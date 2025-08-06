@@ -114,13 +114,13 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
             </SheetTitle>
             <SheetDescription>{config.description}</SheetDescription>
             </SheetHeader>
-            <div className="grid gap-4 py-6">
+            <div className="grid gap-6 py-6">
             {logType === 'meal' && (
                 <>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="meal-type" className="text-right">Meal</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                        <Label htmlFor="meal-type" className="sm:text-right">Meal</Label>
                         <Select {...register("mealType")}>
-                            <SelectTrigger className="col-span-3">
+                            <SelectTrigger className="sm:col-span-3">
                                 <SelectValue placeholder="Select a meal" />
                             </SelectTrigger>
                             <SelectContent>
@@ -131,31 +131,31 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="meal-description" className="text-right">Description</Label>
-                        <Input id="meal-description" placeholder="e.g., Protein shake" className="col-span-3" {...register("mealDescription")} />
+                    <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                        <Label htmlFor="meal-description" className="sm:text-right">Description</Label>
+                        <Input id="meal-description" placeholder="e.g., Protein shake" className="sm:col-span-3" {...register("mealDescription")} />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="calories" className="text-right">Calories</Label>
-                        <Input id="calories" type="number" placeholder="e.g., 450" className="col-span-3" {...register("calories")} />
+                    <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                        <Label htmlFor="calories" className="sm:text-right">Calories</Label>
+                        <Input id="calories" type="number" placeholder="e.g., 450" className="sm:col-span-3" {...register("calories")} />
                     </div>
                 </>
             )}
             {logType === 'activity' && (
                  <>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="activity-type" className="text-right">Activity</Label>
-                        <Input id="activity-type" placeholder="e.g., Morning Run" className="col-span-3" {...register("activityType")} />
+                    <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                        <Label htmlFor="activity-type" className="sm:text-right">Activity</Label>
+                        <Input id="activity-type" placeholder="e.g., Morning Run" className="sm:col-span-3" {...register("activityType")} />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="duration" className="text-right">Duration</Label>
-                        <Input id="duration" type="number" placeholder="in minutes" className="col-span-3" {...register("duration")} />
+                    <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                        <Label htmlFor="duration" className="sm:text-right">Duration</Label>
+                        <Input id="duration" type="number" placeholder="in minutes" className="sm:col-span-3" {...register("duration")} />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="calories-burned" className="text-right">Calories</Label>
-                        <Input id="calories-burned" type="number" placeholder="Click calculate" className="col-span-3" {...register("caloriesBurned")} readOnly />
+                    <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                        <Label htmlFor="calories-burned" className="sm:text-right">Calories</Label>
+                        <Input id="calories-burned" type="number" placeholder="Click calculate" className="sm:col-span-3" {...register("caloriesBurned")} readOnly />
                     </div>
-                    <div className="col-start-2 col-span-3">
+                    <div className="sm:col-start-2 sm:col-span-3">
                         <Button type="button" variant="outline" size="sm" onClick={handleCalculateCalories} disabled={isCalculating}>
                              {isCalculating ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -168,9 +168,9 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
                 </>
             )}
             {logType === 'weight' && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="current-weight" className="text-right">Weight</Label>
-                    <div className="col-span-3 flex items-center gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                    <Label htmlFor="current-weight" className="sm:text-right">Weight</Label>
+                    <div className="sm:col-span-3 flex items-center gap-2">
                         <Input id="current-weight" type="number" step="0.1" placeholder="e.g., 70.5" {...register("weight")} />
                         <span>kg</span>
                     </div>
