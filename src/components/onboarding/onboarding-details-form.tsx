@@ -180,36 +180,40 @@ export function OnboardingDetailsForm() {
                     >
                     {bodyTypes.map(type => (
                         <FormItem key={type.value} className="h-full">
-                            <FormControl>
-                                <RadioGroupItem value={type.value} className="sr-only" />
-                            </FormControl>
-                            <FormLabel className="font-normal h-full">
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Card className={cn(
-                                            "h-full cursor-pointer transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl hover:border-primary relative",
-                                            field.value === type.value && "border-primary ring-2 ring-primary"
-                                        )}>
-                                            <CardContent className="flex flex-col items-center justify-center text-center p-4">
-                                                <Image src={type.image} alt={type.label} width={80} height={120} className="mb-4 rounded-lg" data-ai-hint={type.dataAiHint} />
-                                                <p className="font-headline text-lg font-semibold text-foreground">{type.label}</p>
-                                                <p className="text-muted-foreground text-xs mt-1">{type.description}</p>
-                                            </CardContent>
-                                             <div className="absolute top-2 right-2 p-1 bg-muted/50 rounded-full">
-                                                <Info className="h-3 w-3 text-muted-foreground"/>
-                                             </div>
-                                        </Card>
-                                    </TooltipTrigger>
-                                     <TooltipContent side="top" align="center">
-                                        <div className="p-2">
-                                            <h4 className="font-bold text-base mb-2">{type.label}</h4>
-                                            <ul className="list-disc list-inside space-y-1 text-sm">
-                                                {type.details.map(detail => <li key={detail}>{detail}</li>)}
-                                            </ul>
-                                        </div>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </FormLabel>
+                            <div className="relative">
+                                <FormControl>
+                                    <RadioGroupItem value={type.value} className="sr-only" />
+                                </FormControl>
+                                <FormLabel className="font-normal h-full">
+                                    <Card className={cn(
+                                        "h-full cursor-pointer transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl hover:border-primary",
+                                        field.value === type.value && "border-primary ring-2 ring-primary"
+                                    )}>
+                                        <CardContent className="flex flex-col items-center justify-center text-center p-4">
+                                            <Image src={type.image} alt={type.label} width={80} height={120} className="mb-4 rounded-lg" data-ai-hint={type.dataAiHint} />
+                                            <p className="font-headline text-lg font-semibold text-foreground">{type.label}</p>
+                                            <p className="text-muted-foreground text-xs mt-1">{type.description}</p>
+                                        </CardContent>
+                                    </Card>
+                                </FormLabel>
+                                <div className="absolute top-2 right-2">
+                                     <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button type="button" variant="ghost" size="icon" className="h-6 w-6 rounded-full bg-muted/50 text-muted-foreground hover:bg-muted">
+                                                <Info className="h-4 w-4"/>
+                                            </Button>
+                                        </TooltipTrigger>
+                                         <TooltipContent side="top" align="center">
+                                            <div className="p-2">
+                                                <h4 className="font-bold text-base mb-2">{type.label}</h4>
+                                                <ul className="list-disc list-inside space-y-1 text-sm">
+                                                    {type.details.map(detail => <li key={detail}>{detail}</li>)}
+                                                </ul>
+                                            </div>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </div>
+                            </div>
                         </FormItem>
                     ))}
                     </RadioGroup>
