@@ -61,20 +61,22 @@ export async function onboardingAnalysis(input: OnboardingAnalysisInput): Promis
   return onboardingAnalysisFlow(input);
 }
 
-const medicalAdvisorAgent = ai.defineTool({
-  name: 'medicalAdvisorAgent',
-  description: 'Scans user medical data, outputs medical_flags object (risk_level, contraindications).',
-  inputSchema: z.object({
-    medicalHistory: z.string().describe('The medical history of the user.'),
-  }),
-  outputSchema: z.object({
-    risk_level: z
-      .string()
-      .describe('The risk level of the user based on medical history.'),
-    contraindications: z
-      .string()
-      .describe('Any contraindications for the user based on medical history.'),
-  }),
+const medicalAdvisorAgent = ai.defineTool(
+  {
+    name: 'medicalAdvisorAgent',
+    description: 'Scans user medical data, outputs medical_flags object (risk_level, contraindications).',
+    inputSchema: z.object({
+      medicalHistory: z.string().describe('The medical history of the user.'),
+    }),
+    outputSchema: z.object({
+      risk_level: z
+        .string()
+        .describe('The risk level of the user based on medical history.'),
+      contraindications: z
+        .string()
+        .describe('Any contraindications for the user based on medical history.'),
+    }),
+  },
   async (input) => {
     // TODO: Implement the medical advisor agent logic here
     // For now, return a placeholder object
@@ -82,29 +84,31 @@ const medicalAdvisorAgent = ai.defineTool({
       risk_level: 'low',
       contraindications: 'None',
     };
-  },
-});
+  }
+);
 
-const nutritionExpertAgent = ai.defineTool({
-  name: 'nutritionExpertAgent',
-  description: 'Calculates basic calories (TDEE) and macro ranges.',
-  inputSchema: z.object({
-    physicalSpecifications: z
-      .string()
-      .describe('Physical specs of the user such as height, weight and body type'),
-    lifestyle: z
-      .string()
-      .describe('Lifestyle information of the user such as occupation and activity levels'),
-    eatingHabits: z
-      .string()
-      .describe('Eating habits of the user including disliked foods'),
-  }),
-  outputSchema: z.object({
-    caloric_needs: z.number().describe('The estimated caloric needs of the user.'),
-    macro_targets: z
-      .string()
-      .describe('The recommended macro targets for the user.'),
-  }),
+const nutritionExpertAgent = ai.defineTool(
+  {
+    name: 'nutritionExpertAgent',
+    description: 'Calculates basic calories (TDEE) and macro ranges.',
+    inputSchema: z.object({
+      physicalSpecifications: z
+        .string()
+        .describe('Physical specs of the user such as height, weight and body type'),
+      lifestyle: z
+        .string()
+        .describe('Lifestyle information of the user such as occupation and activity levels'),
+      eatingHabits: z
+        .string()
+        .describe('Eating habits of the user including disliked foods'),
+    }),
+    outputSchema: z.object({
+      caloric_needs: z.number().describe('The estimated caloric needs of the user.'),
+      macro_targets: z
+        .string()
+        .describe('The recommended macro targets for the user.'),
+    }),
+  },
   async (input) => {
     // TODO: Implement the nutrition expert agent logic here
     // For now, return a placeholder object
@@ -112,29 +116,31 @@ const nutritionExpertAgent = ai.defineTool({
       caloric_needs: 2000,
       macro_targets: '50% carbs, 30% protein, 20% fat',
     };
-  },
-});
+  }
+);
 
-const fitnessTrainerAgent = ai.defineTool({
-  name: 'fitnessTrainerAgent',
-  description: 'Determines initial level (beginner, intermediate) and training split (full_body, upper_lower).',
-  inputSchema: z.object({
-    fitnessLevel: z
-      .enum(['beginner', 'intermediate', 'advanced'])
-      .describe('The fitness level of the user.'),
-    goals: z.string().describe('The fitness goals of the user.'),
-    trainingDays: z
-      .string()
-      .describe('The number of training days that the user wants to workout'),
-  }),
-  outputSchema: z.object({
-    initial_level: z
-      .enum(['beginner', 'intermediate'])
-      .describe('The initial fitness level of the user.'),
-    training_split: z
-      .string()
-      .describe('The recommended training split for the user.'),
-  }),
+const fitnessTrainerAgent = ai.defineTool(
+  {
+    name: 'fitnessTrainerAgent',
+    description: 'Determines initial level (beginner, intermediate) and training split (full_body, upper_lower).',
+    inputSchema: z.object({
+      fitnessLevel: z
+        .enum(['beginner', 'intermediate', 'advanced'])
+        .describe('The fitness level of the user.'),
+      goals: z.string().describe('The fitness goals of the user.'),
+      trainingDays: z
+        .string()
+        .describe('The number of training days that the user wants to workout'),
+    }),
+    outputSchema: z.object({
+      initial_level: z
+        .enum(['beginner', 'intermediate'])
+        .describe('The initial fitness level of the user.'),
+      training_split: z
+        .string()
+        .describe('The recommended training split for the user.'),
+    }),
+  },
   async (input) => {
     // TODO: Implement the fitness trainer agent logic here
     // For now, return a placeholder object
@@ -142,8 +148,8 @@ const fitnessTrainerAgent = ai.defineTool({
       initial_level: 'beginner',
       training_split: 'full_body',
     };
-  },
-});
+  }
+);
 
 const onboardingAnalysisPrompt = ai.definePrompt({
   name: 'onboardingAnalysisPrompt',
