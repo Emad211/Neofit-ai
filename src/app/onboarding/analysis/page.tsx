@@ -11,7 +11,7 @@ import { MoveRight } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Flame, ShieldCheck, Target } from 'lucide-react';
+import { Apple, Dumbbell, ShieldCheck } from 'lucide-react';
 
 
 function OnboardingAnalysisPage() {
@@ -129,7 +129,7 @@ function AnalysisContent({ result }: { result: OnboardingAnalysisOutput }) {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center gap-4">
-            <Flame className="h-8 w-8 text-primary" />
+            <Apple className="h-8 w-8 text-primary" />
             <CardTitle>Nutrition</CardTitle>
           </CardHeader>
           <CardContent>
@@ -141,7 +141,7 @@ function AnalysisContent({ result }: { result: OnboardingAnalysisOutput }) {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center gap-4">
-            <Target className="h-8 w-8 text-primary" />
+            <Dumbbell className="h-8 w-8 text-primary" />
             <CardTitle>Fitness</CardTitle>
           </CardHeader>
            <CardContent>

@@ -22,7 +22,7 @@ const OnboardingAnalysisInputSchema = z.object({
   goals: z.string().describe('The fitness goals of the user.'),
   physicalSpecifications: z
     .string()
-    .describe('Physical specs of the user such as height, weight and body type'),
+    .describe('Physical specs of the user such as height, weight, gender, age and body type'),
   lifestyle: z
     .string()
     .describe('Lifestyle information of the user such as occupation and activity levels'),
@@ -49,7 +49,7 @@ const OnboardingAnalysisOutputSchema = z.object({
     .string()
     .describe('The recommended macro targets for the user.'),
   initial_level: z
-    .enum(['beginner', 'intermediate'])
+    .enum(['beginner', 'intermediate', 'advanced'])
     .describe('The initial fitness level of the user.'),
   training_split: z
     .string()
@@ -61,107 +61,45 @@ export async function onboardingAnalysis(input: OnboardingAnalysisInput): Promis
   return onboardingAnalysisFlow(input);
 }
 
-const medicalAdvisorAgent = ai.defineTool(
-  {
-    name: 'medicalAdvisorAgent',
-    description: 'Scans user medical data, outputs medical_flags object (risk_level, contraindications).',
-    inputSchema: z.object({
-      medicalHistory: z.string().describe('The medical history of the user.'),
-    }),
-    outputSchema: z.object({
-      risk_level: z
-        .string()
-        .describe('The risk level of the user based on medical history.'),
-      contraindications: z
-        .string()
-        .describe('Any contraindications for the user based on medical history.'),
-    }),
-  },
-  async (input) => {
-    // TODO: Implement the medical advisor agent logic here
-    // For now, return a placeholder object
-    return {
-      risk_level: 'low',
-      contraindications: 'None',
-    };
-  }
-);
+const analysisPrompt = ai.definePrompt({
+    name: 'onboardingAnalysisMasterPrompt',
+    input: { schema: OnboardingAnalysisInputSchema },
+    output: { schema: OnboardingAnalysisOutputSchema },
+    prompt: `You are a master AI system composed of three expert agents: a medical advisor, a nutrition expert, and a fitness trainer. Your goal is to conduct a comprehensive analysis of a new user's onboarding data to create a safe, effective, and hyper-personalized fitness and nutrition plan.
 
-const nutritionExpertAgent = ai.defineTool(
-  {
-    name: 'nutritionExpertAgent',
-    description: 'Calculates basic calories (TDEE) and macro ranges.',
-    inputSchema: z.object({
-      physicalSpecifications: z
-        .string()
-        .describe('Physical specs of the user such as height, weight and body type'),
-      lifestyle: z
-        .string()
-        .describe('Lifestyle information of the user such as occupation and activity levels'),
-      eatingHabits: z
-        .string()
-        .describe('Eating habits of the user including disliked foods'),
-    }),
-    outputSchema: z.object({
-      caloric_needs: z.number().describe('The estimated caloric needs of the user.'),
-      macro_targets: z
-        .string()
-        .describe('The recommended macro targets for the user.'),
-    }),
-  },
-  async (input) => {
-    // TODO: Implement the nutrition expert agent logic here
-    // For now, return a placeholder object
-    return {
-      caloric_needs: 2000,
-      macro_targets: '50% carbs, 30% protein, 20% fat',
-    };
-  }
-);
+Analyze the complete user profile below and return a single, consolidated JSON object containing the results from all three areas of expertise.
 
-const fitnessTrainerAgent = ai.defineTool(
-  {
-    name: 'fitnessTrainerAgent',
-    description: 'Determines initial level (beginner, intermediate) and training split (full_body, upper_lower).',
-    inputSchema: z.object({
-      fitnessLevel: z
-        .enum(['beginner', 'intermediate', 'advanced'])
-        .describe('The fitness level of the user.'),
-      goals: z.string().describe('The fitness goals of the user.'),
-      trainingDays: z
-        .string()
-        .describe('The number of training days that the user wants to workout'),
-    }),
-    outputSchema: z.object({
-      initial_level: z
-        .enum(['beginner', 'intermediate'])
-        .describe('The initial fitness level of the user.'),
-      training_split: z
-        .string()
-        .describe('The recommended training split for the user.'),
-    }),
-  },
-  async (input) => {
-    // TODO: Implement the fitness trainer agent logic here
-    // For now, return a placeholder object
-    return {
-      initial_level: 'beginner',
-      training_split: 'full_body',
-    };
-  }
-);
+USER ONBOARDING DATA:
+- User ID: {{{userId}}}
+- Goal: {{{goals}}}
+- Fitness Level: {{{fitnessLevel}}}
+- Preferred Training Days: {{{trainingDays}}}
+- Physical Specifications: {{{physicalSpecifications}}}
+- Daily Lifestyle/Activity: {{{lifestyle}}}
+- Medical History & Injuries: {{{medicalHistory}}}
+- Disliked Foods / Allergies: {{{eatingHabits}}}
 
-const onboardingAnalysisPrompt = ai.definePrompt({
-  name: 'onboardingAnalysisPrompt',
-  tools: [
-    medicalAdvisorAgent,
-    nutritionExpertAgent,
-    fitnessTrainerAgent,
-  ],
-  input: {schema: OnboardingAnalysisInputSchema},
-  output: {schema: OnboardingAnalysisOutputSchema},
-  prompt: `Analyze the onboarding data for user {{{userId}}} to personalize and ensure the safety of their fitness programs.\n\nConsider the user's medical history: {{{medicalHistory}}}.\n\nBased on their fitness level ({{{fitnessLevel}}}) and goals ({{{goals}}}), determine an appropriate initial fitness level and training split.\n\nAlso, considering the user's physical specifications ({{{physicalSpecifications}}}), lifestyle ({{{lifestyle}}}), eating habits ({{{eatingHabits}}}), and preferred training days ({{{trainingDays}}}), provide personalized recommendations.\n\nUse the medicalAdvisorAgent tool to assess medical risks and contraindications.\nUse the nutritionExpertAgent tool to calculate caloric needs and macro targets.\nUse the fitnessTrainerAgent tool to determine the initial fitness level and training split.\n`,
+YOUR TASKS:
+
+1.  **Medical Advisor:**
+    - Scan the 'Medical History & Injuries' data.
+    - Determine a 'risk_level' ('low', 'medium', 'high').
+    - List any specific 'contraindications' (e.g., "high-impact jumping", "deep squats", "avoid heavy overhead pressing"). If none, return "None".
+    - Populate the 'medical_flags' object.
+
+2.  **Nutrition Expert:**
+    - Analyze 'Physical Specifications', 'Daily Lifestyle/Activity', and 'goals'.
+    - Calculate the user's Total Daily Energy Expenditure (TDEE) and assign it to 'caloric_needs'. Adjust this value based on their goal (e.g., a 300-500 calorie deficit for weight loss, a 300-500 surplus for muscle gain).
+    - Determine appropriate macronutrient targets (protein, carbs, fat) based on their goal and caloric needs. Present this as a user-friendly string (e.g., "Protein: 150g, Carbs: 200g, Fat: 65g") for the 'macro_targets' field.
+
+3.  **Fitness Trainer:**
+    - Based on 'Fitness Level', 'goals', and 'Preferred Training Days', determine the 'initial_level'. Note: This might be the same as their self-reported level, but you can adjust it (e.g., an 'advanced' user who hasn't trained in years might be better starting at 'intermediate').
+    - Recommend the most suitable 'training_split' (e.g., "Full Body", "Upper/Lower", "Push/Pull/Legs").
+
+Return a single, valid JSON object that strictly follows the output schema.
+`,
 });
+
 
 const onboardingAnalysisFlow = ai.defineFlow(
   {
@@ -170,7 +108,16 @@ const onboardingAnalysisFlow = ai.defineFlow(
     outputSchema: OnboardingAnalysisOutputSchema,
   },
   async input => {
-    const {output} = await onboardingAnalysisPrompt(input);
-    return output!;
+    const {output} = await analysisPrompt(input);
+    
+    // The initial_level in the schema is more constrained than the fitnessLevel input
+    const validInitialLevel = ['beginner', 'intermediate', 'advanced'].includes(output!.initial_level)
+    ? output!.initial_level as 'beginner' | 'intermediate' | 'advanced'
+    : 'beginner';
+    
+    return {
+        ...output!,
+        initial_level: validInitialLevel
+    };
   }
 );
