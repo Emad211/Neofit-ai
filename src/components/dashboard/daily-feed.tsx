@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Apple, Dumbbell, Zap, GlassWater } from 'lucide-react';
+import { DailyMotivationCard } from "./daily-motivation-card";
 
 const feedItems = [
     {
@@ -21,13 +22,6 @@ const feedItems = [
         description: '35g Protein, 450 Calories. A great start to your day.',
         image: 'https://placehold.co/600x400.png',
         dataAiHint: 'protein smoothie',
-    },
-    {
-        type: 'motivation',
-        icon: Zap,
-        title: 'Daily Motivation',
-        time: '10:00 AM',
-        description: '"Success isn\'t always about greatness. It\'s about consistency. Consistent hard work leads to success. Greatness will come." - Dwayne Johnson',
     },
     {
         type: 'hydration',
@@ -74,6 +68,7 @@ export function DailyFeed() {
                         )}
                     </Card>
                 ))}
+                <DailyMotivationCard />
             </div>
         </div>
     );
