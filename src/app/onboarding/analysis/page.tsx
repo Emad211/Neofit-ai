@@ -54,7 +54,7 @@ function AnalysisResult() {
         lifestyle: searchParams.get('lifestyle') || 'sedentary',
         eatingHabits: searchParams.get('eatingHabits') || 'None',
         medicalHistory: searchParams.get('medicalHistory') || 'None',
-        physicalSpecifications: `${searchParams.get('height') || 170}cm, ${searchParams.get('weight') || 70}kg`,
+        physicalSpecifications: `${searchParams.get('height') || 170}cm, ${searchParams.get('weight') || 70}kg, ${searchParams.get('bodyType') || 'mesomorph'}`,
       };
       
       try {
