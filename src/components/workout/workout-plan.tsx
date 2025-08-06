@@ -12,9 +12,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui
 import { Button } from "../ui/button";
 import { PlayCircle, Flame, Clock } from "lucide-react";
 import { Badge } from "../ui/badge";
+import Link from "next/link";
 
 const workoutData = [
     {
+        id: 'full-body-a',
         day: 'Day 1',
         title: 'Full Body Strength A',
         focus: 'Strength Training',
@@ -29,6 +31,7 @@ const workoutData = [
         ],
     },
     {
+        id: 'cardio-core',
         day: 'Day 2',
         title: 'Cardio & Core',
         focus: 'Cardiovascular',
@@ -42,6 +45,7 @@ const workoutData = [
         ],
     },
     {
+        id: 'full-body-b',
         day: 'Day 3',
         title: 'Full Body Strength B',
         focus: 'Strength Training',
@@ -56,6 +60,7 @@ const workoutData = [
         ],
     },
     {
+      id: 'active-recovery',
       day: 'Day 4',
       title: 'Active Recovery',
       focus: 'Flexibility',
@@ -111,9 +116,11 @@ export function WorkoutPlan() {
                         </ul>
                     </CardContent>
                     <div className="p-6 pt-0 mt-auto">
-                        <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                            <PlayCircle className="mr-2 h-5 w-5" />
-                            Start Workout
+                        <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" asChild>
+                            <Link href={`/workout-player/${workout.id}`}>
+                                <PlayCircle className="mr-2 h-5 w-5" />
+                                Start Workout
+                            </Link>
                         </Button>
                     </div>
                 </Card>
