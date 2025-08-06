@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -36,6 +36,9 @@ const FormSchema = z.object({
 
 export function OnboardingDetailsForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const goal = searchParams.get('goal') || 'not_set';
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -46,9 +49,12 @@ export function OnboardingDetailsForm() {
   })
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
-    // Here you would save the user's details
-    console.log(data)
-    router.push("/onboarding/analysis")
+    const onboardingData = { ...data, goal };
+    const params = new URLSearchParams();
+    Object.entries(onboardingData).forEach(([key, value]) => {
+      params.set(key, String(value));
+    });
+    router.push(`/onboarding/analysis?${params.toString()}`);
   }
 
   return (

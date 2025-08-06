@@ -38,9 +38,7 @@ export function OnboardingGoalForm() {
   })
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
-    // Here you would typically save the user's goal
-    console.log(data)
-    router.push("/onboarding/details")
+    router.push(`/onboarding/details?goal=${data.goal}`);
   }
 
   return (
