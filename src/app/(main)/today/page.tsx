@@ -1,7 +1,6 @@
 import { ActivityRings } from '@/components/dashboard/activity-rings';
 import { DailyFeed } from '@/components/dashboard/daily-feed';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { SpeedDial } from '@/components/dashboard/speed-dial';
 
 export default function TodayPage() {
   return (
@@ -15,17 +14,12 @@ export default function TodayPage() {
         </p>
       </header>
       
-      <main className="space-y-8">
+      <main className="space-y-8 pb-24">
         <ActivityRings />
         <DailyFeed />
       </main>
 
-      <div className="fixed bottom-24 right-6 z-50 sm:bottom-8">
-         <Button size="icon" className="h-16 w-16 rounded-full shadow-lg bg-accent hover:bg-accent/90">
-            <Plus className="h-8 w-8" />
-            <span className="sr-only">Add new entry</span>
-         </Button>
-      </div>
+      <SpeedDial />
     </div>
   );
 }
