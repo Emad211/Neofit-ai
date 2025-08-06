@@ -4,47 +4,49 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import React from "react";
 
 const Ring = ({
-  radius,
-  stroke,
   progress,
   color,
-  bgColor,
+  size,
+  strokeWidth,
 }: {
-  radius: number;
-  stroke: number;
   progress: number;
   color: string;
-  bgColor: string;
+  size: number;
+  strokeWidth: number;
 }) => {
-  const normalizedRadius = radius - stroke / 2;
-  const circumference = normalizedRadius * 2 * Math.PI;
+  const center = size / 2;
+  const radius = center - strokeWidth;
+  const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
-    <>
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="transform -rotate-90">
+      {/* Background Circle */}
       <circle
-        stroke={bgColor}
+        stroke="hsl(var(--muted))"
         fill="transparent"
-        strokeWidth={stroke}
-        r={normalizedRadius}
-        cx={radius}
-        cy={radius}
+        strokeWidth={strokeWidth}
+        r={radius}
+        cx={center}
+        cy={center}
       />
+      {/* Progress Circle */}
       <circle
         stroke={color}
         fill="transparent"
-        strokeWidth={stroke}
-        strokeDasharray={circumference + " " + circumference}
-        style={{ strokeDashoffset, transition: 'stroke-dashoffset 0.5s ease-out' }}
+        strokeWidth={strokeWidth}
         strokeLinecap="round"
-        r={normalizedRadius}
-        cx={radius}
-        cy={radius}
-        transform={`rotate(-90 ${radius} ${radius})`}
+        strokeDasharray={circumference}
+        strokeDashoffset={strokeDashoffset}
+        r={radius}
+        cx={center}
+        cy={center}
+        style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
       />
-    </>
+    </svg>
   );
 };
+
 
 const activityData = [
   { name: "Calories", value: 1800, goal: 2200, color: "hsl(var(--chart-1))" },
@@ -53,10 +55,9 @@ const activityData = [
 ];
 
 export function ActivityRings() {
-  const size = 180;
+  const baseSize = 180;
   const strokeWidth = 14;
-  const gap = 4;
-  const totalStrokeWidthWithGap = strokeWidth + gap;
+  const ringGap = 2 * (strokeWidth + 2);
 
   return (
     <Card>
@@ -64,45 +65,21 @@ export function ActivityRings() {
         <CardTitle className="font-headline">Today's Progress</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-8 md:flex-row">
-        <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-          <svg
-            height={size}
-            width={size}
-            viewBox={`0 0 ${size} ${size}`}
-          >
-            {activityData.map((activity, index) => {
-              const radius = size / 2 - (strokeWidth / 2) - (index * totalStrokeWidthWithGap);
+        <div className="relative flex items-center justify-center" style={{ width: baseSize, height: baseSize }}>
+          {activityData.map((activity, index) => {
               const progress = (activity.value / activity.goal) * 100;
+              const size = baseSize - (index * ringGap);
               return (
-                <g key={activity.name}>
+                <div key={activity.name} className="absolute inset-0 flex items-center justify-center">
                     <Ring
-                        radius={size / 2}
-                        stroke={strokeWidth}
-                        progress={100}
-                        color="hsl(var(--muted))"
-                        bgColor="transparent"
-                    />
-                    <Ring
-                        radius={size/2}
-                        stroke={strokeWidth}
                         progress={progress}
                         color={activity.color}
-                        bgColor="transparent"
+                        size={size}
+                        strokeWidth={strokeWidth}
                     />
-                </g>
+                </div>
               );
-            }).reduce((acc, curr, index) => {
-                const radius = size / 2 - (strokeWidth / 2) - (index * totalStrokeWidthWithGap);
-                return (
-                    <g>
-                        {acc}
-                        <g transform={`scale(${radius/(size/2)}) translate(${size/2 - radius}, ${size/2 - radius})`}>
-                            {curr}
-                        </g>
-                    </g>
-                )
-            }, <></>)}
-          </svg>
+            })}
         </div>
         <div className="flex flex-1 justify-around w-full">
             {activityData.map(activity => (
