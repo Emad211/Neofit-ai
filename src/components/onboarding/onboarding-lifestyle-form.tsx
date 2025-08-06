@@ -1,3 +1,4 @@
+
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -17,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Textarea } from "@/components/ui/textarea"
-import { MoveRight, Briefcase, Walking, Weight } from "lucide-react"
+import { MoveRight, Briefcase, Footprints, Activity, Weight } from "lucide-react"
 import { Card, CardContent } from "../ui/card"
 import { cn } from "@/lib/utils"
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group"
@@ -27,8 +28,8 @@ import { X } from "lucide-react"
 
 const lifestyleOptions = [
   { value: 'sedentary', label: 'Sedentary', icon: Briefcase, description: 'Office job, little to no exercise' },
-  { value: 'lightly_active', label: 'Lightly Active', icon: Walking, description: 'Light exercise 1-3 days/week' },
-  { value: 'moderately_active', label: 'Moderately Active', icon: Walking, description: 'Moderate exercise 3-5 days/week' },
+  { value: 'lightly_active', label: 'Lightly Active', icon: Footprints, description: 'Light exercise 1-3 days/week' },
+  { value: 'moderately_active', label: 'Moderately Active', icon: Activity, description: 'Moderate exercise 3-5 days/week' },
   { value: 'very_active', label: 'Very Active', icon: Weight, description: 'Hard exercise 6-7 days/week' },
 ]
 
@@ -196,5 +197,3 @@ export function OnboardingLifestyleForm() {
     </Form>
   )
 }
-
-    
