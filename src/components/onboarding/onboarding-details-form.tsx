@@ -28,12 +28,13 @@ import {
 import { Slider } from "@/components/ui/slider"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import { MoveRight } from "lucide-react"
+import { MoveRight, Info } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 const bodyTypes = [
-  { value: "ectomorph", label: "Ectomorph", description: "Lean and long, with difficulty building muscle.", image: "https://placehold.co/400x600.png", dataAiHint: "lean body" },
-  { value: "mesomorph", label: "Mesomorph", description: "Muscular and well-built, with a high metabolism.", image: "https://placehold.co/400x600.png", dataAiHint: "muscular body" },
-  { value: "endomorph", label: "Endomorph", description: "Big, high body fat, often pear-shaped.", image: "https://placehold.co/400x600.png", dataAiHint: "large body" },
+    { value: "ectomorph", label: "Ectomorph", description: "Lean and long, with difficulty building muscle.", image: "https://placehold.co/400x600.png", dataAiHint: "lean body", details: ["Tall and lean", "Small muscles", "High metabolism", "Hard to gain weight"] },
+    { value: "mesomorph", label: "Mesomorph", description: "Muscular and well-built, with a high metabolism.", image: "https://placehold.co/400x600.png", dataAiHint: "muscular body", details: ["Wide shoulders", "Athletic muscles", "Efficient metabolism", "Balanced weight"] },
+    { value: "endomorph", label: "Endomorph", description: "Big, high body fat, often pear-shaped.", image: "https://placehold.co/400x600.png", dataAiHint: "large body", details: ["Large bone structure", "Higher body fat", "Gains weight easily", "Slower metabolism"] },
 ]
 
 const FormSchema = z.object({
@@ -171,31 +172,48 @@ export function OnboardingDetailsForm() {
                 This helps us understand your metabolism and body composition.
               </FormDescription>
               <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  className="grid grid-cols-1 md:grid-cols-3 gap-4"
-                >
-                  {bodyTypes.map(type => (
-                     <FormItem key={type.value} className="h-full">
-                        <FormControl>
-                           <RadioGroupItem value={type.value} className="sr-only" />
-                        </FormControl>
-                        <FormLabel className="font-normal h-full">
-                           <Card className={cn(
-                                "h-full cursor-pointer transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl hover:border-primary",
-                                field.value === type.value && "border-primary ring-2 ring-primary"
-                            )}>
-                                <CardContent className="flex flex-col items-center justify-center text-center p-4">
-                                    <Image src={type.image} alt={type.label} width={80} height={120} className="mb-4 rounded-lg" data-ai-hint={type.dataAiHint} />
-                                    <p className="font-headline text-lg font-semibold text-foreground">{type.label}</p>
-                                    <p className="text-muted-foreground text-xs mt-1">{type.description}</p>
-                                </CardContent>
-                            </Card>
-                        </FormLabel>
-                    </FormItem>
-                  ))}
-                </RadioGroup>
+                 <TooltipProvider>
+                    <RadioGroup
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                    >
+                    {bodyTypes.map(type => (
+                        <FormItem key={type.value} className="h-full">
+                            <FormControl>
+                                <RadioGroupItem value={type.value} className="sr-only" />
+                            </FormControl>
+                            <FormLabel className="font-normal h-full">
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Card className={cn(
+                                            "h-full cursor-pointer transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl hover:border-primary relative",
+                                            field.value === type.value && "border-primary ring-2 ring-primary"
+                                        )}>
+                                            <CardContent className="flex flex-col items-center justify-center text-center p-4">
+                                                <Image src={type.image} alt={type.label} width={80} height={120} className="mb-4 rounded-lg" data-ai-hint={type.dataAiHint} />
+                                                <p className="font-headline text-lg font-semibold text-foreground">{type.label}</p>
+                                                <p className="text-muted-foreground text-xs mt-1">{type.description}</p>
+                                            </CardContent>
+                                             <div className="absolute top-2 right-2 p-1 bg-muted/50 rounded-full">
+                                                <Info className="h-3 w-3 text-muted-foreground"/>
+                                             </div>
+                                        </Card>
+                                    </TooltipTrigger>
+                                     <TooltipContent side="top" align="center">
+                                        <div className="p-2">
+                                            <h4 className="font-bold text-base mb-2">{type.label}</h4>
+                                            <ul className="list-disc list-inside space-y-1 text-sm">
+                                                {type.details.map(detail => <li key={detail}>{detail}</li>)}
+                                            </ul>
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </FormLabel>
+                        </FormItem>
+                    ))}
+                    </RadioGroup>
+                </TooltipProvider>
               </FormControl>
               <FormMessage />
             </FormItem>
