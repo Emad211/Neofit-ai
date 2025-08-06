@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { WorkoutPlan } from "@/components/workout/workout-plan";
 
 export default function WorkoutPage() {
   return (
@@ -11,14 +11,9 @@ export default function WorkoutPage() {
           Your personalized training program.
         </p>
       </header>
-       <Card>
-        <CardHeader>
-          <CardTitle>Coming Soon</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>The immersive workout player and your program will be available here soon.</p>
-        </CardContent>
-      </Card>
+      <main>
+        <WorkoutPlan />
+      </main>
     </div>
   );
 }
