@@ -15,7 +15,7 @@ const OnboardingAnalysisInputSchema = z.object({
   userId: z.string().describe('The ID of the user undergoing onboarding.'),
   medicalHistory: z
     .string()
-    .describe('The medical history of the user.'),
+    .describe('The medical history of the user, including any selected injured body parts.'),
   fitnessLevel: z
     .enum(['beginner', 'intermediate', 'advanced'])
     .describe('The fitness level of the user.'),

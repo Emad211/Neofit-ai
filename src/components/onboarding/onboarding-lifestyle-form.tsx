@@ -29,7 +29,6 @@ const FormSchema = z.object({
   trainingDays: z.string().min(1, "Please select how many days you can train."),
   lifestyle: z.enum(["sedentary", "lightly_active", "moderately_active", "very_active"], { required_error: "Please select your lifestyle." }),
   eatingHabits: z.string().optional(),
-  medicalHistory: z.string().optional(),
 })
 
 export function OnboardingLifestyleForm() {
@@ -39,7 +38,6 @@ export function OnboardingLifestyleForm() {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      medicalHistory: "None",
       eatingHabits: ""
     }
   })
@@ -49,7 +47,7 @@ export function OnboardingLifestyleForm() {
     Object.entries(data).forEach(([key, value]) => {
       params.set(key, String(value));
     });
-    router.push(`/onboarding/analysis?${params.toString()}`);
+    router.push(`/onboarding/injuries?${params.toString()}`);
   }
 
   return (
@@ -124,31 +122,10 @@ export function OnboardingLifestyleForm() {
               )}
             />
           </div>
-          <div className="md:col-span-2">
-             <FormField
-              control={form.control}
-              name="medicalHistory"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Medical History</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Please list any past injuries, chronic conditions, or health concerns. Type 'None' if you have no relevant history."
-                      {...field}
-                    />
-                  </FormControl>
-                   <FormDescription>
-                    Your safety is our priority. This information helps us create a safe plan for you.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
         </div>
 
         <Button type="submit" size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-          Analyze My Profile <MoveRight className="ml-2 h-5 w-5" />
+          Next <MoveRight className="ml-2 h-5 w-5" />
         </Button>
       </form>
     </Form>

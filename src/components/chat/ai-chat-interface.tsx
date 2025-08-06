@@ -180,7 +180,7 @@ export function AIChatInterface() {
         </TabsContent>
         <TabsContent value="nutrition" className="h-full m-0">
           {renderChatContent("nutrition")}
-        </Tabs.Content>
+        </TabsContent>
       </div>
     </Tabs>
   );
