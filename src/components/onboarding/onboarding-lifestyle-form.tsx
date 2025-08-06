@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { useRouter, useSearchParams } from "next/navigation"
+import React from 'react';
 
 import { Button } from "@/components/ui/button"
 import {
@@ -15,31 +16,41 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { MoveRight } from "lucide-react"
+import { MoveRight, Briefcase, Walking, Weight } from "lucide-react"
+import { Card, CardContent } from "../ui/card"
+import { cn } from "@/lib/utils"
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group"
+import { Badge } from "../ui/badge"
+import { Input } from "../ui/input"
+import { X } from "lucide-react"
+
+const lifestyleOptions = [
+  { value: 'sedentary', label: 'Sedentary', icon: Briefcase, description: 'Office job, little to no exercise' },
+  { value: 'lightly_active', label: 'Lightly Active', icon: Walking, description: 'Light exercise 1-3 days/week' },
+  { value: 'moderately_active', label: 'Moderately Active', icon: Walking, description: 'Moderate exercise 3-5 days/week' },
+  { value: 'very_active', label: 'Very Active', icon: Weight, description: 'Hard exercise 6-7 days/week' },
+]
+
+const trainingDaysOptions = ['2', '3', '4', '5', '6'];
+
 
 const FormSchema = z.object({
   trainingDays: z.string().min(1, "Please select how many days you can train."),
   lifestyle: z.enum(["sedentary", "lightly_active", "moderately_active", "very_active"], { required_error: "Please select your lifestyle." }),
-  eatingHabits: z.string().optional(),
+  eatingHabits: z.array(z.string()).optional(),
   medicalHistory: z.string().optional(),
 })
 
 export function OnboardingLifestyleForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [tagInput, setTagInput] = React.useState('');
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      eatingHabits: "",
+      eatingHabits: [],
       medicalHistory: "",
     }
   })
@@ -48,106 +59,135 @@ export function OnboardingLifestyleForm() {
     const params = new URLSearchParams(searchParams);
     Object.entries(data).forEach(([key, value]) => {
       if (value) {
-        params.set(key, String(value));
+        if (Array.isArray(value)) {
+          params.set(key, value.join(','));
+        } else {
+          params.set(key, String(value));
+        }
       }
     });
     router.push(`/onboarding/injuries?${params.toString()}`);
   }
 
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const newTag = tagInput.trim();
+      if (newTag && !form.getValues('eatingHabits')?.includes(newTag)) {
+        form.setValue('eatingHabits', [...(form.getValues('eatingHabits') || []), newTag]);
+        setTagInput('');
+      }
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    form.setValue('eatingHabits', form.getValues('eatingHabits')?.filter(tag => tag !== tagToRemove));
+  };
+
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <FormField
-              control={form.control}
-              name="trainingDays"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>How many days per week can you train?</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select number of days" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="2">2 days</SelectItem>
-                      <SelectItem value="3">3 days</SelectItem>
-                      <SelectItem value="4">4 days</SelectItem>
-                      <SelectItem value="5">5 days</SelectItem>
-                      <SelectItem value="6">6 days</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="lifestyle"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Describe your daily activity level</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select your activity level" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="sedentary">Sedentary (office job, little to no exercise)</SelectItem>
-                      <SelectItem value="lightly_active">Lightly Active (light exercise 1-3 days/week)</SelectItem>
-                      <SelectItem value="moderately_active">Moderately Active (moderate exercise 3-5 days/week)</SelectItem>
-                      <SelectItem value="very_active">Very Active (hard exercise 6-7 days/week)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          <div className="md:col-span-2">
-            <FormField
-              control={form.control}
-              name="medicalHistory"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Any pre-existing medical conditions?</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="e.g., Asthma, high blood pressure. Leave blank if none."
-                      {...field}
+        
+        <FormField
+          control={form.control}
+          name="trainingDays"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>How many days per week can you train?</FormLabel>
+              <FormControl>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {trainingDaysOptions.map(day => (
+                    <Button
+                      key={day}
+                      type="button"
+                      variant={field.value === day ? "default" : "outline"}
+                      onClick={() => field.onChange(day)}
+                      className="w-20 h-14 text-lg"
+                    >
+                      {day}
+                    </Button>
+                  ))}
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="lifestyle"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Describe your daily activity level</FormLabel>
+               <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2"
+                >
+                  {lifestyleOptions.map(option => (
+                     <FormItem key={option.value} className="h-full">
+                        <FormControl>
+                           <RadioGroupItem value={option.value} className="sr-only" />
+                        </FormControl>
+                        <FormLabel className="font-normal h-full">
+                           <Card className={cn(
+                                "h-full cursor-pointer transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl hover:border-primary",
+                                field.value === option.value && "border-primary ring-2 ring-primary"
+                            )}>
+                                <CardContent className="flex flex-col items-center justify-center text-center p-4">
+                                    <div className="mb-2 rounded-full bg-primary/10 p-3 text-primary">
+                                        <option.icon className="h-8 w-8" />
+                                    </div>
+                                    <p className="font-semibold text-foreground">{option.label}</p>
+                                </CardContent>
+                            </Card>
+                        </FormLabel>
+                    </FormItem>
+                  ))}
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+          
+        <FormField
+          control={form.control}
+          name="eatingHabits"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Any foods you dislike or are allergic to?</FormLabel>
+              <FormControl>
+                 <div>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {field.value?.map(tag => (
+                        <Badge key={tag} variant="secondary" className="text-sm py-1 pl-3 pr-2">
+                          {tag}
+                          <button type="button" onClick={() => removeTag(tag)} className="ml-2 rounded-full hover:bg-muted-foreground/20 p-0.5">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                    <Input
+                      placeholder="Type a food and press Enter..."
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={handleTagKeyDown}
                     />
-                  </FormControl>
-                  <FormDescription>
-                    This information is vital for creating a safe program for you.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="md:col-span-2">
-            <FormField
-              control={form.control}
-              name="eatingHabits"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Any foods you dislike or are allergic to?</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="e.g., I don't like broccoli, allergic to peanuts."
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    This helps us create a meal plan you'll actually enjoy.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
+                 </div>
+              </FormControl>
+              <FormDescription>
+                This helps us create a meal plan you'll actually enjoy.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
 
         <Button type="submit" size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
           Next <MoveRight className="ml-2 h-5 w-5" />
@@ -156,3 +196,5 @@ export function OnboardingLifestyleForm() {
     </Form>
   )
 }
+
+    

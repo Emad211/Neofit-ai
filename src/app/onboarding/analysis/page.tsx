@@ -25,14 +25,35 @@ function OnboardingAnalysisPage() {
 }
 
 function Loading() {
+  const messages = [
+    "Consulting with AI Nutrition Expert...",
+    "Analyzing your goals with the Fitness Coach...",
+    "Reviewing medical history with our Safety Advisor...",
+    "Calculating your personalized caloric needs...",
+    "Designing your initial training split...",
+    "Crafting the perfect plan for you...",
+  ];
+
+  const [message, setMessage] = React.useState(messages[0]);
+
+  React.useEffect(() => {
+    let i = 0;
+    const interval = setInterval(() => {
+      i = (i + 1) % messages.length;
+      setMessage(messages[i]);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [messages]);
+
+
   return (
       <div className="w-full max-w-2xl text-center">
         <AnalysisAnimation />
         <h1 className="mt-8 text-3xl font-bold tracking-tight text-foreground sm:text-4xl font-headline">
           Analyzing Your Profile
         </h1>
-        <p className="mt-4 text-lg text-muted-foreground">
-          Our AI is crafting your hyper-personalized fitness and nutrition plan. This will just take a moment...
+        <p className="mt-4 text-lg text-muted-foreground transition-all duration-500">
+          {message}
         </p>
       </div>
   )
@@ -164,3 +185,5 @@ function ErrorDisplay({ message }: { message: string }) {
 }
 
 export default OnboardingAnalysisPage;
+
+    
