@@ -108,8 +108,8 @@ export const BodyMap = () => {
     }
 
     const selectedPartNames = useMemo(() => 
-        Array.from(selectedParts).map(id => bodyParts.find(p => p.id === id)?.name || '').filter(Boolean),
-    [selectedParts, bodyParts]);
+        Array.from(selectedParts).map(id => bodyParts.find(p => p.id === id)?.name || '').filter(Boolean)
+    , [selectedParts, bodyParts]);
 
     return (
         <div className="text-foreground">
@@ -160,6 +160,6 @@ export const BodyMap = () => {
                     Analyze My Profile <MoveRight className="ml-2 h-5 w-5" />
                 </Button>
             </div>
-        </>
+        </div>
     );
 };
