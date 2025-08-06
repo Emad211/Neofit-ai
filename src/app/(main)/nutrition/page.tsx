@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { WeeklyMealPlan } from "@/components/nutrition/weekly-meal-plan";
 
 export default function NutritionPage() {
   return (
@@ -11,14 +11,9 @@ export default function NutritionPage() {
           Your weekly meal plan and food library.
         </p>
       </header>
-      <Card>
-        <CardHeader>
-          <CardTitle>Coming Soon</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>The full nutrition tracking experience is being prepared!</p>
-        </CardContent>
-      </Card>
+      <main>
+        <WeeklyMealPlan />
+      </main>
     </div>
   );
 }
