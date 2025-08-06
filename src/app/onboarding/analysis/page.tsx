@@ -48,17 +48,12 @@ function AnalysisResult() {
       // Create a default fallback for each parameter.
       const params: OnboardingAnalysisInput = {
         userId: '12345', // In a real app, this would be the logged-in user's ID
-        goal: searchParams.get('goal') || 'improve_fitness',
-        gender: searchParams.get('gender') || 'other',
-        age: Number(searchParams.get('age')) || 25,
-        height: Number(searchParams.get('height')) || 170,
-        weight: Number(searchParams.get('weight')) || 70,
+        goals: searchParams.get('goal') || 'improve_fitness',
         fitnessLevel: (searchParams.get('fitnessLevel') as 'beginner' | 'intermediate' | 'advanced') || 'beginner',
         trainingDays: searchParams.get('trainingDays') || '3',
         lifestyle: searchParams.get('lifestyle') || 'sedentary',
         eatingHabits: searchParams.get('eatingHabits') || 'None',
         medicalHistory: searchParams.get('medicalHistory') || 'None',
-        // The following are not collected in the form, so we provide default values
         physicalSpecifications: `${searchParams.get('height') || 170}cm, ${searchParams.get('weight') || 70}kg`,
       };
       
