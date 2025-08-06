@@ -1,6 +1,7 @@
 "use client"
 
-import { useForm, useFieldArray } from "react-hook-form"
+import * as React from "react"
+import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -10,10 +11,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
 const medicalConditions = [
@@ -124,7 +123,7 @@ export function MedicalHistoryForm() {
                                                             checked={field.value?.includes(item.id)}
                                                             onCheckedChange={(checked) => {
                                                             return checked
-                                                                ? field.onChange([...field.value, item.id])
+                                                                ? field.onChange([...(field.value || []), item.id])
                                                                 : field.onChange(
                                                                     field.value?.filter(
                                                                     (value) => value !== item.id
@@ -170,5 +169,3 @@ export function MedicalHistoryForm() {
         </Form>
     )
 }
-
-    
