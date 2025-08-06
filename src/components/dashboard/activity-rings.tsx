@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React from "react";
 
 const Ring = ({
   radius,
@@ -20,7 +21,7 @@ const Ring = ({
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
-    <g>
+    <>
       <circle
         stroke={bgColor}
         fill="transparent"
@@ -41,7 +42,7 @@ const Ring = ({
         cy={radius}
         transform={`rotate(-90 ${radius} ${radius})`}
       />
-    </g>
+    </>
   );
 };
 
@@ -68,24 +69,39 @@ export function ActivityRings() {
             height={size}
             width={size}
             viewBox={`0 0 ${size} ${size}`}
-            className="absolute"
           >
-            <g>
-              {activityData.map((activity, index) => {
-                const radius = size / 2 - index * totalStrokeWidthWithGap;
-                const progress = (activity.value / activity.goal) * 100;
+            {activityData.map((activity, index) => {
+              const radius = size / 2 - (strokeWidth / 2) - (index * totalStrokeWidthWithGap);
+              const progress = (activity.value / activity.goal) * 100;
+              return (
+                <g key={activity.name}>
+                    <Ring
+                        radius={size / 2}
+                        stroke={strokeWidth}
+                        progress={100}
+                        color="hsl(var(--muted))"
+                        bgColor="transparent"
+                    />
+                    <Ring
+                        radius={size/2}
+                        stroke={strokeWidth}
+                        progress={progress}
+                        color={activity.color}
+                        bgColor="transparent"
+                    />
+                </g>
+              );
+            }).reduce((acc, curr, index) => {
+                const radius = size / 2 - (strokeWidth / 2) - (index * totalStrokeWidthWithGap);
                 return (
-                  <Ring
-                    key={activity.name}
-                    radius={radius}
-                    stroke={strokeWidth}
-                    progress={progress}
-                    color={activity.color}
-                    bgColor="hsl(var(--muted))"
-                  />
-                );
-              })}
-            </g>
+                    <g>
+                        {acc}
+                        <g transform={`scale(${radius/(size/2)}) translate(${size/2 - radius}, ${size/2 - radius})`}>
+                            {curr}
+                        </g>
+                    </g>
+                )
+            }, <></>)}
           </svg>
         </div>
         <div className="flex flex-1 justify-around w-full">
