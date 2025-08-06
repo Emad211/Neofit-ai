@@ -37,7 +37,6 @@ const FormSchema = z.object({
 export function OnboardingDetailsForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const goal = searchParams.get('goal') || 'not_set';
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -49,12 +48,11 @@ export function OnboardingDetailsForm() {
   })
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
-    const onboardingData = { ...data, goal };
-    const params = new URLSearchParams();
-    Object.entries(onboardingData).forEach(([key, value]) => {
+    const params = new URLSearchParams(searchParams);
+    Object.entries(data).forEach(([key, value]) => {
       params.set(key, String(value));
     });
-    router.push(`/onboarding/analysis?${params.toString()}`);
+    router.push(`/onboarding/lifestyle?${params.toString()}`);
   }
 
   return (
@@ -166,7 +164,7 @@ export function OnboardingDetailsForm() {
         </div>
 
         <Button type="submit" size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-          Analyze My Profile <MoveRight className="ml-2 h-5 w-5" />
+          Next <MoveRight className="ml-2 h-5 w-5" />
         </Button>
       </form>
     </Form>
