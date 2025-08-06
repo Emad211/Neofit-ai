@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 const Dot = ({ x, y }: { x: number; y: number }) => (
   <circle
@@ -25,7 +25,16 @@ const Line = ({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number; y2: numb
 
 
 export const AnalysisAnimation = () => {
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
   const { dots, lines } = useMemo(() => {
+    if (!isMounted) {
+        return { dots: [], lines: [] };
+    }
     const numDots = 40;
     const width = 400;
     const height = 200;
@@ -48,7 +57,11 @@ export const AnalysisAnimation = () => {
       }
     }
     return { dots: generatedDots, lines: generatedLines };
-  }, []);
+  }, [isMounted]);
+  
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <div className="flex justify-center items-center p-4">
