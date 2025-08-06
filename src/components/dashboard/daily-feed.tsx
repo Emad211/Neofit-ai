@@ -46,6 +46,7 @@ export function DailyFeed() {
         <div>
             <h2 className="text-2xl font-bold font-headline mb-4">Your Day</h2>
             <div className="space-y-6">
+                <DailyMotivationCard />
                 {feedItems.map((item, index) => (
                     <Card key={index} className="overflow-hidden">
                         {item.image && <Image src={item.image} alt={item.title} width={600} height={200} className="w-full h-32 object-cover" data-ai-hint={item.dataAiHint} />}
@@ -68,7 +69,6 @@ export function DailyFeed() {
                         )}
                     </Card>
                 ))}
-                <DailyMotivationCard />
             </div>
         </div>
     );
