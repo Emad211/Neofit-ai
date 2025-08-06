@@ -105,7 +105,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       <SidebarInset>
         <div className="absolute top-4 left-4">
           <SidebarTrigger asChild>
-            <Button size="icon" variant="ghost"><LayoutGrid /></Button>
+            <Button size="icon" variant="ghost">
+              <LayoutGrid />
+            </Button>
           </SidebarTrigger>
         </div>
         {children}
