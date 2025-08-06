@@ -5,15 +5,30 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, X, Apple, Dumbbell, Weight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { LogEntrySheet, LogType } from './log-entry-sheet';
 
-const actions = [
-  { icon: Apple, label: 'Log Meal', action: () => console.log('Log Meal') },
-  { icon: Dumbbell, label: 'Log Activity', action: () => console.log('Log Activity') },
-  { icon: Weight, label: 'Log Weight', action: () => console.log('Log Weight') },
+type Action = {
+  icon: React.ElementType,
+  label: string,
+  logType: Exclude<LogType, null>,
+}
+
+const actions: Action[] = [
+  { icon: Apple, label: 'Log Meal', logType: 'meal' },
+  { icon: Dumbbell, label: 'Log Activity', logType: 'activity' },
+  { icon: Weight, label: 'Log Weight', logType: 'weight' },
 ];
 
 export function SpeedDial() {
   const [isOpen, setIsOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [activeLogType, setActiveLogType] = useState<Exclude<LogType, null>>('meal');
+
+  const handleActionClick = (logType: Exclude<LogType, null>) => {
+    setActiveLogType(logType);
+    setSheetOpen(true);
+    setIsOpen(false);
+  };
 
   return (
     <>
@@ -44,10 +59,7 @@ export function SpeedDial() {
                             size="icon"
                             variant="secondary"
                             className="h-12 w-12 rounded-full shadow-lg"
-                            onClick={() => {
-                                action.action();
-                                setIsOpen(false);
-                            }}
+                            onClick={() => handleActionClick(action.logType)}
                         >
                             <action.icon className="h-6 w-6" />
                         </Button>
@@ -77,6 +89,12 @@ export function SpeedDial() {
                 </Button>
             </div>
         </div>
+
+        <LogEntrySheet
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+          logType={activeLogType}
+        />
     </>
   );
 }
