@@ -75,7 +75,7 @@ function AnalysisResult() {
         lifestyle: searchParams.get('lifestyle') || 'sedentary',
         eatingHabits: searchParams.get('eatingHabits') || 'None',
         medicalHistory: searchParams.get('medicalHistory') || 'None',
-        physicalSpecifications: `${searchParams.get('height') || 170}cm, ${searchParams.get('weight') || 70}kg, ${searchParams.get('bodyType') || 'mesomorph'}`,
+        physicalSpecifications: `${searchParams.get('gender') || 'other'}, ${searchParams.get('age') || 25} years, ${searchParams.get('height') || 170}cm, ${searchParams.get('weight') || 70}kg, ${searchParams.get('bodyType') || 'mesomorph'}`,
       };
       
       try {
@@ -185,5 +185,3 @@ function ErrorDisplay({ message }: { message: string }) {
 }
 
 export default OnboardingAnalysisPage;
-
-    
