@@ -32,9 +32,9 @@ import { MoveRight, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 const bodyTypes = [
-    { value: "ectomorph", label: "Ectomorph", description: "Lean and long, with difficulty building muscle.", image: "https://placehold.co/400x600.png", dataAiHint: "lean body", details: ["Tall and lean", "Small muscles", "High metabolism", "Hard to gain weight"] },
-    { value: "mesomorph", label: "Mesomorph", description: "Muscular and well-built, with a high metabolism.", image: "https://placehold.co/400x600.png", dataAiHint: "muscular body", details: ["Wide shoulders", "Athletic muscles", "Efficient metabolism", "Balanced weight"] },
-    { value: "endomorph", label: "Endomorph", description: "Big, high body fat, often pear-shaped.", image: "https://placehold.co/400x600.png", dataAiHint: "large body", details: ["Large bone structure", "Higher body fat", "Gains weight easily", "Slower metabolism"] },
+    { value: "ectomorph", label: "Ectomorph", description: "Lean and long, with difficulty building muscle.", image: "/ECTOMORFO.png", dataAiHint: "lean body", details: ["Tall and lean", "Small muscles", "High metabolism", "Hard to gain weight"] },
+    { value: "mesomorph", label: "Mesomorph", description: "Muscular and well-built, with a high metabolism.", image: "/MESOMORFO.png", dataAiHint: "muscular body", details: ["Wide shoulders", "Athletic muscles", "Efficient metabolism", "Balanced weight"] },
+    { value: "endomorph", label: "Endomorph", description: "Big, high body fat, often pear-shaped.", image: "/ENDOMORFO.png", dataAiHint: "large body", details: ["Large bone structure", "Higher body fat", "Gains weight easily", "Slower metabolism"] },
 ]
 
 const FormSchema = z.object({
@@ -189,8 +189,10 @@ export function OnboardingDetailsForm() {
                                         "h-full cursor-pointer transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl hover:border-primary",
                                         field.value === type.value && "border-primary ring-2 ring-primary"
                                     )}>
-                                        <CardContent className="flex flex-col items-center justify-center text-center p-4">
-                                            <Image src={type.image} alt={type.label} width={80} height={120} className="mb-4 rounded-lg" data-ai-hint={type.dataAiHint} />
+                                        <CardContent className="flex flex-col items-center justify-start text-center p-4">
+                                            <div className="relative w-full h-48 mb-4">
+                                                <Image src={type.image} alt={type.label} layout="fill" objectFit="contain" className="rounded-t-lg" data-ai-hint={type.dataAiHint} />
+                                            </div>
                                             <p className="font-headline text-lg font-semibold text-foreground">{type.label}</p>
                                             <p className="text-muted-foreground text-xs mt-1">{type.description}</p>
                                         </CardContent>
