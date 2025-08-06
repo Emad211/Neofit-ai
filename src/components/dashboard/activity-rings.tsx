@@ -50,8 +50,8 @@ const Ring = ({
 
 const activityData = [
   { name: "Calories", value: 1800, goal: 2200, color: "hsl(var(--chart-1))" },
-  { name: "Protein", value: 120, goal: 150, color: "hsl(var(--accent))" },
-  { name: "Workout", value: 45, goal: 60, color: "hsl(var(--chart-2))" },
+  { name: "Protein", value: 120, goal: 150, color: "hsl(var(--chart-2))" },
+  { name: "Workout", value: 45, goal: 60, color: "hsl(var(--chart-3))" },
 ];
 
 export function ActivityRings() {
