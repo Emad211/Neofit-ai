@@ -1,4 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProgressPhotos } from "@/components/progress/progress-photos";
+import { WeightChart } from "@/components/progress/weight-chart";
+import { WorkoutVolumeChart } from "@/components/progress/workout-volume-chart";
 
 export default function ProgressPage() {
   return (
@@ -11,14 +13,11 @@ export default function ProgressPage() {
           Track your journey and celebrate milestones.
         </p>
       </header>
-       <Card>
-        <CardHeader>
-          <CardTitle>Coming Soon</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>Charts, progress photos, and your weekly AI reports will appear here.</p>
-        </CardContent>
-      </Card>
+      <main className="space-y-8">
+        <WeightChart />
+        <WorkoutVolumeChart />
+        <ProgressPhotos />
+      </main>
     </div>
   );
 }
