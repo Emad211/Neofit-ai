@@ -1,0 +1,113 @@
+# **App Name**: NeoFit AI
+
+## Core Features:
+
+- Medical Risk Assessment: Utilize the Medical Advisor Agent (a tool) to scan user medical data, generating risk assessments and contraindications for safe, personalized fitness recommendations. Output includes medical_flags with risk_level and contraindications.
+- Caloric Calculation: Calculate baseline caloric needs and macro targets using the Nutrition Expert Agent (a tool), based on user profile data, activity level, and body composition. Agent calculates TDEE and macro targets.
+- Dynamic Program Adaptation: The Progress Analyzer agent (a tool) analyzes performance, adherence, and trend data to suggest personalized weekly workout plan adaptations. Uses workout/nutrition logs, weight, sleep data, and user feedback with a rules engine.
+- AI Coach Chat: AI-powered fitness and nutrition coaching via a chatbot. Leverages Conversational Agent Flow with WebSocket for real-time communication. Agents use user data and history for personalized responses.
+- Smart Activity Feed: Timely, personalized activity prompts and motivational messages on the Today tab, powered by the Motivation Agent (a tool). Displays activity rings (calories, protein, workout time) and timely cards.
+- Personalized Onboarding: Engaging multi-step wizard with conversational UI, visual sliders, and expandable lists to streamline onboarding. Asks about goals, information, physical specifics, medical history, lifestyle. Uses full-screen network animation with AI messages.
+- Immersive Workout Experience: Workout player UI with large fonts, high-quality looping video demos, and clear input fields after each set. Functions offline.
+- Mission Statement: Empower users to sustainably achieve health goals with accurate, dynamic, scientifically-backed exercise/nutrition programs, analyzed and optimized by expert AI agents.
+- Hyper-Personalization: Programs tailored based on user data points, from exercise type to snack timing.
+- Dynamic & Adaptive: Application adapts weekly/daily based on user performance, feedback, and progress.
+- Science-Backed: Nutrition and exercise recommendations based on scientific principles.
+- Frictionless UX: Easy, fast, enjoyable data entry for user convenience.
+- Sara (Targeted Beginner): 29-year-old graphic designer, desk job. Goal: lose weight, increase energy. Needs: visual guidance, home workouts, motivation.
+- Amir (Intermediate Athlete): 34-year-old software engineer, gym-goer. Goal: gain muscle, break records. Needs: training data analysis, advanced programs, macro optimization.
+- Architecture: React Native/Flutter mobile client <--> API Gateway <--> Node.js/Python backend <--> PostgreSQL database <--> Google Genkit AI Engine (Nutrition, Fitness, Progress, Motivation, Medical Advisor Agents).
+- Client (Mobile): React Native or Flutter for cross-platform mobile development.
+- Backend (Main Service): Node.js (NestJS) for API and business logic management.
+- AI Engine: Google Genkit with Gemini Pro model.
+- Database: PostgreSQL for storing user data, programs, and logs.
+- Cache: Redis for caching dashboard and profile data.
+- User Story (Onboarding): New users want a smooth, engaging onboarding process for the app to design the best/safest program.
+- Interface Type: Conversational UI wizard, asking a key question per page.
+- Animations (Onboarding): Slide/Fade transitions and Lottie animations.
+- Welcome and Main Goal: Large cards with icons for weight loss, muscle gain, fitness.
+- Basic Information: Standard input forms with Input Mask for date of birth.
+- Physical Specifications: Visual sliders for height and weight. Graphic images for body types (ectomorph, mesomorph, endomorph).
+- Medical History (UI): Expandable lists/accordions for medical history. Prevents page crowding.
+- Lifestyle: Icons for occupational activity levels (desk, walking, lifting).
+- Eating Habits: Tag input for disliked foods.
+- Goals and Limitations: Chip Group for selecting training days.
+- Final Analysis: Full-screen page with neural network animation simulating AI analysis.
+- State Management: Zustand or Redux Toolkit for front-end state management.
+- API Endpoint (Onboarding): POST /v1/onboarding/finalize
+- Payload (JSON): Large nested JSON object.
+- Genkit Flow (Onboarding): onboardingAnalysisFlow(userId)
+- Input (Onboarding): New user userId.
+- Medical Advisor Agent (Process): Scans medical data, outputs medical_flags object (risk_level, contraindications).
+- Nutrition Expert Agent (Process): Calculates basic calories (TDEE) and macro ranges.
+- Fitness Trainer Agent (Process): Determines initial level (beginner, intermediate) and training split (full_body, upper_lower).
+- Output (Onboarding): Analysis stored in UserAnalysisProfile table.
+- Bottom Tab Bar: Bottom Tab Bar with Today, Nutrition, Workout, Progress, Profile tabs.
+- Layout (Today Tab): Time-based smart feed.
+- Header (Today Tab): User's name and welcome message.
+- Main Component (Today Tab): Activity Rings (Calories, Protein, Workout Minutes).
+- Feed (Today Tab): Chronological cards for meals, workouts, motivational messages, water reminders.
+- Floating Action Button (Today Tab): + FAB for recording meals, activities, weight.
+- API Endpoint (Today Tab): GET /v1/dashboard/today
+- Genkit Flow (Daily Quote): getDailyMotivationalQuote(userId)
+- Cron Job (Daily Quote): Executed daily via Cron Job, caches message in Redis.
+- Navigation (Nutrition Tab): Segmented Control for Weekly Plan, Food Library, Shopping List.
+- "Weekly Plan" View: Horizontal calendar, cards display daily meals. Swipe actions for 'Eaten' or 'Replace'.
+- Food Details Page: Bottom Sheet Modal with food image, ingredients, recipe steps, macro pie chart.
+- "Shopping List" View: Aggregated and categorized ingredients.
+- API Endpoints (Nutrition): GET /v1/nutrition/plan?week=..., POST /v1/nutrition/log, GET /v1/nutrition/shopping-list
+- Genkit Flow (Meal Alternative): suggestMealAlternative(userId, mealId, context)
+- Input (Meal Alternative): userId, mealId, context (time constraints, missing ingredients).
+- Nutrition Agent (Alternative): Suggests alternatives considering user limits (allergies) and context.
+- Main Tab Page (Workout): Graphical display of weekly program.
+- "Workout Player" Page: Dark Mode, large fonts.
+- Exercise Display: Short, silent, looping video.
+- Interaction (Workout Player): Large input fields for weight/reps. Auto-start timer with haptic feedback.
+- Capabilities (Workout Player): Skip, replace movement buttons, correct form training video.
+- End-of-Workout Animation: Performance summary with animation.
+- Offline First: Local storage (SQLite/WatermelonDB) then sync to server.
+- API Endpoint (Workout Log): POST /v1/fitness/log/session
+- Genkit Flow (Alternative Exercise): getAlternativeExercise(userId, exerciseId, availableEquipment)
+- Fitness Trainer Agent (Alternative): Suggests safe/effective alternative, considering target muscle, medical limits, available equipment.
+- Layout (Progress): Visual and data-driven layout.
+- Charts: Charts for weight, body fat, measurements. Compares two metrics.
+- Image Gallery: Grid display of progress images with side-by-side comparison slider.
+- Medals and Achievements: Graphic medals for milestones.
+- Weekly AI Report: Plain language summary of Progress Analyzer Agent analysis.
+- API Endpoint (Progress Report): GET /v1/progress/report
+- Genkit Flow (Weekly Analysis): generateWeeklyAnalysisAndAdaptation(userId)
+- Execution Time (Weekly Analysis): Cron Job, Saturday 5 AM.
+- Progress Analyzer Agent (Weekly Analysis): Receives all logs from past week.
+- Trend Analysis (Weekly): Analyzes trends (weight decrease, strength increase, program adherence).
+- Text Report (Weekly): Generates text report (feedback on progress, sleep, etc.).
+- Adaptation Suggestions (Weekly): Creates adaptation_suggestions object (calorie, cardio, muscle group adjustments).
+- Agent Communication (Weekly): Sends suggestions to Fitness/Nutrition Agents.
+- Program Generation (Weekly): Agents generate WorkoutPlan_v2, MealPlan_v2, store in database, archive old versions.
+- PostgreSQL Schema: Database schema definition.
+- Layout (Profile): Standard list-based page.
+- Options (Profile): Edit profile, notification settings, AI chat access, support/FAQ, logout.
+- API Endpoints (Profile): PUT /v1/profile, GET /v1/profile/ai-chat-history, POST /v1/ai-chat
+- Advanced Features: Mechanisms transforming the app into a smart coach.
+- User Story (AI Chat): Users want to speak to an AI expert and get personalized answers.
+- Access Point (AI Chat): FAB in Profile tab or ? icon next to components.
+- Agent Selection Screen: Modal page asking question such as 'In what area do you have a question?'
+- Chat Interface: WhatsApp/Telegram-like design, suggested replies, photo attachments.
+- Architecture (AI Chat): WebSocket for real-time communication.
+- API Endpoints (AI Chat Start): POST /v1/ai-chat/start
+- WebSocket Endpoint: wss://api.neofit.ai/v1/ai-chat/stream
+- Genkit Flow (Conversational): conversationalAgentFlow(userId, agentType, messageHistory, newMessage)
+- Input (Conversational): userId, agent type, conversation history, new message.
+- Process (Conversational): Loads Prompt based on agentType, adds user context from database, generates streaming response via WebSocket.
+- User Story (Dynamic Adaptation): Committed users expect program to adjust automatically based on progress.
+- Dynamic Program Adaptation (UI): Push Notification: 'Your weekly report is ready!' Clear changes in Today/Exercise tabs. User feedback (👍/👎).
+- Process (Dynamic Adaptation): Complex, multi-stage Flow: data aggregation, analysis (Progress Analyzer Agent), decision making (rules + AI), program generation.
+
+## Style Guidelines:
+
+- Saturated teal (#4db6ac) for a refreshing and sophisticated aesthetic.
+- Light grayish teal (#e0f2f1) to subtly connect with the primary teal.
+- Soft coral (#ff8a65) as a complementary accent color.
+- 'PT Sans' (humanist sans-serif) for a modern and approachable feel.
+- 'Source Code Pro' (monospaced sans-serif) for code snippets.
+- Minimalist icons for exercises, food groups, and progress metrics.
+- Subtle transitions and feedback animations for a smooth user experience.
