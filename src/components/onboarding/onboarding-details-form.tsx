@@ -190,7 +190,7 @@ export function OnboardingDetailsForm() {
                                         field.value === type.value && "border-primary ring-2 ring-primary"
                                     )}>
                                         <CardContent className="flex flex-col items-center justify-start text-center p-4">
-                                            <div className="relative w-full h-48 mb-4">
+                                            <div className="relative w-full h-64 mb-4">
                                                 <Image src={type.image} alt={type.label} layout="fill" objectFit="contain" className="rounded-t-lg" data-ai-hint={type.dataAiHint} />
                                             </div>
                                             <p className="font-headline text-lg font-semibold text-foreground">{type.label}</p>
