@@ -24,7 +24,17 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { useRouter } from "next/navigation";
+import { WorkoutCompletion } from "./workout-completion";
+
 
 // Mock data for a single workout session
 const initialWorkoutSession = {
@@ -77,12 +87,17 @@ const initialWorkoutSession = {
 };
 
 type WorkoutSession = typeof initialWorkoutSession;
+export type Log = { set: number; reps: string; weight: string };
+export type Exercise = WorkoutSession['exercises'][0] & { logs: Log[] };
+
 
 export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
   const [session, setSession] = React.useState<WorkoutSession>(initialWorkoutSession);
   const [currentExerciseIndex, setCurrentExerciseIndex] = React.useState(0);
   const [currentSetIndex, setCurrentSetIndex] = React.useState(0);
   const [isResting, setIsResting] = React.useState(false);
+  const [isWorkoutComplete, setIsWorkoutComplete] = React.useState(false);
+  const [startTime] = React.useState(Date.now());
   const router = useRouter();
 
   const currentExercise = session.exercises[currentExerciseIndex];
@@ -112,21 +127,18 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
 
     if (currentSetIndex < currentExercise.sets - 1) {
       setCurrentSetIndex(currentSetIndex + 1);
+      setIsResting(true);
     } else {
       // Last set of the exercise, move to next exercise
       if (currentExerciseIndex < session.exercises.length - 1) {
         setCurrentExerciseIndex(currentExerciseIndex + 1);
         setCurrentSetIndex(0);
+        setIsResting(true);
       } else {
         // Workout finished
-        alert("Workout Complete!");
-        // Here you would save the entire session log
-        console.log("Final workout session log:", session);
-        router.push("/today");
-        return; // prevent setting rest state
+        setIsWorkoutComplete(true);
       }
     }
-    setIsResting(true);
   };
 
   const handleNextExercise = () => {
@@ -145,14 +157,20 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
     }
   };
 
-  if (isResting) {
-    const nextExercise = session.exercises[currentExerciseIndex];
-    const isLastSetOfExercise = currentSetIndex === 0;
+  if(isWorkoutComplete) {
+    const totalDuration = Math.round((Date.now() - startTime) / 60000); // in minutes
+    return <WorkoutCompletion session={session} totalDuration={totalDuration} />
+  }
 
-    let nextUpMessage = `Next: ${nextExercise.name}`;
-    if (!isLastSetOfExercise) {
-       nextUpMessage = `Next: Set ${currentSetIndex + 1}`;
-    }
+  if (isResting) {
+    const nextExercise = currentExerciseIndex < session.exercises.length - 1 && currentSetIndex === currentExercise.sets -1 
+      ? session.exercises[currentExerciseIndex + 1] 
+      : currentExercise;
+
+    const isLastSetOfExercise = currentSetIndex === currentExercise.sets-1;
+
+    let nextUpMessage = isLastSetOfExercise ? `Next: ${nextExercise.name}` : `Next: Set ${currentSetIndex + 1}`;
+
 
     return (
       <WorkoutTimer
@@ -275,9 +293,21 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
             currentExerciseName={currentExercise.name}
             onSelectExercise={handleReplaceExercise}
           />
-          <Button variant="ghost" size="icon">
-            <HelpCircle className="h-6 w-6" />
-          </Button>
+          <Dialog>
+              <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <HelpCircle className="h-6 w-6" />
+                  </Button>
+              </DialogTrigger>
+              <DialogContent>
+                  <DialogHeader>
+                      <DialogTitle>Form Guide: {currentExercise.name}</DialogTitle>
+                      <DialogDescription>
+                          A detailed video with audio commentary explaining the correct form for this exercise would be displayed here to ensure safety and effectiveness.
+                      </DialogDescription>
+                  </DialogHeader>
+              </DialogContent>
+          </Dialog>
         </div>
         <div className="text-center">
           <Button
