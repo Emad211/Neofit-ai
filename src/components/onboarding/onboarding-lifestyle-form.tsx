@@ -17,7 +17,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Textarea } from "@/components/ui/textarea"
 import { MoveRight, Briefcase, Footprints, Activity, Weight } from "lucide-react"
 import { Card, CardContent } from "../ui/card"
 import { cn } from "@/lib/utils"
@@ -50,7 +49,9 @@ export function OnboardingLifestyleForm() {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      eatingHabits: [],
+      trainingDays: searchParams.get('trainingDays') || '3',
+      lifestyle: (searchParams.get('lifestyle') as any) || 'sedentary',
+      eatingHabits: searchParams.get('eatingHabits')?.split(',') || [],
     }
   })
 
