@@ -1,4 +1,6 @@
-export const staticMealData = [
+import { addDays, startOfToday } from 'date-fns';
+
+const mealDataDefinition = [
     {
       day: 'Monday',
       meals: [
@@ -278,4 +280,16 @@ export const staticMealData = [
       ],
       totalCalories: 1350,
     }
-  ];
+];
+
+// Add a unique ID and date to each meal for state management
+export const getMealPlan = () => {
+    return mealDataDefinition.map((dayPlan, dayIndex) => ({
+        ...dayPlan,
+        date: addDays(startOfToday(), dayIndex),
+        meals: dayPlan.meals.map((meal, mealIndex) => ({
+            ...meal,
+            id: `${dayIndex}-${mealIndex}` // Simple unique ID
+        }))
+    }));
+}

@@ -3,28 +3,17 @@
 
 import * as React from "react"
 import { MealCard, Meal } from "./meal-card";
-import { format, addDays, startOfToday } from 'date-fns';
+import { format } from 'date-fns';
 import { Skeleton } from "../ui/skeleton";
-import { staticMealData } from "@/lib/data/static-meal-data";
-
-// Add a unique ID to each meal for state management
-const getInitialMealPlan = () => {
-    return staticMealData.map((dayPlan, dayIndex) => ({
-        ...dayPlan,
-        date: addDays(startOfToday(), dayIndex),
-        meals: dayPlan.meals.map((meal, mealIndex) => ({
-            ...meal,
-            id: `${dayIndex}-${mealIndex}` // Simple unique ID
-        }))
-    }));
-}
+import { getMealPlan } from "@/lib/data/static-meal-data";
 
 
 export function WeeklyMealPlan() {
   const [mealPlan, setMealPlan] = React.useState<any[]>([]);
 
   React.useEffect(() => {
-    const dynamicMealData = getInitialMealPlan();
+    // In a real app, this data would come from a database based on the user's generated plan.
+    const dynamicMealData = getMealPlan();
     // Simulate loading
     setTimeout(() => setMealPlan(dynamicMealData), 500);
   }, []);
@@ -35,7 +24,7 @@ export function WeeklyMealPlan() {
         ...dayPlan,
         meals: dayPlan.meals.map((meal: Meal) => {
           if (meal.id === mealIdToUpdate) {
-            // In a real app, you'd fetch all new details for the meal
+            // In a real app, you'd fetch all new details for the meal from the AI/DB
             return { ...meal, name: newMealName, calories: meal.calories + 50, image: 'https://placehold.co/600x400.png', dataAiHint: 'healthy food' };
           }
           return meal;

@@ -3,21 +3,17 @@
 "use client"
 
 import * as React from "react";
-import { staticMealData } from "@/lib/data/static-meal-data";
+import { getMealPlan } from "@/lib/data/static-meal-data";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Checkbox } from "../ui/checkbox";
 import { Leaf, Egg, Milk, Wheat, Apple as FruitIcon } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
+import type { Meal } from './meal-card';
 
 type Ingredient = {
     name: string;
     quantity: string;
     category: string;
-};
-
-type Meal = {
-    name: string;
-    ingredients: Ingredient[];
 };
 
 type DayPlan = {
@@ -26,10 +22,10 @@ type DayPlan = {
 
 const categoryIcons: { [key: string]: React.ElementType } = {
     "Produce": Leaf,
+    "Fruits": FruitIcon,
     "Protein": Egg,
     "Dairy & Alternatives": Milk,
     "Pantry": Wheat,
-    "Fruits": FruitIcon,
 };
 
 function aggregateIngredients(mealData: DayPlan[]): { [key: string]: Ingredient[] } {
@@ -64,14 +60,14 @@ function aggregateIngredients(mealData: DayPlan[]): { [key: string]: Ingredient[
     const sortedAggregated: { [key: string]: Ingredient[] } = {};
     orderedCategories.forEach(category => {
         if(aggregated[category]) {
-            sortedAggregated[category] = aggregated[category];
+            sortedAggregated[category] = aggregated[category].sort((a,b) => a.name.localeCompare(b.name));
         }
     });
 
     // Add any other category that might not be in the ordered list
     Object.keys(aggregated).forEach(category => {
         if(!sortedAggregated[category]){
-            sortedAggregated[category] = aggregated[category];
+            sortedAggregated[category] = aggregated[category].sort((a,b) => a.name.localeCompare(b.name));
         }
     })
 
@@ -85,7 +81,8 @@ export function ShoppingList() {
     React.useEffect(() => {
         // Simulate fetching and processing
         setTimeout(() => {
-            const list = aggregateIngredients(staticMealData);
+            const currentMealPlan = getMealPlan();
+            const list = aggregateIngredients(currentMealPlan);
             setShoppingList(list);
         }, 500);
     }, []);
