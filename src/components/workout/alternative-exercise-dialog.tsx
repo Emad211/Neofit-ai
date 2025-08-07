@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -17,12 +18,12 @@ import { getAlternativeExercise } from "@/ai/flows/get-alternative-exercise"
 import { Card, CardContent } from "../ui/card"
 
 type AlternativeExerciseDialogProps = {
-  currentExerciseId: string;
-  onSelectExercise: (exerciseId: string) => void;
+  currentExerciseName: string;
+  onSelectExercise: (exerciseName: string) => void;
 };
 
 export function AlternativeExerciseDialog({
-  currentExerciseId,
+  currentExerciseName,
   onSelectExercise,
 }: AlternativeExerciseDialogProps) {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -30,14 +31,14 @@ export function AlternativeExerciseDialog({
   const [alternative, setAlternative] = React.useState<{ alternativeExercise: string; reason: string } | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
-  const fetchAlternative = async () => {
+  const fetchAlternative = React.useCallback(async () => {
     setIsLoading(true);
     setError(null);
     setAlternative(null);
     try {
       const result = await getAlternativeExercise({
         userId: "12345", // In a real app, use the actual user ID
-        exerciseId: currentExerciseId,
+        exerciseId: currentExerciseName,
         availableEquipment: "dumbbells, resistance band", // This should be dynamic based on user profile
         medicalLimitations: "Previous knee injury on right leg", // This should also be dynamic
       });
@@ -48,14 +49,21 @@ export function AlternativeExerciseDialog({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentExerciseName]);
   
   // Fetch alternative when dialog is opened
   React.useEffect(() => {
     if (isOpen) {
         fetchAlternative();
     }
-  }, [isOpen]);
+  }, [isOpen, fetchAlternative]);
+
+  const handleReplace = () => {
+    if (alternative) {
+        onSelectExercise(alternative.alternativeExercise);
+        setIsOpen(false);
+    }
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -68,10 +76,10 @@ export function AlternativeExerciseDialog({
         <DialogHeader>
           <DialogTitle>Alternative Exercise</DialogTitle>
           <DialogDescription>
-            Here is a suggested alternative for {currentExerciseId}.
+            Here is a suggested alternative for {currentExerciseName}.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4">
+        <div className="py-4 min-h-[10rem] flex items-center justify-center">
             {isLoading && (
                 <div className="flex items-center justify-center h-24">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -92,11 +100,9 @@ export function AlternativeExerciseDialog({
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Suggest Another
             </Button>
-            <DialogClose asChild>
-                <Button onClick={() => alternative && onSelectExercise(alternative.alternativeExercise)}>
-                    Replace Exercise
-                </Button>
-            </DialogClose>
+            <Button onClick={handleReplace} disabled={!alternative}>
+                Replace Exercise
+            </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

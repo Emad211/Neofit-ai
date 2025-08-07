@@ -92,6 +92,19 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
     newSession.exercises[currentExerciseIndex].logs[currentSetIndex][field] = value;
     setSession(newSession);
   }
+  
+  const handleReplaceExercise = (newExerciseName: string) => {
+    setSession(prevSession => {
+        const newExercises = [...prevSession.exercises];
+        newExercises[currentExerciseIndex] = {
+            ...newExercises[currentExerciseIndex],
+            name: newExerciseName,
+            // Optionally reset logs or adjust other properties
+            logs: newExercises[currentExerciseIndex].logs.map(log => ({ ...log, reps: '', weight: '' }))
+        };
+        return { ...prevSession, exercises: newExercises };
+    });
+  };
 
   const handleNextSet = () => {
     // This is where you would persist the log data for the completed set
@@ -133,14 +146,12 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
   };
 
   if (isResting) {
-    const nextExercise = session.exercises[currentExerciseIndex + 1];
-    const isLastSetOfExercise = currentSetIndex === currentExercise.sets -1;
+    const nextExercise = session.exercises[currentExerciseIndex];
+    const isLastSetOfExercise = currentSetIndex === 0;
 
-    let nextUpMessage = "Last Set Complete!";
-    if (isLastSetOfExercise && nextExercise) {
-      nextUpMessage = `Next: ${nextExercise.name}`;
-    } else if (!isLastSetOfExercise) {
-       nextUpMessage = `Next: Set ${currentSetIndex + 2}`;
+    let nextUpMessage = `Next: ${nextExercise.name}`;
+    if (!isLastSetOfExercise) {
+       nextUpMessage = `Next: Set ${currentSetIndex + 1}`;
     }
 
     return (
@@ -158,7 +169,7 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
       <header className="flex items-center justify-between p-4">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={() => router.push('/workout')}>
+             <Button variant="ghost" size="icon">
               <ChevronLeft className="h-8 w-8" />
             </Button>
           </AlertDialogTrigger>
@@ -261,10 +272,8 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
       <footer className="grid grid-cols-3 items-center gap-4 p-4">
         <div className="flex justify-start gap-2">
           <AlternativeExerciseDialog
-            currentExerciseId={currentExercise.id}
-            onSelectExercise={(newExerciseId) => {
-              console.log("Replacing exercise with", newExerciseId);
-            }}
+            currentExerciseName={currentExercise.name}
+            onSelectExercise={handleReplaceExercise}
           />
           <Button variant="ghost" size="icon">
             <HelpCircle className="h-6 w-6" />
