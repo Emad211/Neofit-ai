@@ -1,11 +1,16 @@
-import {genkit} from 'genkit';
+import {genkit, Genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 
-export const ai = genkit({
-  plugins: [googleAI({apiVersion: 'v1'})],
-});
+// This prevents re-initialization during hot-reloading in development.
+if (!(global as any).genkit) {
+  (global as any).genkit = genkit({
+    plugins: [googleAI({apiVersion: 'v1'})],
+  });
 
-// Set a default model for all generate calls.
-ai.configure({
-  model: 'googleai/gemini-1.5-pro'
-});
+  // Set a default model for all generate calls.
+  (global as any).genkit.configure({
+    model: 'googleai/gemini-1.5-pro'
+  });
+}
+
+export const ai: Genkit = (global as any).genkit;
