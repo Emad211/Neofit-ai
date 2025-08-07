@@ -1,4 +1,5 @@
 import { ProgressPhotos } from "@/components/progress/progress-photos";
+import { WeeklyAiReport } from "@/components/progress/weekly-ai-report";
 import { WeightChart } from "@/components/progress/weight-chart";
 import { WorkoutVolumeChart } from "@/components/progress/workout-volume-chart";
 
@@ -14,6 +15,7 @@ export default function ProgressPage() {
         </p>
       </header>
       <main className="space-y-8">
+        <WeeklyAiReport />
         <WeightChart />
         <WorkoutVolumeChart />
         <ProgressPhotos />
