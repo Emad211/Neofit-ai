@@ -6,14 +6,16 @@ import Image from "next/image";
 import { Apple, Dumbbell, GlassWater } from 'lucide-react';
 import { DailyMotivationCard } from "./daily-motivation-card";
 import Link from "next/link";
+import React, { useEffect, useState } from "react";
 
-const feedItems = [
+const allFeedItems = [
     {
         type: 'workout',
         id: 'full-body-a',
         icon: Dumbbell,
         title: 'Morning Workout: Full Body Strength',
         time: '7:00 AM',
+        timeValue: 7,
         description: "You crushed it! 45 minutes of intense work.",
         image: 'https://placehold.co/600x400.png',
         dataAiHint: 'woman lifting weights',
@@ -24,6 +26,7 @@ const feedItems = [
         icon: Apple,
         title: 'Breakfast: Protein Smoothie',
         time: '8:30 AM',
+        timeValue: 8.5,
         description: '35g Protein, 450 Calories. A great start to your day.',
         image: 'https://placehold.co/600x400.png',
         dataAiHint: 'protein smoothie',
@@ -34,6 +37,7 @@ const feedItems = [
         icon: GlassWater,
         title: 'Water Reminder',
         time: '11:00 AM',
+        timeValue: 11,
         description: 'Time to hydrate! Grab a glass of water to keep your energy levels up.',
     },
      {
@@ -42,6 +46,7 @@ const feedItems = [
         icon: Apple,
         title: 'Lunch: Grilled Chicken Salad',
         time: '1:00 PM',
+        timeValue: 13,
         description: '45g Protein, 550 Calories. Perfectly balanced.',
         image: 'https://placehold.co/600x400.png',
         dataAiHint: 'chicken salad',
@@ -49,6 +54,13 @@ const feedItems = [
 ];
 
 export function DailyFeed({ quote }: { quote: string }) {
+    const [visibleFeedItems, setVisibleFeedItems] = useState<typeof allFeedItems>([]);
+
+    useEffect(() => {
+        const currentHour = new Date().getHours();
+        const visibleItems = allFeedItems.filter(item => item.timeValue <= currentHour);
+        setVisibleFeedItems(visibleItems);
+    }, []);
     
     const handleViewMealDetails = (mealId: string) => {
         // Placeholder for showing a meal details modal or bottom sheet
@@ -60,8 +72,8 @@ export function DailyFeed({ quote }: { quote: string }) {
             <h2 className="text-2xl font-bold font-headline mb-4">Your Day</h2>
             <div className="space-y-6">
                 <DailyMotivationCard quote={quote} />
-                {feedItems.map((item, index) => (
-                    <Card key={index} className="overflow-hidden">
+                {visibleFeedItems.map((item, index) => (
+                    <Card key={index} className="overflow-hidden animate-in fade-in-50">
                         {item.image && <Image src={item.image} alt={item.title} width={600} height={200} className="w-full h-32 object-cover" data-ai-hint={item.dataAiHint} />}
                         <CardHeader className="flex flex-row items-start gap-4 space-y-0">
                             <div className="bg-secondary p-3 rounded-full">

@@ -15,6 +15,13 @@ async function fetchQuote() {
     }
 }
 
+// Mock data for the activity rings. In a real app, this would be fetched from a database.
+const todayProgress = {
+  calories: { value: 1250, goal: 2400 },
+  protein: { value: 90, goal: 160 },
+  workout: { value: 45, goal: 60 },
+};
+
 
 export default async function TodayPage() {
   const quoteData = await fetchQuote();
@@ -31,7 +38,7 @@ export default async function TodayPage() {
       </header>
       
       <main className="space-y-8 pb-24">
-        <ActivityRings />
+        <ActivityRings progress={todayProgress} />
         <DailyFeed quote={quoteData.quote} />
       </main>
 

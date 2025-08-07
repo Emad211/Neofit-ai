@@ -47,14 +47,24 @@ const Ring = ({
   );
 };
 
+type ProgressData = {
+    calories: { value: number; goal: number };
+    protein: { value: number; goal: number };
+    workout: { value: number; goal: number };
+}
 
-const activityData = [
-  { name: "Calories", value: 1800, goal: 2200, color: "hsl(var(--chart-1))" },
-  { name: "Protein", value: 120, goal: 150, color: "hsl(var(--chart-2))" },
-  { name: "Workout", value: 45, goal: 60, color: "hsl(var(--chart-3))" },
-];
+interface ActivityRingsProps {
+    progress: ProgressData;
+}
 
-export function ActivityRings() {
+
+export function ActivityRings({ progress }: ActivityRingsProps) {
+  const activityData = [
+    { name: "Calories", ...progress.calories, color: "hsl(var(--chart-1))" },
+    { name: "Protein", ...progress.protein, color: "hsl(var(--chart-2))" },
+    { name: "Workout", ...progress.workout, color: "hsl(var(--chart-3))" },
+  ];
+  
   const baseSize = 180;
   const strokeWidth = 14;
   const ringGap = 2 * (strokeWidth + 2);
@@ -67,12 +77,12 @@ export function ActivityRings() {
       <CardContent className="flex flex-col items-center gap-8 md:flex-row">
         <div className="relative flex items-center justify-center" style={{ width: baseSize, height: baseSize }}>
           {activityData.map((activity, index) => {
-              const progress = (activity.value / activity.goal) * 100;
+              const progressPercentage = (activity.value / activity.goal) * 100;
               const size = baseSize - (index * ringGap);
               return (
                 <div key={activity.name} className="absolute inset-0 flex items-center justify-center">
                     <Ring
-                        progress={progress}
+                        progress={progressPercentage}
                         color={activity.color}
                         size={size}
                         strokeWidth={strokeWidth}
