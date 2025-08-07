@@ -20,11 +20,16 @@ import { Card, CardContent } from "../ui/card"
 type AlternativeExerciseDialogProps = {
   currentExerciseName: string;
   onSelectExercise: (exerciseName: string) => void;
+  // In a real app, these would be fetched from the user's profile
+  availableEquipment: string;
+  medicalLimitations: string;
 };
 
 export function AlternativeExerciseDialog({
   currentExerciseName,
   onSelectExercise,
+  availableEquipment,
+  medicalLimitations,
 }: AlternativeExerciseDialogProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -39,8 +44,8 @@ export function AlternativeExerciseDialog({
       const result = await getAlternativeExercise({
         userId: "12345", // In a real app, use the actual user ID
         exerciseId: currentExerciseName,
-        availableEquipment: "dumbbells, resistance band", // This should be dynamic based on user profile
-        medicalLimitations: "Previous knee injury on right leg", // This should also be dynamic
+        availableEquipment: availableEquipment,
+        medicalLimitations: medicalLimitations,
       });
       setAlternative(result);
     } catch (e) {
@@ -49,7 +54,7 @@ export function AlternativeExerciseDialog({
     } finally {
       setIsLoading(false);
     }
-  }, [currentExerciseName]);
+  }, [currentExerciseName, availableEquipment, medicalLimitations]);
   
   // Fetch alternative when dialog is opened
   React.useEffect(() => {

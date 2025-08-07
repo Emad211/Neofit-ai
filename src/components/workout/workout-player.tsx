@@ -292,6 +292,8 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
           <AlternativeExerciseDialog
             currentExerciseName={currentExercise.name}
             onSelectExercise={handleReplaceExercise}
+            availableEquipment="dumbbells, resistance band"
+            medicalLimitations="Previous knee injury"
           />
           <Dialog>
               <DialogTrigger asChild>

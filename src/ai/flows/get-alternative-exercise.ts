@@ -20,13 +20,13 @@ const GetAlternativeExerciseInputSchema = z.object({
     .describe(
       'A comma-separated list of equipment available to the user. Example: dumbbells, resistance band'
     ),
-  medicalLimitations: z.string().optional().describe('Any medical limitations the user has.'),
+  medicalLimitations: z.string().optional().describe('Any medical limitations the user has that might affect exercise choice, e.g., "previous knee injury".'),
 });
 export type GetAlternativeExerciseInput = z.infer<typeof GetAlternativeExerciseInputSchema>;
 
 const GetAlternativeExerciseOutputSchema = z.object({
   alternativeExercise: z.string().describe('A suggested alternative exercise.'),
-  reason: z.string().describe('The reason why this exercise is a suitable alternative.'),
+  reason: z.string().describe('The reason why this exercise is a suitable alternative, considering the user\'s context.'),
 });
 export type GetAlternativeExerciseOutput = z.infer<typeof GetAlternativeExerciseOutputSchema>;
 
@@ -40,17 +40,21 @@ const prompt = ai.definePrompt({
   name: 'getAlternativeExercisePrompt',
   input: {schema: GetAlternativeExerciseInputSchema},
   output: {schema: GetAlternativeExerciseOutputSchema},
-  prompt: `You are an expert fitness trainer. A user is unable to perform their current exercise and has requested an alternative.
+  prompt: `You are an expert fitness trainer specializing in creating safe and effective workout modifications. A user is unable to perform their current exercise and needs a personalized alternative.
 
-  The user has the following equipment available: {{{availableEquipment}}}
+Analyze the user's context carefully:
+- **Original Exercise**: {{{exerciseId}}}
+- **Available Equipment**: {{{availableEquipment}}}
+- **Medical Limitations**: {{{medicalLimitations}}}
 
-  Original Exercise ID: {{{exerciseId}}}
+Your task is to suggest a safe and effective alternative exercise that targets the **same primary muscle group(s)** as the original exercise.
 
-  The user has the following medical limitations (if any): {{{medicalLimitations}}}
+**Crucially, your suggestion MUST be:**
+1.  **Feasible** with the user's available equipment.
+2.  **Safe** considering their stated medical limitations. If they mention a knee injury, avoid high-impact leg exercises. If they mention shoulder pain, avoid heavy overhead presses.
 
-  Suggest a safe and effective alternative exercise that targets the same muscle group, considering the available equipment and any medical limitations.
-  Explain why this exercise is a suitable alternative. Return the alternativeExercise and reason in the proper JSON format.
-  `,
+Provide a concise explanation in the 'reason' field, justifying why your suggestion is a good fit for their specific situation (equipment and limitations).
+`,
 });
 
 const getAlternativeExerciseFlow = ai.defineFlow(
