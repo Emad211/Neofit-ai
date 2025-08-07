@@ -17,7 +17,7 @@ export default function NutritionPage() {
       </header>
       <main>
         <Tabs defaultValue="weekly-plan" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="mb-6 w-full justify-start overflow-x-auto">
             <TabsTrigger value="weekly-plan">Weekly Plan</TabsTrigger>
             <TabsTrigger value="shopping-list">Shopping List</TabsTrigger>
             <TabsTrigger value="food-library">Food Library</TabsTrigger>
