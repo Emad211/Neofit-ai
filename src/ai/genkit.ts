@@ -6,4 +6,6 @@ export const ai = genkit({
 });
 
 // Set a default model for all generate calls.
-ai.dot.setModel('googleai/gemini-1.5-pro');
+ai.configure({
+  model: 'googleai/gemini-1.5-pro'
+});
