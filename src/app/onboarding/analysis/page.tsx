@@ -81,9 +81,13 @@ function AnalysisResult() {
       try {
         const result = await onboardingAnalysis(params);
         setAnalysisResult(result);
-      } catch (e) {
+      } catch (e: any) {
         console.error(e);
-        setError("Our AI is currently unavailable. Please try again later.");
+        if (typeof e.message === 'string' && e.message.includes('429')) {
+             setError("Our AI is experiencing high traffic right now. Please try again in a few moments.");
+        } else {
+             setError("Our AI is currently unavailable. Please try again later.");
+        }
       }
     };
 
