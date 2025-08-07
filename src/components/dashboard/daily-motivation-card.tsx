@@ -1,22 +1,9 @@
-import { getDailyMotivationalQuote } from "@/ai/flows/daily-motivational-quote";
+"use client"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Zap } from "lucide-react";
 
-async function fetchQuote() {
-    try {
-        // In a real app, you'd pass the actual user ID.
-        const quote = await getDailyMotivationalQuote({ userId: '12345' });
-        return quote;
-    } catch (error) {
-        console.error("Failed to fetch motivational quote:", error);
-        // Return a fallback quote in case of an error
-        return { quote: "The best time to start was yesterday. The next best time is now." };
-    }
-}
-
-export async function DailyMotivationCard() {
-    const quoteData = await fetchQuote();
-
+export function DailyMotivationCard({ quote }: { quote: string }) {
     return (
         <Card className="overflow-hidden bg-accent/20 border-accent">
             <CardHeader className="flex flex-row items-start gap-4 space-y-0">
@@ -29,7 +16,7 @@ export async function DailyMotivationCard() {
                 </div>
             </CardHeader>
             <CardContent>
-                <p className="text-lg font-medium text-foreground/90">&quot;{quoteData.quote}&quot;</p>
+                <p className="text-lg font-medium text-foreground/90">&quot;{quote}&quot;</p>
             </CardContent>
         </Card>
     );
