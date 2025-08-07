@@ -1,3 +1,4 @@
+
 // src/components/nutrition/shopping-list.tsx
 "use client"
 
@@ -5,7 +6,6 @@ import * as React from "react";
 import { staticMealData } from "@/lib/data/static-meal-data";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Checkbox } from "../ui/checkbox";
-import { produce, protein, dairy, pantry, fruits } from 'lucide-react';
 import { Leaf, Egg, Milk, Wheat, Apple as FruitIcon } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 
@@ -58,8 +58,25 @@ function aggregateIngredients(mealData: DayPlan[]): { [key: string]: Ingredient[
         }
         aggregated[item.category].push({ name, quantity: combinedQuantity, category: item.category });
     });
+    
+    // Sort categories
+    const orderedCategories = ["Produce", "Fruits", "Protein", "Dairy & Alternatives", "Pantry"];
+    const sortedAggregated: { [key: string]: Ingredient[] } = {};
+    orderedCategories.forEach(category => {
+        if(aggregated[category]) {
+            sortedAggregated[category] = aggregated[category];
+        }
+    });
 
-    return aggregated;
+    // Add any other category that might not be in the ordered list
+    Object.keys(aggregated).forEach(category => {
+        if(!sortedAggregated[category]){
+            sortedAggregated[category] = aggregated[category];
+        }
+    })
+
+
+    return sortedAggregated;
 }
 
 export function ShoppingList() {
@@ -70,7 +87,7 @@ export function ShoppingList() {
         setTimeout(() => {
             const list = aggregateIngredients(staticMealData);
             setShoppingList(list);
-        }, 300);
+        }, 500);
     }, []);
 
     if (!shoppingList) {
