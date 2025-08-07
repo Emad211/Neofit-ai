@@ -1,7 +1,9 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Apple, Dumbbell, Zap, GlassWater } from 'lucide-react';
+import { Apple, Dumbbell, GlassWater } from 'lucide-react';
 import { DailyMotivationCard } from "./daily-motivation-card";
 import Link from "next/link";
 
