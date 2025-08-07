@@ -1,6 +1,7 @@
 import { WeeklyMealPlan } from "@/components/nutrition/weekly-meal-plan";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShoppingList } from "@/components/nutrition/shopping-list";
+import { FoodLibrary } from "@/components/nutrition/food-library";
 
 export default function NutritionPage() {
   return (
@@ -27,9 +28,7 @@ export default function NutritionPage() {
             <ShoppingList />
           </TabsContent>
           <TabsContent value="food-library">
-            <div className="flex items-center justify-center h-48 bg-secondary/50 rounded-lg">
-              <p className="text-muted-foreground">Food Library coming soon!</p>
-            </div>
+            <FoodLibrary />
           </TabsContent>
         </Tabs>
       </main>
