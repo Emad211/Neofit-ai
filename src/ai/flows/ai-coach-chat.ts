@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -33,27 +34,42 @@ export async function conversationalAgent(input: ConversationalAgentInput): Prom
   return conversationalAgentFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'conversationalAgentPrompt',
-  input: {schema: ConversationalAgentInputSchema},
-  output: {schema: ConversationalAgentOutputSchema},
-  prompt: `You are an AI-powered fitness and nutrition coach. Your goal is to provide personalized guidance and answers to the user's questions in real-time.
 
-You are a helpful, friendly, and knowledgeable coach that helps the user achieve their fitness and nutrition goals.
+const fitnessCoachPrompt = `You are a world-class AI Fitness Coach. Your name is Coach Alex. You are empathetic, knowledgeable, and highly motivational. Your primary goal is to help the user achieve their fitness goals safely and effectively.
 
-Agent Type: {{{agentType}}}
+- **Analyze User Questions**: Carefully consider the user's message, their message history, and their unique user ID ({{{userId}}}) to provide personalized advice.
+- **Prioritize Safety**: Always prioritize safety. If a user mentions pain, advise them to consult a medical professional. Do not give medical advice.
+- **Be Actionable**: Provide clear, actionable steps. Suggest specific exercises, modifications, or form corrections.
+- **Maintain Persona**: Be encouraging and supportive. Use positive language. Keep your responses concise and easy to understand for a mobile screen.
 
-User ID: {{{userId}}}
-
-Message History:
+Here is the conversation history:
 {{#each messageHistory}}
   {{role}}: {{{content}}}
 {{/each}}
 
-New Message: {{{newMessage}}}
+Here is the new message from the user:
+User: {{{newMessage}}}
 
-Response:`,
-});
+Your response:`;
+
+
+const nutritionCoachPrompt = `You are a world-class AI Nutrition Coach. Your name is Coach Sam. You are a registered dietitian, scientific, and practical. Your primary goal is to help the user build sustainable, healthy eating habits that align with their goals.
+
+- **Analyze User Questions**: Carefully consider the user's message, their message history, and their unique user ID ({{{userId}}}) to provide personalized advice.
+- **Evidence-Based**: Provide recommendations based on established nutritional science. Avoid fad diets.
+- **Be Practical**: Suggest realistic meal ideas and adjustments. Consider factors like budget and time constraints if the user mentions them.
+- **Maintain Persona**: Be clear, precise, and supportive. Break down complex topics into simple terms. Keep your responses concise and easy to understand for a mobile screen.
+
+Here is the conversation history:
+{{#each messageHistory}}
+  {{role}}: {{{content}}}
+{{/each}}
+
+Here is the new message from the user:
+User: {{{newMessage}}}
+
+Your response:`;
+
 
 const conversationalAgentFlow = ai.defineFlow(
   {
@@ -61,8 +77,17 @@ const conversationalAgentFlow = ai.defineFlow(
     inputSchema: ConversationalAgentInputSchema,
     outputSchema: ConversationalAgentOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
+  async (input) => {
+    const promptText = input.agentType === 'fitness' ? fitnessCoachPrompt : nutritionCoachPrompt;
+
+    const finalPrompt = ai.definePrompt({
+        name: `conversationalAgentPrompt_${input.agentType}`,
+        input: {schema: ConversationalAgentInputSchema},
+        output: {schema: ConversationalAgentOutputSchema},
+        prompt: promptText,
+    });
+
+    const {output} = await finalPrompt(input);
     return {
       response: output!.response,
     };

@@ -4,71 +4,7 @@ import * as React from "react"
 import { MealCard } from "./meal-card";
 import { format, addDays, startOfToday } from 'date-fns';
 import { Skeleton } from "../ui/skeleton";
-
-const staticMealData = [
-    {
-      day: 'Monday',
-      meals: [
-        { type: 'Breakfast', name: 'Oatmeal with Berries', calories: 350, image: 'https://placehold.co/600x400.png', dataAiHint: 'oatmeal berries' },
-        { type: 'Lunch', name: 'Quinoa Salad', calories: 500, image: 'https://placehold.co/600x400.png', dataAiHint: 'quinoa salad' },
-        { type: 'Dinner', name: 'Baked Salmon', calories: 600, image: 'https://placehold.co/600x400.png', dataAiHint: 'baked salmon' },
-      ],
-      totalCalories: 1450,
-    },
-    {
-      day: 'Tuesday',
-      meals: [
-        { type: 'Breakfast', name: 'Greek Yogurt with Nuts', calories: 400, image: 'https://placehold.co/600x400.png', dataAiHint: 'yogurt nuts' },
-        { type: 'Lunch', name: 'Chicken Wrap', calories: 550, image: 'https://placehold.co/600x400.png', dataAiHint: 'chicken wrap' },
-        { type: 'Dinner', name: 'Lentil Soup', calories: 450, image: 'https://placehold.co/600x400.png', dataAiHint: 'lentil soup' },
-      ],
-      totalCalories: 1400,
-    },
-    {
-      day: 'Wednesday',
-      meals: [
-        { type: 'Breakfast', name: 'Scrambled Eggs', calories: 300, image: 'https://placehold.co/600x400.png', dataAiHint: 'scrambled eggs' },
-        { type: 'Lunch', name: 'Tuna Sandwich', calories: 480, image: 'https://placehold.co/600x400.png', dataAiHint: 'tuna sandwich' },
-        { type: 'Dinner', name: 'Spaghetti Bolognese', calories: 650, image: 'https://placehold.co/600x400.png', dataAiHint: 'spaghetti bolognese' },
-      ],
-      totalCalories: 1430,
-    },
-     {
-      day: 'Thursday',
-      meals: [
-        { type: 'Breakfast', name: 'Protein Pancakes', calories: 450, image: 'https://placehold.co/600x400.png', dataAiHint: 'protein pancakes' },
-        { type: 'Lunch', name: 'Leftover Spaghetti', calories: 650, image: 'https://placehold.co/600x400.png', dataAiHint: 'spaghetti bolognese' },
-        { type: 'Dinner', name: 'Chicken Stir-fry', calories: 550, image: 'https://placehold.co/600x400.png', dataAiHint: 'chicken stir-fry' },
-      ],
-      totalCalories: 1650,
-    },
-    {
-      day: 'Friday',
-      meals: [
-        { type: 'Breakfast', name: 'Avocado Toast', calories: 380, image: 'https://placehold.co/600x400.png', dataAiHint: 'avocado toast' },
-        { type: 'Lunch', name: 'Caesar Salad with Chicken', calories: 520, image: 'https://placehold.co/600x400.png', dataAiHint: 'caesar salad' },
-        { type: 'Dinner', name: 'Pizza Night', calories: 800, image: 'https://placehold.co/600x400.png', dataAiHint: 'pizza' },
-      ],
-      totalCalories: 1700,
-    },
-    {
-      day: 'Saturday',
-       meals: [
-        { type: 'Breakfast', name: 'Fruit Smoothie', calories: 300, image: 'https://placehold.co/600x400.png', dataAiHint: 'fruit smoothie' },
-        { type: 'Lunch', name: 'Sushi', calories: 600, image: 'https://placehold.co/600x400.png', dataAiHint: 'sushi' },
-        { type: 'Dinner', name: 'Steak and Veggies', calories: 700, image: 'https://placehold.co/600x400.png', dataAiHint: 'steak vegetables' },
-      ],
-      totalCalories: 1600,
-    },
-    {
-      day: 'Sunday',
-      meals: [
-        { type: 'Brunch', name: 'Waffles and Bacon', calories: 700, image: 'https://placehold.co/600x400.png', dataAiHint: 'waffles bacon' },
-        { type: 'Dinner', name: 'Roast Chicken', calories: 650, image: 'https://placehold.co/600x400.png', dataAiHint: 'roast chicken' },
-      ],
-      totalCalories: 1350,
-    }
-  ];
+import { staticMealData } from "@/lib/data/static-meal-data";
 
 export function WeeklyMealPlan() {
   const [mealPlan, setMealPlan] = React.useState<any[]>([]);
