@@ -3,10 +3,12 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Apple, Dumbbell, Zap, GlassWater } from 'lucide-react';
 import { DailyMotivationCard } from "./daily-motivation-card";
+import Link from "next/link";
 
 const feedItems = [
     {
         type: 'workout',
+        id: 'full-body-a',
         icon: Dumbbell,
         title: 'Morning Workout: Full Body Strength',
         time: '7:00 AM',
@@ -16,6 +18,7 @@ const feedItems = [
     },
     {
         type: 'meal',
+        id: 'protein-smoothie',
         icon: Apple,
         title: 'Breakfast: Protein Smoothie',
         time: '8:30 AM',
@@ -25,6 +28,7 @@ const feedItems = [
     },
     {
         type: 'hydration',
+        id: 'water-1',
         icon: GlassWater,
         title: 'Water Reminder',
         time: '11:00 AM',
@@ -32,6 +36,7 @@ const feedItems = [
     },
      {
         type: 'meal',
+        id: 'chicken-salad',
         icon: Apple,
         title: 'Lunch: Grilled Chicken Salad',
         time: '1:00 PM',
@@ -42,6 +47,12 @@ const feedItems = [
 ];
 
 export function DailyFeed() {
+    
+    const handleViewMealDetails = (mealId: string) => {
+        // Placeholder for showing a meal details modal or bottom sheet
+        console.log(`Viewing details for meal: ${mealId}`);
+    }
+
     return (
         <div>
             <h2 className="text-2xl font-bold font-headline mb-4">Your Day</h2>
@@ -62,11 +73,18 @@ export function DailyFeed() {
                         <CardContent>
                             <p className="text-muted-foreground">{item.description}</p>
                         </CardContent>
-                        {(item.type === 'meal' || item.type === 'workout') && (
-                            <CardFooter>
-                                <Button variant="secondary" size="sm">View Details</Button>
-                            </CardFooter>
-                        )}
+                        <CardFooter>
+                            {item.type === 'workout' && (
+                                <Button variant="secondary" size="sm" asChild>
+                                    <Link href={`/workout-player/${item.id}`}>View Details</Link>
+                                </Button>
+                            )}
+                             {item.type === 'meal' && (
+                                <Button variant="secondary" size="sm" onClick={() => handleViewMealDetails(item.id!)}>
+                                    View Details
+                                </Button>
+                            )}
+                        </CardFooter>
                     </Card>
                 ))}
             </div>
