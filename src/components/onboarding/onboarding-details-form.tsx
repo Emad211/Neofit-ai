@@ -193,7 +193,6 @@ export function OnboardingDetailsForm() {
                                             <div className="relative w-full h-64 mb-4">
                                                 <Image src={type.image} alt={type.label} layout="fill" objectFit="contain" className="rounded-t-lg" data-ai-hint={type.dataAiHint} />
                                             </div>
-                                            <p className="font-headline text-lg font-semibold text-foreground">{type.label}</p>
                                             <p className="text-muted-foreground text-xs mt-1">{type.description}</p>
                                         </CardContent>
                                     </Card>
