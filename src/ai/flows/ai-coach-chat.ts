@@ -80,14 +80,20 @@ const conversationalAgentFlow = ai.defineFlow(
   async (input) => {
     const promptText = input.agentType === 'fitness' ? fitnessCoachPrompt : nutritionCoachPrompt;
 
-    const finalPrompt = ai.definePrompt({
-        name: `conversationalAgentPrompt_${input.agentType}`,
-        input: {schema: ConversationalAgentInputSchema},
-        output: {schema: ConversationalAgentOutputSchema},
-        prompt: promptText,
+    const { output } = await ai.generate({
+      prompt: promptText,
+      history: input.messageHistory.map(m => ({ role: m.role, content: [{ text: m.content }] })),
+      input: {
+          userId: input.userId,
+          newMessage: input.newMessage
+      },
+      output: {
+          schema: z.object({
+              response: z.string()
+          })
+      }
     });
 
-    const {output} = await finalPrompt(input);
     return {
       response: output!.response,
     };
