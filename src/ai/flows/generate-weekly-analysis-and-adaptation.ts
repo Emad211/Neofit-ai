@@ -8,7 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 
 // Define the input schema
 const GenerateWeeklyAnalysisAndAdaptationInputSchema = z.object({
@@ -18,34 +18,30 @@ export type GenerateWeeklyAnalysisAndAdaptationInput = z.infer<typeof GenerateWe
 
 // Define the output schema
 const GenerateWeeklyAnalysisAndAdaptationOutputSchema = z.object({
-  analysisReport: z.string().describe('A plain language summary of the user\'s weekly progress, including feedback on progress, sleep, etc.'),
+  analysisReport: z.string().describe('A plain language summary of the user\'s weekly progress, including feedback on progress, sleep, etc. Should be encouraging and personalized.'),
   adaptationSuggestions: z.object({
-    calorieAdjustment: z.string().optional().describe('Suggested adjustment to daily calorie intake.'),
-    cardioAdjustment: z.string().optional().describe('Suggested adjustment to cardio exercise frequency or intensity.'),
-    muscleGroupAdjustment: z.string().optional().describe('Suggested adjustment to muscle group focus in workouts.'),
-  }).describe('Suggestions for adapting the user\'s nutrition and workout plans.'),
+    calorieAdjustment: z.string().optional().describe('Suggested adjustment to daily calorie intake. E.g., "Slightly increase daily calories by 100-150 kcal to fuel muscle growth."'),
+    cardioAdjustment: z.string().optional().describe('Suggested adjustment to cardio exercise frequency or intensity. E.g., "Add one 20-minute light cardio session for better recovery."'),
+    muscleGroupAdjustment: z.string().optional().describe('Suggested adjustment to muscle group focus in workouts. E.g., "Increase focus on shoulder exercises to break plateaus."'),
+  }).describe('Specific, actionable suggestions for adapting the user\'s nutrition and workout plans.'),
 });
 export type GenerateWeeklyAnalysisAndAdaptationOutput = z.infer<typeof GenerateWeeklyAnalysisAndAdaptationOutputSchema>;
 
-// Define the tool for analyzing progress
+
+// This tool simulates fetching and analyzing user data from a database.
 const progressAnalyzerAgent = ai.defineTool(
   {
     name: 'progressAnalyzerAgent',
     description:
-      'Analyzes user workout, nutrition, weight, and sleep logs from the past week to identify trends and provide feedback.',
+      'Analyzes user workout, nutrition, weight, and sleep logs from the past week to identify trends and provide a summary report and adaptation suggestions.',
     inputSchema: z.object({
       userId: z.string().describe('The ID of the user.'),
     }),
     outputSchema: z.object({
-      trendAnalysis: z
+      analysisReport: z
         .string()
         .describe(
-          'An analysis of trends (weight decrease, strength increase, program adherence).'
-        ),
-      textReport: z
-        .string()
-        .describe(
-          'A plain language report summarizing progress, sleep, and other relevant factors.'
+          'A plain language report summarizing progress, sleep, and other relevant factors. Example: "Great work on staying consistent this week! You hit all your workouts and your weight is trending down nicely. I see your sleep was a bit inconsistent, which we should watch."'
         ),
       adaptationSuggestions: z
         .object({
@@ -71,34 +67,39 @@ const progressAnalyzerAgent = ai.defineTool(
         ),
     }),
   },
-  async (input) => {
-    // TODO: Implement the progress analysis logic here.  This is a placeholder.
-    //  In a real application, this would involve querying the database for user data,
-    //  analyzing the data, and generating a report and adaptation suggestions.
+  async ({ userId }) => {
+    // In a real application, this would query a database for the user's logs.
+    // For now, we return mock data that simulates a good week of progress.
+    console.log(`Analyzing data for user: ${userId}`);
     return {
-      trendAnalysis: 'No significant trends identified this week.',
-      textReport:
-        'Keep up the good work! Maintain your current workout and nutrition plan.',
-      adaptationSuggestions: {},
+      analysisReport:
+        'Excellent consistency this week, Sara! You nailed every workout and your weight is trending downwards perfectly. Your strength on the bench press has increased. Let\'s keep this momentum going!',
+      adaptationSuggestions: {
+        calorieAdjustment: "Maintain your current calorie target. It's working perfectly for your weight loss goal.",
+        cardioAdjustment: 'Consider adding 10 minutes of light walking after your strength sessions to improve recovery.',
+      },
     };
   }
 );
 
-// Define the prompt for generating the weekly analysis and adaptation
+
 const weeklyAnalysisPrompt = ai.definePrompt({
   name: 'weeklyAnalysisPrompt',
   tools: [progressAnalyzerAgent],
   input: {schema: GenerateWeeklyAnalysisAndAdaptationInputSchema},
   output: {schema: GenerateWeeklyAnalysisAndAdaptationOutputSchema},
-  prompt: `Analyze the user's progress over the past week and provide a plain language summary of their performance, along with suggestions for adapting their nutrition and workout plans.
+  prompt: `You are the Progress Analyzer Agent. Your role is to provide a clear, encouraging, and actionable weekly report for the user.
+  
+  1. First, call the 'progressAnalyzerAgent' tool to get a data-driven analysis of the user's past week.
+  2. Then, use the output from the tool to populate the 'analysisReport' and 'adaptationSuggestions' fields in the final output.
+  
+  Do not make up any data. Base your entire response on the information provided by the tool.
 
-  Use the progressAnalyzerAgent tool to analyze the user's data and generate adaptation suggestions.
-
-  User ID: {{{userId}}}
+  Analyze the progress for User ID: {{{userId}}}
   `,
 });
 
-// Define the Genkit flow
+
 const generateWeeklyAnalysisAndAdaptationFlow = ai.defineFlow(
   {
     name: 'generateWeeklyAnalysisAndAdaptationFlow',
@@ -107,6 +108,10 @@ const generateWeeklyAnalysisAndAdaptationFlow = ai.defineFlow(
   },
   async (input) => {
     const {output} = await weeklyAnalysisPrompt(input);
+    
+    // In a real scenario, these suggestions would be used to automatically
+    // update the user's plan for the following week.
+    
     return output!;
   }
 );

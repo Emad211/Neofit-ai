@@ -2,11 +2,10 @@
 "use client";
 
 import * as React from "react";
-import { generateWeeklyAnalysisAndAdaptation } from "@/ai/flows/generate-weekly-analysis-and-adaptation";
+import { generateWeeklyAnalysisAndAdaptation, GenerateWeeklyAnalysisAndAdaptationOutput } from "@/ai/flows/generate-weekly-analysis-and-adaptation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { BrainCircuit, Flame, Activity, TrendingUp, Loader2 } from "lucide-react";
+import { BrainCircuit, Flame, Activity, Dumbbell, Loader2 } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
-import { Badge } from "../ui/badge";
 
 type AdaptationSuggestions = {
     calorieAdjustment?: string | undefined;
@@ -22,7 +21,7 @@ function Suggestion({ text, icon: Icon }: { text: string | undefined; icon: Reac
                 <Icon className="h-4 w-4 text-primary" />
             </div>
             <div>
-                <p className="font-semibold text-sm">{text}</p>
+                <p className="font-semibold text-sm text-secondary-foreground">{text}</p>
             </div>
         </div>
     );
@@ -30,7 +29,7 @@ function Suggestion({ text, icon: Icon }: { text: string | undefined; icon: Reac
 
 
 export function WeeklyAiReport() {
-  const [report, setReport] = React.useState<any>(null);
+  const [report, setReport] = React.useState<GenerateWeeklyAnalysisAndAdaptationOutput | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -85,6 +84,8 @@ export function WeeklyAiReport() {
         </Card>
     );
   }
+  
+  if (!report) return null;
 
   return (
     <Card className="bg-accent/20 border-accent">
@@ -107,7 +108,7 @@ export function WeeklyAiReport() {
             <div className="space-y-3">
                 <Suggestion text={report.adaptationSuggestions.calorieAdjustment} icon={Flame} />
                 <Suggestion text={report.adaptationSuggestions.cardioAdjustment} icon={Activity} />
-                <Suggestion text={report.adaptationSuggestions.muscleGroupAdjustment} icon={TrendingUp} />
+                <Suggestion text={report.adaptationSuggestions.muscleGroupAdjustment} icon={Dumbbell} />
                 {!report.adaptationSuggestions.calorieAdjustment && !report.adaptationSuggestions.cardioAdjustment && !report.adaptationSuggestions.muscleGroupAdjustment && (
                     <p className="text-sm text-muted-foreground">No changes suggested this week. Keep up the great work!</p>
                 )}
