@@ -98,9 +98,17 @@ export const BodyMap = () => {
     };
     
     const handleSubmit = () => {
-        const selectedPartNames = Array.from(selectedParts).map(id => bodyParts.find(p => p.id === id)?.name || '').filter(Boolean);
+        const selectedPartNames = Array.from(selectedParts).map(id => `Previously injured: ${bodyParts.find(p => p.id === id)?.name || ''}`).filter(Boolean);
         const medicalHistory = searchParams.get('medicalHistory') || 'None';
-        const combinedMedicalHistory = [medicalHistory, ...selectedPartNames].filter(s => s !== 'None').join(', ');
+        
+        let combinedMedicalHistory = medicalHistory;
+        if (selectedPartNames.length > 0) {
+             if (combinedMedicalHistory === 'None') {
+                combinedMedicalHistory = selectedPartNames.join('; ');
+             } else {
+                combinedMedicalHistory += '; ' + selectedPartNames.join('; ');
+             }
+        }
         
         const params = new URLSearchParams(searchParams);
         params.set('medicalHistory', combinedMedicalHistory || 'None');

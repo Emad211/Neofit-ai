@@ -77,7 +77,7 @@ export function MedicalHistoryForm() {
     React.useEffect(() => {
         const subscription = form.watch((value, { name, type }) => {
             const params = new URLSearchParams(searchParams);
-            const selectedConditions = value.conditions?.join(', ') || '';
+            const selectedConditions = value.conditions?.map(c => c.replace(/_/g, ' ')).join(', ') || '';
             const otherDetails = value.details || '';
             
             let combined = [selectedConditions, otherDetails]

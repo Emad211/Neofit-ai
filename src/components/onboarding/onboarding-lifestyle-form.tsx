@@ -40,7 +40,6 @@ const FormSchema = z.object({
   trainingDays: z.string().min(1, "Please select how many days you can train."),
   lifestyle: z.enum(["sedentary", "lightly_active", "moderately_active", "very_active"], { required_error: "Please select your lifestyle." }),
   eatingHabits: z.array(z.string()).optional(),
-  medicalHistory: z.string().optional(),
 })
 
 export function OnboardingLifestyleForm() {
@@ -52,7 +51,6 @@ export function OnboardingLifestyleForm() {
     resolver: zodResolver(FormSchema),
     defaultValues: {
       eatingHabits: [],
-      medicalHistory: "",
     }
   })
 
