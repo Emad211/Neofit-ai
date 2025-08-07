@@ -28,32 +28,61 @@ const GenerateWeeklyAnalysisAndAdaptationOutputSchema = z.object({
 export type GenerateWeeklyAnalysisAndAdaptationOutput = z.infer<typeof GenerateWeeklyAnalysisAndAdaptationOutputSchema>;
 
 // Define the tool for analyzing progress
-const progressAnalyzerAgent = ai.defineTool({
-  name: 'progressAnalyzerAgent',
-  description: 'Analyzes user workout, nutrition, weight, and sleep logs from the past week to identify trends and provide feedback.',
-  inputSchema: z.object({
-    userId: z.string().describe('The ID of the user.'),
-  }),
-  outputSchema: z.object({
-    trendAnalysis: z.string().describe('An analysis of trends (weight decrease, strength increase, program adherence).'),
-    textReport: z.string().describe('A plain language report summarizing progress, sleep, and other relevant factors.'),
-    adaptationSuggestions: z.object({
-      calorieAdjustment: z.string().optional().describe('Suggested adjustment to daily calorie intake.'),
-      cardioAdjustment: z.string().optional().describe('Suggested adjustment to cardio exercise frequency or intensity.'),
-      muscleGroupAdjustment: z.string().optional().describe('Suggested adjustment to muscle group focus in workouts.'),
-    }).describe('Specific, actionable suggestions for adapting the user\'s nutrition and workout plans to optimize results.'),
-  }),
+const progressAnalyzerAgent = ai.defineTool(
+  {
+    name: 'progressAnalyzerAgent',
+    description:
+      'Analyzes user workout, nutrition, weight, and sleep logs from the past week to identify trends and provide feedback.',
+    inputSchema: z.object({
+      userId: z.string().describe('The ID of the user.'),
+    }),
+    outputSchema: z.object({
+      trendAnalysis: z
+        .string()
+        .describe(
+          'An analysis of trends (weight decrease, strength increase, program adherence).'
+        ),
+      textReport: z
+        .string()
+        .describe(
+          'A plain language report summarizing progress, sleep, and other relevant factors.'
+        ),
+      adaptationSuggestions: z
+        .object({
+          calorieAdjustment: z
+            .string()
+            .optional()
+            .describe('Suggested adjustment to daily calorie intake.'),
+          cardioAdjustment: z
+            .string()
+            .optional()
+            .describe(
+              'Suggested adjustment to cardio exercise frequency or intensity.'
+            ),
+          muscleGroupAdjustment: z
+            .string()
+            .optional()
+            .describe(
+              'Suggested adjustment to muscle group focus in workouts.'
+            ),
+        })
+        .describe(
+          'Specific, actionable suggestions for adapting the user\'s nutrition and workout plans to optimize results.'
+        ),
+    }),
+  },
   async (input) => {
     // TODO: Implement the progress analysis logic here.  This is a placeholder.
     //  In a real application, this would involve querying the database for user data,
     //  analyzing the data, and generating a report and adaptation suggestions.
     return {
       trendAnalysis: 'No significant trends identified this week.',
-      textReport: 'Keep up the good work!  Maintain your current workout and nutrition plan.',
+      textReport:
+        'Keep up the good work! Maintain your current workout and nutrition plan.',
       adaptationSuggestions: {},
     };
-  },
-});
+  }
+);
 
 // Define the prompt for generating the weekly analysis and adaptation
 const weeklyAnalysisPrompt = ai.definePrompt({
@@ -90,5 +119,3 @@ const generateWeeklyAnalysisAndAdaptationFlow = ai.defineFlow(
 export async function generateWeeklyAnalysisAndAdaptation(input: GenerateWeeklyAnalysisAndAdaptationInput): Promise<GenerateWeeklyAnalysisAndAdaptationOutput> {
   return generateWeeklyAnalysisAndAdaptationFlow(input);
 }
-
-export type { GenerateWeeklyAnalysisAndAdaptationFlow };
