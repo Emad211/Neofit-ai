@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -6,13 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   ChevronLeft,
-  ChevronRight,
   HelpCircle,
-  Replace,
   SkipForward,
   Check,
-  Play,
-  Pause,
 } from "lucide-react";
 import { WorkoutTimer } from "./workout-timer";
 import { AlternativeExerciseDialog } from "./alternative-exercise-dialog";
@@ -30,7 +27,7 @@ import {
 import { useRouter } from "next/navigation";
 
 // Mock data for a single workout session
-const workoutSession = {
+const initialWorkoutSession = {
   id: "full-body-a",
   name: "Full Body Strength A",
   exercises: [
@@ -79,33 +76,48 @@ const workoutSession = {
   ],
 };
 
+type WorkoutSession = typeof initialWorkoutSession;
+
 export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
+  const [session, setSession] = React.useState<WorkoutSession>(initialWorkoutSession);
   const [currentExerciseIndex, setCurrentExerciseIndex] = React.useState(0);
   const [currentSetIndex, setCurrentSetIndex] = React.useState(0);
   const [isResting, setIsResting] = React.useState(false);
   const router = useRouter();
 
-  const currentExercise = workoutSession.exercises[currentExerciseIndex];
+  const currentExercise = session.exercises[currentExerciseIndex];
+
+  const handleLogChange = (field: 'reps' | 'weight', value: string) => {
+    const newSession = { ...session };
+    newSession.exercises[currentExerciseIndex].logs[currentSetIndex][field] = value;
+    setSession(newSession);
+  }
 
   const handleNextSet = () => {
+    // This is where you would persist the log data for the completed set
+    console.log(`Logging set ${currentSetIndex + 1} for ${currentExercise.name}:`, currentExercise.logs[currentSetIndex]);
+
     if (currentSetIndex < currentExercise.sets - 1) {
       setCurrentSetIndex(currentSetIndex + 1);
     } else {
       // Last set of the exercise, move to next exercise
-      if (currentExerciseIndex < workoutSession.exercises.length - 1) {
+      if (currentExerciseIndex < session.exercises.length - 1) {
         setCurrentExerciseIndex(currentExerciseIndex + 1);
         setCurrentSetIndex(0);
       } else {
         // Workout finished
         alert("Workout Complete!");
+        // Here you would save the entire session log
+        console.log("Final workout session log:", session);
         router.push("/today");
+        return; // prevent setting rest state
       }
     }
     setIsResting(true);
   };
 
   const handleNextExercise = () => {
-    if (currentExerciseIndex < workoutSession.exercises.length - 1) {
+    if (currentExerciseIndex < session.exercises.length - 1) {
       setCurrentExerciseIndex(currentExerciseIndex + 1);
       setCurrentSetIndex(0);
       setIsResting(false);
@@ -121,15 +133,21 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
   };
 
   if (isResting) {
+    const nextExercise = session.exercises[currentExerciseIndex + 1];
+    const isLastSetOfExercise = currentSetIndex === currentExercise.sets -1;
+
+    let nextUpMessage = "Last Set Complete!";
+    if (isLastSetOfExercise && nextExercise) {
+      nextUpMessage = `Next: ${nextExercise.name}`;
+    } else if (!isLastSetOfExercise) {
+       nextUpMessage = `Next: Set ${currentSetIndex + 2}`;
+    }
+
     return (
       <WorkoutTimer
         duration={currentExercise.rest}
         onComplete={() => setIsResting(false)}
-        exerciseName={
-          currentExerciseIndex < workoutSession.exercises.length - 1
-            ? `Next: ${workoutSession.exercises[currentExerciseIndex + 1].name}`
-            : "Last Set Complete!"
-        }
+        exerciseName={nextUpMessage}
       />
     );
   }
@@ -140,7 +158,7 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
       <header className="flex items-center justify-between p-4">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" onClick={() => router.push('/workout')}>
               <ChevronLeft className="h-8 w-8" />
             </Button>
           </AlertDialogTrigger>
@@ -163,7 +181,7 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
         <div className="text-center">
           <h1 className="text-xl font-bold">{currentExercise.name}</h1>
           <p className="text-sm text-gray-400">
-            {currentExerciseIndex + 1} / {workoutSession.exercises.length}
+            {currentExerciseIndex + 1} / {session.exercises.length}
           </p>
         </div>
         <div className="w-10"></div>
@@ -215,6 +233,8 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
               id="weight"
               type="number"
               placeholder="--"
+              value={currentExercise.logs[currentSetIndex].weight}
+              onChange={(e) => handleLogChange('weight', e.target.value)}
               className="mt-1 h-20 w-full bg-gray-800 text-center text-4xl font-bold text-white [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
           </div>
@@ -229,6 +249,8 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
               id="reps"
               type="number"
               placeholder={currentExercise.reps}
+              value={currentExercise.logs[currentSetIndex].reps}
+              onChange={(e) => handleLogChange('reps', e.target.value)}
               className="mt-1 h-20 w-full bg-gray-800 text-center text-4xl font-bold text-white [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
           </div>

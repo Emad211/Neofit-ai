@@ -1,7 +1,9 @@
+
 "use client";
 
 import * as React from "react";
 import { Button } from "../ui/button";
+import { SkipForward, Pause, Play } from "lucide-react";
 
 export function WorkoutTimer({
   duration,
@@ -93,12 +95,14 @@ export function WorkoutTimer({
           className="h-16 w-32 text-lg"
           onClick={() => onComplete()}
         >
+          <SkipForward className="mr-2" />
           Skip
         </Button>
         <Button
           className="h-16 w-32 text-lg"
           onClick={() => setIsPaused(!isPaused)}
         >
+          {isPaused ? <Play className="mr-2" /> : <Pause className="mr-2" />}
           {isPaused ? "Resume" : "Pause"}
         </Button>
       </div>
