@@ -1,13 +1,6 @@
 "use client"
 
 import * as React from "react"
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel"
 import { MealCard } from "./meal-card";
 import { format, addDays, startOfToday } from 'date-fns';
 import { Skeleton } from "../ui/skeleton";
@@ -86,12 +79,13 @@ export function WeeklyMealPlan() {
         ...dayPlan,
         date: addDays(today, index)
     }));
-    setMealPlan(dynamicMealData);
+    // Simulate loading
+    setTimeout(() => setMealPlan(dynamicMealData), 500);
   }, []);
 
   if (mealPlan.length === 0) {
       return (
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(3)].map((_, i) => (
                   <div key={i} className="p-1">
                       <div className="bg-card border rounded-lg p-4 h-full space-y-4">
@@ -123,38 +117,26 @@ export function WeeklyMealPlan() {
   }
 
   return (
-    <Carousel
-      opts={{
-        align: "start",
-        loop: true,
-      }}
-      className="w-full"
-    >
-      <CarouselContent>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {mealPlan.map((dayPlan, index) => (
-          <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
-            <div className="p-1">
-                <div className="bg-card border rounded-lg p-4 h-full">
-                    <div className="text-center mb-4">
-                        <p className="text-lg font-bold font-headline">{dayPlan.day}</p>
-                        <p className="text-sm text-muted-foreground">{format(dayPlan.date, 'do MMMM')}</p>
-                    </div>
-                    <div className="space-y-4">
-                        {dayPlan.meals.map((meal: any) => (
-                            <MealCard key={meal.name} meal={meal} />
-                        ))}
-                    </div>
-                     <div className="text-center mt-4 pt-4 border-t">
-                        <p className="text-sm text-muted-foreground">Total Calories</p>
-                        <p className="text-xl font-bold text-primary">{dayPlan.totalCalories} kcal</p>
-                    </div>
-                </div>
-            </div>
-          </CarouselItem>
+          <div key={index}>
+              <div className="bg-card border rounded-lg p-4 h-full">
+                  <div className="text-center mb-4">
+                      <p className="text-lg font-bold font-headline">{dayPlan.day}</p>
+                      <p className="text-sm text-muted-foreground">{format(dayPlan.date, 'do MMMM')}</p>
+                  </div>
+                  <div className="space-y-4">
+                      {dayPlan.meals.map((meal: any) => (
+                          <MealCard key={meal.name} meal={meal} />
+                      ))}
+                  </div>
+                   <div className="text-center mt-4 pt-4 border-t">
+                      <p className="text-sm text-muted-foreground">Total Calories</p>
+                      <p className="text-xl font-bold text-primary">{dayPlan.totalCalories} kcal</p>
+                  </div>
+              </div>
+          </div>
         ))}
-      </CarouselContent>
-      <CarouselPrevious className="hidden sm:flex" />
-      <CarouselNext className="hidden sm:flex" />
-    </Carousel>
+    </div>
   )
 }
