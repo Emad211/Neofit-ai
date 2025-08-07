@@ -32,9 +32,9 @@ import { MoveRight, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 const bodyTypes = [
-    { value: "ectomorph", label: "Ectomorph", description: "Lean and long, with difficulty building muscle.", image: "https://placehold.co/400x400.png", dataAiHint: "lean body", details: ["Tall and lean", "Small muscles", "High metabolism", "Hard to gain weight"] },
-    { value: "mesomorph", label: "Mesomorph", description: "Muscular and well-built, with a high metabolism.", image: "https://placehold.co/400x400.png", dataAiHint: "muscular body", details: ["Wide shoulders", "Athletic muscles", "Efficient metabolism", "Balanced weight"] },
-    { value: "endomorph", label: "Endomorph", description: "Big, high body fat, often pear-shaped.", image: "https://placehold.co/400x400.png", dataAiHint: "large body", details: ["Large bone structure", "Higher body fat", "Gains weight easily", "Slower metabolism"] },
+    { value: "ectomorph", label: "Ectomorph", description: "Lean and long, with difficulty building muscle.", image: "/uploads/ECTOMORFO.png", dataAiHint: "lean body", details: ["Tall and lean", "Small muscles", "High metabolism", "Hard to gain weight"] },
+    { value: "mesomorph", label: "Mesomorph", description: "Muscular and well-built, with a high metabolism.", image: "/uploads/MESOMORFO.png", dataAiHint: "muscular body", details: ["Wide shoulders", "Athletic muscles", "Efficient metabolism", "Balanced weight"] },
+    { value: "endomorph", label: "Endomorph", description: "Big, high body fat, often pear-shaped.", image: "/uploads/ENDOMORFO.png", dataAiHint: "large body", details: ["Large bone structure", "Higher body fat", "Gains weight easily", "Slower metabolism"] },
 ]
 
 const FormSchema = z.object({
