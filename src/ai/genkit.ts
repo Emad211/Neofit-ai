@@ -3,7 +3,7 @@ import {googleAI} from '@genkit-ai/googleai';
 
 export const ai = genkit({
   plugins: [googleAI({apiVersion: 'v1'})],
-  flow: {
-    model: ['googleai/gemini-1.5-pro', 'googleai/gemini-1.5-flash'],
-  },
 });
+
+// Set a default model for all generate calls.
+ai.dot.setModel('googleai/gemini-1.5-pro');
