@@ -8,7 +8,7 @@ import '@/ai/flows/conversational-agent-flow.ts';
 import '@/ai/flows/daily-motivational-quote.ts';
 import '@/ai/flows/personalized-calorie-calculation.ts';
 import '@/ai/flows/onboarding-analysis.ts';
-import '@/ai/flows/generate-weekly-analysis-and-adaptation.ts';
+import '@/ai/flows/dynamic-program-adaptation.ts';
 import '@/ai/flows/suggest-meal-alternative.ts';
 import '@/ai/flows/calculate-activity-calories.ts';
 import '@/ai/flows/food-lookup.ts';
