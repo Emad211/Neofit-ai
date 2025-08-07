@@ -2,9 +2,9 @@
 "use client";
 
 import * as React from "react";
-import { generateWeeklyAnalysisAndAdaptation, GenerateWeeklyAnalysisAndAdaptationOutput } from "@/ai/flows/generate-weekly-analysis-and-adaptation";
+import { dynamicProgramAdaptation, DynamicProgramAdaptationOutput } from "@/ai/flows/dynamic-program-adaptation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { BrainCircuit, Flame, Activity, Dumbbell, Loader2 } from "lucide-react";
+import { BrainCircuit, Flame, Activity, Dumbbell, Loader2, CalendarCheck, Apple } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 
 type AdaptationSuggestions = {
@@ -13,15 +13,16 @@ type AdaptationSuggestions = {
     muscleGroupAdjustment?: string | undefined;
 }
 
-function Suggestion({ text, icon: Icon }: { text: string | undefined; icon: React.ElementType }) {
+function Suggestion({ text, icon: Icon, title }: { text: string | undefined; icon: React.ElementType, title: string }) {
     if (!text) return null;
     return (
-        <div className="flex items-start gap-3">
-            <div className="bg-secondary p-2 rounded-full mt-1">
-                <Icon className="h-4 w-4 text-primary" />
+        <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
+            <div className="bg-primary/10 p-2 rounded-full mt-1">
+                <Icon className="h-5 w-5 text-primary" />
             </div>
             <div>
-                <p className="font-semibold text-sm text-secondary-foreground">{text}</p>
+                 <p className="font-bold text-sm text-foreground">{title}</p>
+                <p className="text-sm text-muted-foreground">{text}</p>
             </div>
         </div>
     );
@@ -29,7 +30,7 @@ function Suggestion({ text, icon: Icon }: { text: string | undefined; icon: Reac
 
 
 export function WeeklyAiReport() {
-  const [report, setReport] = React.useState<GenerateWeeklyAnalysisAndAdaptationOutput | null>(null);
+  const [report, setReport] = React.useState<DynamicProgramAdaptationOutput | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -37,7 +38,7 @@ export function WeeklyAiReport() {
     async function fetchReport() {
       try {
         // In a real app, you would fetch this for the logged-in user
-        const result = await generateWeeklyAnalysisAndAdaptation({ userId: "12345" });
+        const result = await dynamicProgramAdaptation({ userId: "12345" });
         setReport(result);
       } catch (e) {
         console.error("Failed to fetch weekly report", e);
@@ -103,15 +104,23 @@ export function WeeklyAiReport() {
           &quot;{report.analysisReport}&quot;
         </p>
         
-        <div className="border-t border-accent pt-4">
-            <h4 className="font-semibold mb-3">Adaptation Suggestions</h4>
-            <div className="space-y-3">
-                <Suggestion text={report.adaptationSuggestions.calorieAdjustment} icon={Flame} />
-                <Suggestion text={report.adaptationSuggestions.cardioAdjustment} icon={Activity} />
-                <Suggestion text={report.adaptationSuggestions.muscleGroupAdjustment} icon={Dumbbell} />
-                {!report.adaptationSuggestions.calorieAdjustment && !report.adaptationSuggestions.cardioAdjustment && !report.adaptationSuggestions.muscleGroupAdjustment && (
-                    <p className="text-sm text-muted-foreground">No changes suggested this week. Keep up the great work!</p>
-                )}
+        <div className="border-t border-accent pt-4 space-y-4">
+            <h4 className="font-semibold">Plan for Next Week</h4>
+             <div className="space-y-3">
+                <Suggestion title="Workout Plan" text={report.nextWeekWorkoutPlan} icon={CalendarCheck} />
+                <Suggestion title="Nutrition Plan" text={report.nextWeekNutritionPlan} icon={Apple} />
+            </div>
+
+            <div className="border-t border-accent pt-4">
+                <h4 className="font-semibold mb-3">Reasoning & Suggestions</h4>
+                <div className="space-y-3">
+                    <Suggestion title="Calorie Adjustment" text={report.adaptationSuggestions.calorieAdjustment} icon={Flame} />
+                    <Suggestion title="Cardio Adjustment" text={report.adaptationSuggestions.cardioAdjustment} icon={Activity} />
+                    <Suggestion title="Workout Focus" text={report.adaptationSuggestions.muscleGroupAdjustment} icon={Dumbbell} />
+                    {!report.adaptationSuggestions.calorieAdjustment && !report.adaptationSuggestions.cardioAdjustment && !report.adaptationSuggestions.muscleGroupAdjustment && (
+                        <p className="text-sm text-muted-foreground">No changes suggested this week. Keep up the great work!</p>
+                    )}
+                </div>
             </div>
         </div>
       </CardContent>
