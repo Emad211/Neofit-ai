@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview An AI flow to look up nutritional information for a given food item.
+ * @fileOverview An AI flow to look up nutritional information for a given food item, either from text or a photo.
  *
  * - foodLookup - A function that returns nutritional data for a food query.
  * - FoodLookupInput - The input type for the function.
@@ -12,7 +12,10 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const FoodLookupInputSchema = z.object({
-  foodName: z.string().describe('The name of the food to look up (e.g., "1 large banana", "100g chicken breast").'),
+  foodName: z.string().describe('The name of the food to look up (e.g., "1 large banana", "100g chicken breast"). This can be empty if a photo is provided.'),
+  photoDataUri: z.string().optional().describe(
+      "A photo of a food item, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
 });
 export type FoodLookupInput = z.infer<typeof FoodLookupInputSchema>;
 
@@ -34,12 +37,16 @@ const prompt = ai.definePrompt({
   name: 'foodLookupPrompt',
   input: {schema: FoodLookupInputSchema},
   output: {schema: FoodLookupOutputSchema},
-  prompt: `You are a nutritional database expert. The user will provide a food name. 
+  prompt: `You are a nutritional database expert. The user will provide either a food name, a photo of food, or both. 
   
 Your task is to provide accurate nutritional information for a standard serving of that food.
-If the user provides a quantity (e.g., "1 cup of milk", "100g of chicken"), use that. Otherwise, use a common single serving size.
+- If a photo is provided, prioritize identifying the food in the photo.
+- If the user provides a quantity (e.g., "1 cup of milk", "100g of chicken"), use that. Otherwise, use a common single serving size.
 
 Food query: {{{foodName}}}
+{{#if photoDataUri}}
+Photo: {{media url=photoDataUri}}
+{{/if}}
 
 Return the item name, serving size, and nutritional information (calories, protein, carbohydrates, fat) as a JSON object. Ensure all nutritional values are integers.
 `,

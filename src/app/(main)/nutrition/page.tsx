@@ -2,6 +2,7 @@ import { WeeklyMealPlan } from "@/components/nutrition/weekly-meal-plan";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShoppingList } from "@/components/nutrition/shopping-list";
 import { FoodLibrary } from "@/components/nutrition/food-library";
+import { FoodCameraLookup } from "@/components/nutrition/food-camera-lookup";
 
 export default function NutritionPage() {
   return (
@@ -16,10 +17,11 @@ export default function NutritionPage() {
       </header>
       <main>
         <Tabs defaultValue="weekly-plan" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="weekly-plan">Weekly Plan</TabsTrigger>
             <TabsTrigger value="shopping-list">Shopping List</TabsTrigger>
             <TabsTrigger value="food-library">Food Library</TabsTrigger>
+            <TabsTrigger value="scan-meal">Scan Meal</TabsTrigger>
           </TabsList>
           <TabsContent value="weekly-plan">
             <WeeklyMealPlan />
@@ -29,6 +31,9 @@ export default function NutritionPage() {
           </TabsContent>
           <TabsContent value="food-library">
             <FoodLibrary />
+          </TabsContent>
+           <TabsContent value="scan-meal">
+            <FoodCameraLookup />
           </TabsContent>
         </Tabs>
       </main>
