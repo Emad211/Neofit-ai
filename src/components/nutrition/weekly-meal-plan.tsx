@@ -1,23 +1,48 @@
+
 "use client"
 
 import * as React from "react"
-import { MealCard } from "./meal-card";
+import { MealCard, Meal } from "./meal-card";
 import { format, addDays, startOfToday } from 'date-fns';
 import { Skeleton } from "../ui/skeleton";
 import { staticMealData } from "@/lib/data/static-meal-data";
+
+// Add a unique ID to each meal for state management
+const getInitialMealPlan = () => {
+    return staticMealData.map((dayPlan, dayIndex) => ({
+        ...dayPlan,
+        date: addDays(startOfToday(), dayIndex),
+        meals: dayPlan.meals.map((meal, mealIndex) => ({
+            ...meal,
+            id: `${dayIndex}-${mealIndex}` // Simple unique ID
+        }))
+    }));
+}
+
 
 export function WeeklyMealPlan() {
   const [mealPlan, setMealPlan] = React.useState<any[]>([]);
 
   React.useEffect(() => {
-    const today = startOfToday();
-    const dynamicMealData = staticMealData.map((dayPlan, index) => ({
-        ...dayPlan,
-        date: addDays(today, index)
-    }));
+    const dynamicMealData = getInitialMealPlan();
     // Simulate loading
     setTimeout(() => setMealPlan(dynamicMealData), 500);
   }, []);
+
+  const handleUpdateMeal = (mealIdToUpdate: string, newMealName: string) => {
+    setMealPlan(currentPlan => {
+      return currentPlan.map(dayPlan => ({
+        ...dayPlan,
+        meals: dayPlan.meals.map((meal: Meal) => {
+          if (meal.id === mealIdToUpdate) {
+            // In a real app, you'd fetch all new details for the meal
+            return { ...meal, name: newMealName, calories: meal.calories + 50, image: 'https://placehold.co/600x400.png', dataAiHint: 'healthy food' };
+          }
+          return meal;
+        }),
+      }));
+    });
+  };
 
   if (mealPlan.length === 0) {
       return (
@@ -62,8 +87,12 @@ export function WeeklyMealPlan() {
                       <p className="text-sm text-muted-foreground">{format(dayPlan.date, 'do MMMM')}</p>
                   </div>
                   <div className="space-y-4">
-                      {dayPlan.meals.map((meal: any) => (
-                          <MealCard key={meal.name} meal={meal} />
+                      {dayPlan.meals.map((meal: Meal) => (
+                          <MealCard 
+                            key={meal.id} 
+                            meal={meal}
+                            onUpdateMeal={handleUpdateMeal} 
+                          />
                       ))}
                   </div>
                    <div className="text-center mt-4 pt-4 border-t">
