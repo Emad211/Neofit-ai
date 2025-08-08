@@ -91,35 +91,31 @@ export function OnboardingLifestyleForm() {
   function onSubmit(data: z.infer<typeof FormSchema>) {
     const params = new URLSearchParams(searchParams);
     
-    // Create a comprehensive 'lifestyle' string for the AI
-    const lifestyleDetails = [
-      `Daily activity: ${data.lifestyle}`,
-      `Sleep: ${data.sleepHours} hours`,
-      `Stress: ${data.stressLevel}`,
-    ].join('; ');
-    
-    params.set('lifestyle', lifestyleDetails);
+    // Pass individual lifestyle fields
+    params.set('lifestyle', data.lifestyle);
+    params.set('sleepHours', data.sleepHours);
+    params.set('stressLevel', data.stressLevel);
 
     // Create a comprehensive 'eatingHabits' string
     const eatingHabitsDetails = [
         data.dietaryPreference !== 'none' ? `Dietary preference: ${data.dietaryPreference}`: '',
         data.eatingHabits && data.eatingHabits.length > 0 ? `Dislikes/Allergies: ${data.eatingHabits.join(', ')}` : '',
-        `Cooking skill: ${data.cookingSkill}`,
     ].filter(Boolean).join('; ');
 
     params.set('eatingHabits', eatingHabitsDetails || 'None');
-
-    // Add new fields to the query params
-    params.set('trainingDays', data.trainingDays);
-    params.set('workoutLocation', data.workoutLocation);
+    params.set('cookingSkill', data.cookingSkill);
     params.set('costLevel', data.costLevel);
-    
-    let workoutGoals = searchParams.get('goal') || 'improve_fitness';
-    if (data.performanceGoals) {
-        workoutGoals += `; Specific goal: ${data.performanceGoals}`;
-    }
-    params.set('goals', workoutGoals);
 
+    // Pass training details
+    params.set('trainingDays', data.trainingDays);
+    params.set('trainingDuration', data.trainingDuration);
+    params.set('trainingTime', data.trainingTime);
+    params.set('workoutLocation', data.workoutLocation);
+    
+    if (data.performanceGoals) {
+        params.set('performanceGoals', data.performanceGoals);
+    }
+    
     const equipment = data.workoutLocation === 'gym' ? 'Full gym equipment' : data.availableEquipment;
     params.set('availableEquipment', equipment || 'Bodyweight only');
 
@@ -493,6 +489,30 @@ export function OnboardingLifestyleForm() {
                         )}
                         />
                  </div>
+                 <FormField
+                    control={form.control}
+                    name="trainingTime"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Preferred time to work out</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select a time" /></SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="morning">Morning</SelectItem>
+                                <SelectItem value="afternoon">Afternoon</SelectItem>
+                                <SelectItem value="evening">Evening</SelectItem>
+                                <SelectItem value="any">Any time</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormDescription>
+                            This helps us schedule your pre/post workout meals.
+                        </FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
             </CardContent>
         </Card>
         
