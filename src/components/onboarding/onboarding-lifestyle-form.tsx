@@ -17,7 +17,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { MoveRight, Briefcase, Footprints, Activity, Weight } from "lucide-react"
+import { MoveRight, Briefcase, Footprints, Activity, Weight, Home, Building, DollarSign, Utensils, Sparkles } from "lucide-react"
 import { Card, CardContent } from "../ui/card"
 import { cn } from "@/lib/utils"
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group"
@@ -30,15 +30,29 @@ const lifestyleOptions = [
   { value: 'lightly_active', label: 'Lightly Active', icon: Footprints, description: 'Light exercise 1-3 days/week' },
   { value: 'moderately_active', label: 'Moderately Active', icon: Activity, description: 'Moderate exercise 3-5 days/week' },
   { value: 'very_active', label: 'Very Active', icon: Weight, description: 'Hard exercise 6-7 days/week' },
-]
+];
 
 const trainingDaysOptions = ['2', '3', '4', '5', '6'];
+
+const workoutLocationOptions = [
+    { value: 'home', label: 'Home', icon: Home },
+    { value: 'gym', label: 'Gym', icon: Building },
+];
+
+const costLevelOptions = [
+    { value: 'low', label: 'Low', icon: DollarSign },
+    { value: 'medium', label: 'Medium', icon: DollarSign },
+    { value: 'high', label: 'High', icon: DollarSign },
+]
 
 
 const FormSchema = z.object({
   trainingDays: z.string().min(1, "Please select how many days you can train."),
   lifestyle: z.enum(["sedentary", "lightly_active", "moderately_active", "very_active"], { required_error: "Please select your lifestyle." }),
   eatingHabits: z.array(z.string()).optional(),
+  workoutLocation: z.enum(["home", "gym"], { required_error: "Please select where you will train." }),
+  availableEquipment: z.string().optional(),
+  costLevel: z.enum(["low", "medium", "high"], { required_error: "Please select your budget level." }),
 })
 
 export function OnboardingLifestyleForm() {
@@ -51,7 +65,10 @@ export function OnboardingLifestyleForm() {
     defaultValues: {
       trainingDays: searchParams.get('trainingDays') || '3',
       lifestyle: (searchParams.get('lifestyle') as any) || 'sedentary',
-      eatingHabits: searchParams.get('eatingHabits')?.split(',') || [],
+      eatingHabits: searchParams.get('eatingHabits')?.split(',').filter(Boolean) || [],
+      workoutLocation: (searchParams.get('workoutLocation') as any) || 'gym',
+      availableEquipment: searchParams.get('availableEquipment') || '',
+      costLevel: (searchParams.get('costLevel') as any) || 'medium',
     }
   })
 
@@ -187,6 +204,100 @@ export function OnboardingLifestyleForm() {
             </FormItem>
           )}
         />
+        
+         <FormField
+          control={form.control}
+          name="costLevel"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>What's your weekly food budget?</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="grid grid-cols-3 gap-4 pt-2"
+                >
+                  {costLevelOptions.map((option) => (
+                     <FormItem key={option.value} className="h-full">
+                        <FormControl>
+                           <RadioGroupItem value={option.value} className="sr-only" />
+                        </FormControl>
+                        <FormLabel className="font-normal h-full">
+                           <Card className={cn(
+                                "h-full cursor-pointer transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl hover:border-primary",
+                                field.value === option.value && "border-primary ring-2 ring-primary"
+                            )}>
+                                <CardContent className="flex flex-col items-center justify-center text-center p-4">
+                                    <p className="font-semibold text-foreground capitalize">{option.label}</p>
+                                </CardContent>
+                            </Card>
+                        </FormLabel>
+                    </FormItem>
+                  ))}
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="workoutLocation"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Where will you be working out?</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="grid grid-cols-2 gap-4 pt-2"
+                >
+                  {workoutLocationOptions.map((option) => (
+                     <FormItem key={option.value} className="h-full">
+                        <FormControl>
+                           <RadioGroupItem value={option.value} className="sr-only" />
+                        </FormControl>
+                        <FormLabel className="font-normal h-full">
+                           <Card className={cn(
+                                "h-full cursor-pointer transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl hover:border-primary",
+                                field.value === option.value && "border-primary ring-2 ring-primary"
+                            )}>
+                                <CardContent className="flex flex-col items-center justify-center text-center p-4">
+                                     <div className="mb-2 rounded-full bg-primary/10 p-3 text-primary">
+                                        <option.icon className="h-8 w-8" />
+                                    </div>
+                                    <p className="font-semibold text-foreground capitalize">{option.label}</p>
+                                </CardContent>
+                            </Card>
+                        </FormLabel>
+                    </FormItem>
+                  ))}
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+         {form.watch('workoutLocation') === 'home' && (
+             <FormField
+                control={form.control}
+                name="availableEquipment"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>What equipment do you have available?</FormLabel>
+                    <FormControl>
+                        <Input placeholder="e.g., dumbbells, resistance bands, yoga mat" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                        List any equipment you have so we can tailor your home workouts.
+                    </FormDescription>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+         )}
         
 
         <Button type="submit" size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">

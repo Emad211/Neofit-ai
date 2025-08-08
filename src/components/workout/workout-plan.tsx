@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -6,70 +7,82 @@ import { Button } from "../ui/button";
 import { PlayCircle, Flame, Clock } from "lucide-react";
 import { Badge } from "../ui/badge";
 import Link from "next/link";
+import { Skeleton } from "../ui/skeleton";
+import type { GenerateWorkoutProgramOutput } from "@/ai/flows/generate-workout-program";
 
-const workoutData = [
-    {
-        id: 'full-body-a',
-        day: 'Day 1',
-        title: 'Full Body Strength A',
-        focus: 'Strength Training',
-        duration: '45-60 min',
-        calories: '350 kcal',
-        exercises: [
-            { name: 'Barbell Squats', sets: '3', reps: '8-12' },
-            { name: 'Bench Press', sets: '3', reps: '8-12' },
-            { name: 'Bent Over Rows', sets: '3', reps: '8-12' },
-            { name: 'Overhead Press', sets: '3', reps: '8-12' },
-            { name: 'Plank', sets: '3', reps: '30-60s' },
-        ],
-    },
-    {
-        id: 'cardio-core',
-        day: 'Day 2',
-        title: 'Cardio & Core',
-        focus: 'Cardiovascular',
-        duration: '30-45 min',
-        calories: '300 kcal',
-        exercises: [
-            { name: 'Running (Treadmill)', sets: '1', reps: '25 min' },
-            { name: 'Crunches', sets: '3', reps: '15-20' },
-            { name: 'Leg Raises', sets: '3', reps: '15-20' },
-            { name: 'Russian Twists', sets: '3', reps: '15-20' },
-        ],
-    },
-    {
-        id: 'full-body-b',
-        day: 'Day 3',
-        title: 'Full Body Strength B',
-        focus: 'Strength Training',
-        duration: '45-60 min',
-        calories: '400 kcal',
-        exercises: [
-            { name: 'Deadlifts', sets: '3', reps: '5-8' },
-            { name: 'Pull Ups / Lat Pulldowns', sets: '3', reps: '8-12' },
-            { name: 'Dumbbell Lunges', sets: '3', reps: '10-15 each leg' },
-            { name: 'Dips / Push-ups', sets: '3', reps: 'AMRAP' },
-            { name: 'Hanging Knee Raises', sets: '3', reps: '15-20' },
-        ],
-    },
-    {
-      id: 'active-recovery',
-      day: 'Day 4',
-      title: 'Active Recovery',
-      focus: 'Flexibility',
-      duration: '20-30 min',
-      calories: '100 kcal',
-      exercises: [
-          { name: 'Light Jogging or Cycling', sets: '1', reps: '15 min' },
-          { name: 'Full Body Stretching', sets: '1', reps: '10 min' },
-      ],
-  }
-];
+// Note: This component now relies on the workout plan being stored in localStorage
+// after the onboarding analysis. In a real-world app, this would be fetched
+// from a database.
+
+type DailyWorkout = GenerateWorkoutProgramOutput['weeklyWorkoutPlan'][0];
 
 export function WorkoutPlan() {
+    const [workoutPlan, setWorkoutPlan] = React.useState<DailyWorkout[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [error, setError] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        try {
+            const storedPlan = localStorage.getItem('userWorkoutPlan');
+            if (storedPlan) {
+                setWorkoutPlan(JSON.parse(storedPlan));
+            } else {
+                setError("No workout plan found. Please complete the onboarding process.");
+            }
+        } catch (e) {
+            console.error("Failed to load or parse workout plan:", e);
+            setError("Could not load your workout plan.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    if (isLoading) {
+        return (
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(3)].map((_, i) => (
+                    <Card key={i} className="flex flex-col h-full">
+                         <CardHeader>
+                            <div className="flex justify-between items-start">
+                                <div className="space-y-2">
+                                    <Skeleton className="h-4 w-24" />
+                                    <Skeleton className="h-6 w-48" />
+                                </div>
+                                <Skeleton className="h-6 w-20" />
+                            </div>
+                            <div className="flex items-center gap-4 pt-2">
+                                <Skeleton className="h-4 w-24" />
+                                <Skeleton className="h-4 w-20" />
+                            </div>
+                        </CardHeader>
+                        <CardContent className="flex-grow space-y-2">
+                            {[...Array(5)].map((_, j) => (
+                                <div key={j} className="flex justify-between items-center py-2">
+                                    <Skeleton className="h-5 w-3/5" />
+                                    <Skeleton className="h-5 w-1/5" />
+                                </div>
+                            ))}
+                        </CardContent>
+                         <div className="p-6 pt-0 mt-auto">
+                            <Skeleton className="h-11 w-full" />
+                         </div>
+                    </Card>
+                ))}
+             </div>
+        )
+    }
+
+    if (error) {
+        return <div className="text-center text-destructive p-8">{error}</div>;
+    }
+    
+    if (workoutPlan.length === 0 && !isLoading) {
+       return <div className="text-center text-muted-foreground p-8">Your workout plan is empty for this week. Maybe it's a rest week?</div>;
+    }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {workoutData.map((workout, index) => (
+        {workoutPlan.map((workout, index) => (
           <div key={index} className="h-full">
               <Card className="flex flex-col h-full">
                   <CardHeader>

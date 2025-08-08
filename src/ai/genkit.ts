@@ -7,6 +7,7 @@ if (!(global as any).genkit) {
   (global as any).genkit = genkit({
     plugins: [googleAI({apiVersion: 'v1'})],
     // Set a default model for all generate calls directly in the main config.
+    // NOTE: Individual prompts can and should override this for clarity.
     model: 'googleai/gemini-1.5-flash',
   });
 }

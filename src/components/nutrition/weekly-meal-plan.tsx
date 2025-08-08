@@ -5,35 +5,68 @@ import * as React from "react"
 import { MealCard, Meal } from "./meal-card";
 import { format } from 'date-fns';
 import { Skeleton } from "../ui/skeleton";
-import { getMealPlan } from "@/lib/data/static-meal-data";
+import type { GenerateNutritionProgramOutput } from "@/ai/flows/generate-nutrition-program";
 
+// Note: This component now relies on the meal plan being stored in localStorage
+// after the onboarding analysis. In a real-world app, this would be fetched
+// from a database.
+
+type DailyMealPlan = GenerateNutritionProgramOutput['weeklyMealPlan'][0];
 
 export function WeeklyMealPlan() {
-  const [mealPlan, setMealPlan] = React.useState<any[]>([]);
+  const [mealPlan, setMealPlan] = React.useState<DailyMealPlan[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    // In a real app, this data would come from a database based on the user's generated plan.
-    const dynamicMealData = getMealPlan();
-    // Simulate loading
-    setTimeout(() => setMealPlan(dynamicMealData), 500);
+    try {
+      const storedPlan = localStorage.getItem('userNutritionPlan');
+      if (storedPlan) {
+        const parsedPlan = JSON.parse(storedPlan);
+        // Add date objects to the plan
+        const today = new Date();
+        const planWithDates = parsedPlan.map((dayPlan: DailyMealPlan, index: number) => {
+           const date = new Date();
+           date.setDate(today.getDate() + index);
+           return {
+               ...dayPlan,
+               date: date,
+               meals: dayPlan.meals.map((meal: any, mealIndex: number) => ({
+                   ...meal,
+                   id: `${index}-${mealIndex}` // Ensure unique ID
+               }))
+           }
+        });
+        setMealPlan(planWithDates);
+      } else {
+        setError("No nutrition plan found. Please complete the onboarding process.");
+      }
+    } catch (e) {
+      console.error("Failed to load or parse meal plan:", e);
+      setError("Could not load your nutrition plan.");
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const handleUpdateMeal = (mealIdToUpdate: string, newMealName: string) => {
     setMealPlan(currentPlan => {
-      return currentPlan.map(dayPlan => ({
+      const updatedPlan = currentPlan.map(dayPlan => ({
         ...dayPlan,
         meals: dayPlan.meals.map((meal: Meal) => {
           if (meal.id === mealIdToUpdate) {
-            // In a real app, you'd fetch all new details for the meal from the AI/DB
             return { ...meal, name: newMealName, calories: meal.calories + 50, image: 'https://placehold.co/600x400.png', dataAiHint: 'healthy food' };
           }
           return meal;
         }),
       }));
+      // Persist the change back to localStorage
+      localStorage.setItem('userNutritionPlan', JSON.stringify(updatedPlan.map(({date, ...rest}) => rest)));
+      return updatedPlan;
     });
   };
 
-  if (mealPlan.length === 0) {
+  if (isLoading) {
       return (
           <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(3)].map((_, i) => (
@@ -65,6 +98,11 @@ export function WeeklyMealPlan() {
           </div>
       )
   }
+  
+  if (error) {
+    return <div className="text-center text-destructive p-8">{error}</div>;
+  }
+
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
