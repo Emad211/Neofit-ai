@@ -73,6 +73,8 @@ function AnalysisResult() {
     const performAnalysis = async () => {
         const physicalSpecifications = `${searchParams.get('gender') || 'other'}, ${searchParams.get('age') || 25} years, ${searchParams.get('height') || 170}cm, ${searchParams.get('weight') || 70}kg, ${searchParams.get('bodyType') || 'mesomorph'}`;
         
+        const userProfileData = Object.fromEntries(searchParams.entries());
+
         const nutritionParams: GenerateNutritionProgramInput = {
             userId: '12345',
             goals: searchParams.get('goal') || 'improve_fitness',
@@ -112,8 +114,8 @@ function AnalysisResult() {
             generateWorkoutProgram(workoutParams)
         ]);
 
-        // In a real app, you would save these plans to the database for the user.
-        // For this demo, we'll store them in localStorage.
+        // Store the full user profile and the generated plans
+        localStorage.setItem('userProfile', JSON.stringify(userProfileData));
         localStorage.setItem('userNutritionPlan', JSON.stringify(nutritionResult.weeklyMealPlan));
         localStorage.setItem('userWorkoutPlan', JSON.stringify(workoutResult.weeklyWorkoutPlan));
 
