@@ -102,6 +102,8 @@ function AnalysisResult() {
             availableEquipment: searchParams.get('availableEquipment') || 'Full gym equipment',
             medicalHistory: searchParams.get('medicalHistory') || 'None',
             physicalSpecifications: physicalSpecifications,
+            sleepHours: searchParams.get('sleepHours') || '7-8',
+            stressLevel: searchParams.get('stressLevel') || 'medium',
         };
 
       try {
