@@ -1,10 +1,8 @@
-// This hook is no longer used and is replaced by the UserProfileProvider context.
-// It is kept here for reference but can be safely removed in a future cleanup.
+// src/context/user-profile-context.tsx
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
 
-// Define the shape of the user profile based on all collected data
 export type UserProfile = {
   goal: "lose_weight" | "gain_muscle" | "improve_fitness";
   gender: "male" | "female" | "other";
@@ -29,7 +27,15 @@ export type UserProfile = {
   dietaryPreference?: string;
 };
 
-export function useUserProfile() {
+interface UserProfileContextType {
+  userProfile: UserProfile | null;
+  saveUserProfile: (profileData: UserProfile) => void;
+  isLoading: boolean;
+}
+
+const UserProfileContext = createContext<UserProfileContextType | undefined>(undefined);
+
+export const UserProfileProvider = ({ children }: { children: React.ReactNode }) => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -56,5 +62,17 @@ export function useUserProfile() {
     }
   }, []);
 
-  return { userProfile, saveUserProfile, isLoading };
-}
+  return (
+    <UserProfileContext.Provider value={{ userProfile, saveUserProfile, isLoading }}>
+      {children}
+    </UserProfileContext.Provider>
+  );
+};
+
+export const useUserProfile = () => {
+  const context = useContext(UserProfileContext);
+  if (context === undefined) {
+    throw new Error('useUserProfile must be used within a UserProfileProvider');
+  }
+  return context;
+};

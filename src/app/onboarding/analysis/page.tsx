@@ -13,6 +13,7 @@ import { MoveRight } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Apple, Dumbbell } from 'lucide-react';
+import { UserProfile } from '@/context/user-profile-context';
 
 type AnalysisResults = {
     nutrition: GenerateNutritionProgramOutput;
@@ -73,39 +74,39 @@ function AnalysisResult() {
     const performAnalysis = async () => {
         const physicalSpecifications = `${searchParams.get('gender') || 'other'}, ${searchParams.get('age') || 25} years, ${searchParams.get('height') || 170}cm, ${searchParams.get('weight') || 70}kg, ${searchParams.get('bodyType') || 'mesomorph'}`;
         
-        const userProfileData = Object.fromEntries(searchParams.entries());
+        const userProfileData: UserProfile = Object.fromEntries(searchParams.entries()) as any;
 
         const nutritionParams: GenerateNutritionProgramInput = {
             userId: '12345',
-            goals: searchParams.get('goal') || 'improve_fitness',
-            performanceGoals: searchParams.get('performanceGoals') || undefined,
-            fitnessLevel: (searchParams.get('fitnessLevel') as 'beginner' | 'intermediate' | 'advanced') || 'beginner',
+            goals: userProfileData.goal,
+            performanceGoals: userProfileData.performanceGoals,
+            fitnessLevel: userProfileData.fitnessLevel,
             physicalSpecifications: physicalSpecifications,
-            lifestyle: searchParams.get('lifestyle') || 'sedentary',
-            sleepHours: searchParams.get('sleepHours') || '7-8',
-            stressLevel: searchParams.get('stressLevel') || 'medium',
-            eatingHabits: searchParams.get('eatingHabits') || 'None',
-            cookingSkill: (searchParams.get('cookingSkill') as 'beginner' | 'intermediate' | 'advanced') || 'intermediate',
-            costLevel: (searchParams.get('costLevel') as 'low' | 'medium' | 'high') || 'medium',
-            trainingDays: parseInt(searchParams.get('trainingDays') || '3', 10),
-            trainingDuration: searchParams.get('trainingDuration') || '45-60 minutes',
-            trainingTime: searchParams.get('trainingTime') || 'any',
+            lifestyle: userProfileData.lifestyle,
+            sleepHours: userProfileData.sleepHours,
+            stressLevel: userProfileData.stressLevel,
+            eatingHabits: userProfileData.eatingHabits,
+            cookingSkill: userProfileData.cookingSkill,
+            costLevel: userProfileData.costLevel,
+            trainingDays: parseInt(userProfileData.trainingDays, 10),
+            trainingDuration: userProfileData.trainingDuration,
+            trainingTime: userProfileData.trainingTime,
         };
 
         const workoutParams: GenerateWorkoutProgramInput = {
             userId: '12345',
-            goals: searchParams.get('goal') || 'improve_fitness',
-            performanceGoals: searchParams.get('performanceGoals') || undefined,
-            fitnessLevel: (searchParams.get('fitnessLevel') as 'beginner' | 'intermediate' | 'advanced') || 'beginner',
-            trainingDays: parseInt(searchParams.get('trainingDays') || '3', 10),
-            trainingDuration: searchParams.get('trainingDuration') || '45-60',
-            trainingTime: searchParams.get('trainingTime') || 'any',
-            workoutLocation: (searchParams.get('workoutLocation') as 'home' | 'gym') || 'gym',
-            availableEquipment: searchParams.get('availableEquipment') || 'Full gym equipment',
-            medicalHistory: searchParams.get('medicalHistory') || 'None',
+            goals: userProfileData.goal,
+            performanceGoals: userProfileData.performanceGoals,
+            fitnessLevel: userProfileData.fitnessLevel,
+            trainingDays: parseInt(userProfileData.trainingDays, 10),
+            trainingDuration: userProfileData.trainingDuration,
+            trainingTime: userProfileData.trainingTime,
+            workoutLocation: userProfileData.workoutLocation,
+            availableEquipment: userProfileData.availableEquipment || 'Full gym equipment',
+            medicalHistory: userProfileData.medicalHistory || 'None',
             physicalSpecifications: physicalSpecifications,
-            sleepHours: searchParams.get('sleepHours') || '7-8',
-            stressLevel: searchParams.get('stressLevel') || 'medium',
+            sleepHours: userProfileData.sleepHours,
+            stressLevel: userProfileData.stressLevel,
         };
 
       try {
