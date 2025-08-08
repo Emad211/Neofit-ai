@@ -1,23 +1,20 @@
-
 // src/components/nutrition/shopping-list.tsx
 "use client"
 
 import * as React from "react";
-import { getMealPlan } from "@/lib/data/static-meal-data";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Checkbox } from "../ui/checkbox";
 import { Leaf, Egg, Milk, Wheat, Apple as FruitIcon } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
-import type { Meal } from './meal-card';
+import type { GenerateNutritionProgramOutput } from "@/ai/flows/generate-nutrition-program";
+
+type DailyMealPlan = GenerateNutritionProgramOutput['weeklyMealPlan'][0];
+type Meal = DailyMealPlan['meals'][0];
 
 type Ingredient = {
     name: string;
     quantity: string;
     category: string;
-};
-
-type DayPlan = {
-    meals: Meal[];
 };
 
 const categoryIcons: { [key: string]: React.ElementType } = {
@@ -28,7 +25,7 @@ const categoryIcons: { [key: string]: React.ElementType } = {
     "Pantry": Wheat,
 };
 
-function aggregateIngredients(mealData: DayPlan[]): { [key: string]: Ingredient[] } {
+function aggregateIngredients(mealData: DailyMealPlan[]): { [key: string]: Ingredient[] } {
     const ingredientMap: { [key: string]: { quantity: string[]; category: string } } = {};
 
     mealData.forEach(day => {
@@ -77,17 +74,28 @@ function aggregateIngredients(mealData: DayPlan[]): { [key: string]: Ingredient[
 
 export function ShoppingList() {
     const [shoppingList, setShoppingList] = React.useState<{ [key: string]: Ingredient[] } | null>(null);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [error, setError] = React.useState<string | null>(null);
 
     React.useEffect(() => {
-        // Simulate fetching and processing
-        setTimeout(() => {
-            const currentMealPlan = getMealPlan();
-            const list = aggregateIngredients(currentMealPlan);
-            setShoppingList(list);
-        }, 500);
+        try {
+            const storedPlan = localStorage.getItem('userNutritionPlan');
+            if (storedPlan) {
+                const parsedPlan = JSON.parse(storedPlan);
+                const list = aggregateIngredients(parsedPlan);
+                setShoppingList(list);
+            } else {
+                setError("No nutrition plan found. Please complete the onboarding process.");
+            }
+        } catch (e) {
+            console.error("Failed to load or parse shopping list:", e);
+            setError("Could not load your shopping list.");
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
 
-    if (!shoppingList) {
+    if (isLoading) {
         return (
              <div className="space-y-6">
                 {[...Array(4)].map((_, i) => (
@@ -109,6 +117,14 @@ export function ShoppingList() {
                 ))}
             </div>
         )
+    }
+
+    if (error) {
+        return <div className="text-center text-destructive p-8">{error}</div>;
+    }
+    
+    if (!shoppingList || Object.keys(shoppingList).length === 0) {
+        return <div className="text-center text-muted-foreground p-8">Your shopping list is empty.</div>;
     }
 
     return (
