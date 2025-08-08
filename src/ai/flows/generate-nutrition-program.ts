@@ -29,7 +29,7 @@ const MealSchema = z.object({
     type: z.string().describe("The type of meal (e.g., Breakfast, Lunch, Dinner, Snack)."),
     name: z.string().describe("The name of the meal."),
     calories: z.number().int().describe("Estimated calories for the meal."),
-    image: z.string().url().describe("A placeholder image URL for the meal, in the format https://placehold.co/600x400.png."),
+    image: z.string().describe("A placeholder image URL for the meal. This must be a valid URL, for example: https://placehold.co/600x400.png."),
     dataAiHint: z.string().describe("One or two keywords for a relevant image search, like 'chicken salad'."),
     ingredients: z.array(z.object({
         name: z.string(),
