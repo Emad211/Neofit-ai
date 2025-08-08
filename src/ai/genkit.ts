@@ -9,7 +9,7 @@ if (!(global as any).genkit) {
 
   // Set a default model for all generate calls.
   (global as any).genkit.configure({
-    model: 'googleai/gemini-1.5-pro'
+    model: 'googleai/gemini-1.5-flash'
   });
 }
 
