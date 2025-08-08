@@ -7,7 +7,7 @@ import { useUserProfile } from '@/context/user-profile-context';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronRight, Edit, LogOut, Moon, Sun } from 'lucide-react';
+import { ChevronRight, Edit, LogOut, FileText } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ModeToggle } from '@/components/mode-toggle';
 
@@ -37,8 +37,8 @@ export default function ProfilePage() {
                     <Skeleton className="h-4 w-48 mt-2" />
                 </header>
                 <div className="space-y-6 max-w-2xl mx-auto">
-                    <Skeleton className="h-32 w-full" />
                     <Skeleton className="h-48 w-full" />
+                    <Skeleton className="h-32 w-full" />
                 </div>
             </div>
         )
@@ -66,7 +66,13 @@ export default function ProfilePage() {
             <CardHeader>
                 <CardTitle>My Profile</CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 divide-y divide-border">
+                 <SettingsItem 
+                    icon={<FileText className="h-6 w-6"/>}
+                    title="View My Information"
+                    description="See the data used to generate your plans"
+                    href="/profile/view"
+                />
                  <SettingsItem 
                     icon={<Edit className="h-6 w-6"/>}
                     title="Edit My Details & Plan"

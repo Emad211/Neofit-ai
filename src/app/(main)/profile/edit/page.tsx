@@ -9,7 +9,7 @@ import * as z from 'zod';
 import { useUserProfile } from '@/context/user-profile-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,14 +19,11 @@ import { RefreshCw, MoveLeft, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 
-// This schema combines fields from both details and lifestyle forms
+// This schema contains only the fields that are realistically changeable by the user.
+// Fields like gender, age, bodyType are considered less frequently changed or fixed.
 const ProfileFormSchema = z.object({
   goal: z.enum(["lose_weight", "gain_muscle", "improve_fitness"]),
-  gender: z.enum(["male", "female", "other"]),
-  age: z.coerce.number().min(16).max(100),
-  height: z.coerce.number(),
-  weight: z.coerce.number(),
-  bodyType: z.enum(["ectomorph", "mesomorph", "endomorph"]),
+  weight: z.coerce.number().min(30, "Weight must be a positive number."),
   fitnessLevel: z.enum(["beginner", "intermediate", "advanced"]),
   trainingDays: z.string(),
   trainingDuration: z.string(),
@@ -58,9 +55,6 @@ export default function EditProfilePage() {
     if (userProfile) {
       const profileToReset: any = {
         ...userProfile,
-        // Ensure numeric values are not strings from localStorage
-        age: Number(userProfile.age),
-        height: Number(userProfile.height),
         weight: Number(userProfile.weight),
       };
       form.reset(profileToReset);
@@ -68,15 +62,16 @@ export default function EditProfilePage() {
   }, [userProfile, form]);
 
   const onRegenerate = (data: ProfileFormValues) => {
-    saveUserProfile(data as any); // Save the updated profile to localStorage
+    // Merge the changed data with the existing fixed data before saving/regenerating
+    const fullProfile = { ...userProfile, ...data };
+    saveUserProfile(fullProfile as any);
     toast({
         title: "Profile Updated!",
         description: "Your new plans are being generated.",
     });
 
-    // Create URLSearchParams to navigate to the analysis page for plan regeneration
     const params = new URLSearchParams();
-    Object.entries(data).forEach(([key, value]) => {
+    Object.entries(fullProfile).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         params.set(key, String(value));
       }
@@ -86,11 +81,11 @@ export default function EditProfilePage() {
   };
   
   const onSaveOnly = () => {
-    // We need to trigger validation before saving
     form.trigger().then(isValid => {
         if(isValid) {
             const data = form.getValues();
-            saveUserProfile(data as any);
+            const fullProfile = { ...userProfile, ...data };
+            saveUserProfile(fullProfile as any);
             toast({
                 title: "Profile Saved!",
                 description: "Your profile details have been updated.",
@@ -141,10 +136,10 @@ export default function EditProfilePage() {
         </div>
       <header className="mb-8 text-center">
         <h1 className="text-4xl font-bold font-headline text-foreground">
-          Edit Your Profile
+          Edit Your Details & Plan
         </h1>
         <p className="text-muted-foreground">
-          Update your details to regenerate your plans anytime.
+          Update your details to reflect your progress. You can save or regenerate your plans.
         </p>
       </header>
 
@@ -155,7 +150,7 @@ export default function EditProfilePage() {
               <CardTitle>Core Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="goal" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Primary Goal</FormLabel>
@@ -169,48 +164,11 @@ export default function EditProfilePage() {
                     </Select>
                   </FormItem>
                 )} />
-                 <FormField control={form.control} name="gender" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Gender</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                       <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                       <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                       </SelectContent>
-                    </Select>
-                  </FormItem>
-                )} />
-                 <FormField control={form.control} name="age" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Age</FormLabel>
-                    <FormControl><Input type="number" {...field} /></FormControl>
-                  </FormItem>
-                )} />
-                 <FormField control={form.control} name="height" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Height (cm)</FormLabel>
-                    <FormControl><Input type="number" {...field} /></FormControl>
-                  </FormItem>
-                )} />
                  <FormField control={form.control} name="weight" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Weight (kg)</FormLabel>
+                    <FormLabel>Current Weight (kg)</FormLabel>
                     <FormControl><Input type="number" {...field} /></FormControl>
-                  </FormItem>
-                )} />
-                 <FormField control={form.control} name="bodyType" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Body Type</FormLabel>
-                     <Select onValueChange={field.onChange} value={field.value}>
-                       <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                       <SelectContent>
-                            <SelectItem value="ectomorph">Ectomorph</SelectItem>
-                            <SelectItem value="mesomorph">Mesomorph</SelectItem>
-                            <SelectItem value="endomorph">Endomorph</SelectItem>
-                       </SelectContent>
-                    </Select>
+                    <FormDescription>Update this as your weight changes.</FormDescription>
                   </FormItem>
                 )} />
               </div>
@@ -374,6 +332,7 @@ export default function EditProfilePage() {
                     <FormItem>
                         <FormLabel>Note any injuries, conditions, or pains</FormLabel>
                         <FormControl><Textarea placeholder="e.g., Previous knee injury, Lower back pain" {...field} /></FormControl>
+                         <FormDescription>Update this if you have new injuries or have recovered from old ones.</FormDescription>
                     </FormItem>
                 )} />
               </CardContent>
