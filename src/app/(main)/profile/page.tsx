@@ -2,13 +2,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ChevronRight, MessageSquare, Bell, User as UserIcon, HelpCircle, LogOut } from "lucide-react";
+import { ChevronRight, Bell, User as UserIcon, HelpCircle, LogOut } from "lucide-react";
 import Link from "next/link";
 
 const menuItems = [
     { icon: UserIcon, text: "Edit Profile", href: "#" },
     { icon: Bell, text: "Notification Settings", href: "#" },
-    { icon: MessageSquare, text: "AI Coach Chat", href: "/chat" },
     { icon: HelpCircle, text: "Support & FAQ", href: "#" },
 ];
 
