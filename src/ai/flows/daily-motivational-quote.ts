@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -29,6 +30,7 @@ const prompt = ai.definePrompt({
   name: 'dailyMotivationalQuotePrompt',
   input: {schema: DailyMotivationalQuoteInputSchema},
   output: {schema: DailyMotivationalQuoteOutputSchema},
+  model: 'googleai/gemini-1.5-flash',
   prompt: `You are a motivational coach providing daily quotes to users to keep them engaged and motivated towards their fitness goals.
 
   Generate a motivational quote for user with ID: {{{userId}}}. The quote should be short, personalized, and relevant to fitness and health goals.`,

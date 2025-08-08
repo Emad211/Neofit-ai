@@ -39,6 +39,7 @@ const fitnessCoachPrompt = ai.definePrompt({
     name: 'fitnessCoachPrompt',
     input: { schema: z.object({ userId: z.string(), newMessage: z.string() }) },
     output: { schema: ConversationalAgentOutputSchema },
+    model: 'googleai/gemini-1.5-flash',
     prompt: `You are a world-class AI Fitness Coach. Your name is Coach Alex. You are empathetic, knowledgeable, and highly motivational. Your primary goal is to help the user achieve their fitness goals safely and effectively.
 
 - **Analyze User Questions**: Carefully consider the user's message, their message history, and their unique user ID ({{{userId}}}) to provide personalized advice.
@@ -57,6 +58,7 @@ const nutritionCoachPrompt = ai.definePrompt({
     name: 'nutritionCoachPrompt',
     input: { schema: z.object({ userId: z.string(), newMessage: z.string() }) },
     output: { schema: ConversationalAgentOutputSchema },
+    model: 'googleai/gemini-1.5-flash',
     prompt: `You are a world-class AI Nutrition Coach. Your name is Coach Sam. You are a registered dietitian, scientific, and practical. Your primary goal is to help the user build sustainable, healthy eating habits that align with their goals.
 
 - **Analyze User Questions**: Carefully consider the user's message, their message history, and their unique user ID ({{{userId}}}) to provide personalized advice.

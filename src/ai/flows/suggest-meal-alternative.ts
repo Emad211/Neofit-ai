@@ -1,3 +1,4 @@
+
 // src/ai/flows/suggest-meal-alternative.ts
 'use server';
 
@@ -44,6 +45,7 @@ const prompt = ai.definePrompt({
   name: 'suggestMealAlternativePrompt',
   input: {schema: SuggestMealAlternativeInputSchema},
   output: {schema: SuggestMealAlternativeOutputSchema},
+  model: 'googleai/gemini-1.5-flash',
   prompt: `You are a nutrition expert. A user is looking for an alternative meal suggestion.
 
   Original Meal ID: {{{mealId}}}

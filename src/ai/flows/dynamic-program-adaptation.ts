@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview This file defines the Genkit flow for dynamically adapting a user's program.
@@ -106,6 +107,7 @@ const dynamicAdaptationPrompt = ai.definePrompt({
   tools: [getWeeklyAnalysis, generateAdaptedProgram],
   input: {schema: DynamicProgramAdaptationInputSchema},
   output: {schema: DynamicProgramAdaptationOutputSchema},
+  model: 'googleai/gemini-1.5-flash',
   prompt: `You are the master AI coach for the NeoFit application. Your job is to orchestrate a weekly review for the user.
   
   Follow these steps precisely:

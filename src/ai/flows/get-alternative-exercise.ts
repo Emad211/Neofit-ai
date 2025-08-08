@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -40,6 +41,7 @@ const prompt = ai.definePrompt({
   name: 'getAlternativeExercisePrompt',
   input: {schema: GetAlternativeExerciseInputSchema},
   output: {schema: GetAlternativeExerciseOutputSchema},
+  model: 'googleai/gemini-1.5-flash',
   prompt: `You are an expert fitness trainer specializing in creating safe and effective workout modifications. A user is unable to perform their current exercise and needs a personalized alternative.
 
 Analyze the user's context carefully:

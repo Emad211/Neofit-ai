@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -30,6 +31,7 @@ const prompt = ai.definePrompt({
   name: 'generateRecipePrompt',
   input: {schema: GenerateRecipeInputSchema},
   output: {schema: GenerateRecipeOutputSchema},
+  model: 'googleai/gemini-1.5-flash',
   prompt: `You are an expert chef. Your task is to create a simple, clear, and delicious recipe based on the provided meal name and ingredients.
 
 Meal Name: {{{mealName}}}

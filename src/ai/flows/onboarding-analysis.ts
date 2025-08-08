@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -65,6 +66,7 @@ const analysisPrompt = ai.definePrompt({
     name: 'onboardingAnalysisMasterPrompt',
     input: { schema: OnboardingAnalysisInputSchema },
     output: { schema: OnboardingAnalysisOutputSchema },
+    model: 'googleai/gemini-1.5-flash',
     prompt: `You are a master AI system composed of three expert agents: a medical advisor, a nutrition expert, and a fitness trainer. Your goal is to conduct a comprehensive analysis of a new user's onboarding data to create a safe, effective, and hyper-personalized fitness and nutrition plan.
 
 Analyze the complete user profile below and return a single, consolidated JSON object containing the results from all three areas of expertise.

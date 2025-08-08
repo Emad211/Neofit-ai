@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -37,6 +38,7 @@ const prompt = ai.definePrompt({
   name: 'foodLookupPrompt',
   input: {schema: FoodLookupInputSchema},
   output: {schema: FoodLookupOutputSchema},
+  model: 'googleai/gemini-1.5-flash',
   prompt: `You are a nutritional database expert. The user will provide either a food name, a photo of food, or both. 
   
 Your task is to provide accurate nutritional information for a standard serving of that food.

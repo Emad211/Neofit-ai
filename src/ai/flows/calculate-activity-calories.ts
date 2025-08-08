@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -32,6 +33,7 @@ const prompt = ai.definePrompt({
   name: 'calculateActivityCaloriesPrompt',
   input: {schema: CalculateActivityCaloriesInputSchema},
   output: {schema: CalculateActivityCaloriesOutputSchema},
+  model: 'googleai/gemini-1.5-flash',
   prompt: `You are an expert exercise physiologist. Your task is to accurately estimate the number of calories a person has burned during a specific physical activity.
 
 Use the user's data and the activity details to perform the calculation. Consider the MET (Metabolic Equivalent of Task) value for the given activity.
