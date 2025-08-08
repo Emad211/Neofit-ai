@@ -15,7 +15,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { RefreshCw, MoveLeft } from 'lucide-react';
+import { RefreshCw, MoveLeft, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 
@@ -67,7 +67,7 @@ export default function EditProfilePage() {
     }
   }, [userProfile, form]);
 
-  const onSubmit = (data: ProfileFormValues) => {
+  const onRegenerate = (data: ProfileFormValues) => {
     saveUserProfile(data as any); // Save the updated profile to localStorage
     toast({
         title: "Profile Updated!",
@@ -84,6 +84,27 @@ export default function EditProfilePage() {
     
     router.push(`/onboarding/analysis?${params.toString()}`);
   };
+  
+  const onSaveOnly = () => {
+    // We need to trigger validation before saving
+    form.trigger().then(isValid => {
+        if(isValid) {
+            const data = form.getValues();
+            saveUserProfile(data as any);
+            toast({
+                title: "Profile Saved!",
+                description: "Your profile details have been updated.",
+            });
+            router.push('/profile');
+        } else {
+             toast({
+                variant: "destructive",
+                title: "Invalid Information",
+                description: "Please check the form for errors before saving.",
+            });
+        }
+    });
+  }
 
   if (isProfileLoading) {
     return (
@@ -128,7 +149,7 @@ export default function EditProfilePage() {
       </header>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-4xl mx-auto">
+        <form onSubmit={form.handleSubmit(onRegenerate)} className="space-y-8 max-w-4xl mx-auto">
           <Card>
             <CardHeader>
               <CardTitle>Core Information</CardTitle>
@@ -357,11 +378,17 @@ export default function EditProfilePage() {
                 )} />
               </CardContent>
           </Card>
-
-          <Button type="submit" size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-            <RefreshCw className="mr-2 h-5 w-5" />
-            Update Profile & Get New Plan
-          </Button>
+            
+          <div className="flex flex-col-reverse sm:flex-row gap-2 justify-end">
+            <Button type="button" variant="secondary" onClick={onSaveOnly}>
+              <Save className="mr-2 h-4 w-4" />
+              Save Changes
+            </Button>
+            <Button type="submit" size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+              <RefreshCw className="mr-2 h-5 w-5" />
+              Update & Regenerate Plan
+            </Button>
+          </div>
         </form>
       </Form>
     </div>
