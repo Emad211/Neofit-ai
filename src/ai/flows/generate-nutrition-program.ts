@@ -45,7 +45,7 @@ const DailyMealPlanSchema = z.object({
 });
 
 const GenerateNutritionProgramOutputSchema = z.object({
-    weeklyMealPlan: z.array(DailyMealPlanSchema).length(7),
+    weeklyMealPlan: z.array(DailyMealPlanSchema),
     summary: z.string().describe("A brief, encouraging summary of the generated nutrition plan."),
 });
 export type GenerateNutritionProgramOutput = z.infer<typeof GenerateNutritionProgramOutputSchema>;
