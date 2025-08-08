@@ -7,6 +7,7 @@ import { Checkbox } from "../ui/checkbox";
 import { Leaf, Egg, Milk, Wheat, Apple as FruitIcon } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 import type { GenerateNutritionProgramOutput } from "@/ai/flows/generate-nutrition-program";
+import { useUserData } from "@/context/user-profile-context";
 
 type DailyMealPlan = GenerateNutritionProgramOutput['weeklyMealPlan'][0];
 type Meal = DailyMealPlan['meals'][0];
@@ -73,27 +74,20 @@ function aggregateIngredients(mealData: DailyMealPlan[]): { [key: string]: Ingre
 }
 
 export function ShoppingList() {
+    const { nutritionPlan, isLoading } = useUserData();
     const [shoppingList, setShoppingList] = React.useState<{ [key: string]: Ingredient[] } | null>(null);
-    const [isLoading, setIsLoading] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
 
     React.useEffect(() => {
-        try {
-            const storedPlan = localStorage.getItem('userNutritionPlan');
-            if (storedPlan) {
-                const parsedPlan = JSON.parse(storedPlan);
-                const list = aggregateIngredients(parsedPlan);
+        if (!isLoading) {
+            if (nutritionPlan) {
+                const list = aggregateIngredients(nutritionPlan);
                 setShoppingList(list);
             } else {
                 setError("No nutrition plan found. Please complete the onboarding process.");
             }
-        } catch (e) {
-            console.error("Failed to load or parse shopping list:", e);
-            setError("Could not load your shopping list.");
-        } finally {
-            setIsLoading(false);
         }
-    }, []);
+    }, [nutritionPlan, isLoading]);
 
     if (isLoading) {
         return (

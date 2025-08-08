@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import * as z from 'zod';
-import { useUserProfile } from '@/context/user-profile-context';
+import { useUserData } from '@/context/user-profile-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
@@ -43,7 +43,7 @@ const ProfileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof ProfileFormSchema>;
 
 export default function EditProfilePage() {
-  const { userProfile, saveUserProfile, isLoading: isProfileLoading } = useUserProfile();
+  const { userProfile, saveUserProfile, isLoading: isProfileLoading } = useUserData();
   const router = useRouter();
   const { toast } = useToast();
 

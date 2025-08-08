@@ -2,7 +2,16 @@
 "use client";
 
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
+import { app } from '@/lib/firebase';
+import type { GenerateNutritionProgramOutput } from '@/ai/flows/generate-nutrition-program';
+import type { GenerateWorkoutProgramOutput } from '@/ai/flows/generate-workout-program';
 
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// Keep the same UserProfile type
 export type UserProfile = {
   goal: "lose_weight" | "gain_muscle" | "improve_fitness";
   gender: "male" | "female" | "other";
@@ -27,52 +36,104 @@ export type UserProfile = {
   dietaryPreference?: string;
 };
 
-interface UserProfileContextType {
+// Add types for the plans
+type NutritionPlan = GenerateNutritionProgramOutput['weeklyMealPlan'];
+type WorkoutPlan = GenerateWorkoutProgramOutput['weeklyWorkoutPlan'];
+
+interface UserDataContextType {
+  user: User | null;
   userProfile: UserProfile | null;
-  saveUserProfile: (profileData: UserProfile) => void;
+  nutritionPlan: NutritionPlan | null;
+  workoutPlan: WorkoutPlan | null;
+  saveUserProfile: (profileData: UserProfile) => Promise<void>;
+  savePlans: (plans: { nutritionPlan: NutritionPlan, workoutPlan: WorkoutPlan }) => Promise<void>;
   isLoading: boolean;
 }
 
-const UserProfileContext = createContext<UserProfileContextType | undefined>(undefined);
+const UserDataContext = createContext<UserDataContextType | undefined>(undefined);
 
-export const UserProfileProvider = ({ children }: { children: React.ReactNode }) => {
+export const UserDataProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [nutritionPlan, setNutritionPlan] = useState<NutritionPlan | null>(null);
+  const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  // Mock user ID for demonstration purposes
+  const MOCK_USER_ID = 'mock-user-123';
+
+  const fetchData = async (userId: string) => {
+    setIsLoading(true);
     try {
-      const storedProfile = localStorage.getItem('userProfile');
-      if (storedProfile) {
-        setUserProfile(JSON.parse(storedProfile));
+      const profileRef = doc(db, 'profiles', userId);
+      const plansRef = doc(db, 'plans', userId);
+      
+      const [profileDoc, plansDoc] = await Promise.all([getDoc(profileRef), getDoc(plansRef)]);
+
+      if (profileDoc.exists()) {
+        setUserProfile(profileDoc.data() as UserProfile);
+      }
+      if (plansDoc.exists()) {
+        const plansData = plansDoc.data();
+        setNutritionPlan(plansData.nutritionPlan);
+        setWorkoutPlan(plansData.workoutPlan);
       }
     } catch (error) {
-      console.error("Failed to parse user profile from localStorage", error);
-      setUserProfile(null);
+      console.error("Failed to fetch user data from Firestore", error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    // In a real app, you would use Firebase Auth
+    // For now, we simulate a logged-in user with a mock ID
+    const mockUser = { uid: MOCK_USER_ID } as User;
+    setUser(mockUser);
+    fetchData(mockUser.uid);
   }, []);
 
-  const saveUserProfile = useCallback((profileData: UserProfile) => {
+  const saveUserProfile = async (profileData: UserProfile) => {
+    if (!user) {
+      console.error("No user is signed in to save profile.");
+      return;
+    }
     try {
-      localStorage.setItem('userProfile', JSON.stringify(profileData));
+      const profileRef = doc(db, 'profiles', user.uid);
+      await setDoc(profileRef, profileData, { merge: true });
       setUserProfile(profileData);
     } catch (error) {
-      console.error("Failed to save user profile to localStorage", error);
+      console.error("Failed to save user profile to Firestore", error);
     }
-  }, []);
+  };
+
+  const savePlans = async (plans: { nutritionPlan: NutritionPlan, workoutPlan: WorkoutPlan }) => {
+     if (!user) {
+      console.error("No user is signed in to save plans.");
+      return;
+    }
+    try {
+        const plansRef = doc(db, 'plans', user.uid);
+        await setDoc(plansRef, plans);
+        setNutritionPlan(plans.nutritionPlan);
+        setWorkoutPlan(plans.workoutPlan);
+    } catch (error) {
+        console.error("Failed to save plans to Firestore", error);
+    }
+  }
+
 
   return (
-    <UserProfileContext.Provider value={{ userProfile, saveUserProfile, isLoading }}>
+    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, saveUserProfile, savePlans, isLoading }}>
       {children}
-    </UserProfileContext.Provider>
+    </UserDataContext.Provider>
   );
 };
 
-export const useUserProfile = () => {
-  const context = useContext(UserProfileContext);
+export const useUserData = () => {
+  const context = useContext(UserDataContext);
   if (context === undefined) {
-    throw new Error('useUserProfile must be used within a UserProfileProvider');
+    throw new Error('useUserData must be used within a UserDataProvider');
   }
   return context;
 };

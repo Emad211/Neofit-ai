@@ -1,5 +1,5 @@
 import { AppShell } from "@/components/app-shell";
-import { UserProfileProvider } from "@/context/user-profile-context";
+import { UserDataProvider } from "@/context/user-profile-context";
 
 export default function MainAppLayout({
   children,
@@ -7,8 +7,8 @@ export default function MainAppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <UserProfileProvider>
+    <UserDataProvider>
       <AppShell>{children}</AppShell>
-    </UserProfileProvider>
+    </UserDataProvider>
   );
 }

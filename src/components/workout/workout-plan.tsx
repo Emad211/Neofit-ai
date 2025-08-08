@@ -9,33 +9,20 @@ import { Badge } from "../ui/badge";
 import Link from "next/link";
 import { Skeleton } from "../ui/skeleton";
 import type { GenerateWorkoutProgramOutput } from "@/ai/flows/generate-workout-program";
-
-// Note: This component now relies on the workout plan being stored in localStorage
-// after the onboarding analysis. In a real-world app, this would be fetched
-// from a database.
+import { useUserData } from "@/context/user-profile-context";
 
 type DailyWorkout = GenerateWorkoutProgramOutput['weeklyWorkoutPlan'][0];
 
 export function WorkoutPlan() {
-    const [workoutPlan, setWorkoutPlan] = React.useState<DailyWorkout[]>([]);
-    const [isLoading, setIsLoading] = React.useState(true);
+    const { workoutPlan, isLoading } = useUserData();
     const [error, setError] = React.useState<string | null>(null);
 
     React.useEffect(() => {
-        try {
-            const storedPlan = localStorage.getItem('userWorkoutPlan');
-            if (storedPlan) {
-                setWorkoutPlan(JSON.parse(storedPlan));
-            } else {
-                setError("No workout plan found. Please complete the onboarding process.");
-            }
-        } catch (e) {
-            console.error("Failed to load or parse workout plan:", e);
-            setError("Could not load your workout plan.");
-        } finally {
-            setIsLoading(false);
+        if (!isLoading && !workoutPlan) {
+             setError("No workout plan found. Please complete the onboarding process.");
         }
-    }, []);
+    }, [workoutPlan, isLoading]);
+
 
     if (isLoading) {
         return (
@@ -76,7 +63,7 @@ export function WorkoutPlan() {
         return <div className="text-center text-destructive p-8">{error}</div>;
     }
     
-    if (workoutPlan.length === 0 && !isLoading) {
+    if (!workoutPlan || (workoutPlan.length === 0 && !isLoading)) {
        return <div className="text-center text-muted-foreground p-8">Your workout plan is empty for this week. Maybe it's a rest week?</div>;
     }
 

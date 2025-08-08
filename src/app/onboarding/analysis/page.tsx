@@ -13,7 +13,7 @@ import { MoveRight } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Apple, Dumbbell } from 'lucide-react';
-import { UserProfile } from '@/context/user-profile-context';
+import { UserProfile, useUserData } from '@/context/user-profile-context';
 
 type AnalysisResults = {
     nutrition: GenerateNutritionProgramOutput;
@@ -67,6 +67,7 @@ function Loading() {
 
 function AnalysisResult() {
   const searchParams = useSearchParams();
+  const { saveUserProfile, savePlans } = useUserData();
   const [analysisResult, setAnalysisResult] = React.useState<AnalysisResults | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -115,10 +116,12 @@ function AnalysisResult() {
             generateWorkoutProgram(workoutParams)
         ]);
 
-        // Store the full user profile and the generated plans
-        localStorage.setItem('userProfile', JSON.stringify(userProfileData));
-        localStorage.setItem('userNutritionPlan', JSON.stringify(nutritionResult.weeklyMealPlan));
-        localStorage.setItem('userWorkoutPlan', JSON.stringify(workoutResult.weeklyWorkoutPlan));
+        // Save the full user profile and the generated plans to Firestore
+        await saveUserProfile(userProfileData);
+        await savePlans({ 
+            nutritionPlan: nutritionResult.weeklyMealPlan, 
+            workoutPlan: workoutResult.weeklyWorkoutPlan 
+        });
 
         setAnalysisResult({ nutrition: nutritionResult, workout: workoutResult });
       } catch (e: any) {
@@ -132,7 +135,7 @@ function AnalysisResult() {
     };
 
     performAnalysis();
-  }, [searchParams]);
+  }, [searchParams, saveUserProfile, savePlans]);
 
   if (error) {
     return <ErrorDisplay message={error} />

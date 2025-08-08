@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from 'react';
-import { useUserProfile } from '@/context/user-profile-context';
+import { useUserData } from '@/context/user-profile-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MoveLeft } from 'lucide-react';
@@ -29,7 +29,7 @@ const InfoSection = ({ title, children }: { title: string, children: React.React
 
 
 export default function ViewProfilePage() {
-    const { userProfile, isLoading } = useUserProfile();
+    const { userProfile, isLoading } = useUserData();
 
     if (isLoading) {
         return (

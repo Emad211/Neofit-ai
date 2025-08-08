@@ -1,4 +1,4 @@
-// This hook is no longer used and is replaced by the UserProfileProvider context.
+// This hook has been deprecated and replaced by the UserDataContext.
 // It is kept here for reference but can be safely removed in a future cleanup.
 "use client";
 

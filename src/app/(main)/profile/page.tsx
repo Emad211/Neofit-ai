@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useUserProfile } from '@/context/user-profile-context';
+import { useUserData } from '@/context/user-profile-context';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,7 +27,7 @@ const SettingsItem = ({ icon, title, description, href }: { icon: React.ReactNod
 
 
 export default function ProfilePage() {
-    const { userProfile, isLoading } = useUserProfile();
+    const { user, userProfile, isLoading } = useUserData();
 
     if (isLoading) {
         return (
@@ -46,14 +46,14 @@ export default function ProfilePage() {
     }
 
     // Default name if not available in profile
-    const userName = "Sara"; 
-    const userEmail = "sara@example.com";
+    const userName = user?.displayName || "Sara"; 
+    const userEmail = user?.email || "sara@example.com";
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <header className="flex flex-col items-center text-center mb-10">
         <Avatar className="h-24 w-24 border-4 border-primary">
-          <AvatarImage src="https://placehold.co/100x100.png" alt={userName} data-ai-hint="profile picture" />
+          <AvatarImage src={user?.photoURL || "https://placehold.co/100x100.png"} alt={userName} data-ai-hint="profile picture" />
           <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
         </Avatar>
         <h1 className="mt-4 text-3xl font-bold font-headline text-foreground">
