@@ -71,11 +71,13 @@ function AnalysisResult() {
 
   React.useEffect(() => {
     const performAnalysis = async () => {
+        const physicalSpecifications = `${searchParams.get('gender') || 'other'}, ${searchParams.get('age') || 25} years, ${searchParams.get('height') || 170}cm, ${searchParams.get('weight') || 70}kg, ${searchParams.get('bodyType') || 'mesomorph'}`;
+        
         const nutritionParams: GenerateNutritionProgramInput = {
             userId: '12345',
             goals: searchParams.get('goal') || 'improve_fitness',
             fitnessLevel: (searchParams.get('fitnessLevel') as 'beginner' | 'intermediate' | 'advanced') || 'beginner',
-            physicalSpecifications: `${searchParams.get('gender') || 'other'}, ${searchParams.get('age') || 25} years, ${searchParams.get('height') || 170}cm, ${searchParams.get('weight') || 70}kg, ${searchParams.get('bodyType') || 'mesomorph'}`,
+            physicalSpecifications: physicalSpecifications,
             lifestyle: `Daily activity: ${searchParams.get('lifestyle') || 'sedentary'}, Sleep: ${searchParams.get('sleepHours') || '7-8'} hours, Stress: ${searchParams.get('stressLevel') || 'medium'}`,
             eatingHabits: `Dietary preference: ${searchParams.get('dietaryPreference') || 'none'}; Dislikes/Allergies: ${searchParams.get('eatingHabits') || 'None'}`,
             cookingSkill: (searchParams.get('cookingSkill') as 'beginner' | 'intermediate' | 'advanced') || 'intermediate',
@@ -93,6 +95,7 @@ function AnalysisResult() {
             workoutLocation: (searchParams.get('workoutLocation') as 'home' | 'gym') || 'gym',
             availableEquipment: searchParams.get('availableEquipment') || 'Full gym equipment',
             medicalHistory: searchParams.get('medicalHistory') || 'None',
+            physicalSpecifications: physicalSpecifications,
         };
 
       try {

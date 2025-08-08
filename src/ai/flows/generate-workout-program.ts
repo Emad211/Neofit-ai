@@ -22,6 +22,7 @@ const GenerateWorkoutProgramInputSchema = z.object({
   workoutLocation: z.enum(['gym', 'home']).describe('Where the user plans to work out.'),
   availableEquipment: z.string().describe('A comma-separated list of equipment available to the user.'),
   medicalHistory: z.string().describe('Any medical history or injuries the user has reported.'),
+  physicalSpecifications: z.string().describe('Physical specs of the user such as height, weight, gender, age, and body type.'),
 });
 export type GenerateWorkoutProgramInput = z.infer<typeof GenerateWorkoutProgramInputSchema>;
 
@@ -62,6 +63,7 @@ const prompt = ai.definePrompt({
     USER PROFILE:
     - Goal: {{{goals}}}
     - Fitness Level: {{{fitnessLevel}}}
+    - Physical Specs (Height, Weight, Body Type, etc.): {{{physicalSpecifications}}}
     - Training Days Per Week: {{{trainingDays}}}
     - Preferred Session Duration: {{{trainingDuration}}}
     - Preferred Training Time: {{{trainingTime}}}
@@ -74,6 +76,7 @@ const prompt = ai.definePrompt({
         - For 2-3 days, a 'Full Body' split is effective.
         - For 4 days, an 'Upper/Lower' split is a great choice.
         - For 5-6 days, a 'Push/Pull/Legs' or Body Part split works well.
+        - Consider the user's body type. Ectomorphs might benefit from more rest days, while Endomorphs might need more frequent cardio sessions.
         - Include active recovery or rest days. For every training day, create a corresponding workout object. Rest days should not have a workout object.
     2.  **Create Daily Workouts**: For each training day in the split:
         - Define a clear 'title' and 'focus'.
