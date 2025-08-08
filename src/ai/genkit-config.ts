@@ -2,7 +2,6 @@ import { config } from 'dotenv';
 config();
 
 import '@/ai/flows/get-alternative-exercise.ts';
-import '@/ai/flows/ai-coach-chat.ts';
 import '@/ai/flows/onboarding-analysis.ts';
 import '@/ai/flows/dynamic-program-adaptation.ts';
 import '@/ai/flows/suggest-meal-alternative.ts';
