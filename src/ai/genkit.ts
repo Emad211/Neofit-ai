@@ -6,11 +6,8 @@ import {googleAI} from '@genkit-ai/googleai';
 if (!(global as any).genkit) {
   (global as any).genkit = genkit({
     plugins: [googleAI({apiVersion: 'v1'})],
-  });
-
-  // Set a default model for all generate calls.
-  (global as any).genkit.configure({
-    model: 'googleai/gemini-1.5-flash'
+    // Set a default model for all generate calls directly in the main config.
+    model: 'googleai/gemini-1.5-flash',
   });
 }
 
