@@ -7,12 +7,13 @@ import { useUserProfile } from '@/context/user-profile-context';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronRight, Edit, LogOut, FileText } from 'lucide-react';
+import { ChevronRight, Edit, LogOut, FileText, UserCog, Mail, Lock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ModeToggle } from '@/components/mode-toggle';
+import { Separator } from '@/components/ui/separator';
 
 const SettingsItem = ({ icon, title, description, href }: { icon: React.ReactNode, title: string, description: string, href: string }) => (
-    <Link href={href}>
+    <Link href={href} className="block">
         <div className="flex items-center p-4 rounded-lg hover:bg-secondary transition-colors">
             <div className="mr-4 text-primary">{icon}</div>
             <div className="flex-grow">
@@ -64,7 +65,7 @@ export default function ProfilePage() {
       <main className="space-y-8 max-w-2xl mx-auto">
         <Card>
             <CardHeader>
-                <CardTitle>My Profile</CardTitle>
+                <CardTitle>Plan Details</CardTitle>
             </CardHeader>
             <CardContent className="p-0 divide-y divide-border">
                  <SettingsItem 
@@ -76,12 +77,38 @@ export default function ProfilePage() {
                  <SettingsItem 
                     icon={<Edit className="h-6 w-6"/>}
                     title="Edit My Details & Plan"
-                    description="Update your goals, physical stats, and lifestyle"
+                    description="Update your goals, stats, and lifestyle"
                     href="/profile/edit"
                 />
             </CardContent>
         </Card>
         
+        <Card>
+            <CardHeader>
+                <CardTitle>Account Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 divide-y divide-border">
+                 <SettingsItem 
+                    icon={<UserCog className="h-6 w-6"/>}
+                    title="Edit Profile"
+                    description="Change your name and profile picture"
+                    href="#" // Placeholder link
+                />
+                 <SettingsItem 
+                    icon={<Mail className="h-6 w-6"/>}
+                    title="Change Email"
+                    description="Update the email address for your account"
+                    href="#" // Placeholder link
+                />
+                 <SettingsItem 
+                    icon={<Lock className="h-6 w-6"/>}
+                    title="Change Password"
+                    description="Update your account password"
+                    href="#" // Placeholder link
+                />
+            </CardContent>
+        </Card>
+
         <Card>
             <CardHeader>
                 <CardTitle>App Settings</CardTitle>
