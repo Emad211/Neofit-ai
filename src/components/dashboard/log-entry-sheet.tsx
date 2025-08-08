@@ -27,7 +27,7 @@ import { calculateActivityCalories } from "@/ai/flows/calculate-activity-calorie
 import { useToast } from "@/hooks/use-toast"
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group"
 import { cn } from "@/lib/utils"
-import { useUserData } from "@/context/user-profile-context"
+import { useUserData, CombinedLog } from "@/context/user-profile-context"
 
 export type LogType = "meal" | "activity" | "weight" | null;
 
@@ -52,38 +52,48 @@ const logConfig = {
 interface LogEntrySheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  logType: Exclude<LogType, null>;
+  logType: LogType;
+  editableLog?: CombinedLog | null;
+  onClose?: () => void;
 }
 
-export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProps) {
-    const config = logConfig[logType];
+export function LogEntrySheet({ open, onOpenChange, logType, editableLog, onClose }: LogEntrySheetProps) {
+    const config = logType ? logConfig[logType] : null;
     const { toast } = useToast();
-    const { userProfile, logMeal, logActivity, logWeight } = useUserData();
+    const { userProfile, logMeal, logActivity, logWeight, updateLog } = useUserData();
     const [isCalculating, setIsCalculating] = React.useState(false);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [calculatedCalories, setCalculatedCalories] = React.useState<number | null>(null);
 
-    const { register, handleSubmit, watch, setValue, control, reset } = useForm({
-        defaultValues: {
-            // Activity
-            activityType: '',
-            durationMinutes: '',
-            intensity: 'medium',
-            caloriesBurned: '',
-            // Meal
-            mealType: 'snack',
-            description: '',
-            calories: '',
-            // Weight
-            weight: ''
+    const isEditMode = !!editableLog;
+
+    const { register, handleSubmit, watch, setValue, control, reset } = useForm();
+    
+    React.useEffect(() => {
+        if (open && editableLog) {
+            // Pre-fill form with log data for editing
+            reset(editableLog);
+        } else {
+            // Reset to default for new entries
+            reset({
+                activityType: '',
+                durationMinutes: '',
+                intensity: 'medium',
+                caloriesBurned: '',
+                mealType: 'snack',
+                description: '',
+                calories: '',
+                weight: ''
+            });
         }
-    });
+        setCalculatedCalories(null);
+    }, [open, editableLog, reset]);
 
     React.useEffect(() => {
-        // Reset form when the sheet is closed or logType changes
-        reset();
-        setCalculatedCalories(null);
-    }, [open, logType, reset]);
+        if (!open && onClose) {
+            onClose();
+        }
+    }, [open, onClose]);
     
     const activityType = watch('activityType');
     const durationMinutes = watch('durationMinutes');
@@ -136,37 +146,56 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
 
 
     const onFormSubmit = async (data: any) => {
+        if (!logType) return;
         setIsSubmitting(true);
+        
         try {
-            switch(logType) {
-                case 'meal':
-                    await logMeal({
-                        mealType: data.mealType,
-                        description: data.description,
-                        calories: parseInt(data.calories, 10)
-                    });
-                    break;
-                case 'activity':
-                    await logActivity({
-                        activityType: data.activityType,
-                        durationMinutes: parseInt(data.durationMinutes, 10),
-                        intensity: data.intensity,
-                        caloriesBurned: parseInt(data.caloriesBurned, 10) || 0
-                    });
-                    break;
-                case 'weight':
-                    await logWeight({
-                        weight: parseFloat(data.weight)
-                    });
-                    break;
+            if (isEditMode && editableLog) {
+                // Update existing log
+                const updatedData = { ...editableLog, ...data };
+                // Convert string numbers back to numbers
+                if (updatedData.calories) updatedData.calories = parseInt(updatedData.calories, 10);
+                if (updatedData.durationMinutes) updatedData.durationMinutes = parseInt(updatedData.durationMinutes, 10);
+                if (updatedData.caloriesBurned) updatedData.caloriesBurned = parseInt(updatedData.caloriesBurned, 10);
+                if (updatedData.weight) updatedData.weight = parseFloat(updatedData.weight);
+
+                await updateLog(editableLog.id!, logType, updatedData);
+                 toast({
+                    title: "Log Updated!",
+                    description: `Your ${logType} has been successfully updated.`,
+                });
+            } else {
+                // Create new log
+                 switch(logType) {
+                    case 'meal':
+                        await logMeal({
+                            mealType: data.mealType,
+                            description: data.description,
+                            calories: parseInt(data.calories, 10)
+                        });
+                        break;
+                    case 'activity':
+                        await logActivity({
+                            activityType: data.activityType,
+                            durationMinutes: parseInt(data.durationMinutes, 10),
+                            intensity: data.intensity,
+                            caloriesBurned: parseInt(data.caloriesBurned, 10) || 0
+                        });
+                        break;
+                    case 'weight':
+                        await logWeight({
+                            weight: parseFloat(data.weight)
+                        });
+                        break;
+                }
+                 toast({
+                    title: "Log Saved!",
+                    description: `Your ${logType} has been successfully saved.`,
+                });
             }
-            toast({
-                title: "Log Saved!",
-                description: `Your ${logType} has been successfully saved.`,
-            })
             onOpenChange(false);
         } catch (error) {
-             console.error(`Failed to log ${logType}`, error);
+             console.error(`Failed to save ${logType}`, error);
              toast({
                 variant: 'destructive',
                 title: "Save Failed",
@@ -177,6 +206,8 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
         }
     }
 
+  if (!logType || !config) return null;
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent>
@@ -184,7 +215,7 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
             <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
                 <config.icon className="h-6 w-6 text-primary" />
-                {config.title}
+                {isEditMode ? `Edit ${logType.charAt(0).toUpperCase() + logType.slice(1)} Log` : config.title}
             </SheetTitle>
             <SheetDescription>{config.description}</SheetDescription>
             </SheetHeader>
@@ -197,7 +228,7 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
                             name="mealType"
                             control={control}
                             render={({ field }) => (
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <SelectTrigger className="sm:col-span-3">
                                         <SelectValue placeholder="Select a meal" />
                                     </SelectTrigger>
@@ -240,7 +271,7 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
                                 render={({ field }) => (
                                      <RadioGroup
                                         onValueChange={field.onChange}
-                                        defaultValue={field.value}
+                                        value={field.value}
                                         className="grid grid-cols-3 gap-2"
                                         >
                                         {['low', 'medium', 'high'].map((level) => (
@@ -256,7 +287,7 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
                     </div>
                     <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
                         <Label htmlFor="calories-burned" className="sm:text-right">Calories</Label>
-                        <Input id="calories-burned" type="number" placeholder="Click calculate" className="sm:col-span-3" {...register("caloriesBurned")} readOnly />
+                        <Input id="calories-burned" type="number" placeholder="Click calculate" className="sm:col-span-3" {...register("caloriesBurned")} />
                     </div>
                     <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
                         <div className="sm:col-start-2 sm:col-span-3">
@@ -288,7 +319,7 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
             </SheetClose>
             <Button type="submit" disabled={isSubmitting}>
                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Log
+                {isEditMode ? "Save Changes" : "Save Log"}
             </Button>
             </SheetFooter>
         </form>

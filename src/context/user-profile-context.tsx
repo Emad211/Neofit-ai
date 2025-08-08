@@ -1,9 +1,8 @@
-
 // src/context/user-profile-context.tsx
 "use client";
 
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, addDoc, onSnapshot, query, orderBy, updateDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import type { GenerateNutritionProgramOutput } from '@/ai/flows/generate-nutrition-program';
@@ -14,6 +13,7 @@ const auth = getAuth(app);
 
 // Keep the same UserProfile type
 export type UserProfile = {
+  name: string;
   goal: "lose_weight" | "gain_muscle" | "improve_fitness";
   gender: "male" | "female" | "other";
   age: number;
@@ -80,7 +80,7 @@ export type WorkoutLog = {
         logs: { set: number; reps: string; weight: string; }[]
     }[]
 }
-type CombinedLog = MealLog | ActivityLog | WeightLog | WorkoutLog;
+export type CombinedLog = MealLog | ActivityLog | WeightLog | WorkoutLog;
 
 
 interface UserDataContextType {
@@ -90,16 +90,25 @@ interface UserDataContextType {
   workoutPlan: WorkoutPlan | null;
   saveUserProfile: (profileData: UserProfile) => Promise<void>;
   savePlans: (plans: { nutritionPlan: NutritionPlan, workoutPlan: WorkoutPlan }) => Promise<void>;
-  saveWorkoutLog: (logData: Omit<WorkoutLog, 'logType' | 'loggedAt'>) => Promise<void>;
-  logMeal: (logData: Omit<MealLog, 'logType' | 'loggedAt'>) => Promise<void>;
-  logActivity: (logData: Omit<ActivityLog, 'logType' | 'loggedAt'>) => Promise<void>;
-  logWeight: (logData: Omit<WeightLog, 'logType' | 'loggedAt'>) => Promise<void>;
+  saveWorkoutLog: (logData: Omit<WorkoutLog, 'logType' | 'loggedAt' | 'id'>) => Promise<void>;
+  logMeal: (logData: Omit<MealLog, 'logType' | 'loggedAt' | 'id'>) => Promise<void>;
+  logActivity: (logData: Omit<ActivityLog, 'logType' | 'loggedAt'| 'id'>) => Promise<void>;
+  logWeight: (logData: Omit<WeightLog, 'logType' | 'loggedAt' | 'id'>) => Promise<void>;
+  updateLog: (logId: string, logType: CombinedLog['logType'], data: Partial<CombinedLog>) => Promise<void>;
+  deleteLog: (logId: string, logType: CombinedLog['logType']) => Promise<void>;
   resetUserData: () => Promise<void>;
   combinedLogs: CombinedLog[];
   isLoading: boolean;
 }
 
 const UserDataContext = createContext<UserDataContextType | undefined>(undefined);
+
+const logTypeToCollectionName = {
+    meal: 'meal_logs',
+    activity: 'activity_logs',
+    weight: 'weight_logs',
+    workout: 'workout_logs',
+} as const;
 
 export const UserDataProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -109,21 +118,13 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
   const [combinedLogs, setCombinedLogs] = useState<CombinedLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Mock user ID for demonstration purposes
   const MOCK_USER_ID = 'mock-user-123';
 
   // Real-time listeners
   useEffect(() => {
     if (!user) return;
 
-    const collectionsToListen = {
-        meal_logs: 'meal',
-        activity_logs: 'activity',
-        weight_logs: 'weight',
-        workout_logs: 'workout',
-    } as const;
-
-    const unsubscribes = Object.entries(collectionsToListen).map(([collectionName, logType]) => {
+    const unsubscribes = Object.entries(logTypeToCollectionName).map(([logType, collectionName]) => {
         const q = query(collection(db, 'profiles', user.uid, collectionName), orderBy('loggedAt', 'desc'));
         return onSnapshot(q, (querySnapshot) => {
             const logs = querySnapshot.docs.map(doc => ({ 
@@ -133,7 +134,6 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
             } as CombinedLog));
             
             setCombinedLogs(prevLogs => {
-                // Filter out old logs of the same type and merge with new ones
                 const otherLogs = prevLogs.filter(log => log.logType !== logType);
                 const updatedLogs = [...otherLogs, ...logs].sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
                 return updatedLogs;
@@ -159,11 +159,16 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
 
       if (profileDoc.exists()) {
         setUserProfile(profileDoc.data() as UserProfile);
+      } else {
+        setUserProfile(null);
       }
       if (plansDoc.exists()) {
         const plansData = plansDoc.data();
         setNutritionPlan(plansData.nutritionPlan);
         setWorkoutPlan(plansData.workoutPlan);
+      } else {
+        setNutritionPlan(null);
+        setWorkoutPlan(null);
       }
     } catch (error) {
       console.error("Failed to fetch user data from Firestore", error);
@@ -173,8 +178,6 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
   };
 
   useEffect(() => {
-    // In a real app, you would use Firebase Auth
-    // For now, we simulate a logged-in user with a mock ID
     const mockUser = { uid: MOCK_USER_ID } as User;
     setUser(mockUser);
     fetchData(mockUser.uid);
@@ -222,29 +225,43 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
         await addDoc(logsCollectionRef, dataToSave);
     } catch (error) {
         console.error(`Failed to save to ${collectionName}`, error);
-        throw error; // re-throw error to be caught by the caller
+        throw error;
     }
   }
   
-  const logMeal = (logData: Omit<MealLog, 'logType' | 'loggedAt'>) => logGeneric('meal_logs', logData);
-  const logActivity = (logData: Omit<ActivityLog, 'logType' | 'loggedAt'>) => logGeneric('activity_logs', logData);
-  const logWeight = (logData: Omit<WeightLog, 'logType' | 'loggedAt'>) => logGeneric('weight_logs', logData);
-  const saveWorkoutLog = (logData: Omit<WorkoutLog, 'logType' | 'loggedAt'>) => logGeneric('workout_logs', logData);
+  const logMeal = (logData: Omit<MealLog, 'logType' | 'loggedAt' | 'id'>) => logGeneric('meal_logs', logData);
+  const logActivity = (logData: Omit<ActivityLog, 'logType' | 'loggedAt' | 'id'>) => logGeneric('activity_logs', logData);
+  const logWeight = (logData: Omit<WeightLog, 'logType' | 'loggedAt' | 'id'>) => logGeneric('weight_logs', logData);
+  const saveWorkoutLog = (logData: Omit<WorkoutLog, 'logType' | 'loggedAt'| 'id'>) => logGeneric('workout_logs', logData);
+
+  const updateLog = async (logId: string, logType: CombinedLog['logType'], data: Partial<CombinedLog>) => {
+    if (!user) throw new Error("No user is signed in to update log.");
+    const collectionName = logTypeToCollectionName[logType];
+    const logRef = doc(db, 'profiles', user.uid, collectionName, logId);
+    await updateDoc(logRef, data);
+  };
+
+  const deleteLog = async (logId: string, logType: CombinedLog['logType']) => {
+    if (!user) throw new Error("No user is signed in to delete log.");
+    const collectionName = logTypeToCollectionName[logType];
+    const logRef = doc(db, 'profiles', user.uid, collectionName, logId);
+    await deleteDoc(logRef);
+  };
 
   const resetUserData = async () => {
     if (!user) {
       throw new Error("No user is signed in to reset data.");
     }
+    setIsLoading(true);
     try {
-      // Note: Deleting subcollections is complex and not done here for simplicity.
-      // In a production app, a Cloud Function would be needed for this.
       const profileRef = doc(db, 'profiles', user.uid);
       const plansRef = doc(db, 'plans', user.uid);
       
+      // In a real app, deleting subcollections requires a Cloud Function.
+      // For this demo, we'll just delete the main docs.
       await deleteDoc(profileRef);
       await deleteDoc(plansRef);
       
-      // Clear local state
       setUserProfile(null);
       setNutritionPlan(null);
       setWorkoutPlan(null);
@@ -252,12 +269,14 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
     } catch (error) {
       console.error("Failed to reset user data in Firestore", error);
       throw error;
+    } finally {
+        setIsLoading(false);
     }
   };
 
 
   return (
-    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, saveUserProfile, savePlans, saveWorkoutLog, logMeal, logActivity, logWeight, resetUserData, combinedLogs, isLoading }}>
+    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, saveUserProfile, savePlans, saveWorkoutLog, logMeal, logActivity, logWeight, updateLog, deleteLog, resetUserData, combinedLogs, isLoading }}>
       {children}
     </UserDataContext.Provider>
   );

@@ -1,48 +1,85 @@
 // src/components/dashboard/daily-feed.tsx
 "use client";
 
+import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Apple, Dumbbell, Weight } from 'lucide-react';
+import { Apple, Dumbbell, Weight, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { DailyMotivationCard } from "./daily-motivation-card";
-import Link from "next/link";
-import React from "react";
 import { useUserData } from "@/context/user-profile-context";
 import { format } from 'date-fns';
 import { Skeleton } from "../ui/skeleton";
+import type { CombinedLog } from "@/context/user-profile-context";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { LogEntrySheet } from "./log-entry-sheet";
+import { useToast } from "@/hooks/use-toast";
 
 
 const iconMapping = {
     meal: Apple,
     activity: Dumbbell,
-    weight: Weight
+    weight: Weight,
+    workout: Dumbbell,
 }
 
 export function DailyFeed({ quote }: { quote: string }) {
-    const { combinedLogs, isLoading, userProfile } = useUserData();
+    const { combinedLogs, isLoading, deleteLog } = useUserData();
+    const { toast } = useToast();
     
-    const handleViewMealDetails = (mealId: string) => {
-        // Placeholder for showing a meal details modal or bottom sheet
-        console.log(`Viewing details for meal: ${mealId}`);
-    }
+    const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+    const [editableLog, setEditableLog] = React.useState<CombinedLog | null>(null);
 
-    const renderFeedItem = (item: any) => {
+    const handleEdit = (log: CombinedLog) => {
+        setEditableLog(log);
+        setIsSheetOpen(true);
+    }
+    
+    const handleDelete = async (logId: string, logType: CombinedLog['logType']) => {
+        try {
+            await deleteLog(logId, logType);
+            toast({
+                title: "Log Deleted",
+                description: "The entry has been successfully removed.",
+            });
+        } catch (error) {
+            console.error("Failed to delete log:", error);
+            toast({
+                variant: 'destructive',
+                title: "Deletion Failed",
+                description: "There was a problem deleting the log. Please try again.",
+            });
+        }
+    }
+    
+
+    const renderFeedItem = (item: CombinedLog) => {
         const Icon = iconMapping[item.logType as keyof typeof iconMapping] || Dumbbell;
         
-        // Use user's timezone if available, otherwise default to local
         const itemDate = new Date(item.loggedAt);
-        const timeString = format(itemDate, 'p', { 
-            // In a real app, you might use a library like date-fns-tz for proper timezone formatting
-            // For now, this will format according to the user's browser locale which is a good approximation
-        });
+        const timeString = format(itemDate, 'p');
 
 
         let title = '';
         let description = '';
         let image = null;
         let dataAiHint = null;
-        let footer = null;
 
         switch (item.logType) {
             case 'activity':
@@ -61,6 +98,12 @@ export function DailyFeed({ quote }: { quote: string }) {
                 title = 'Weight Logged';
                 description = `${item.weight} kg`;
                 break;
+            case 'workout':
+                title = `Workout: ${item.workoutName}`;
+                description = `${item.durationMinutes} min · ${item.totalVolume} kg Volume`;
+                image = 'https://placehold.co/600x400.png';
+                dataAiHint = 'gym workout';
+                break;
         }
 
         return (
@@ -74,11 +117,45 @@ export function DailyFeed({ quote }: { quote: string }) {
                         <CardTitle>{title}</CardTitle>
                         <CardDescription>{timeString}</CardDescription>
                     </div>
+                    <AlertDialog>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                    <MoreVertical className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEdit(item)}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    <span>Edit</span>
+                                </DropdownMenuItem>
+                                <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem className="text-destructive">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        <span>Delete</span>
+                                    </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                         <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete this log entry.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(item.id!, item.logType)}>
+                                Delete
+                            </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </CardHeader>
                 <CardContent>
                     <p className="text-muted-foreground">{description}</p>
                 </CardContent>
-                {footer && <CardFooter>{footer}</CardFooter>}
             </Card>
         )
     }
@@ -120,6 +197,14 @@ export function DailyFeed({ quote }: { quote: string }) {
                     )
                 )}
             </div>
+            
+            <LogEntrySheet
+                open={isSheetOpen}
+                onOpenChange={setIsSheetOpen}
+                logType={editableLog?.logType ?? null}
+                editableLog={editableLog}
+                onClose={() => setEditableLog(null)}
+            />
         </div>
     );
 }

@@ -22,7 +22,7 @@ const actions: Action[] = [
 export function SpeedDial() {
   const [isOpen, setIsOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [activeLogType, setActiveLogType] = useState<Exclude<LogType, null>>('meal');
+  const [activeLogType, setActiveLogType] = useState<Exclude<LogType, null> | null>(null);
 
   const handleActionClick = (logType: Exclude<LogType, null>) => {
     setActiveLogType(logType);
@@ -94,6 +94,7 @@ export function SpeedDial() {
           open={sheetOpen}
           onOpenChange={setSheetOpen}
           logType={activeLogType}
+          onClose={() => setActiveLogType(null)}
         />
     </>
   );
