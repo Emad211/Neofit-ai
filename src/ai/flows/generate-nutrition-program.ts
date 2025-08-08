@@ -93,7 +93,7 @@ const prompt = ai.definePrompt({
         - A list of simple ingredients with quantities and a category.
         - A placeholder image URL: ALWAYS use \`https://placehold.co/600x400.png\`.
         - A \`dataAiHint\` with one or two keywords for image generation (e.g., "grilled chicken").
-    4.  **Summarize**: Write a brief, encouraging summary of the plan you've created.
+    4.  **Summarize**: Write a brief, encouraging summary of the plan you've created. In the summary, specifically mention how the plan is tailored to the user's goal ({{{goals}}}), budget ({{{costLevel}}}), and cooking skill ({{{cookingSkill}}}). This shows the user you've paid attention to their specific needs.
 
     Return the complete, valid JSON object containing the 7-day meal plan and the summary.
     `,

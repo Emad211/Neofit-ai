@@ -90,7 +90,7 @@ const prompt = ai.definePrompt({
         - Avoid exercises that could be contraindicated by the 'medicalHistory' (e.g., no high-impact exercises for knee pain).
         - For each exercise, specify the number of 'sets' and a target 'reps' range.
     3.  **Provide Metadata**: For each daily workout, estimate the 'duration' and 'calories' burned. The duration should align with the user's preference.
-    4.  **Summarize**: Write a brief, motivational summary of the plan, mentioning how it aligns with their key goals.
+    4.  **Summarize**: Write a brief, motivational summary of the plan. Specifically mention how the workout split was chosen based on their {{{trainingDays}}} available days and {{{fitnessLevel}}} level, and how the exercises are tailored to their {{{workoutLocation}}} and equipment. This personalization is key.
 
     Return a single, valid JSON object containing the list of daily workout objects and the summary.
     `,
