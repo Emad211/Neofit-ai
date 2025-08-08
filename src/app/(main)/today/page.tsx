@@ -1,17 +1,17 @@
 import { ActivityRings } from '@/components/dashboard/activity-rings';
 import { DailyFeed } from '@/components/dashboard/daily-feed';
 import { SpeedDial } from '@/components/dashboard/speed-dial';
-import { getDailyMotivationalQuote } from "@/ai/flows/daily-motivational-quote";
+import { getPersonalizedQuote } from "@/lib/data/static-quotes";
 
-async function fetchQuote() {
+
+function getQuote(userName: string) {
     try {
-        // In a real app, you'd pass the actual user ID.
-        const quote = await getDailyMotivationalQuote({ userId: '12345' });
+        const quote = getPersonalizedQuote(userName);
         return quote;
     } catch (error) {
         console.error("Failed to fetch motivational quote:", error);
         // Return a fallback quote in case of an error
-        return { quote: "The best time to start was yesterday. The next best time is now." };
+        return "The best time to start was yesterday. The next best time is now.";
     }
 }
 
@@ -24,7 +24,8 @@ const todayProgress = {
 
 
 export default async function TodayPage() {
-  const quoteData = await fetchQuote();
+  // In a real app, you'd get the user's name from auth.
+  const quote = getQuote("Sara");
 
   return (
     <div className="relative min-h-screen p-4 sm:p-6 lg:p-8">
@@ -39,7 +40,7 @@ export default async function TodayPage() {
       
       <main className="space-y-8 pb-24">
         <ActivityRings progress={todayProgress} />
-        <DailyFeed quote={quoteData.quote} />
+        <DailyFeed quote={quote} />
       </main>
 
       <SpeedDial />
