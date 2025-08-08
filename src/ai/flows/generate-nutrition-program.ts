@@ -15,13 +15,18 @@ import {z} from 'genkit';
 const GenerateNutritionProgramInputSchema = z.object({
   userId: z.string().describe('The ID of the user.'),
   goals: z.string().describe('The fitness goals of the user (e.g., "lose_weight", "gain_muscle").'),
+  performanceGoals: z.string().optional().describe('Specific performance goals, like "run a 5k" or "increase bench press".'),
   fitnessLevel: z.enum(['beginner', 'intermediate', 'advanced']).describe('The fitness level of the user.'),
-  physicalSpecifications: z.string().describe('Physical specs of the user such as height, weight, gender, and age.'),
-  lifestyle: z.string().describe('Lifestyle information including daily activity, sleep hours, and stress levels.'),
+  physicalSpecifications: z.string().describe('Physical specs of the user such as height, weight, gender, age, and body type.'),
+  lifestyle: z.string().describe('General daily activity level, e.g., "sedentary office job".'),
+  sleepHours: z.string().describe('Average hours of sleep per night.'),
+  stressLevel: z.string().describe('Average stress level (e.g., "low", "medium", "high").'),
   eatingHabits: z.string().describe('Eating habits including disliked foods, allergies, or specific dietary preferences like vegetarian.'),
-  cookingSkill: z.enum(['beginner', 'intermediate', 'advanced']).describe('The user\'s cooking skill level.'),
-  costLevel: z.enum(['low', 'medium', 'high']).describe('The user\'s preferred budget for food.'),
+  cookingSkill: z.enum(['beginner', 'intermediate', 'advanced']).describe("The user's cooking skill level."),
+  costLevel: z.enum(['low', 'medium', 'high']).describe("The user's preferred budget for food."),
   trainingDays: z.number().describe('The number of days the user plans to train per week.'),
+  trainingDuration: z.string().describe("The user's preferred workout duration per session (e.g., '30-45 minutes')."),
+  trainingTime: z.string().describe("The user's preferred time of day to work out (e.g., 'morning', 'evening')."),
 });
 export type GenerateNutritionProgramInput = z.infer<typeof GenerateNutritionProgramInputSchema>;
 
@@ -65,20 +70,22 @@ const prompt = ai.definePrompt({
     prompt: `You are a world-class AI Nutritionist. Your task is to create a hyper-personalized, 7-day nutrition plan for a user based on their detailed profile. The plan must be realistic, sustainable, and aligned with their goals.
 
     USER PROFILE:
-    - Goal: {{{goals}}}
+    - Main Goal: {{{goals}}}
+    - Specific Performance Goal: {{{performanceGoals}}}
     - Fitness Level: {{{fitnessLevel}}}
-    - Physical Specs: {{{physicalSpecifications}}}
-    - Lifestyle Details (Activity, Sleep, Stress): {{{lifestyle}}}
+    - Physical Specs (Height, Weight, Gender, Age, Body Type): {{{physicalSpecifications}}}
+    - Daily Activity (Lifestyle): {{{lifestyle}}}
+    - Sleep & Stress: {{{sleepHours}}} of sleep, {{{stressLevel}}} stress.
     - Dietary Info (Dislikes, Allergies, Preferences): {{{eatingHabits}}}
     - Cooking Skill: {{{cookingSkill}}}
     - Food Budget: {{{costLevel}}}
-    - Weekly Training Days: {{{trainingDays}}}
+    - Weekly Training Schedule: {{{trainingDays}}} days per week, for {{{trainingDuration}}} per session, usually in the {{{trainingTime}}}.
 
     YOUR TASKS:
-    1.  **Calculate Caloric Needs**: Based on the user's entire profile, estimate their daily caloric needs. Adjust for their goal (e.g., slight deficit for weight loss, slight surplus for muscle gain).
+    1.  **Calculate Caloric Needs**: Based on the user's entire profile, estimate their daily caloric needs. Adjust for their goal (e.g., slight deficit for weight loss, slight surplus for muscle gain). Consider their training schedule and sleep patterns.
     2.  **Design a 7-Day Plan**: Create a meal plan for every day of the week (Monday to Sunday).
         - Each day should have 2-4 meals (e.g., Breakfast, Lunch, Dinner, and optionally a Snack).
-        - Distribute calories appropriately throughout the day.
+        - Distribute calories appropriately. Pay special attention to the user's preferred training time to plan pre- and post-workout meals.
         - The meal choices should reflect the user's budget, cooking skill, and avoid their disliked foods/allergies. Adhere to any dietary preferences like vegetarian.
     3.  **Detail Each Meal**: For every meal, provide:
         - A descriptive name (e.g., "Grilled Chicken Salad with Avocado").

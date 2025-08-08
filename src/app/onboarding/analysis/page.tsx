@@ -76,18 +76,24 @@ function AnalysisResult() {
         const nutritionParams: GenerateNutritionProgramInput = {
             userId: '12345',
             goals: searchParams.get('goal') || 'improve_fitness',
+            performanceGoals: searchParams.get('performanceGoals') || undefined,
             fitnessLevel: (searchParams.get('fitnessLevel') as 'beginner' | 'intermediate' | 'advanced') || 'beginner',
             physicalSpecifications: physicalSpecifications,
-            lifestyle: `Daily activity: ${searchParams.get('lifestyle') || 'sedentary'}, Sleep: ${searchParams.get('sleepHours') || '7-8'} hours, Stress: ${searchParams.get('stressLevel') || 'medium'}`,
-            eatingHabits: `Dietary preference: ${searchParams.get('dietaryPreference') || 'none'}; Dislikes/Allergies: ${searchParams.get('eatingHabits') || 'None'}`,
+            lifestyle: searchParams.get('lifestyle') || 'sedentary',
+            sleepHours: searchParams.get('sleepHours') || '7-8',
+            stressLevel: searchParams.get('stressLevel') || 'medium',
+            eatingHabits: searchParams.get('eatingHabits') || 'None',
             cookingSkill: (searchParams.get('cookingSkill') as 'beginner' | 'intermediate' | 'advanced') || 'intermediate',
             costLevel: (searchParams.get('costLevel') as 'low' | 'medium' | 'high') || 'medium',
             trainingDays: parseInt(searchParams.get('trainingDays') || '3', 10),
+            trainingDuration: searchParams.get('trainingDuration') || '45-60 minutes',
+            trainingTime: searchParams.get('trainingTime') || 'any',
         };
 
         const workoutParams: GenerateWorkoutProgramInput = {
             userId: '12345',
-            goals: searchParams.get('goals') || 'improve_fitness',
+            goals: searchParams.get('goal') || 'improve_fitness',
+            performanceGoals: searchParams.get('performanceGoals') || undefined,
             fitnessLevel: (searchParams.get('fitnessLevel') as 'beginner' | 'intermediate' | 'advanced') || 'beginner',
             trainingDays: parseInt(searchParams.get('trainingDays') || '3', 10),
             trainingDuration: searchParams.get('trainingDuration') || '45-60',
