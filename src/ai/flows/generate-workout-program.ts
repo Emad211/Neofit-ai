@@ -14,9 +14,11 @@ import {z} from 'genkit';
 
 const GenerateWorkoutProgramInputSchema = z.object({
   userId: z.string().describe('The ID of the user.'),
-  goals: z.string().describe('The fitness goals of the user (e.g., "lose_weight", "gain_muscle").'),
+  goals: z.string().describe('The fitness goals of the user (e.g., "lose_weight", "gain_muscle", "run a 5k").'),
   fitnessLevel: z.enum(['beginner', 'intermediate', 'advanced']).describe('The fitness level of the user.'),
   trainingDays: z.number().int().min(2).max(6).describe('The number of days the user wants to train per week.'),
+  trainingDuration: z.string().describe("The user's preferred workout duration per session (e.g., '30-45 minutes')."),
+  trainingTime: z.string().describe("The user's preferred time of day to work out (e.g., 'morning', 'evening')."),
   workoutLocation: z.enum(['gym', 'home']).describe('Where the user plans to work out.'),
   availableEquipment: z.string().describe('A comma-separated list of equipment available to the user.'),
   medicalHistory: z.string().describe('Any medical history or injuries the user has reported.'),
@@ -61,6 +63,8 @@ const prompt = ai.definePrompt({
     - Goal: {{{goals}}}
     - Fitness Level: {{{fitnessLevel}}}
     - Training Days Per Week: {{{trainingDays}}}
+    - Preferred Session Duration: {{{trainingDuration}}}
+    - Preferred Training Time: {{{trainingTime}}}
     - Workout Location: {{{workoutLocation}}}
     - Available Equipment: {{{availableEquipment}}}
     - Medical History/Injuries: {{{medicalHistory}}}
@@ -73,10 +77,11 @@ const prompt = ai.definePrompt({
         - Include active recovery or rest days. For every training day, create a corresponding workout object. Rest days should not have a workout object.
     2.  **Create Daily Workouts**: For each training day in the split:
         - Define a clear 'title' and 'focus'.
-        - Select 5-7 appropriate exercises. The exercises MUST be feasible with the user's 'availableEquipment' and 'workoutLocation'.
+        - Select an appropriate number of exercises based on the 'Preferred Session Duration'. A 60-minute session should have about 5-7 exercises.
+        - The exercises MUST be feasible with the user's 'availableEquipment' and 'workoutLocation'.
         - Avoid exercises that could be contraindicated by the 'medicalHistory' (e.g., no high-impact exercises for knee pain).
         - For each exercise, specify the number of 'sets' and a target 'reps' range.
-    3.  **Provide Metadata**: For each daily workout, estimate the 'duration' and 'calories' burned.
+    3.  **Provide Metadata**: For each daily workout, estimate the 'duration' and 'calories' burned. The duration should align with the user's preference.
     4.  **Summarize**: Write a brief, motivational summary of the plan.
 
     Return a single, valid JSON object containing the list of daily workout objects and the summary.

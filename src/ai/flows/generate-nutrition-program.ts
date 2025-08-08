@@ -17,8 +17,9 @@ const GenerateNutritionProgramInputSchema = z.object({
   goals: z.string().describe('The fitness goals of the user (e.g., "lose_weight", "gain_muscle").'),
   fitnessLevel: z.enum(['beginner', 'intermediate', 'advanced']).describe('The fitness level of the user.'),
   physicalSpecifications: z.string().describe('Physical specs of the user such as height, weight, gender, and age.'),
-  lifestyle: z.string().describe('Lifestyle information of the user such as occupation and activity levels.'),
-  eatingHabits: z.string().describe('Eating habits of the user including disliked foods or allergies.'),
+  lifestyle: z.string().describe('Lifestyle information including daily activity, sleep hours, and stress levels.'),
+  eatingHabits: z.string().describe('Eating habits including disliked foods, allergies, or specific dietary preferences like vegetarian.'),
+  cookingSkill: z.enum(['beginner', 'intermediate', 'advanced']).describe('The user\'s cooking skill level.'),
   costLevel: z.enum(['low', 'medium', 'high']).describe('The user\'s preferred budget for food.'),
   trainingDays: z.number().describe('The number of days the user plans to train per week.'),
 });
@@ -67,17 +68,18 @@ const prompt = ai.definePrompt({
     - Goal: {{{goals}}}
     - Fitness Level: {{{fitnessLevel}}}
     - Physical Specs: {{{physicalSpecifications}}}
-    - Daily Activity: {{{lifestyle}}}
-    - Disliked Foods/Allergies: {{{eatingHabits}}}
+    - Lifestyle Details (Activity, Sleep, Stress): {{{lifestyle}}}
+    - Dietary Info (Dislikes, Allergies, Preferences): {{{eatingHabits}}}
+    - Cooking Skill: {{{cookingSkill}}}
     - Food Budget: {{{costLevel}}}
     - Weekly Training Days: {{{trainingDays}}}
 
     YOUR TASKS:
-    1.  **Calculate Caloric Needs**: Based on the user's profile, estimate their daily caloric needs. Adjust for their goal (e.g., slight deficit for weight loss, slight surplus for muscle gain).
-    2.  **Design a 7-Day Plan**: Create a meal plan for each day of the week (Monday to Sunday).
+    1.  **Calculate Caloric Needs**: Based on the user's entire profile, estimate their daily caloric needs. Adjust for their goal (e.g., slight deficit for weight loss, slight surplus for muscle gain).
+    2.  **Design a 7-Day Plan**: Create a meal plan for every day of the week (Monday to Sunday).
         - Each day should have 2-4 meals (e.g., Breakfast, Lunch, Dinner, and optionally a Snack).
         - Distribute calories appropriately throughout the day.
-        - The meal choices should reflect the user's budget (costLevel) and avoid their disliked foods.
+        - The meal choices should reflect the user's budget, cooking skill, and avoid their disliked foods/allergies. Adhere to any dietary preferences like vegetarian.
     3.  **Detail Each Meal**: For every meal, provide:
         - A descriptive name (e.g., "Grilled Chicken Salad with Avocado").
         - Estimated calories (as an integer).
