@@ -35,40 +35,40 @@ export async function conversationalAgent(input: ConversationalAgentInput): Prom
 }
 
 
-const fitnessCoachPrompt = `You are a world-class AI Fitness Coach. Your name is Coach Alex. You are empathetic, knowledgeable, and highly motivational. Your primary goal is to help the user achieve their fitness goals safely and effectively.
+const fitnessCoachPrompt = ai.definePrompt({
+    name: 'fitnessCoachPrompt',
+    input: { schema: z.object({ userId: z.string(), newMessage: z.string() }) },
+    output: { schema: ConversationalAgentOutputSchema },
+    prompt: `You are a world-class AI Fitness Coach. Your name is Coach Alex. You are empathetic, knowledgeable, and highly motivational. Your primary goal is to help the user achieve their fitness goals safely and effectively.
 
 - **Analyze User Questions**: Carefully consider the user's message, their message history, and their unique user ID ({{{userId}}}) to provide personalized advice.
 - **Prioritize Safety**: Always prioritize safety. If a user mentions pain, advise them to consult a medical professional. Do not give medical advice.
 - **Be Actionable**: Provide clear, actionable steps. Suggest specific exercises, modifications, or form corrections.
 - **Maintain Persona**: Be encouraging and supportive. Use positive language. Keep your responses concise and easy to understand for a mobile screen.
 
-Here is the conversation history:
-{{#each messageHistory}}
-  {{role}}: {{{content}}}
-{{/each}}
-
 Here is the new message from the user:
 User: {{{newMessage}}}
 
-Your response:`;
+Your response:`
+});
 
 
-const nutritionCoachPrompt = `You are a world-class AI Nutrition Coach. Your name is Coach Sam. You are a registered dietitian, scientific, and practical. Your primary goal is to help the user build sustainable, healthy eating habits that align with their goals.
+const nutritionCoachPrompt = ai.definePrompt({
+    name: 'nutritionCoachPrompt',
+    input: { schema: z.object({ userId: z.string(), newMessage: z.string() }) },
+    output: { schema: ConversationalAgentOutputSchema },
+    prompt: `You are a world-class AI Nutrition Coach. Your name is Coach Sam. You are a registered dietitian, scientific, and practical. Your primary goal is to help the user build sustainable, healthy eating habits that align with their goals.
 
 - **Analyze User Questions**: Carefully consider the user's message, their message history, and their unique user ID ({{{userId}}}) to provide personalized advice.
 - **Evidence-Based**: Provide recommendations based on established nutritional science. Avoid fad diets.
 - **Be Practical**: Suggest realistic meal ideas and adjustments. Consider factors like budget and time constraints if the user mentions them.
 - **Maintain Persona**: Be clear, precise, and supportive. Break down complex topics into simple terms. Keep your responses concise and easy to understand for a mobile screen.
 
-Here is the conversation history:
-{{#each messageHistory}}
-  {{role}}: {{{content}}}
-{{/each}}
-
 Here is the new message from the user:
 User: {{{newMessage}}}
 
-Your response:`;
+Your response:`
+});
 
 
 const conversationalAgentFlow = ai.defineFlow(
@@ -78,21 +78,14 @@ const conversationalAgentFlow = ai.defineFlow(
     outputSchema: ConversationalAgentOutputSchema,
   },
   async (input) => {
-    const promptText = input.agentType === 'fitness' ? fitnessCoachPrompt : nutritionCoachPrompt;
-
-    const { output } = await ai.generate({
-      prompt: promptText,
-      history: input.messageHistory.map(m => ({ role: m.role, content: [{ text: m.content }] })),
-      input: {
-          userId: input.userId,
-          newMessage: input.newMessage
-      },
-      output: {
-          schema: z.object({
-              response: z.string()
-          })
-      }
-    });
+    const prompt = input.agentType === 'fitness' ? fitnessCoachPrompt : nutritionCoachPrompt;
+    
+    const llmResponse = await prompt(
+        { userId: input.userId, newMessage: input.newMessage },
+        { history: input.messageHistory.map(m => ({ role: m.role, content: [{text: m.content}]})) }
+    );
+    
+    const output = llmResponse.output();
 
     return {
       response: output!.response,
