@@ -1,4 +1,4 @@
-
+// src/components/onboarding/onboarding-lifestyle-form.tsx
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -17,7 +17,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { MoveRight, Briefcase, Footprints, Activity, Weight, Home, Building, DollarSign, Bed, ChefHat, Droplets, Smile, Dumbbell, Utensils, Sparkles, Brain } from "lucide-react"
+import { MoveRight, Briefcase, Footprints, Activity, Weight, Home, Building, DollarSign, Bed, ChefHat, Droplets, Smile, Dumbbell, Utensils, Sparkles, Brain, Globe } from "lucide-react"
 import { Card, CardContent } from "../ui/card"
 import { cn } from "@/lib/utils"
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group"
@@ -62,12 +62,16 @@ const FormSchema = z.object({
   workoutLocation: z.enum(["home", "gym"], { required_error: "Please select where you will train." }),
   availableEquipment: z.string().optional(),
   costLevel: z.enum(["low", "medium", "high"], { required_error: "Please select your budget level." }),
+  timezone: z.string({required_error: "Please select your timezone."}),
 })
 
 export function OnboardingLifestyleForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [tagInput, setTagInput] = React.useState('');
+  
+  const defaultTimezone = React.useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
+  const timezones = React.useMemo(() => Intl.supportedValuesOf('timeZone'), []);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -84,7 +88,8 @@ export function OnboardingLifestyleForm() {
       cookingSkill: 'intermediate',
       trainingDuration: '45-60',
       trainingTime: 'any',
-      performanceGoals: ''
+      performanceGoals: '',
+      timezone: defaultTimezone
     }
   })
 
@@ -95,6 +100,7 @@ export function OnboardingLifestyleForm() {
     params.set('lifestyle', data.lifestyle);
     params.set('sleepHours', data.sleepHours);
     params.set('stressLevel', data.stressLevel);
+    params.set('timezone', data.timezone);
 
     // Create a comprehensive 'eatingHabits' string
     const eatingHabitsDetails = [
@@ -489,30 +495,55 @@ export function OnboardingLifestyleForm() {
                         )}
                         />
                  </div>
-                 <FormField
-                    control={form.control}
-                    name="trainingTime"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Preferred time to work out</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                            <SelectTrigger><SelectValue placeholder="Select a time" /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                <SelectItem value="morning">Morning</SelectItem>
-                                <SelectItem value="afternoon">Afternoon</SelectItem>
-                                <SelectItem value="evening">Evening</SelectItem>
-                                <SelectItem value="any">Any time</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <FormDescription>
-                            This helps us schedule your pre/post workout meals.
-                        </FormDescription>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                        control={form.control}
+                        name="trainingTime"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Preferred time to work out</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                <SelectTrigger><SelectValue placeholder="Select a time" /></SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="morning">Morning</SelectItem>
+                                    <SelectItem value="afternoon">Afternoon</SelectItem>
+                                    <SelectItem value="evening">Evening</SelectItem>
+                                    <SelectItem value="any">Any time</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormDescription>
+                                This helps us schedule your pre/post workout meals.
+                            </FormDescription>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                     <FormField
+                        control={form.control}
+                        name="timezone"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel className="flex items-center gap-2"><Globe className="h-4 w-4"/>Timezone</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                <SelectTrigger><SelectValue placeholder="Select your timezone" /></SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {timezones.map(tz => (
+                                        <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormDescription>
+                                We've auto-detected your timezone.
+                            </FormDescription>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                 </div>
             </CardContent>
         </Card>
         

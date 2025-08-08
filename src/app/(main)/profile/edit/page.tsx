@@ -15,7 +15,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { RefreshCw, MoveLeft, Save } from 'lucide-react';
+import { RefreshCw, MoveLeft, Save, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 
@@ -38,6 +38,7 @@ const ProfileFormSchema = z.object({
   availableEquipment: z.string().optional(),
   costLevel: z.enum(["low", "medium", "high"]),
   medicalHistory: z.string().optional(),
+  timezone: z.string({required_error: "Please select your timezone."}),
 });
 
 type ProfileFormValues = z.infer<typeof ProfileFormSchema>;
@@ -46,6 +47,7 @@ export default function EditProfilePage() {
   const { userProfile, saveUserProfile, isLoading: isProfileLoading } = useUserData();
   const router = useRouter();
   const { toast } = useToast();
+  const timezones = React.useMemo(() => Intl.supportedValuesOf('timeZone'), []);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(ProfileFormSchema),
@@ -319,6 +321,26 @@ export default function EditProfilePage() {
                             </Select>
                         </FormItem>
                     )} />
+                    <FormField
+                        control={form.control}
+                        name="timezone"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel className="flex items-center gap-2"><Globe className="h-4 w-4"/>Timezone</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                <SelectTrigger><SelectValue placeholder="Select your timezone" /></SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {timezones.map(tz => (
+                                        <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
                  </div>
             </CardContent>
           </Card>

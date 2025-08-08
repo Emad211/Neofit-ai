@@ -1,4 +1,3 @@
-
 // src/components/dashboard/log-entry-sheet.tsx
 "use client"
 
@@ -28,7 +27,7 @@ import { calculateActivityCalories } from "@/ai/flows/calculate-activity-calorie
 import { useToast } from "@/hooks/use-toast"
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group"
 import { cn } from "@/lib/utils"
-import { Card } from "../ui/card"
+import { useUserData } from "@/context/user-profile-context"
 
 export type LogType = "meal" | "activity" | "weight" | null;
 
@@ -59,28 +58,51 @@ interface LogEntrySheetProps {
 export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProps) {
     const config = logConfig[logType];
     const { toast } = useToast();
+    const { userProfile, logMeal, logActivity, logWeight } = useUserData();
     const [isCalculating, setIsCalculating] = React.useState(false);
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [calculatedCalories, setCalculatedCalories] = React.useState<number | null>(null);
 
-    const { register, handleSubmit, watch, setValue, control } = useForm({
+    const { register, handleSubmit, watch, setValue, control, reset } = useForm({
         defaultValues: {
-            intensity: 'medium',
+            // Activity
             activityType: '',
-            duration: '',
+            durationMinutes: '',
+            intensity: 'medium',
             caloriesBurned: '',
+            // Meal
+            mealType: 'snack',
+            description: '',
+            calories: '',
+            // Weight
+            weight: ''
         }
     });
+
+    React.useEffect(() => {
+        // Reset form when the sheet is closed or logType changes
+        reset();
+        setCalculatedCalories(null);
+    }, [open, logType, reset]);
+    
     const activityType = watch('activityType');
-    const duration = watch('duration');
+    const durationMinutes = watch('durationMinutes');
     const intensity = watch('intensity');
 
-
     const handleCalculateCalories = async () => {
-        if (!activityType || !duration) {
+        if (!activityType || !durationMinutes) {
             toast({
                 variant: "destructive",
                 title: "Missing Information",
                 description: "Please enter an activity and duration.",
+            })
+            return;
+        }
+        if (!userProfile) {
+            toast({
+                variant: "destructive",
+                title: "User Profile not found",
+                description: "Cannot calculate calories without user data.",
             })
             return;
         }
@@ -89,14 +111,13 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
         try {
             const result = await calculateActivityCalories({
                 activityType: activityType,
-                durationMinutes: parseInt(duration, 10),
+                durationMinutes: parseInt(durationMinutes, 10),
                 intensity: intensity as "low" | "medium" | "high",
-                // In a real app, this would come from the user's profile from auth/db
                 userProfile: {
-                    weightKg: 70, 
-                    age: 29,
-                    gender: 'female',
-                    heightCm: 165
+                    weightKg: userProfile.weight, 
+                    age: userProfile.age,
+                    gender: userProfile.gender,
+                    heightCm: userProfile.height
                 }
             });
             setValue('caloriesBurned', String(result.caloriesBurned));
@@ -114,10 +135,46 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
     }
 
 
-    const onFormSubmit = (data: any) => {
-        console.log(`Submitting ${logType} log...`, data);
-        onOpenChange(false);
-        setCalculatedCalories(null);
+    const onFormSubmit = async (data: any) => {
+        setIsSubmitting(true);
+        try {
+            switch(logType) {
+                case 'meal':
+                    await logMeal({
+                        mealType: data.mealType,
+                        description: data.description,
+                        calories: parseInt(data.calories, 10)
+                    });
+                    break;
+                case 'activity':
+                    await logActivity({
+                        activityType: data.activityType,
+                        durationMinutes: parseInt(data.durationMinutes, 10),
+                        intensity: data.intensity,
+                        caloriesBurned: parseInt(data.caloriesBurned, 10) || 0
+                    });
+                    break;
+                case 'weight':
+                    await logWeight({
+                        weight: parseFloat(data.weight)
+                    });
+                    break;
+            }
+            toast({
+                title: "Log Saved!",
+                description: `Your ${logType} has been successfully saved.`,
+            })
+            onOpenChange(false);
+        } catch (error) {
+             console.error(`Failed to log ${logType}`, error);
+             toast({
+                variant: 'destructive',
+                title: "Save Failed",
+                description: `There was an error saving your ${logType}. Please try again.`,
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     }
 
   return (
@@ -135,26 +192,32 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
             {logType === 'meal' && (
                 <>
                     <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
-                        <Label htmlFor="meal-type" className="sm:text-right">Meal</Label>
-                        <Select {...register("mealType")}>
-                            <SelectTrigger className="sm:col-span-3">
-                                <SelectValue placeholder="Select a meal" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="breakfast">Breakfast</SelectItem>
-                                <SelectItem value="lunch">Lunch</SelectItem>
-                                <SelectItem value="dinner">Dinner</SelectItem>
-                                <SelectItem value="snack">Snack</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <Label htmlFor="mealType" className="sm:text-right">Meal</Label>
+                        <Controller
+                            name="mealType"
+                            control={control}
+                            render={({ field }) => (
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <SelectTrigger className="sm:col-span-3">
+                                        <SelectValue placeholder="Select a meal" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="breakfast">Breakfast</SelectItem>
+                                        <SelectItem value="lunch">Lunch</SelectItem>
+                                        <SelectItem value="dinner">Dinner</SelectItem>
+                                        <SelectItem value="snack">Snack</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        />
                     </div>
                     <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
-                        <Label htmlFor="meal-description" className="sm:text-right">Description</Label>
-                        <Input id="meal-description" placeholder="e.g., Protein shake" className="sm:col-span-3" {...register("mealDescription")} />
+                        <Label htmlFor="description" className="sm:text-right">Description</Label>
+                        <Input id="description" placeholder="e.g., Protein shake" className="sm:col-span-3" {...register("description", { required: true })} />
                     </div>
                     <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
                         <Label htmlFor="calories" className="sm:text-right">Calories</Label>
-                        <Input id="calories" type="number" placeholder="e.g., 450" className="sm:col-span-3" {...register("calories")} />
+                        <Input id="calories" type="number" placeholder="e.g., 450" className="sm:col-span-3" {...register("calories", { required: true })} />
                     </div>
                 </>
             )}
@@ -162,11 +225,11 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
                  <>
                     <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
                         <Label htmlFor="activity-type" className="sm:text-right">Activity</Label>
-                        <Input id="activity-type" placeholder="e.g., Morning Run" className="sm:col-span-3" {...register("activityType")} />
+                        <Input id="activity-type" placeholder="e.g., Morning Run" className="sm:col-span-3" {...register("activityType", { required: true })} />
                     </div>
                     <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
-                        <Label htmlFor="duration" className="sm:text-right">Duration</Label>
-                        <Input id="duration" type="number" placeholder="in minutes" className="sm:col-span-3" {...register("duration")} />
+                        <Label htmlFor="durationMinutes" className="sm:text-right">Duration</Label>
+                        <Input id="durationMinutes" type="number" placeholder="in minutes" className="sm:col-span-3" {...register("durationMinutes", { required: true })} />
                     </div>
                      <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
                         <Label className="sm:text-right">Intensity</Label>
@@ -213,7 +276,7 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
                 <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
                     <Label htmlFor="current-weight" className="sm:text-right">Weight</Label>
                     <div className="sm:col-span-3 flex items-center gap-2">
-                        <Input id="current-weight" type="number" step="0.1" placeholder="e.g., 70.5" {...register("weight")} />
+                        <Input id="current-weight" type="number" step="0.1" placeholder="e.g., 70.5" {...register("weight", { required: true })} />
                         <span>kg</span>
                     </div>
                 </div>
@@ -221,9 +284,12 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
             </div>
             <SheetFooter>
             <SheetClose asChild>
-                <Button type="button" variant="secondary">Cancel</Button>
+                <Button type="button" variant="secondary" disabled={isSubmitting}>Cancel</Button>
             </SheetClose>
-            <Button type="submit">Save Log</Button>
+            <Button type="submit" disabled={isSubmitting}>
+                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Log
+            </Button>
             </SheetFooter>
         </form>
       </SheetContent>

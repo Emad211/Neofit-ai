@@ -113,6 +113,7 @@ export default function ViewProfilePage() {
                      <InfoItem label="Average Sleep" value={`${userProfile.sleepHours} hours`} />
                      <InfoItem label="Stress Level" value={userProfile.stressLevel} />
                      <InfoItem label="Eating Habits/Allergies" value={userProfile.eatingHabits || 'None'} />
+                     <InfoItem label="Timezone" value={userProfile.timezone} />
                 </InfoSection>
 
                 <Card>

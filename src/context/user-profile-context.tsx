@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import type { GenerateNutritionProgramOutput } from '@/ai/flows/generate-nutrition-program';
@@ -34,15 +34,43 @@ export type UserProfile = {
   costLevel: "low" | "medium" | "high";
   medicalHistory?: string;
   dietaryPreference?: string;
+  timezone: string;
 };
 
-// Add types for the plans
+// Add types for the plans and logs
 type NutritionPlan = GenerateNutritionProgramOutput['weeklyMealPlan'];
 type WorkoutPlan = GenerateWorkoutProgramOutput['weeklyWorkoutPlan'];
-type WorkoutLog = {
+
+export type MealLog = {
+    id?: string;
+    logType: 'meal';
+    loggedAt: string;
+    mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+    description: string;
+    calories: number;
+}
+export type ActivityLog = {
+    id?: string;
+    logType: 'activity';
+    loggedAt: string;
+    activityType: string;
+    durationMinutes: number;
+    intensity: 'low' | 'medium' | 'high';
+    caloriesBurned: number;
+}
+export type WeightLog = {
+    id?: string;
+    logType: 'weight';
+    loggedAt: string;
+    weight: number;
+}
+export type WorkoutLog = {
+    id?: string;
+    logType: 'workout';
     workoutId: string;
     workoutName: string;
-    completedAt: string;
+    completedAt: string; // Keep this as it's specific to the workout completion event
+    loggedAt: string;
     durationMinutes: number;
     totalVolume: number;
     exercises: {
@@ -51,6 +79,8 @@ type WorkoutLog = {
         logs: { set: number; reps: string; weight: string; }[]
     }[]
 }
+type CombinedLog = MealLog | ActivityLog | WeightLog | WorkoutLog;
+
 
 interface UserDataContextType {
   user: User | null;
@@ -59,7 +89,11 @@ interface UserDataContextType {
   workoutPlan: WorkoutPlan | null;
   saveUserProfile: (profileData: UserProfile) => Promise<void>;
   savePlans: (plans: { nutritionPlan: NutritionPlan, workoutPlan: WorkoutPlan }) => Promise<void>;
-  saveWorkoutLog: (logData: WorkoutLog) => Promise<void>;
+  saveWorkoutLog: (logData: Omit<WorkoutLog, 'logType' | 'loggedAt'>) => Promise<void>;
+  logMeal: (logData: Omit<MealLog, 'logType' | 'loggedAt'>) => Promise<void>;
+  logActivity: (logData: Omit<ActivityLog, 'logType' | 'loggedAt'>) => Promise<void>;
+  logWeight: (logData: Omit<WeightLog, 'logType' | 'loggedAt'>) => Promise<void>;
+  combinedLogs: CombinedLog[];
   isLoading: boolean;
 }
 
@@ -70,10 +104,48 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [nutritionPlan, setNutritionPlan] = useState<NutritionPlan | null>(null);
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
+  const [combinedLogs, setCombinedLogs] = useState<CombinedLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Mock user ID for demonstration purposes
   const MOCK_USER_ID = 'mock-user-123';
+
+  // Real-time listeners
+  useEffect(() => {
+    if (!user) return;
+
+    const collectionsToListen = {
+        meal_logs: 'meal',
+        activity_logs: 'activity',
+        weight_logs: 'weight',
+        workout_logs: 'workout',
+    } as const;
+
+    const unsubscribes = Object.entries(collectionsToListen).map(([collectionName, logType]) => {
+        const q = query(collection(db, 'profiles', user.uid, collectionName), orderBy('loggedAt', 'desc'));
+        return onSnapshot(q, (querySnapshot) => {
+            const logs = querySnapshot.docs.map(doc => ({ 
+                id: doc.id, 
+                logType: logType,
+                ...doc.data() 
+            } as CombinedLog));
+            
+            setCombinedLogs(prevLogs => {
+                // Filter out old logs of the same type and merge with new ones
+                const otherLogs = prevLogs.filter(log => log.logType !== logType);
+                const updatedLogs = [...otherLogs, ...logs].sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
+                return updatedLogs;
+            });
+        }, (error) => {
+            console.error(`Error listening to ${collectionName}:`, error);
+        });
+    });
+
+    return () => {
+        unsubscribes.forEach(unsub => unsub());
+    };
+}, [user]);
+
 
   const fetchData = async (userId: string) => {
     setIsLoading(true);
@@ -108,8 +180,7 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
 
   const saveUserProfile = async (profileData: UserProfile) => {
     if (!user) {
-      console.error("No user is signed in to save profile.");
-      return;
+      throw new Error("No user is signed in to save profile.");
     }
     try {
       const profileRef = doc(db, 'profiles', user.uid);
@@ -117,13 +188,13 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
       setUserProfile(profileData);
     } catch (error) {
       console.error("Failed to save user profile to Firestore", error);
+      throw error;
     }
   };
 
   const savePlans = async (plans: { nutritionPlan: NutritionPlan, workoutPlan: WorkoutPlan }) => {
      if (!user) {
-      console.error("No user is signed in to save plans.");
-      return;
+      throw new Error("No user is signed in to save plans.");
     }
     try {
         const plansRef = doc(db, 'plans', user.uid);
@@ -132,25 +203,35 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
         setWorkoutPlan(plans.workoutPlan);
     } catch (error) {
         console.error("Failed to save plans to Firestore", error);
+        throw error;
     }
   }
 
-  const saveWorkoutLog = async (logData: WorkoutLog) => {
+  const logGeneric = async (collectionName: string, logData: object) => {
     if (!user) {
-        throw new Error("No user is signed in to save workout log.");
+        throw new Error("No user is signed in to save log.");
     }
+    const dataToSave = {
+        ...logData,
+        loggedAt: new Date().toISOString(),
+    };
     try {
-        // This will create a new document with a unique ID inside the user's workout_logs subcollection
-        const logsCollectionRef = collection(db, 'profiles', user.uid, 'workout_logs');
-        await addDoc(logsCollectionRef, logData);
+        const logsCollectionRef = collection(db, 'profiles', user.uid, collectionName);
+        await addDoc(logsCollectionRef, dataToSave);
     } catch (error) {
-        console.error("Failed to save workout log to Firestore", error);
+        console.error(`Failed to save to ${collectionName}`, error);
         throw error; // re-throw error to be caught by the caller
     }
   }
+  
+  const logMeal = (logData: Omit<MealLog, 'logType' | 'loggedAt'>) => logGeneric('meal_logs', logData);
+  const logActivity = (logData: Omit<ActivityLog, 'logType' | 'loggedAt'>) => logGeneric('activity_logs', logData);
+  const logWeight = (logData: Omit<WeightLog, 'logType' | 'loggedAt'>) => logGeneric('weight_logs', logData);
+  const saveWorkoutLog = (logData: Omit<WorkoutLog, 'logType' | 'loggedAt'>) => logGeneric('workout_logs', logData);
+
 
   return (
-    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, saveUserProfile, savePlans, saveWorkoutLog, isLoading }}>
+    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, saveUserProfile, savePlans, saveWorkoutLog, logMeal, logActivity, logWeight, combinedLogs, isLoading }}>
       {children}
     </UserDataContext.Provider>
   );
