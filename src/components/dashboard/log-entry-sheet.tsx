@@ -1,3 +1,4 @@
+
 // src/components/dashboard/log-entry-sheet.tsx
 "use client"
 
@@ -25,6 +26,9 @@ import { Apple, Dumbbell, Weight, Sparkles, Loader2 } from "lucide-react"
 import { useForm, Controller } from "react-hook-form"
 import { calculateActivityCalories } from "@/ai/flows/calculate-activity-calories"
 import { useToast } from "@/hooks/use-toast"
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group"
+import { cn } from "@/lib/utils"
+import { Card } from "../ui/card"
 
 export type LogType = "meal" | "activity" | "weight" | null;
 
@@ -58,9 +62,17 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
     const [isCalculating, setIsCalculating] = React.useState(false);
     const [calculatedCalories, setCalculatedCalories] = React.useState<number | null>(null);
 
-    const { register, handleSubmit, watch, setValue } = useForm();
+    const { register, handleSubmit, watch, setValue, control } = useForm({
+        defaultValues: {
+            intensity: 'medium',
+            activityType: '',
+            duration: '',
+            caloriesBurned: '',
+        }
+    });
     const activityType = watch('activityType');
     const duration = watch('duration');
+    const intensity = watch('intensity');
 
 
     const handleCalculateCalories = async () => {
@@ -78,11 +90,16 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
             const result = await calculateActivityCalories({
                 activityType: activityType,
                 durationMinutes: parseInt(duration, 10),
-                // In a real app, this would come from the user's profile
-                weightKg: 70, 
-                age: 29
+                intensity: intensity as "low" | "medium" | "high",
+                // In a real app, this would come from the user's profile from auth/db
+                userProfile: {
+                    weightKg: 70, 
+                    age: 29,
+                    gender: 'female',
+                    heightCm: 165
+                }
             });
-            setValue('caloriesBurned', result.caloriesBurned);
+            setValue('caloriesBurned', String(result.caloriesBurned));
             setCalculatedCalories(result.caloriesBurned);
         } catch (e) {
             console.error(e);
@@ -150,6 +167,29 @@ export function LogEntrySheet({ open, onOpenChange, logType }: LogEntrySheetProp
                     <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
                         <Label htmlFor="duration" className="sm:text-right">Duration</Label>
                         <Input id="duration" type="number" placeholder="in minutes" className="sm:col-span-3" {...register("duration")} />
+                    </div>
+                     <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
+                        <Label className="sm:text-right">Intensity</Label>
+                         <div className="sm:col-span-3">
+                            <Controller
+                                name="intensity"
+                                control={control}
+                                render={({ field }) => (
+                                     <RadioGroup
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                        className="grid grid-cols-3 gap-2"
+                                        >
+                                        {['low', 'medium', 'high'].map((level) => (
+                                            <Label key={level} className={cn("cursor-pointer rounded-md border p-3 text-center text-sm font-normal", field.value === level && "border-primary ring-2 ring-primary")}>
+                                                <RadioGroupItem value={level} className="sr-only" />
+                                                {level.charAt(0).toUpperCase() + level.slice(1)}
+                                            </Label>
+                                        ))}
+                                    </RadioGroup>
+                                )}
+                            />
+                         </div>
                     </div>
                     <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-4 sm:gap-4">
                         <Label htmlFor="calories-burned" className="sm:text-right">Calories</Label>

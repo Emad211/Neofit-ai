@@ -14,9 +14,15 @@ import {z} from 'genkit';
 
 const CalculateActivityCaloriesInputSchema = z.object({
   activityType: z.string().describe('The type of physical activity performed (e.g., Running, Weightlifting, Yoga).'),
-  durationMinutes: z.number().describe('The duration of the activity in minutes.'),
-  weightKg: z.number().describe('The weight of the user in kilograms.'),
-  age: z.number().describe('The age of the user in years.'),
+  durationMinutes: z.number().int().describe('The duration of the activity in minutes.'),
+  intensity: z.enum(['low', 'medium', 'high']).describe('The subjective intensity level of the activity.'),
+  userProfile: z.object({
+      weightKg: z.number().describe('The weight of the user in kilograms.'),
+      heightCm: z.number().int().describe('The height of the user in centimeters.'),
+      age: z.number().int().describe('The age of the user in years.'),
+      gender: z.enum(['male', 'female', 'other']).describe('The gender of the user.'),
+  }),
+  averageHeartRate: z.number().int().optional().describe('The user\'s average heart rate during the activity, if available. This provides a more accurate calculation.'),
 });
 export type CalculateActivityCaloriesInput = z.infer<typeof CalculateActivityCaloriesInputSchema>;
 
@@ -36,17 +42,28 @@ const prompt = ai.definePrompt({
   model: 'googleai/gemini-1.5-flash',
   prompt: `You are an expert exercise physiologist. Your task is to accurately estimate the number of calories a person has burned during a specific physical activity.
 
-Use the user's data and the activity details to perform the calculation. Consider the MET (Metabolic Equivalent of Task) value for the given activity.
+Use the user's detailed data and the activity information to perform a precise calculation. 
 
-User Information:
-- Weight: {{{weightKg}}} kg
-- Age: {{{age}}} years
+USER PROFILE:
+- Weight: {{{userProfile.weightKg}}} kg
+- Height: {{{userProfile.heightCm}}} cm
+- Age: {{{userProfile.age}}} years
+- Gender: {{{userProfile.gender}}}
 
-Activity Information:
+ACTIVITY INFORMATION:
 - Type: {{{activityType}}}
 - Duration: {{{durationMinutes}}} minutes
+- Subjective Intensity: {{{intensity}}}
+{{#if averageHeartRate}}
+- Average Heart Rate: {{{averageHeartRate}}} bpm
+{{/if}}
 
-Based on this information, calculate the total calories burned. Return the result as an integer in the 'caloriesBurned' field. Do not include any other text or explanation in your response.
+Based on this comprehensive information, calculate the total calories burned. 
+- Use the MET (Metabolic Equivalent of Task) value appropriate for the given activity AND its intensity.
+- If the average heart rate is provided, use it to refine your calculation, as it's a strong indicator of metabolic cost.
+- Consider the user's BMR (Basal Metabolic Rate) derived from their profile.
+
+Return the result as an integer in the 'caloriesBurned' field. Do not include any other text or explanation in your response.
 `,
 });
 
