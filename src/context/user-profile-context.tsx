@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import type { GenerateNutritionProgramOutput } from '@/ai/flows/generate-nutrition-program';
@@ -39,6 +39,18 @@ export type UserProfile = {
 // Add types for the plans
 type NutritionPlan = GenerateNutritionProgramOutput['weeklyMealPlan'];
 type WorkoutPlan = GenerateWorkoutProgramOutput['weeklyWorkoutPlan'];
+type WorkoutLog = {
+    workoutId: string;
+    workoutName: string;
+    completedAt: string;
+    durationMinutes: number;
+    totalVolume: number;
+    exercises: {
+        id: string;
+        name: string;
+        logs: { set: number; reps: string; weight: string; }[]
+    }[]
+}
 
 interface UserDataContextType {
   user: User | null;
@@ -47,6 +59,7 @@ interface UserDataContextType {
   workoutPlan: WorkoutPlan | null;
   saveUserProfile: (profileData: UserProfile) => Promise<void>;
   savePlans: (plans: { nutritionPlan: NutritionPlan, workoutPlan: WorkoutPlan }) => Promise<void>;
+  saveWorkoutLog: (logData: WorkoutLog) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -122,9 +135,22 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
     }
   }
 
+  const saveWorkoutLog = async (logData: WorkoutLog) => {
+    if (!user) {
+        throw new Error("No user is signed in to save workout log.");
+    }
+    try {
+        // This will create a new document with a unique ID inside the user's workout_logs subcollection
+        const logsCollectionRef = collection(db, 'profiles', user.uid, 'workout_logs');
+        await addDoc(logsCollectionRef, logData);
+    } catch (error) {
+        console.error("Failed to save workout log to Firestore", error);
+        throw error; // re-throw error to be caught by the caller
+    }
+  }
 
   return (
-    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, saveUserProfile, savePlans, isLoading }}>
+    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, saveUserProfile, savePlans, saveWorkoutLog, isLoading }}>
       {children}
     </UserDataContext.Provider>
   );

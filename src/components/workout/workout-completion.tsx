@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@uidotdev/usehooks';
 import type { Exercise, Log } from './workout-player';
+import { useUserData } from '@/context/user-profile-context';
+import { useToast } from '@/hooks/use-toast';
 
 type WorkoutSession = {
     id: string;
@@ -32,7 +34,9 @@ const StatCard = ({ icon, title, value }: { icon: React.ReactNode, title: string
 export function WorkoutCompletion({ session, totalDuration }: WorkoutCompletionProps) {
   const router = useRouter();
   const { width, height } = useWindowSize();
-
+  const { saveWorkoutLog } = useUserData();
+  const { toast } = useToast();
+  
   const totalVolume = React.useMemo(() => {
     return session.exercises.reduce((total, exercise) => {
       const exerciseVolume = exercise.logs.reduce((exTotal: number, log: Log) => {
@@ -46,6 +50,37 @@ export function WorkoutCompletion({ session, totalDuration }: WorkoutCompletionP
       return total + exerciseVolume;
     }, 0);
   }, [session.exercises]);
+
+  React.useEffect(() => {
+    const logData = {
+      workoutId: session.id,
+      workoutName: session.name,
+      completedAt: new Date().toISOString(),
+      durationMinutes: totalDuration,
+      totalVolume: totalVolume,
+      exercises: session.exercises.map(ex => ({
+        id: ex.id,
+        name: ex.name,
+        logs: ex.logs
+      }))
+    };
+    
+    saveWorkoutLog(logData).then(() => {
+       toast({
+        title: "Workout Logged!",
+        description: "Your session has been successfully saved to your history.",
+      });
+    }).catch(error => {
+      console.error("Failed to save workout log", error);
+       toast({
+        variant: 'destructive',
+        title: "Save Failed",
+        description: "There was an error saving your workout log.",
+      });
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once when the component mounts
+
 
   return (
     <>
@@ -98,4 +133,3 @@ export function WorkoutCompletion({ session, totalDuration }: WorkoutCompletionP
     </>
   );
 }
-
