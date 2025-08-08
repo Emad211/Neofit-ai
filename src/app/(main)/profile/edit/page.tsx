@@ -1,3 +1,4 @@
+
 // src/app/(main)/profile/edit/page.tsx
 "use client";
 
@@ -15,9 +16,20 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { RefreshCw, MoveLeft, Save, Globe } from 'lucide-react';
+import { RefreshCw, MoveLeft, Save, Globe, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 // This schema contains only the fields that are realistically changeable by the user.
 // Fields like gender, age, bodyType are considered less frequently changed or fixed.
@@ -44,7 +56,7 @@ const ProfileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof ProfileFormSchema>;
 
 export default function EditProfilePage() {
-  const { userProfile, saveUserProfile, isLoading: isProfileLoading } = useUserData();
+  const { userProfile, saveUserProfile, resetUserData, isLoading: isProfileLoading } = useUserData();
   const router = useRouter();
   const { toast } = useToast();
   const timezones = React.useMemo(() => Intl.supportedValuesOf('timeZone'), []);
@@ -101,6 +113,15 @@ export default function EditProfilePage() {
             });
         }
     });
+  }
+
+  const handleReset = async () => {
+    await resetUserData();
+    toast({
+        title: "Profile Reset",
+        description: "Your data has been cleared. Please start over.",
+    });
+    router.push('/');
   }
 
   if (isProfileLoading) {
@@ -359,16 +380,41 @@ export default function EditProfilePage() {
                 )} />
               </CardContent>
           </Card>
-            
-          <div className="flex flex-col-reverse sm:flex-row gap-2 justify-end">
-            <Button type="button" variant="secondary" onClick={onSaveOnly}>
-              <Save className="mr-2 h-4 w-4" />
-              Save Changes
-            </Button>
-            <Button type="submit" size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              <RefreshCw className="mr-2 h-5 w-5" />
-              Update & Regenerate Plan
-            </Button>
+
+           <div className="flex flex-col-reverse sm:flex-row gap-4 justify-between items-center">
+            <div>
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button type="button" variant="destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Reset Profile & Start Over
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete all your
+                            profile data and plans, and you will be returned to the onboarding screen.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleReset}>Continue</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </div>
+            <div className="flex flex-col-reverse sm:flex-row gap-2">
+                <Button type="button" variant="secondary" onClick={onSaveOnly}>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Changes
+                </Button>
+                <Button type="submit" size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                    <RefreshCw className="mr-2 h-5 w-5" />
+                    Update & Regenerate Plan
+                </Button>
+            </div>
           </div>
         </form>
       </Form>

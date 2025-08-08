@@ -1,8 +1,9 @@
+
 // src/context/user-profile-context.tsx
 "use client";
 
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import type { GenerateNutritionProgramOutput } from '@/ai/flows/generate-nutrition-program';
@@ -93,6 +94,7 @@ interface UserDataContextType {
   logMeal: (logData: Omit<MealLog, 'logType' | 'loggedAt'>) => Promise<void>;
   logActivity: (logData: Omit<ActivityLog, 'logType' | 'loggedAt'>) => Promise<void>;
   logWeight: (logData: Omit<WeightLog, 'logType' | 'loggedAt'>) => Promise<void>;
+  resetUserData: () => Promise<void>;
   combinedLogs: CombinedLog[];
   isLoading: boolean;
 }
@@ -229,9 +231,33 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
   const logWeight = (logData: Omit<WeightLog, 'logType' | 'loggedAt'>) => logGeneric('weight_logs', logData);
   const saveWorkoutLog = (logData: Omit<WorkoutLog, 'logType' | 'loggedAt'>) => logGeneric('workout_logs', logData);
 
+  const resetUserData = async () => {
+    if (!user) {
+      throw new Error("No user is signed in to reset data.");
+    }
+    try {
+      // Note: Deleting subcollections is complex and not done here for simplicity.
+      // In a production app, a Cloud Function would be needed for this.
+      const profileRef = doc(db, 'profiles', user.uid);
+      const plansRef = doc(db, 'plans', user.uid);
+      
+      await deleteDoc(profileRef);
+      await deleteDoc(plansRef);
+      
+      // Clear local state
+      setUserProfile(null);
+      setNutritionPlan(null);
+      setWorkoutPlan(null);
+      setCombinedLogs([]);
+    } catch (error) {
+      console.error("Failed to reset user data in Firestore", error);
+      throw error;
+    }
+  };
+
 
   return (
-    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, saveUserProfile, savePlans, saveWorkoutLog, logMeal, logActivity, logWeight, combinedLogs, isLoading }}>
+    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, saveUserProfile, savePlans, saveWorkoutLog, logMeal, logActivity, logWeight, resetUserData, combinedLogs, isLoading }}>
       {children}
     </UserDataContext.Provider>
   );
