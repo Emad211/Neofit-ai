@@ -6,8 +6,8 @@ import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Code, TestTube2, Loader2 } from "lucide-react";
 import { useUserData } from "@/context/user-profile-context";
-import { getUserDataForWeeklyReview } from "@/ai/tools/get-user-data";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import { fetchDebugData } from "@/app/actions/debug-actions";
 
 export function DebugDataFetcher() {
   const [debugData, setDebugData] = React.useState<any>(null);
@@ -24,7 +24,7 @@ export function DebugDataFetcher() {
     setError(null);
     setDebugData(null);
     try {
-      const data = await getUserDataForWeeklyReview({ userId: user.uid });
+      const data = await fetchDebugData({ userId: user.uid });
       setDebugData(data);
     } catch (e: any) {
       console.error("Debug fetch failed:", e);
