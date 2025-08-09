@@ -56,7 +56,7 @@ export async function generateOnDemandReport(input: GenerateOnDemandReportInput)
         - **Meals**: I see you've logged some meals, like the '{{mealLogs.0.description}}' and '{{mealLogs.1.description}}' - sounds delicious!
         - Here are the meals you've logged:
         {{#each mealLogs}}
-        - {{{this.description}}}
+        - {{this.description}}
         {{/each}}
         {{else}}
         - **Meals**: Remember to log your meals to keep track of your nutrition.
@@ -76,7 +76,7 @@ export async function generateOnDemandReport(input: GenerateOnDemandReportInput)
         - **Workouts**: Great job completing the '{{workoutLogs.0.workoutName}}' workout!
         - Here are the workouts you've logged:
         {{#each workoutLogs}}
-        - {{{this.workoutName}}}
+        - {{this.workoutName}}
         {{/each}}
         {{else}}
         - **Workouts**: Try to complete one of your planned workouts this week to stay on track!
