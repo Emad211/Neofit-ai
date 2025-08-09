@@ -58,9 +58,9 @@ const GenerateNutritionProgramOutputSchema = z.object({
 export type GenerateNutritionProgramOutput = z.infer<typeof GenerateNutritionProgramOutputSchema>;
 
 
-export const generateNutritionProgram = ai.defineFlow(
+const generateNutritionProgramFlow = ai.defineFlow(
   {
-    name: 'generateNutritionProgram',
+    name: 'generateNutritionProgramFlow',
     inputSchema: GenerateNutritionProgramInputSchema,
     outputSchema: GenerateNutritionProgramOutputSchema,
   },
@@ -115,3 +115,20 @@ export const generateNutritionProgram = ai.defineFlow(
     return output!;
   }
 );
+
+
+export const generateNutritionProgram = ai.defineTool(
+    {
+        name: 'generateNutritionProgram',
+        description: 'Generates a personalized 7-day nutrition plan based on user profile and history.',
+        inputSchema: GenerateNutritionProgramInputSchema,
+        outputSchema: GenerateNutritionProgramOutputSchema,
+    },
+    async (input) => {
+        return await generateNutritionProgramFlow(input);
+    }
+);
+
+async function callTool(input: GenerateNutritionProgramInput): Promise<GenerateNutritionProgramOutput> {
+    return await generateNutritionProgram(input);
+}

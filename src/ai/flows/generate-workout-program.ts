@@ -54,9 +54,9 @@ const GenerateWorkoutProgramOutputSchema = z.object({
 export type GenerateWorkoutProgramOutput = z.infer<typeof GenerateWorkoutProgramOutputSchema>;
 
 
-export const generateWorkoutProgram = ai.defineFlow(
+const generateWorkoutProgramFlow = ai.defineFlow(
   {
-    name: 'generateWorkoutProgram',
+    name: 'generateWorkoutProgramFlow',
     inputSchema: GenerateWorkoutProgramInputSchema,
     outputSchema: GenerateWorkoutProgramOutputSchema,
   },
@@ -113,3 +113,20 @@ export const generateWorkoutProgram = ai.defineFlow(
     return output!;
   }
 );
+
+
+export const generateWorkoutProgram = ai.defineTool(
+    {
+        name: 'generateWorkoutProgram',
+        description: 'Generates a personalized 7-day workout program based on user profile and history.',
+        inputSchema: GenerateWorkoutProgramInputSchema,
+        outputSchema: GenerateWorkoutProgramOutputSchema,
+    },
+    async (input) => {
+        return await generateWorkoutProgramFlow(input);
+    }
+);
+
+async function callTool(input: GenerateWorkoutProgramInput): Promise<GenerateWorkoutProgramOutput> {
+    return await generateWorkoutProgram(input);
+}
