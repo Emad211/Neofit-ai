@@ -53,39 +53,27 @@ export async function generateOnDemandReport(input: GenerateOnDemandReportInput)
         2.  Carefully review the logs provided for the current week. Address EACH category based on whether it has data or not.
 
         {{#if mealLogs}}
-        - **Meals**: I see you've logged some meals, like the '{{mealLogs.0.description}}' and '{{mealLogs.1.description}}' - sounds delicious!
-        - Here are the meals you've logged:
-        {{#each mealLogs}}
-        - {{this.description}}
-        {{/each}}
+- **Meals**: I see you've logged some meals, like the {{#each mealLogs}}'{{description}}'{{#unless @last}} and {{/unless}}{{/each}} - sounds delicious!
         {{else}}
-        - **Meals**: Remember to log your meals to keep track of your nutrition.
+- **Meals**: Remember to log your meals to keep track of your nutrition.
         {{/if}}
 
         {{#if activityLogs}}
-        - **Activities**: Awesome job on that {{activityLogs.0.durationMinutes}}-minute {{activityLogs.0.activityType}}!
-        - Here are the activities you've logged:
-        {{#each activityLogs}}
-        - A {{this.durationMinutes}}-minute {{this.activityType}}.
-        {{/each}}
+- **Activities**: Awesome job on the {{#each activityLogs}}{{durationMinutes}}-minute {{activityType}}{{#unless @last}}, and {{/unless}}{{/each}}!
         {{else}}
-        - **Activities**: Don't forget to log any activities you do, every bit counts!
+- **Activities**: Don't forget to log any activities you do, every bit counts!
         {{/if}}
 
         {{#if workoutLogs}}
-        - **Workouts**: Great job completing the '{{workoutLogs.0.workoutName}}' workout!
-        - Here are the workouts you've logged:
-        {{#each workoutLogs}}
-        - {{this.workoutName}}
-        {{/each}}
+- **Workouts**: Great job completing the {{#each workoutLogs}}'{{workoutName}}'{{#unless @last}} and {{/unless}}{{/each}} workout!
         {{else}}
-        - **Workouts**: Try to complete one of your planned workouts this week to stay on track!
+- **Workouts**: Try to complete one of your planned workouts this week to stay on track!
         {{/if}}
 
         {{#if weightLogs}}
-        - **Weight**: Thanks for logging your weight! Your latest weigh-in was {{weightLogs.0.weight}} kg.
+- **Weight**: Thanks for logging your weight! Your latest weigh-in was {{weightLogs.0.weight}} kg.
         {{else}}
-        - **Weight**: I don't see a weight log for this week yet. Remember to weigh in to track your progress!
+- **Weight**: I don't see a weight log for this week yet. Remember to weigh in to track your progress!
         {{/if}}
 
         3.  Conclude with a motivational closing statement.

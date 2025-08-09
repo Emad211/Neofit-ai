@@ -19,6 +19,7 @@ interface WeeklyAiReportProps {
   externalReport: GenerateOnDemandReportOutput | null;
   isLoadingExternal: boolean;
   clearExternalReport: () => void;
+  setExternalReport: (report: any) => void;
 }
 
 
@@ -41,9 +42,11 @@ function ReportDisplay({ report }: { report: GenerateOnDemandReportOutput }) {
             </div>
         </CardHeader>
         <CardContent>
-            <p className="mb-6 text-foreground/90 italic whitespace-pre-wrap">
-             {report.analysisReport}
-            </p>
+            <div className="mb-6 text-foreground/90 italic whitespace-pre-wrap prose prose-sm dark:prose-invert">
+             {report.analysisReport.split('\n').map((line, index) => (
+                <p key={index}>{line}</p>
+             ))}
+            </div>
              <div className="text-center">
                  <p className="text-xs text-muted-foreground">Your official weekly plan will be updated automatically at the end of the week. Keep up the great work!</p>
              </div>
@@ -54,7 +57,7 @@ function ReportDisplay({ report }: { report: GenerateOnDemandReportOutput }) {
 }
 
 
-export function WeeklyAiReport({ externalReport, isLoadingExternal, clearExternalReport }: WeeklyAiReportProps) {
+export function WeeklyAiReport({ externalReport, isLoadingExternal, clearExternalReport, setExternalReport }: WeeklyAiReportProps) {
   const [internalReport, setInternalReport] = React.useState<GenerateOnDemandReportOutput | null>(null);
   const [isLoadingInternal, setIsLoadingInternal] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -63,13 +66,20 @@ export function WeeklyAiReport({ externalReport, isLoadingExternal, clearExterna
   const report = externalReport || internalReport;
   const isLoading = isLoadingExternal || isLoadingInternal;
 
+  React.useEffect(() => {
+    // If an external report is set, clear the internal one.
+    if (externalReport) {
+      setInternalReport(null);
+    }
+  }, [externalReport]);
+
   const handleGenerateReport = async () => {
     if (!user || !userProfile) {
         setError("Please log in to generate your report.");
         return;
     }
     setIsLoadingInternal(true);
-    clearExternalReport();
+    clearExternalReport(); // Clear external report when generating a new internal one
     setError(null);
     setInternalReport(null);
     

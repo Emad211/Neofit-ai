@@ -26,6 +26,7 @@ export default function ProgressPage() {
           externalReport={externalReport}
           isLoadingExternal={isLoadingExternal}
           clearExternalReport={() => setExternalReport(null)}
+          setExternalReport={setExternalReport}
         />
         <WeightChart />
         <WorkoutVolumeChart />
