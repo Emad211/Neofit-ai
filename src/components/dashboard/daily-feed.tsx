@@ -1,3 +1,4 @@
+
 // src/components/dashboard/daily-feed.tsx
 "use client";
 
@@ -78,21 +79,15 @@ export function DailyFeed({ quote }: { quote: string }) {
 
         let title = '';
         let description = '';
-        let image = null;
-        let dataAiHint = null;
 
         switch (item.logType) {
             case 'activity':
                 title = item.activityType;
                 description = `${item.durationMinutes} min · ${item.caloriesBurned} kcal`;
-                image = 'https://placehold.co/600x400.png';
-                dataAiHint = item.activityType.toLowerCase().split(' ').slice(0,2).join(' ');
                 break;
             case 'meal':
                 title = `${item.mealType.charAt(0).toUpperCase() + item.mealType.slice(1)}: ${item.description}`;
                 description = `${item.calories} kcal`;
-                image = 'https://placehold.co/600x400.png';
-                dataAiHint = item.description.toLowerCase().split(' ').slice(0,2).join(' ');
                 break;
             case 'weight':
                 title = 'Weight Logged';
@@ -101,14 +96,11 @@ export function DailyFeed({ quote }: { quote: string }) {
             case 'workout':
                 title = `Workout: ${item.workoutName}`;
                 description = `${item.durationMinutes} min · ${item.totalVolume} kg Volume`;
-                image = 'https://placehold.co/600x400.png';
-                dataAiHint = 'gym workout';
                 break;
         }
 
         return (
             <Card key={item.id} className="overflow-hidden animate-in fade-in-50">
-                {image && <Image src={image} alt={title} width={600} height={200} className="w-full h-32 object-cover" data-ai-hint={dataAiHint || 'fitness'} />}
                 <CardHeader className="flex flex-row items-start gap-4 space-y-0">
                     <div className="bg-secondary p-3 rounded-full">
                         <Icon className="h-6 w-6 text-primary" />
@@ -168,7 +160,6 @@ export function DailyFeed({ quote }: { quote: string }) {
             <Skeleton className="h-48 w-full" />
              {[...Array(2)].map((_, i) => (
                 <Card key={i} className="overflow-hidden">
-                    <Skeleton className="w-full h-32" />
                     <CardHeader className="flex flex-row items-start gap-4 space-y-0">
                         <Skeleton className="h-12 w-12 rounded-full" />
                         <div className="flex-1 space-y-2">
