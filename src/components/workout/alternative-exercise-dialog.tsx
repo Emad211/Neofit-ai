@@ -16,6 +16,7 @@ import { Button } from "../ui/button"
 import { Replace, Loader2, RefreshCw } from "lucide-react"
 import { getAlternativeExercise } from "@/ai/flows/get-alternative-exercise"
 import { Card, CardContent } from "../ui/card"
+import { useUserData } from "@/context/user-profile-context"
 
 type AlternativeExerciseDialogProps = {
   currentExerciseName: string;
@@ -35,14 +36,16 @@ export function AlternativeExerciseDialog({
   const [isLoading, setIsLoading] = React.useState(false);
   const [alternative, setAlternative] = React.useState<{ alternativeExercise: string; reason: string } | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const { user } = useUserData();
 
   const fetchAlternative = React.useCallback(async () => {
+    if (!user) return;
     setIsLoading(true);
     setError(null);
     setAlternative(null);
     try {
       const result = await getAlternativeExercise({
-        userId: "12345", // In a real app, use the actual user ID
+        userId: user.uid,
         exerciseId: currentExerciseName,
         availableEquipment: availableEquipment,
         medicalLimitations: medicalLimitations,
@@ -54,7 +57,7 @@ export function AlternativeExerciseDialog({
     } finally {
       setIsLoading(false);
     }
-  }, [currentExerciseName, availableEquipment, medicalLimitations]);
+  }, [currentExerciseName, availableEquipment, medicalLimitations, user]);
   
   // Fetch alternative when dialog is opened
   React.useEffect(() => {

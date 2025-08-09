@@ -11,6 +11,8 @@ import { ChevronRight, Edit, LogOut, FileText, UserCog, Mail, Lock } from 'lucid
 import { Skeleton } from '@/components/ui/skeleton';
 import { ModeToggle } from '@/components/mode-toggle';
 import { Separator } from '@/components/ui/separator';
+import { getAuth, signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 
 const SettingsItem = ({ icon, title, description, href }: { icon: React.ReactNode, title: string, description: string, href: string }) => (
     <Link href={href} className="block">
@@ -27,7 +29,19 @@ const SettingsItem = ({ icon, title, description, href }: { icon: React.ReactNod
 
 
 export default function ProfilePage() {
-    const { user, userProfile, isLoading } = useUserData();
+    const { user, isLoading } = useUserData();
+    const router = useRouter();
+    const auth = getAuth();
+
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            router.push('/auth');
+        } catch (error) {
+            console.error('Error signing out: ', error);
+        }
+    };
+
 
     if (isLoading) {
         return (
@@ -45,16 +59,15 @@ export default function ProfilePage() {
         )
     }
 
-    // Default name if not available in profile
-    const userName = user?.displayName || "Sara"; 
-    const userEmail = user?.email || "sara@example.com";
+    const userName = user?.displayName || "User"; 
+    const userEmail = user?.email || "user@example.com";
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <header className="flex flex-col items-center text-center mb-10">
         <Avatar className="h-24 w-24 border-4 border-primary">
           <AvatarImage src={user?.photoURL || "https://placehold.co/100x100.png"} alt={userName} data-ai-hint="profile picture" />
-          <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
+          <AvatarFallback>{userName.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
         <h1 className="mt-4 text-3xl font-bold font-headline text-foreground">
           {userName}
@@ -122,7 +135,7 @@ export default function ProfilePage() {
         </Card>
 
         <div className="text-center">
-            <Button variant="ghost" className="text-destructive hover:text-destructive">
+            <Button variant="ghost" className="text-destructive hover:text-destructive" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Log Out
             </Button>

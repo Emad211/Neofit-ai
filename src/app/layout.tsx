@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import { UserDataProvider } from "@/context/user-profile-context";
 
 export const metadata: Metadata = {
   title: "NeoFit AI",
@@ -28,7 +29,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+            <UserDataProvider>
+              {children}
+            </UserDataProvider>
           <Toaster />
         </ThemeProvider>
       </body>

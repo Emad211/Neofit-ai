@@ -67,18 +67,27 @@ function Loading() {
 
 function AnalysisResult() {
   const searchParams = useSearchParams();
-  const { saveUserProfile, savePlans } = useUserData();
+  const { user, saveUserProfile, savePlans } = useUserData();
   const [analysisResult, setAnalysisResult] = React.useState<AnalysisResults | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const performAnalysis = async () => {
+        if (!user) {
+            setError("No user logged in. Cannot generate plans.");
+            return;
+        }
+
         const physicalSpecifications = `${searchParams.get('gender') || 'other'}, ${searchParams.get('age') || 25} years, ${searchParams.get('height') || 170}cm, ${searchParams.get('weight') || 70}kg, ${searchParams.get('bodyType') || 'mesomorph'}`;
         
-        const userProfileData: UserProfile = Object.fromEntries(searchParams.entries()) as any;
+        const userProfileData: UserProfile = {
+            ...Object.fromEntries(searchParams.entries()),
+            name: user.displayName || "User", // Add user's name
+        } as any;
+
 
         const nutritionParams: GenerateNutritionProgramInput = {
-            userId: '12345',
+            userId: user.uid,
             goals: userProfileData.goal,
             performanceGoals: userProfileData.performanceGoals,
             fitnessLevel: userProfileData.fitnessLevel,
@@ -95,7 +104,7 @@ function AnalysisResult() {
         };
 
         const workoutParams: GenerateWorkoutProgramInput = {
-            userId: '12345',
+            userId: user.uid,
             goals: userProfileData.goal,
             performanceGoals: userProfileData.performanceGoals,
             fitnessLevel: userProfileData.fitnessLevel,
@@ -135,7 +144,7 @@ function AnalysisResult() {
     };
 
     performAnalysis();
-  }, [searchParams, saveUserProfile, savePlans]);
+  }, [searchParams, saveUserProfile, savePlans, user]);
 
   if (error) {
     return <ErrorDisplay message={error} />

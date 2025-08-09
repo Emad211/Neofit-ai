@@ -6,6 +6,7 @@ import { dynamicProgramAdaptation, DynamicProgramAdaptationOutput } from "@/ai/f
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { BrainCircuit, Flame, Activity, Dumbbell, Loader2, CalendarCheck, Apple } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
+import { useUserData } from "@/context/user-profile-context";
 
 type AdaptationSuggestions = {
     calorieAdjustment?: string | undefined;
@@ -33,12 +34,17 @@ export function WeeklyAiReport() {
   const [report, setReport] = React.useState<DynamicProgramAdaptationOutput | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const { user } = useUserData();
 
   React.useEffect(() => {
     async function fetchReport() {
+      if (!user) {
+        setError("Please log in to see your report.");
+        setIsLoading(false);
+        return;
+      }
       try {
-        // In a real app, you would fetch this for the logged-in user
-        const result = await dynamicProgramAdaptation({ userId: "12345" });
+        const result = await dynamicProgramAdaptation({ userId: user.uid });
         setReport(result);
       } catch (e) {
         console.error("Failed to fetch weekly report", e);
@@ -48,7 +54,7 @@ export function WeeklyAiReport() {
       }
     }
     fetchReport();
-  }, []);
+  }, [user]);
 
   if (isLoading) {
     return (

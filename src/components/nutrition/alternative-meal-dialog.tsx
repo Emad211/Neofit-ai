@@ -15,6 +15,7 @@ import { Loader2, RefreshCw } from "lucide-react"
 import { suggestMealAlternative } from "@/ai/flows/suggest-meal-alternative"
 import { Card, CardContent } from "../ui/card"
 import type { Meal } from "./meal-card"
+import { useUserData } from "@/context/user-profile-context"
 
 type AlternativeMealDialogProps = {
   meal: Meal;
@@ -32,14 +33,16 @@ export function AlternativeMealDialog({
   const [isLoading, setIsLoading] = React.useState(false);
   const [alternative, setAlternative] = React.useState<{ alternativeMeal: string } | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const { user } = useUserData();
 
   const fetchAlternative = React.useCallback(async () => {
+    if (!user) return;
     setIsLoading(true);
     setError(null);
     setAlternative(null);
     try {
       const result = await suggestMealAlternative({
-        userId: "12345", // In a real app, use the actual user ID
+        userId: user.uid,
         mealId: meal.name,
         context: `User is looking for an alternative to ${meal.name}. The original meal has around ${meal.calories} calories. Suggest something similar.`,
       });
@@ -50,7 +53,7 @@ export function AlternativeMealDialog({
     } finally {
       setIsLoading(false);
     }
-  }, [meal]);
+  }, [meal, user]);
   
   React.useEffect(() => {
     if (isOpen) {

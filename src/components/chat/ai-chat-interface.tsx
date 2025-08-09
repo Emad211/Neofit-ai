@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useUserData } from "@/context/user-profile-context";
 import { cn } from "@/lib/utils";
 import { Bot, Send, User, Loader2 } from "lucide-react";
 import { useState, useRef, useEffect, FormEvent } from "react";
@@ -42,6 +43,7 @@ export function AIChatInterface() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { user } = useUserData();
 
   const handleTabChange = (value: string) => {
     setActiveTab(value as AgentType);
@@ -58,7 +60,7 @@ export function AIChatInterface() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || !user) return;
 
     const newMessage: Message = { role: "user", content: input };
     const currentMessages = [...messages[activeTab], newMessage];
@@ -69,7 +71,7 @@ export function AIChatInterface() {
 
     try {
       const result = await conversationalAgent({
-        userId: "12345", // In a real app, use the actual user ID
+        userId: user.uid,
         agentType: activeTab,
         messageHistory: currentMessages.slice(0, -1).map(m => ({ role: m.role, content: m.content })),
         newMessage: input,
@@ -128,7 +130,7 @@ export function AIChatInterface() {
                 </div>
                  {message.role === "user" && (
                   <Avatar className="h-9 w-9 border">
-                    <AvatarImage src="https://placehold.co/100x100.png" alt="User" data-ai-hint="profile picture" />
+                    <AvatarImage src={user?.photoURL || "https://placehold.co/100x100.png"} alt={user?.displayName || "User"} data-ai-hint="profile picture" />
                     <AvatarFallback><User /></AvatarFallback>
                   </Avatar>
                 )}
@@ -153,9 +155,9 @@ export function AIChatInterface() {
               onChange={(e) => setInput(e.target.value)}
               placeholder={`Message ${agentType} coach...`}
               autoComplete="off"
-              disabled={isLoading}
+              disabled={isLoading || !user}
             />
-            <Button type="submit" size="icon" disabled={isLoading || !input.trim()}>
+            <Button type="submit" size="icon" disabled={isLoading || !input.trim() || !user}>
               <Send className="h-5 w-5" />
             </Button>
           </form>

@@ -7,6 +7,7 @@ import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import type { GenerateNutritionProgramOutput } from '@/ai/flows/generate-nutrition-program';
 import type { GenerateWorkoutProgramOutput } from '@/ai/flows/generate-workout-program';
+import { useRouter } from 'next/navigation';
 
 const db = getFirestore(app);
 const auth = getAuth(app);
@@ -117,19 +118,59 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
   const [combinedLogs, setCombinedLogs] = useState<CombinedLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
-  const MOCK_USER_ID = 'mock-user-123';
 
-  // Real-time listeners
   useEffect(() => {
-    if (!user) return;
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        setIsLoading(true);
+        if (firebaseUser) {
+            setUser(firebaseUser);
+        } else {
+            setUser(null);
+            setUserProfile(null);
+            setNutritionPlan(null);
+            setWorkoutPlan(null);
+            setCombinedLogs([]);
+            router.push('/auth');
+        }
+    });
 
-    const unsubscribes = Object.entries(logTypeToCollectionName).map(([logType, collectionName]) => {
+    return () => unsubscribe();
+  }, [router]);
+
+
+  useEffect(() => {
+    if (!user) {
+        setIsLoading(false);
+        return;
+    };
+    
+    const profileRef = doc(db, 'profiles', user.uid);
+    const plansRef = doc(db, 'plans', user.uid);
+
+    const unsubProfile = onSnapshot(profileRef, (doc) => {
+        setUserProfile(doc.data() as UserProfile || null);
+    });
+
+    const unsubPlans = onSnapshot(plansRef, (doc) => {
+        const data = doc.data();
+        if (data) {
+            setNutritionPlan(data.nutritionPlan);
+            setWorkoutPlan(data.workoutPlan);
+        } else {
+            setNutritionPlan(null);
+            setWorkoutPlan(null);
+        }
+    });
+    
+    // Set up listeners for all log collections
+    const logUnsubscribers = Object.entries(logTypeToCollectionName).map(([logType, collectionName]) => {
         const q = query(collection(db, 'profiles', user.uid, collectionName), orderBy('loggedAt', 'desc'));
         return onSnapshot(q, (querySnapshot) => {
             const logs = querySnapshot.docs.map(doc => ({ 
                 id: doc.id, 
-                logType: logType,
+                logType: logType as keyof typeof logTypeToCollectionName,
                 ...doc.data() 
             } as CombinedLog));
             
@@ -143,45 +184,14 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
         });
     });
 
+    setIsLoading(false);
+
     return () => {
-        unsubscribes.forEach(unsub => unsub());
-    };
-}, [user]);
-
-
-  const fetchData = async (userId: string) => {
-    setIsLoading(true);
-    try {
-      const profileRef = doc(db, 'profiles', userId);
-      const plansRef = doc(db, 'plans', userId);
-      
-      const [profileDoc, plansDoc] = await Promise.all([getDoc(profileRef), getDoc(plansRef)]);
-
-      if (profileDoc.exists()) {
-        setUserProfile(profileDoc.data() as UserProfile);
-      } else {
-        setUserProfile(null);
-      }
-      if (plansDoc.exists()) {
-        const plansData = plansDoc.data();
-        setNutritionPlan(plansData.nutritionPlan);
-        setWorkoutPlan(plansData.workoutPlan);
-      } else {
-        setNutritionPlan(null);
-        setWorkoutPlan(null);
-      }
-    } catch (error) {
-      console.error("Failed to fetch user data from Firestore", error);
-    } finally {
-      setIsLoading(false);
+        unsubProfile();
+        unsubPlans();
+        logUnsubscribers.forEach(unsub => unsub());
     }
-  };
-
-  useEffect(() => {
-    const mockUser = { uid: MOCK_USER_ID } as User;
-    setUser(mockUser);
-    fetchData(mockUser.uid);
-  }, []);
+  }, [user]);
 
   const saveUserProfile = async (profileData: UserProfile) => {
     if (!user) {
