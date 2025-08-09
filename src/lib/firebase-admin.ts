@@ -1,9 +1,5 @@
 
 import admin from 'firebase-admin';
-import * as dotenv from 'dotenv';
-
-// IMPORTANT: Configure dotenv before any other imports that might use environment variables.
-dotenv.config();
 
 // This prevents re-initialization during hot-reloading in development.
 if (!admin.apps.length) {
