@@ -33,10 +33,10 @@ export function AlternativeMealDialog({
   const [isLoading, setIsLoading] = React.useState(false);
   const [alternative, setAlternative] = React.useState<{ alternativeMeal: string } | null>(null);
   const [error, setError] = React.useState<string | null>(null);
-  const { user } = useUserData();
+  const { user, userProfile } = useUserData();
 
   const fetchAlternative = React.useCallback(async () => {
-    if (!user) return;
+    if (!user || !userProfile) return;
     setIsLoading(true);
     setError(null);
     setAlternative(null);
@@ -45,6 +45,7 @@ export function AlternativeMealDialog({
         userId: user.uid,
         mealId: meal.name,
         context: `User is looking for an alternative to ${meal.name}. The original meal has around ${meal.calories} calories. Suggest something similar.`,
+        geminiApiKey: userProfile.geminiApiKey,
       });
       setAlternative(result);
     } catch (e) {
@@ -53,7 +54,7 @@ export function AlternativeMealDialog({
     } finally {
       setIsLoading(false);
     }
-  }, [meal, user]);
+  }, [meal, user, userProfile]);
   
   React.useEffect(() => {
     if (isOpen) {

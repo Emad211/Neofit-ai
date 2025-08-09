@@ -35,10 +35,10 @@ export function MealDetailsDialog({ meal, isOpen, onOpenChange }: MealDetailsDia
     const [recipe, setRecipe] = React.useState<string | null>(null);
     const [isLoadingRecipe, setIsLoadingRecipe] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
-    const { user } = useUserData();
+    const { user, userProfile } = useUserData();
 
     React.useEffect(() => {
-        if (isOpen && meal && user) {
+        if (isOpen && meal && user && userProfile) {
             const fetchRecipe = async () => {
                 setIsLoadingRecipe(true);
                 setError(null);
@@ -48,6 +48,7 @@ export function MealDetailsDialog({ meal, isOpen, onOpenChange }: MealDetailsDia
                         userId: user.uid,
                         mealName: meal.name,
                         ingredients: meal.ingredients,
+                        geminiApiKey: userProfile.geminiApiKey,
                     });
                     setRecipe(result.recipe);
                 } catch (e) {
@@ -59,7 +60,7 @@ export function MealDetailsDialog({ meal, isOpen, onOpenChange }: MealDetailsDia
             };
             fetchRecipe();
         }
-    }, [isOpen, meal, user]);
+    }, [isOpen, meal, user, userProfile]);
 
   if (!meal) return null;
 

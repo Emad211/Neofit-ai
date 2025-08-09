@@ -21,6 +21,7 @@ const SuggestMealAlternativeInputSchema = z.object({
     .describe(
       'Contextual information, including dietary restrictions, available ingredients, and time constraints.'
     ),
+  geminiApiKey: z.string().optional().describe('Optional Gemini API key for the user.'),
 });
 export type SuggestMealAlternativeInput = z.infer<
   typeof SuggestMealAlternativeInputSchema
@@ -51,6 +52,9 @@ export async function suggestMealAlternative(
         input: {schema: SuggestMealAlternativeInputSchema},
         output: {schema: SuggestMealAlternativeOutputSchema},
         model: 'googleai/gemini-1.5-flash',
+        config: {
+            apiKey: input.geminiApiKey,
+        },
         prompt: `You are a nutrition expert. A user is looking for an alternative meal suggestion.
 
         Original Meal ID: {{{mealId}}}

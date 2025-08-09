@@ -36,10 +36,10 @@ export function AlternativeExerciseDialog({
   const [isLoading, setIsLoading] = React.useState(false);
   const [alternative, setAlternative] = React.useState<{ alternativeExercise: string; reason: string } | null>(null);
   const [error, setError] = React.useState<string | null>(null);
-  const { user } = useUserData();
+  const { user, userProfile } = useUserData();
 
   const fetchAlternative = React.useCallback(async () => {
-    if (!user) return;
+    if (!user || !userProfile) return;
     setIsLoading(true);
     setError(null);
     setAlternative(null);
@@ -49,6 +49,7 @@ export function AlternativeExerciseDialog({
         exerciseId: currentExerciseName,
         availableEquipment: availableEquipment,
         medicalLimitations: medicalLimitations,
+        geminiApiKey: userProfile.geminiApiKey,
       });
       setAlternative(result);
     } catch (e) {
@@ -57,7 +58,7 @@ export function AlternativeExerciseDialog({
     } finally {
       setIsLoading(false);
     }
-  }, [currentExerciseName, availableEquipment, medicalLimitations, user]);
+  }, [currentExerciseName, availableEquipment, medicalLimitations, user, userProfile]);
   
   // Fetch alternative when dialog is opened
   React.useEffect(() => {

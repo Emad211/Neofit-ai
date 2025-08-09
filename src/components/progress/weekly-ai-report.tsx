@@ -47,10 +47,10 @@ export function WeeklyAiReport() {
   const [report, setReport] = React.useState<GenerateOnDemandReportOutput | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const { user } = useUserData();
+  const { user, userProfile } = useUserData();
 
   const handleGenerateReport = async () => {
-    if (!user) {
+    if (!user || !userProfile) {
         setError("Please log in to generate your report.");
         return;
     }
@@ -59,7 +59,7 @@ export function WeeklyAiReport() {
     setReport(null);
     
     try {
-        const result = await generateOnDemandReport({ userId: user.uid });
+        const result = await generateOnDemandReport({ userId: user.uid, geminiApiKey: userProfile.geminiApiKey });
         setReport(result);
     } catch (e: any) {
         console.error("Failed to fetch on-demand report", e);

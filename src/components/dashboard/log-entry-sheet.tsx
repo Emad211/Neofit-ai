@@ -129,7 +129,8 @@ export function LogEntrySheet({ open, onOpenChange, logType, editableLog, onClos
                     age: Number(userProfile.age),
                     gender: userProfile.gender,
                     heightCm: Number(userProfile.height)
-                }
+                },
+                geminiApiKey: userProfile.geminiApiKey,
             });
             setValue('caloriesBurned', String(result.caloriesBurned));
             setCalculatedCalories(result.caloriesBurned);

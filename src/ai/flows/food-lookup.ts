@@ -18,6 +18,7 @@ const FoodLookupInputSchema = z.object({
   photoDataUri: z.string().optional().describe(
       "A photo of a food item, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
+  geminiApiKey: z.string().optional().describe('Optional Gemini API key for the user.'),
 });
 export type FoodLookupInput = z.infer<typeof FoodLookupInputSchema>;
 
@@ -45,6 +46,9 @@ export async function foodLookup(input: FoodLookupInput): Promise<FoodLookupOutp
         input: {schema: FoodLookupInputSchema},
         output: {schema: FoodLookupOutputSchema},
         model: 'googleai/gemini-1.5-flash',
+        config: {
+            apiKey: input.geminiApiKey,
+        },
         prompt: `You are a nutritional database expert. The user will provide either a food name, a photo of food, or both. 
         
       Your task is to provide accurate nutritional information for a standard serving of that food.

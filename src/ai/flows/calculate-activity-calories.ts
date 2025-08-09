@@ -24,6 +24,7 @@ const CalculateActivityCaloriesInputSchema = z.object({
       gender: z.enum(['male', 'female', 'other']).describe('The gender of the user.'),
   }),
   averageHeartRate: z.number().int().optional().describe('The user\'s average heart rate during the activity, if available. This provides a more accurate calculation.'),
+  geminiApiKey: z.string().optional().describe('Optional Gemini API key for the user.'),
 });
 export type CalculateActivityCaloriesInput = z.infer<typeof CalculateActivityCaloriesInputSchema>;
 
@@ -46,6 +47,9 @@ export async function calculateActivityCalories(input: CalculateActivityCalories
         input: {schema: CalculateActivityCaloriesInputSchema},
         output: {schema: CalculateActivityCaloriesOutputSchema},
         model: 'googleai/gemini-1.5-flash',
+        config: {
+            apiKey: input.geminiApiKey,
+        },
         prompt: `You are an expert exercise physiologist. Your task is to accurately estimate the number of calories a person has burned during a specific physical activity.
 
   Use the user's detailed data and the activity information to perform a precise calculation. 

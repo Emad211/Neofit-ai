@@ -41,7 +41,7 @@ export function FoodCameraLookup() {
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
-  const { user } = useUserData();
+  const { user, userProfile } = useUserData();
 
   React.useEffect(() => {
     const getCameraPermission = async () => {
@@ -72,8 +72,8 @@ export function FoodCameraLookup() {
   }, []);
 
   const handleAnalyze = async () => {
-    if (!videoRef.current || !canvasRef.current || !user) {
-        if (!user) {
+    if (!videoRef.current || !canvasRef.current || !user || !userProfile) {
+        if (!user || !userProfile) {
             toast({
                 variant: 'destructive',
                 title: 'User not found',
@@ -97,7 +97,7 @@ export function FoodCameraLookup() {
     const dataUri = canvas.toDataURL("image/jpeg");
 
     try {
-      const response = await foodLookup({ userId: user.uid, foodName: "", photoDataUri: dataUri });
+      const response = await foodLookup({ userId: user.uid, foodName: "", photoDataUri: dataUri, geminiApiKey: userProfile.geminiApiKey });
       setResult(response);
     } catch (e) {
       console.error(e);

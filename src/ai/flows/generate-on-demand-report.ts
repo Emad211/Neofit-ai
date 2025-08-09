@@ -16,6 +16,7 @@ import { getUserDataForWeeklyReview } from '../tools/get-user-data';
 // Define the input schema for the flow
 const GenerateOnDemandReportInputSchema = z.object({
   userId: z.string().describe('The ID of the user for whom the report is being generated.'),
+  geminiApiKey: z.string().optional().describe('Optional Gemini API key for the user.'),
 });
 export type GenerateOnDemandReportInput = z.infer<typeof GenerateOnDemandReportInputSchema>;
 
@@ -45,6 +46,9 @@ const generateOnDemandReportFlow = ai.defineFlow(
       input: {schema: GenerateOnDemandReportInputSchema},
       output: {schema: GenerateOnDemandReportOutputSchema},
       model: 'googleai/gemini-1.5-flash',
+      config: {
+        apiKey: input.geminiApiKey,
+      },
       prompt: `You are the friendly AI coach for the NeoFit application. Your job is to provide an encouraging, on-demand summary of the user's progress so far in their current week.
 
       Follow these steps with precision for User ID: {{{userId}}}

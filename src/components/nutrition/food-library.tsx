@@ -32,7 +32,7 @@ export function FoodLibrary() {
   const [result, setResult] = React.useState<FoodLookupOutput | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const { user } = useUserData();
+  const { user, userProfile } = useUserData();
   const { toast } = useToast();
   
   const form = useForm<SearchFormValues>({
@@ -40,7 +40,7 @@ export function FoodLibrary() {
   });
 
   const onSubmit: SubmitHandler<SearchFormValues> = async (data) => {
-    if (!user) {
+    if (!user || !userProfile) {
       toast({
         variant: 'destructive',
         title: 'User not found',
@@ -53,7 +53,7 @@ export function FoodLibrary() {
     setResult(null);
 
     try {
-      const response = await foodLookup({ userId: user.uid, foodName: data.query });
+      const response = await foodLookup({ userId: user.uid, foodName: data.query, geminiApiKey: userProfile.geminiApiKey });
       setResult(response);
     } catch (e) {
       console.error(e);

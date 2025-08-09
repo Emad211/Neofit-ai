@@ -27,35 +27,8 @@ if (!(global as any).genkit) {
   (global as any).genkit = genkit({
     plugins: [googleAI({
       apiVersion: 'v1',
-      // The API key is now determined dynamically based on the user's profile.
-      // We pass the userId in the flow's input, and use this function
-      // to retrieve their key from Firestore.
-      apiKey: async (flow) => {
-        // Use 'any' for input to accommodate different flow input schemas
-        const userId = (flow.input as any)?.userId;
-        if (!userId) {
-          // Fallback to environment variable if no user context is provided
-          return process.env.GEMINI_API_KEY || '';
-        }
-        try {
-          const db = getFirestore();
-          const profileRef = doc(db, 'profiles', userId);
-          const profileSnap = await getDoc(profileRef);
-          if (profileSnap.exists()) {
-            const profileData = profileSnap.data();
-            // Use the user's key if it exists, otherwise fallback to the global key
-            return profileData.geminiApiKey || process.env.GEMINI_API_KEY || '';
-          }
-        } catch (error) {
-           console.error(`Failed to retrieve API key for user ${userId}:`, error);
-        }
-        // Fallback if user profile or key is not found
-        return process.env.GEMINI_API_KEY || '';
-      }
     })],
-    // Set a default model for all generate calls directly in the main config.
-    // NOTE: Individual prompts can and should override this for clarity.
-    model: 'googleai/gemini-1.5-flash',
+    // Let flows specify the model, as some might need different versions.
   });
 
   // Import all flows and tools here to register them with the initialized Genkit instance.
