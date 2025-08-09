@@ -2,7 +2,7 @@
 import admin from 'firebase-admin';
 import * as dotenv from 'dotenv';
 
-// This ensures dotenv is loaded, but the primary call is in genkit.ts
+// IMPORTANT: Configure dotenv before any other imports that might use environment variables.
 dotenv.config();
 
 // This prevents re-initialization during hot-reloading in development.
