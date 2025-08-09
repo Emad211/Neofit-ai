@@ -1,5 +1,3 @@
-
-'use server';
 /**
  * @fileOverview A Genkit tool to save the generated weekly report to Firestore.
  */

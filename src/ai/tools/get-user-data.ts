@@ -1,5 +1,3 @@
-
-'use server';
 /**
  * @fileOverview This file contains tools for fetching data from Firestore for Genkit flows.
  */
@@ -47,7 +45,7 @@ export const getUserDataForWeeklyReview = ai.defineTool(
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const sevenDaysAgoTimestamp = Timestamp.fromDate(sevenDaysAgo);
 
-    const profileRef = db.doc(`profiles/${userId}`);
+    const profileRef = doc(db, `profiles/${userId}`);
     const reportsRef = collection(db, `profiles/${userId}/weekly_reports`);
     const mealLogsRef = collection(db, `profiles/${userId}/meal_logs`);
     const activityLogsRef = collection(db, `profiles/${userId}/activity_logs`);
