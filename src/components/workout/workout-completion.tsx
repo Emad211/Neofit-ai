@@ -30,6 +30,7 @@ export function WorkoutCompletion({ session, totalDuration }: WorkoutCompletionP
   const { width, height } = useWindowSize();
   const { saveWorkoutLog } = useUserData();
   const { toast } = useToast();
+  const hasLogged = React.useRef(false);
   
   const totalVolume = React.useMemo(() => {
     return session.exercises.reduce((total, exercise) => {
@@ -46,6 +47,8 @@ export function WorkoutCompletion({ session, totalDuration }: WorkoutCompletionP
   }, [session.exercises]);
 
   React.useEffect(() => {
+    if (hasLogged.current) return; // Prevent double logging in Strict Mode
+
     const logData = {
       workoutId: session.id,
       workoutName: session.title,
@@ -71,19 +74,21 @@ export function WorkoutCompletion({ session, totalDuration }: WorkoutCompletionP
         description: "There was an error saving your workout log.",
       });
     });
+
+    hasLogged.current = true;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only once when the component mounts
+  }, [totalDuration, totalVolume, session, saveWorkoutLog, toast]);
 
 
   return (
     <>
-        <Confetti
-            width={width ?? 0}
-            height={height ?? 0}
+        {width && height && <Confetti
+            width={width}
+            height={height}
             recycle={false}
             numberOfPieces={400}
             gravity={0.1}
-        />
+        />}
         <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 text-center">
             <div className="max-w-2xl">
                 <Award className="h-20 w-20 text-accent mx-auto animate-pulse" />
@@ -126,5 +131,3 @@ export function WorkoutCompletion({ session, totalDuration }: WorkoutCompletionP
     </>
   );
 }
-
-    

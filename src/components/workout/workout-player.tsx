@@ -79,6 +79,7 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
           videoUrl: "/placehold.co/1280x720.png", // Placeholder
           dataAiHint: ex.name.toLowerCase(), // Basic hint
           rest: 90, // Default rest
+          sets: parseInt(ex.sets, 10) || 3, // Ensure sets is a number
           logs: Array.from({ length: parseInt(ex.sets, 10) || 3 }, (_, i) => ({
             set: i + 1,
             reps: '',
@@ -328,5 +329,3 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
     </div>
   );
 }
-
-    
