@@ -51,7 +51,6 @@ export async function generateOnDemandReport(input: GenerateOnDemandReportInput)
       // STEP 2: Define a prompt that expects the data directly.
       const onDemandReportPrompt = ai.definePrompt({
         name: 'onDemandReportPrompt',
-        // Note: The prompt no longer needs tools, as data fetching is done outside.
         input: {schema: ReportPromptInputSchema},
         output: {schema: GenerateOnDemandReportOutputSchema},
         model: 'googleai/gemini-1.5-flash',
@@ -64,22 +63,38 @@ export async function generateOnDemandReport(input: GenerateOnDemandReportInput)
         - Name: {{{userData.userProfile.name}}}
         - Goal: {{{userData.userProfile.goal}}}
 
-        **LOGGED DATA FOR THIS WEEK:**
-        - Meal Logs: {{{json userData.mealLogs}}}
-        - Activity Logs: {{{json userData.activityLogs}}}
-        - Weight Logs: {{{json userData.weightLogs}}}
-        - Workout Logs: {{{json userData.workoutLogs}}}
-
         **YOUR TASK:**
-        1.  Start with a friendly greeting, using the user's name.
-        2.  Analyze the provided logs for the **current week**.
-        3.  **If there are logs**, praise the user for their effort. Specifically mention one or two logged items to show you've seen their data (e.g., "I see you logged a run for 20 minutes" or "That chicken salad you logged sounds delicious!").
-        4.  **If there are NO logs in one or more categories**, gently encourage the user to start logging in those areas to get a better picture of their progress. For example, "I don't see any weight logs yet this week, remember to weigh in to track your progress!".
-        5.  **If ALL log arrays are empty**, write a friendly and motivational message encouraging the user to start logging their meals, activities, and weight to get started on their journey.
-        6.  Keep the tone positive, encouraging, and conversational.
-        7.  **IMPORTANT RESTRICTION**: Do NOT mention creating new plans or that the "official weekly plan will be updated". This is only an on-demand, mid-week check-in. Just focus on the data provided for this week.
+        1.  Start with a friendly and encouraging greeting, using the user's name (e.g., "Hey {{{userData.userProfile.name}}}, great work this week!").
+        2.  Carefully review the logs provided for the current week. Address EACH category based on whether it has data or not.
+        
+        {{#if userData.mealLogs}}
+        - **Meals**: Acknowledge the meals they've logged. Mention one or two specific items. For example: "I see you've logged some meals, like the '{{{userData.mealLogs.0.description}}}' - sounds delicious!"
+        {{else}}
+        - **Meals**: Gently encourage them to log their meals. For example: "Remember to log your meals to keep track of your nutrition."
+        {{/if}}
 
-        Generate the 'analysisReport' based on these instructions.
+        {{#if userData.activityLogs}}
+        - **Activities**: Praise their logged activities. Mention a specific one. For example: "Awesome job on that {{{userData.activityLogs.0.durationMinutes}}}-minute {{{userData.activityLogs.0.activityType}}}!"
+        {{else}}
+        - **Activities**: If no separate activities are logged, gently encourage it. For example: "Don't forget to log any activities you do, every bit counts!"
+        {{/if}}
+        
+        {{#if userData.workoutLogs}}
+        - **Workouts**: Commend them for completing their workouts. For example: "Great job completing the '{{{userData.workoutLogs.0.workoutName}}}' workout!"
+        {{else}}
+        - **Workouts**: If no full workouts are logged, encourage them. For example: "Try to complete one of your planned workouts this week to stay on track!"
+        {{/if}}
+
+        {{#if userData.weightLogs}}
+        - **Weight**: Mention their latest weight log. For example: "Thanks for logging your weight! Your latest weigh-in was {{{userData.weightLogs.0.weight}}} kg."
+        {{else}}
+        - **Weight**: Gently remind them to log their weight. For example: "I don't see a weight log for this week yet. Remember to weigh in to track your progress!"
+        {{/if}}
+
+        3.  Conclude with a motivational closing statement.
+        4.  **IMPORTANT RESTRICTION**: Do NOT mention creating new plans or that the "official weekly plan will be updated". This is only an on-demand, mid-week check-in. Just focus on the data provided for this week.
+
+        Generate the 'analysisReport' based on these explicit instructions.
         `,
       });
       
