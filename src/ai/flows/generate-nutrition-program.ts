@@ -119,7 +119,7 @@ export async function generateNutritionProgram(input: GenerateNutritionProgramIn
 }
 
 
-export function getGenerateNutritionProgramTool() {
+export async function getGenerateNutritionProgramTool() {
     return ai.defineTool(
         {
             name: 'generateNutritionProgram',

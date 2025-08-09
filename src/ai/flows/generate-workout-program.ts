@@ -117,7 +117,7 @@ export async function generateWorkoutProgram(input: GenerateWorkoutProgramInput)
 }
 
 
-export function getGenerateWorkoutProgramTool() {
+export async function getGenerateWorkoutProgramTool() {
     return ai.defineTool(
         {
             name: 'generateWorkoutProgram',
