@@ -65,16 +65,16 @@ export async function generateOnDemandReport(input: GenerateOnDemandReportInput)
 
         **YOUR TASK:**
         1.  Start with a friendly and encouraging greeting, using the user's name (e.g., "Hey {{{userData.userProfile.name}}}, great work this week!").
-        2.  Carefully review the logs provided for the current week. Address EACH category based on whether it has data or not.
+        2.  Carefully review the logs provided for the current week. Address EACH category based on whether it has data or not, using the exact text provided.
         
         {{#if userData.mealLogs}}
-        - **Meals**: Acknowledge the meals they've logged. Mention one or two specific items. For example: "I see you've logged some meals, like the '{{{userData.mealLogs.0.description}}}' - sounds delicious!"
+        - **Meals**: Acknowledge the meals they've logged. For example: "I see you've logged some meals, like the '{{{userData.mealLogs.0.description}}}' - sounds delicious!"
         {{else}}
         - **Meals**: Gently encourage them to log their meals. For example: "Remember to log your meals to keep track of your nutrition."
         {{/if}}
 
         {{#if userData.activityLogs}}
-        - **Activities**: Praise their logged activities. Mention a specific one. For example: "Awesome job on that {{{userData.activityLogs.0.durationMinutes}}}-minute {{{userData.activityLogs.0.activityType}}}!"
+        - **Activities**: Praise their logged activities. For example: "Awesome job on that {{{userData.activityLogs.0.durationMinutes}}}-minute {{{userData.activityLogs.0.activityType}}}!"
         {{else}}
         - **Activities**: If no separate activities are logged, gently encourage it. For example: "Don't forget to log any activities you do, every bit counts!"
         {{/if}}
