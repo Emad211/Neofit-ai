@@ -46,42 +46,32 @@ export async function generateOnDemandReport(input: GenerateOnDemandReportInput)
         config: {
           apiKey: geminiApiKey,
         },
-        prompt: `You are the friendly, encouraging, and analytical AI coach for the NeoFit application. Your task is to write a short, motivational on-demand progress report for the user based *only* on the data provided for the current week. This is a mid-week check-in, not the final weekly summary.
+        prompt: `You are an encouraging and analytical AI coach. Your task is to write a short, motivational on-demand progress report for the user based *only* on the data provided for the current week. This is a mid-week check-in.
 
-        **USER DATA (Full JSON Dump):**
-        {{{json userData}}}
+        **YOUR TASK: Write an insightful and human-readable report by following these steps precisely.**
 
-        ---
+        1.  **Greeting:** Start with a friendly greeting. Use the user's name, which is **{{userData.userProfile.name}}**. Do not use any other name.
 
-        **YOUR TASK: Write an insightful and human-readable report.**
-
-        1.  **Start with a friendly and encouraging greeting.** Use the user's name: **{{userData.userProfile.name}}**.
-
-        2.  **Analyze Workout Adherence:**
+        2.  **Workout Adherence Analysis:**
             *   Compare the number of logged workouts (count of items in \`workoutLogs\`) to the number of planned workouts (count of items in \`baseWorkoutPlan\`).
-            *   **If adherence is good**, praise them (e.g., "Amazing job on completing X out of Y workouts so far!").
-            *   **If workouts were missed**, be encouraging (e.g., "You've completed X workout(s) so far. Let's try to hit the next one!").
-            *   **If no workouts were logged**, gently remind them (e.g., "I don't see any logged workouts yet this week. Let's try to get one in soon!").
+            *   State this clearly, for example: "You've completed X out of Y planned workouts".
+            *   Then, list the names of the completed workouts from the \`workoutLogs\`. Use a loop for this.
 
-        3.  **Analyze Nutrition Adherence:**
-            *   Calculate the average daily calorie intake from the \`mealLogs\`.
-            *   Compare this to the average target calories from the \`baseNutritionPlan\`.
-            *   Comment on their progress (e.g., "You're doing a great job staying close to your calorie targets," or "I noticed we're a bit over our calorie goal on average, let's keep an eye on that for the rest of the week.").
-            *   Mention one or two logged meals by name to show you're paying attention (e.g., "The 'Lentil Soup' and 'Scrambled Tofu' looked great!").
+        3.  **Nutrition Adherence Analysis:**
+            *   Acknowledge the user's meal logging.
+            *   List the specific meals logged by their 'description' field from the \`mealLogs\`. Use a loop for this and list every single one.
 
-        4.  **Analyze Weight Trend:**
-            *   Look at the \`weightLogs\`. Is the weight trending in the right direction based on their goal (\`userProfile.goal\`)?
-            *   **If it's trending well (e.g., down for weight loss)**, celebrate it! (e.g., "Great news! The scale is moving in the right direction, showing a drop from START to END kg.").
-            *   **If it's stagnant or going the wrong way**, be encouraging and focus on the process (e.g., "Weight can fluctuate, so let's stay consistent with the plan.").
-            *   **If only one log exists**, just state the latest weight (e.g., "Thanks for logging your weight! Your latest weigh-in was X kg.").
+        4.  **Other Activities:**
+            *   Check the \`activityLogs\`. If there are any, list them by their 'activityType' and 'durationMinutes'.
 
-        5.  **Acknowledge Other Activities:**
-            *   Briefly mention any other activities from \`activityLogs\` (e.g., "Awesome job on that 30-minute Light Jog!").
+        5.  **Weight Trend Analysis:**
+            *   Look at the \`weightLogs\`.
+            *   If there is more than one entry, state the trend by mentioning the change from the first weight log to the most recent one.
+            *   If there is only one entry, just state the latest weight.
 
-        6.  **End with a Motivational Summary:**
-            *   Provide a strong, positive closing statement to encourage them for the rest of the week.
+        6.  **Closing:** End with a short, positive, and motivational summary.
 
-        **IMPORTANT RESTRICTION**: Do NOT mention creating new plans or that the "official weekly plan will be updated". This is only an on-demand, mid-week check-in. Just focus on analyzing the data provided.
+        **IMPORTANT RESTRICTION**: Do NOT mention creating new plans or that the "official weekly plan will be updated". Do not invent or "hallucinate" any information, names, meals, or activities that are not explicitly present in the provided data. Stick strictly to the data in the JSON.
 
         Generate the 'analysisReport' based on these explicit instructions.
         `,
