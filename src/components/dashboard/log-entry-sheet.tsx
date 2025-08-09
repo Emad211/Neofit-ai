@@ -124,10 +124,10 @@ export function LogEntrySheet({ open, onOpenChange, logType, editableLog, onClos
                 durationMinutes: parseInt(durationMinutes, 10),
                 intensity: intensity as "low" | "medium" | "high",
                 userProfile: {
-                    weightKg: userProfile.weight, 
-                    age: userProfile.age,
+                    weightKg: Number(userProfile.weight), 
+                    age: Number(userProfile.age),
                     gender: userProfile.gender,
-                    heightCm: userProfile.height
+                    heightCm: Number(userProfile.height)
                 }
             });
             setValue('caloriesBurned', String(result.caloriesBurned));
