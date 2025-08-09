@@ -1,3 +1,4 @@
+
 // src/context/user-profile-context.tsx
 "use client";
 
@@ -72,7 +73,6 @@ export type WorkoutLog = {
     logType: 'workout';
     workoutId: string;
     workoutName: string;
-    completedAt: string; // Keep this as it's specific to the workout completion event
     loggedAt: string;
     durationMinutes: number;
     totalVolume: number;
@@ -245,7 +245,7 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
   }
   
   const logMeal = (logData: Omit<MealLog, 'logType' | 'loggedAt' | 'id'>) => logGeneric('meal_logs', logData);
-  const logActivity = (logData: Omit<ActivityLog, 'logType' | 'loggedAt' | 'id'>) => logGeneric('activity_logs', logData);
+  const logActivity = (logData: Omit<ActivityLog, 'logType' | 'loggedAt'| 'id'>) => logGeneric('activity_logs', logData);
   const logWeight = (logData: Omit<WeightLog, 'logType' | 'loggedAt' | 'id'>) => logGeneric('weight_logs', logData);
   const saveWorkoutLog = (logData: Omit<WorkoutLog, 'logType' | 'loggedAt'| 'id'>) => logGeneric('workout_logs', logData);
 
@@ -328,3 +328,5 @@ export const useUserData = () => {
   }
   return context;
 };
+
+    

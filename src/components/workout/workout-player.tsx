@@ -34,87 +34,104 @@ import {
 } from "@/components/ui/dialog"
 import { useRouter } from "next/navigation";
 import { WorkoutCompletion } from "./workout-completion";
+import { useUserData } from "@/context/user-profile-context";
+import { Skeleton } from "../ui/skeleton";
 
 
-// Mock data for a single workout session
-const initialWorkoutSession = {
-  id: "full-body-a",
-  name: "Full Body Strength A",
-  exercises: [
-    {
-      id: "ex1",
-      name: "Barbell Squats",
-      videoUrl: "/placehold.co/1280x720.png",
-      dataAiHint: "barbell squat",
-      sets: 3,
-      reps: "8-12",
-      rest: 90,
-      logs: [
-        { set: 1, reps: "", weight: "" },
-        { set: 2, reps: "", weight: "" },
-        { set: 3, reps: "", weight: "" },
-      ],
-    },
-    {
-      id: "ex2",
-      name: "Bench Press",
-      videoUrl: "/placehold.co/1280x720.png",
-      dataAiHint: "bench press",
-      sets: 3,
-      reps: "8-12",
-      rest: 90,
-      logs: [
-        { set: 1, reps: "", weight: "" },
-        { set: 2, reps: "", weight: "" },
-        { set: 3, reps: "", weight: "" },
-      ],
-    },
-    {
-      id: "ex3",
-      name: "Bent Over Rows",
-      videoUrl: "/placehold.co/1280x720.png",
-      dataAiHint: "bent over row",
-      sets: 3,
-      reps: "8-12",
-      rest: 90,
-      logs: [
-        { set: 1, reps: "", weight: "" },
-        { set: 2, reps: "", weight: "" },
-        { set: 3, reps: "", weight: "" },
-      ],
-    },
-  ],
+export type Log = { set: number; reps: string; weight: string };
+export type Exercise = {
+  id: string;
+  name: string;
+  videoUrl?: string; // Made optional for robustness
+  dataAiHint?: string; // Made optional
+  sets: number;
+  reps: string;
+  rest: number;
+  logs: Log[];
 };
 
-type WorkoutSession = typeof initialWorkoutSession;
-export type Log = { set: number; reps: string; weight: string };
-export type Exercise = WorkoutSession['exercises'][0] & { logs: Log[] };
+export type WorkoutSession = {
+  id: string;
+  title: string;
+  exercises: Exercise[];
+}
 
 
 export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
-  const [session, setSession] = React.useState<WorkoutSession>(initialWorkoutSession);
+  const { workoutPlan, userProfile } = useUserData();
+  const router = useRouter();
+  
+  const [session, setSession] = React.useState<WorkoutSession | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = React.useState(0);
   const [currentSetIndex, setCurrentSetIndex] = React.useState(0);
   const [isResting, setIsResting] = React.useState(false);
   const [isWorkoutComplete, setIsWorkoutComplete] = React.useState(false);
-  const [startTime] = React.useState(Date.now());
-  const router = useRouter();
+  const [startTime, setStartTime] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    if (workoutPlan) {
+      const activeWorkout = workoutPlan.find(w => w.id === workoutId);
+      if (activeWorkout) {
+        // Initialize the session with logs placeholder
+        const exercisesWithLogs: Exercise[] = activeWorkout.exercises.map((ex, exIndex) => ({
+          ...ex,
+          id: `${workoutId}-${exIndex}`, // Create a unique ID for the exercise instance
+          videoUrl: "/placehold.co/1280x720.png", // Placeholder
+          dataAiHint: ex.name.toLowerCase(), // Basic hint
+          rest: 90, // Default rest
+          logs: Array.from({ length: parseInt(ex.sets, 10) || 3 }, (_, i) => ({
+            set: i + 1,
+            reps: '',
+            weight: ''
+          }))
+        }));
+
+        setSession({
+          id: activeWorkout.id,
+          title: activeWorkout.title,
+          exercises: exercisesWithLogs,
+        });
+        setStartTime(Date.now());
+      }
+    }
+  }, [workoutId, workoutPlan]);
+  
+  if (!session || !userProfile) {
+    return (
+        <div className="flex h-screen flex-col bg-gray-950 text-white">
+            <header className="flex items-center justify-between p-4"><Skeleton className="h-8 w-8 rounded-full" /><Skeleton className="h-6 w-32" /><Skeleton className="h-8 w-10" /></header>
+            <Skeleton className="relative aspect-video w-full" />
+            <div className="flex justify-center gap-2 p-4"><Skeleton className="h-2 w-8 rounded-full" /><Skeleton className="h-2 w-8 rounded-full" /><Skeleton className="h-2 w-8 rounded-full" /></div>
+            <main className="flex-grow space-y-6 p-4">
+                <Skeleton className="h-10 w-24 mx-auto" />
+                <div className="grid grid-cols-2 gap-4">
+                     <Skeleton className="h-28 w-full" />
+                     <Skeleton className="h-28 w-full" />
+                </div>
+            </main>
+            <footer className="grid grid-cols-3 items-center gap-4 p-4"><Skeleton className="h-10 w-24" /><Skeleton className="h-20 w-20 rounded-full" /><Skeleton className="h-10 w-10 justify-self-end" /></footer>
+        </div>
+    )
+  }
 
   const currentExercise = session.exercises[currentExerciseIndex];
+  const currentLog = currentExercise.logs[currentSetIndex];
+  const isSetLogComplete = currentLog && currentLog.reps.trim() !== '' && currentLog.weight.trim() !== '';
+
 
   const handleLogChange = (field: 'reps' | 'weight', value: string) => {
     const newSession = { ...session };
     newSession.exercises[currentExerciseIndex].logs[currentSetIndex][field] = value;
-    setSession(newSession);
+    setSession(newSession as WorkoutSession);
   }
   
   const handleReplaceExercise = (newExerciseName: string) => {
     setSession(prevSession => {
+        if (!prevSession) return null;
         const newExercises = [...prevSession.exercises];
         newExercises[currentExerciseIndex] = {
             ...newExercises[currentExerciseIndex],
             name: newExerciseName,
-            // Optionally reset logs or adjust other properties
             logs: newExercises[currentExerciseIndex].logs.map(log => ({ ...log, reps: '', weight: '' }))
         };
         return { ...prevSession, exercises: newExercises };
@@ -122,20 +139,17 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
   };
 
   const handleNextSet = () => {
-    // This is where you would persist the log data for the completed set
-    console.log(`Logging set ${currentSetIndex + 1} for ${currentExercise.name}:`, currentExercise.logs[currentSetIndex]);
+    if (!isSetLogComplete) return; // Prevent advancing without logging
 
-    if (currentSetIndex < currentExercise.sets - 1) {
+    if (currentSetIndex < currentExercise.logs.length - 1) {
       setCurrentSetIndex(currentSetIndex + 1);
       setIsResting(true);
     } else {
-      // Last set of the exercise, move to next exercise
       if (currentExerciseIndex < session.exercises.length - 1) {
         setCurrentExerciseIndex(currentExerciseIndex + 1);
         setCurrentSetIndex(0);
         setIsResting(true);
       } else {
-        // Workout finished
         setIsWorkoutComplete(true);
       }
     }
@@ -149,28 +163,18 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
     }
   };
 
-  const handlePrevExercise = () => {
-    if (currentExerciseIndex > 0) {
-      setCurrentExerciseIndex(currentExerciseIndex - 1);
-      setCurrentSetIndex(0);
-      setIsResting(false);
-    }
-  };
-
-  if(isWorkoutComplete) {
+  if(isWorkoutComplete && startTime) {
     const totalDuration = Math.round((Date.now() - startTime) / 60000); // in minutes
     return <WorkoutCompletion session={session} totalDuration={totalDuration} />
   }
 
   if (isResting) {
-    const nextExercise = currentExerciseIndex < session.exercises.length - 1 && currentSetIndex === currentExercise.sets -1 
+    const isLastSetOfExercise = currentSetIndex === currentExercise.logs.length;
+    const nextExercise = currentExerciseIndex < session.exercises.length - 1 && isLastSetOfExercise
       ? session.exercises[currentExerciseIndex + 1] 
       : currentExercise;
-
-    const isLastSetOfExercise = currentSetIndex === currentExercise.sets-1;
-
+    
     let nextUpMessage = isLastSetOfExercise ? `Next: ${nextExercise.name}` : `Next: Set ${currentSetIndex + 1}`;
-
 
     return (
       <WorkoutTimer
@@ -183,7 +187,6 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
 
   return (
     <div className="flex h-screen flex-col bg-gray-950 text-white">
-      {/* Header */}
       <header className="flex items-center justify-between p-4">
         <AlertDialog>
           <AlertDialogTrigger asChild>
@@ -196,7 +199,7 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
               <AlertDialogTitle>End Workout?</AlertDialogTitle>
               <AlertDialogDescription>
                 Are you sure you want to end your workout session? Your progress
-                so far will be saved.
+                so far will not be saved.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -216,20 +219,18 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
         <div className="w-10"></div>
       </header>
 
-      {/* Video */}
       <div className="relative aspect-video w-full">
         <Image
-          src={`https://${currentExercise.videoUrl.replace(/^\/+/, '')}`}
+          src={currentExercise.videoUrl || `https://placehold.co/1280x720.png`}
           alt={currentExercise.name}
           layout="fill"
           objectFit="cover"
-          data-ai-hint={currentExercise.dataAiHint}
+          data-ai-hint={currentExercise.dataAiHint || 'exercise video'}
         />
       </div>
 
-      {/* Set Tracker */}
       <div className="flex justify-center gap-2 p-4">
-        {Array.from({ length: currentExercise.sets }).map((_, index) => (
+        {Array.from({ length: currentExercise.logs.length }).map((_, index) => (
           <div
             key={index}
             className={`h-2 w-8 rounded-full ${
@@ -243,7 +244,6 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
         ))}
       </div>
 
-      {/* Inputs */}
       <main className="flex-grow space-y-6 p-4">
         <div className="text-center">
           <h2 className="text-4xl font-bold text-primary">
@@ -262,7 +262,7 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
               id="weight"
               type="number"
               placeholder="--"
-              value={currentExercise.logs[currentSetIndex].weight}
+              value={currentLog.weight}
               onChange={(e) => handleLogChange('weight', e.target.value)}
               className="mt-1 h-20 w-full bg-gray-800 text-center text-4xl font-bold text-white [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
@@ -278,7 +278,7 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
               id="reps"
               type="number"
               placeholder={currentExercise.reps}
-              value={currentExercise.logs[currentSetIndex].reps}
+              value={currentLog.reps}
               onChange={(e) => handleLogChange('reps', e.target.value)}
               className="mt-1 h-20 w-full bg-gray-800 text-center text-4xl font-bold text-white [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
@@ -286,14 +286,13 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
         </div>
       </main>
 
-      {/* Footer Actions */}
       <footer className="grid grid-cols-3 items-center gap-4 p-4">
         <div className="flex justify-start gap-2">
           <AlternativeExerciseDialog
             currentExerciseName={currentExercise.name}
             onSelectExercise={handleReplaceExercise}
-            availableEquipment="dumbbells, resistance band"
-            medicalLimitations="Previous knee injury"
+            availableEquipment={userProfile.availableEquipment || 'gym'}
+            medicalLimitations={userProfile.medicalHistory || 'none'}
           />
           <Dialog>
               <DialogTrigger asChild>
@@ -313,8 +312,9 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
         </div>
         <div className="text-center">
           <Button
-            className="h-20 w-20 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
+            className="h-20 w-20 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 disabled:bg-gray-700"
             onClick={handleNextSet}
+            disabled={!isSetLogComplete}
           >
             <Check className="h-10 w-10" />
           </Button>
@@ -328,3 +328,5 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
     </div>
   );
 }
+
+    

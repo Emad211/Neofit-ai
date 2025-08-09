@@ -7,15 +7,9 @@ import { Award, Check, Clock, Repeat, Weight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@uidotdev/usehooks';
-import type { Exercise, Log } from './workout-player';
+import type { WorkoutSession } from './workout-player';
 import { useUserData } from '@/context/user-profile-context';
 import { useToast } from '@/hooks/use-toast';
-
-type WorkoutSession = {
-    id: string;
-    name: string;
-    exercises: Exercise[];
-}
 
 interface WorkoutCompletionProps {
   session: WorkoutSession;
@@ -39,7 +33,7 @@ export function WorkoutCompletion({ session, totalDuration }: WorkoutCompletionP
   
   const totalVolume = React.useMemo(() => {
     return session.exercises.reduce((total, exercise) => {
-      const exerciseVolume = exercise.logs.reduce((exTotal: number, log: Log) => {
+      const exerciseVolume = exercise.logs.reduce((exTotal, log) => {
         const reps = parseInt(log.reps, 10);
         const weight = parseFloat(log.weight);
         if (!isNaN(reps) && !isNaN(weight)) {
@@ -54,8 +48,7 @@ export function WorkoutCompletion({ session, totalDuration }: WorkoutCompletionP
   React.useEffect(() => {
     const logData = {
       workoutId: session.id,
-      workoutName: session.name,
-      completedAt: new Date().toISOString(),
+      workoutName: session.title,
       durationMinutes: totalDuration,
       totalVolume: totalVolume,
       exercises: session.exercises.map(ex => ({
@@ -98,7 +91,7 @@ export function WorkoutCompletion({ session, totalDuration }: WorkoutCompletionP
                     Workout Complete!
                 </h1>
                 <p className="mt-4 text-lg text-muted-foreground">
-                    Amazing work. You crushed it! Here is your summary for {session.name}.
+                    Amazing work. You crushed it! Here is your summary for {session.title}.
                 </p>
 
                 <div className="my-8 grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -116,7 +109,7 @@ export function WorkoutCompletion({ session, totalDuration }: WorkoutCompletionP
                             {session.exercises.map(exercise => (
                                 <li key={exercise.id} className="py-2 flex items-center justify-between text-sm">
                                     <span className="font-medium">{exercise.name}</span>
-                                    <span className="text-muted-foreground">{exercise.sets} Sets</span>
+                                    <span className="text-muted-foreground">{exercise.logs.length} Sets</span>
                                 </li>
                             ))}
                         </ul>
@@ -133,3 +126,5 @@ export function WorkoutCompletion({ session, totalDuration }: WorkoutCompletionP
     </>
   );
 }
+
+    
