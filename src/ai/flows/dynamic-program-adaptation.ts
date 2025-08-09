@@ -14,8 +14,8 @@ import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 import { getUserDataForWeeklyReview } from '../tools/get-user-data';
 import { saveWeeklyReport } from '../tools/save-weekly-report';
-import { getGenerateWorkoutProgramTool } from './generate-workout-program';
-import { getGenerateNutritionProgramTool } from './generate-nutrition-program';
+import { generateWorkoutProgram } from './generate-workout-program';
+import { generateNutritionProgram } from './generate-nutrition-program';
 
 
 // Define the input schema for the main flow
@@ -32,6 +32,17 @@ const DynamicProgramAdaptationOutputSchema = z.object({
 });
 export type DynamicProgramAdaptationOutput = z.infer<typeof DynamicProgramAdaptationOutputSchema>;
 
+// NEW: Define an intermediate schema for the AI analysis prompt
+const AIAnalysisInputSchema = z.object({
+    userData: z.any().describe("A JSON object containing all of the user's data for the week: profile, logs, and historical reports."),
+});
+
+// NEW: Define the output for the analysis prompt, which includes the report and a structured history object
+const AIAnalysisOutputSchema = z.object({
+    analysisReport: z.string().describe("The human-readable report for the user."),
+    structuredHistory: z.string().describe("A structured JSON string summarizing the analysis for use by other AI agents."),
+});
+
 
 /**
  * Wrapper function to be called from the server (e.g., a scheduled job).
@@ -44,47 +55,96 @@ export async function dynamicProgramAdaptation(input: DynamicProgramAdaptationIn
         outputSchema: DynamicProgramAdaptationOutputSchema,
       },
       async (input) => {
-        const dynamicAdaptationPrompt = ai.definePrompt({
-          name: 'dynamicAdaptationPrompt',
-          tools: [getUserDataForWeeklyReview, saveWeeklyReport, await getGenerateWorkoutProgramTool(), await getGenerateNutritionProgramTool()],
-          input: {schema: DynamicProgramAdaptationInputSchema},
-          output: {schema: DynamicProgramAdaptationOutputSchema},
+        
+        // STEP 1: Programmatically fetch all user data first. This is guaranteed to run.
+        const userData = await getUserDataForWeeklyReview({ userId: input.userId });
+
+        // STEP 2: Define and call the AI prompt for analysis, passing the fetched data.
+        const analysisPrompt = ai.definePrompt({
+          name: 'weeklyAnalysisPrompt',
+          input: { schema: AIAnalysisInputSchema },
+          output: { schema: AIAnalysisOutputSchema },
           model: 'googleai/gemini-1.5-flash',
-          prompt: `You are the master AI coach for the NeoFit application. Your primary job is to conduct a thorough, data-driven weekly review for the user and then create their plans for the upcoming week.
-
-          Follow these steps with precision for User ID: {{{userId}}}
-
-          **Step 1: Comprehensive Data Analysis**
-          - Call the 'getUserDataForWeeklyReview' tool to get a complete picture of the user's situation. This includes their core profile, all historical weekly reports, and all of their activity, meal, and weight logs from the last 7 days.
-
-          **Step 2: Generate the User-Facing Weekly Report**
-          - Based on ALL the data from Step 1, write a comprehensive, insightful, and encouraging report for the user.
-          - Analyze their adherence to workout and nutrition plans.
-          - Highlight progress (e.g., weight change, increased workout volume).
-          - Acknowledge any logged feedback (e.g., replaced exercises, disliked meals).
-          - Keep the tone positive and motivational.
-
-          **Step 3: Create a Structured JSON Analysis for AI Specialists**
-          - Synthesize your findings into a structured JSON object. This will be the 'history' parameter for the specialist AIs. It should summarize adherence, progress, and key feedback points clearly.
+          prompt: `You are the master AI coach for the NeoFit application. You have been provided with a complete data dump for a user.
           
-          **Step 4: Save the Report**
-          - Call the 'saveWeeklyReport' tool. Pass the 'userId' and the beautiful, human-readable 'analysisReport' you just wrote in Step 2. This creates a permanent record.
+          USER DATA:
+          {{{json userData}}}
 
-          **Step 5: Generate Next Week's Plans**
-          - Now, act as the orchestrator for the specialists.
-          - Call the 'generateWorkoutProgram' flow. For the 'history' parameter, pass the structured JSON analysis you created in Step 3.
-          - Call the 'generateNutritionProgram' flow. For the 'history' parameter, pass the same structured JSON analysis.
+          **YOUR TASKS:**
+          1.  **Generate the User-Facing Weekly Report**: Based on ALL the provided data, write a comprehensive, insightful, and encouraging report for the user.
+              - Analyze their adherence to workout and nutrition plans.
+              - Highlight progress (e.g., weight change, increased workout volume).
+              - Acknowledge any logged feedback (e.g., replaced exercises, disliked meals).
+              - Keep the tone positive and motivational.
+
+          2.  **Create a Structured JSON Analysis for AI Specialists**: Synthesize your findings into a structured JSON object string. This will be the 'history' parameter for the specialist AIs. It should summarize adherence, progress, and key feedback points clearly.
           
-          **Step 6: Final Output**
-          - Consolidate the results into the final output format.
-          - The 'analysisReport' should be the full text from Step 2.
-          - The 'nextWeekWorkoutPlanSummary' and 'nextWeekNutritionPlanSummary' should be the summaries from the newly generated plans in Step 5.
+          Return both the human-readable 'analysisReport' and the 'structuredHistory' JSON string.
           `,
         });
+
+        const { output: analysisResult } = await analysisPrompt({ userData });
         
-        // This prompt now handles the entire orchestration logic.
-        const {output} = await dynamicAdaptationPrompt(input, { toolConfig: { toolChoice: 'any' } });
-        return output!;
+        if (!analysisResult) {
+            throw new Error("AI analysis failed to produce an output.");
+        }
+
+        const { analysisReport, structuredHistory } = analysisResult;
+
+        // STEP 3: Save the generated report.
+        await saveWeeklyReport({ userId: input.userId, analysisReport });
+
+        // STEP 4: Generate the next week's plans using the structured history.
+        // We need to get the user's full profile to pass to the generation flows.
+        const userProfile = userData.userProfile;
+        if (!userProfile) throw new Error("User profile is missing from fetched data.");
+
+        const [workoutResult, nutritionResult] = await Promise.all([
+            generateWorkoutProgram({
+                userId: input.userId,
+                // Pass all required fields from the user's profile
+                goals: userProfile.goal,
+                performanceGoals: userProfile.performanceGoals,
+                fitnessLevel: userProfile.fitnessLevel,
+                trainingDays: parseInt(userProfile.trainingDays, 10),
+                trainingDuration: userProfile.trainingDuration,
+                trainingTime: userProfile.trainingTime,
+                workoutLocation: userProfile.workoutLocation,
+                availableEquipment: userProfile.availableEquipment || 'Full gym equipment',
+                medicalHistory: userProfile.medicalHistory || 'None',
+                physicalSpecifications: `${userProfile.gender}, ${userProfile.age} years, ${userProfile.height}cm, ${userProfile.weight}kg, ${userProfile.bodyType}`,
+                sleepHours: userProfile.sleepHours,
+                stressLevel: userProfile.stressLevel,
+                // Crucially, pass the structured history from the analysis
+                history: structuredHistory,
+            }),
+            generateNutritionProgram({
+                userId: input.userId,
+                // Pass all required fields from the user's profile
+                goals: userProfile.goal,
+                performanceGoals: userProfile.performanceGoals,
+                fitnessLevel: userProfile.fitnessLevel,
+                physicalSpecifications: `${userProfile.gender}, ${userProfile.age} years, ${userProfile.height}cm, ${userProfile.weight}kg, ${userProfile.bodyType}`,
+                lifestyle: userProfile.lifestyle,
+                sleepHours: userProfile.sleepHours,
+                stressLevel: userProfile.stressLevel,
+                eatingHabits: userProfile.eatingHabits,
+                cookingSkill: userProfile.cookingSkill,
+                costLevel: userProfile.costLevel,
+                trainingDays: parseInt(userProfile.trainingDays, 10),
+                trainingDuration: userProfile.trainingDuration,
+                trainingTime: userProfile.trainingTime,
+                 // Crucially, pass the structured history from the analysis
+                history: structuredHistory,
+            })
+        ]);
+
+        // STEP 5: Consolidate and return the final output.
+        return {
+            analysisReport,
+            nextWeekWorkoutPlanSummary: workoutResult.summary,
+            nextWeekNutritionPlanSummary: nutritionResult.summary,
+        };
       }
     );
   return dynamicProgramAdaptationFlow(input);
