@@ -1,18 +1,15 @@
+
 // src/components/progress/weekly-ai-report.tsx
 "use client";
 
 import * as React from "react";
 import { dynamicProgramAdaptation, DynamicProgramAdaptationOutput } from "@/ai/flows/dynamic-program-adaptation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { BrainCircuit, Flame, Activity, Dumbbell, Loader2, CalendarCheck, Apple } from "lucide-react";
+import { BrainCircuit, Flame, Activity, Dumbbell, Loader2, CalendarCheck, Apple, Wand2 } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 import { useUserData } from "@/context/user-profile-context";
-
-type AdaptationSuggestions = {
-    calorieAdjustment?: string | undefined;
-    cardioAdjustment?: string | undefined;
-    muscleGroupAdjustment?: string | undefined;
-}
+import { Button } from "../ui/button";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 
 function Suggestion({ text, icon: Icon, title }: { text: string | undefined; icon: React.ElementType, title: string }) {
     if (!text) return null;
@@ -29,80 +26,16 @@ function Suggestion({ text, icon: Icon, title }: { text: string | undefined; ico
     );
 }
 
-
-export function WeeklyAiReport() {
-  const [report, setReport] = React.useState<DynamicProgramAdaptationOutput | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const { user } = useUserData();
-
-  React.useEffect(() => {
-    async function fetchReport() {
-      if (!user) {
-        setError("Please log in to see your report.");
-        setIsLoading(false);
-        return;
-      }
-      try {
-        const result = await dynamicProgramAdaptation({ userId: user.uid });
-        setReport(result);
-      } catch (e) {
-        console.error("Failed to fetch weekly report", e);
-        setError("Could not load your weekly AI report. Please try again later.");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchReport();
-  }, [user]);
-
-  if (isLoading) {
+function ReportDisplay({ report }: { report: DynamicProgramAdaptationOutput }) {
     return (
-        <Card>
-            <CardHeader className="flex flex-row items-center gap-4">
-                <Skeleton className="h-10 w-10 rounded-full" />
-                <div className="flex-1 space-y-2">
-                    <Skeleton className="h-5 w-48" />
-                    <Skeleton className="h-4 w-64" />
-                </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-[90%]" />
-                <div className="border-t pt-4 mt-4 space-y-3">
-                    <Skeleton className="h-5 w-40" />
-                     <Skeleton className="h-10 w-full" />
-                     <Skeleton className="h-10 w-full" />
-                </div>
-            </CardContent>
-        </Card>
-    );
-  }
-
-  if (error) {
-    return (
-        <Card className="border-destructive">
-            <CardHeader>
-                 <CardTitle className="text-destructive">Error</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <p>{error}</p>
-            </CardContent>
-        </Card>
-    );
-  }
-  
-  if (!report) return null;
-
-  return (
-    <Card className="bg-accent/20 border-accent">
+    <Card className="bg-accent/20 border-accent animate-in fade-in-50">
       <CardHeader className="flex flex-row items-start gap-4 space-y-0">
         <div className="bg-secondary p-3 rounded-full">
             <BrainCircuit className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
-            <CardTitle className="font-headline">Weekly AI Report</CardTitle>
-            <CardDescription>Your personalized analysis and suggestions.</CardDescription>
+            <CardTitle className="font-headline">Your Weekly AI Report</CardTitle>
+            <CardDescription>A personalized analysis of your progress.</CardDescription>
         </div>
       </CardHeader>
       <CardContent>
@@ -111,25 +44,89 @@ export function WeeklyAiReport() {
         </p>
         
         <div className="border-t border-accent pt-4 space-y-4">
-            <h4 className="font-semibold">Plan for Next Week</h4>
+            <h4 className="font-semibold">Your New Plan for Next Week</h4>
              <div className="space-y-3">
-                <Suggestion title="Workout Plan" text={report.nextWeekWorkoutPlan} icon={CalendarCheck} />
-                <Suggestion title="Nutrition Plan" text={report.nextWeekNutritionPlan} icon={Apple} />
-            </div>
-
-            <div className="border-t border-accent pt-4">
-                <h4 className="font-semibold mb-3">Reasoning & Suggestions</h4>
-                <div className="space-y-3">
-                    <Suggestion title="Calorie Adjustment" text={report.adaptationSuggestions.calorieAdjustment} icon={Flame} />
-                    <Suggestion title="Cardio Adjustment" text={report.adaptationSuggestions.cardioAdjustment} icon={Activity} />
-                    <Suggestion title="Workout Focus" text={report.adaptationSuggestions.muscleGroupAdjustment} icon={Dumbbell} />
-                    {!report.adaptationSuggestions.calorieAdjustment && !report.adaptationSuggestions.cardioAdjustment && !report.adaptationSuggestions.muscleGroupAdjustment && (
-                        <p className="text-sm text-muted-foreground">No changes suggested this week. Keep up the great work!</p>
-                    )}
-                </div>
+                <Suggestion title="New Workout Plan" text={report.nextWeekWorkoutPlanSummary} icon={CalendarCheck} />
+                <Suggestion title="New Nutrition Plan" text={report.nextWeekNutritionPlanSummary} icon={Apple} />
             </div>
         </div>
       </CardContent>
     </Card>
   );
 }
+
+
+export function WeeklyAiReport() {
+  const [report, setReport] = React.useState<DynamicProgramAdaptationOutput | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const { user } = useUserData();
+
+  const handleGenerateReport = async () => {
+    if (!user) {
+        setError("Please log in to generate your report.");
+        return;
+    }
+    setIsLoading(true);
+    setError(null);
+    setReport(null);
+    
+    try {
+        const result = await dynamicProgramAdaptation({ userId: user.uid });
+        setReport(result);
+    } catch (e: any) {
+        console.error("Failed to fetch weekly report", e);
+        setError("Could not generate your weekly AI report. This can happen during periods of high traffic. Please try again in a moment.");
+    } finally {
+        setIsLoading(false);
+    }
+  }
+
+  if (isLoading) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-headline">Generating Report...</CardTitle>
+                 <CardDescription>Your AI coach is analyzing your week.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center justify-center text-center p-8 space-y-4">
+                <Loader2 className="h-12 w-12 text-primary animate-spin" />
+                <p className="text-muted-foreground">This may take a moment...</p>
+            </CardContent>
+        </Card>
+    );
+  }
+
+  if (error) {
+    return (
+        <Alert variant="destructive">
+            <AlertTitle>Generation Failed</AlertTitle>
+            <AlertDescription>
+                {error}
+                 <Button variant="secondary" size="sm" onClick={handleGenerateReport} className="mt-4">
+                    Try Again
+                </Button>
+            </AlertDescription>
+        </Alert>
+    );
+  }
+  
+  if (report) {
+    return <ReportDisplay report={report} />
+  }
+
+  return (
+    <Card className="bg-secondary/50">
+       <CardContent className="p-6 text-center">
+            <Wand2 className="h-12 w-12 mx-auto text-primary/80 mb-4" />
+            <h3 className="text-xl font-bold font-headline">Ready for your weekly check-in?</h3>
+            <p className="text-muted-foreground mt-2 mb-6">Let your AI coach analyze your progress, provide insights, and adapt your plan for the week ahead.</p>
+            <Button onClick={handleGenerateReport} size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                <BrainCircuit className="mr-2 h-5 w-5" />
+                Generate My Weekly Report
+            </Button>
+       </CardContent>
+    </Card>
+  );
+}
+

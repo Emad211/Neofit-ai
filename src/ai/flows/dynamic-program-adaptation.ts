@@ -4,119 +4,73 @@
  * @fileOverview This file defines the Genkit flow for dynamically adapting a user's program.
  * It orchestrates other tools to first analyze weekly data and then generate a new plan.
  *
- * - dynamicProgramAdaptationFlow - The main orchestration flow.
+ * - dynamicProgramAdaptation - The main orchestration flow.
  * - DynamicProgramAdaptationInput - The input type for the flow.
  * - DynamicProgramAdaptationOutput - The return type for the flow.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
+import { getUserDataForWeeklyReview } from '../tools/get-user-data';
+import { saveWeeklyReport } from '../tools/save-weekly-report';
+import { generateWorkoutProgram } from './generate-workout-program';
+import { generateNutritionProgram } from './generate-nutrition-program';
+
 
 // Define the input schema for the main flow
-const DynamicProgramAdaptationInputSchema = z.object({
+export const DynamicProgramAdaptationInputSchema = z.object({
   userId: z.string().describe('The ID of the user for whom the analysis and adaptation is being generated.'),
 });
 export type DynamicProgramAdaptationInput = z.infer<typeof DynamicProgramAdaptationInputSchema>;
 
 // Define the final output schema for the main flow
-const DynamicProgramAdaptationOutputSchema = z.object({
-  analysisReport: z.string().describe("A summary of the user's weekly progress."),
-  adaptationSuggestions: z.object({
-    calorieAdjustment: z.string().optional(),
-    cardioAdjustment: z.string().optional(),
-    muscleGroupAdjustment: z.string().optional(),
-  }),
-  nextWeekWorkoutPlan: z.string().describe("A summary of the new workout plan for the upcoming week."),
-  nextWeekNutritionPlan: z.string().describe("A summary of the new nutrition plan for the upcoming week."),
+export const DynamicProgramAdaptationOutputSchema = z.object({
+  analysisReport: z.string().describe("A comprehensive, encouraging, and human-readable summary of the user's weekly progress, adherence, and achievements."),
+  nextWeekWorkoutPlanSummary: z.string().describe("A summary of the new workout plan for the upcoming week."),
+  nextWeekNutritionPlanSummary: z.string().describe("A summary of the new nutrition plan for the upcoming week."),
 });
 export type DynamicProgramAdaptationOutput = z.infer<typeof DynamicProgramAdaptationOutputSchema>;
 
 
 /**
- * Tool 1: Analyzes user data and provides suggestions.
- * In a real app, this would query a database. Here we simulate it.
- */
-const getWeeklyAnalysis = ai.defineTool(
-  {
-    name: 'getWeeklyAnalysis',
-    description: 'Analyzes user workout, nutrition, and weight logs from the past week to identify trends and provide adaptation suggestions.',
-    inputSchema: z.object({ userId: z.string() }),
-    outputSchema: z.object({
-      analysisReport: z.string().describe('A plain language report summarizing progress and relevant factors.'),
-      adaptationSuggestions: z.object({
-        calorieAdjustment: z.string().optional().describe('Suggested adjustment to daily calorie intake.'),
-        cardioAdjustment: z.string().optional().describe('Suggested adjustment to cardio exercise.'),
-        muscleGroupAdjustment: z.string().optional().describe('Suggested adjustment to muscle group focus.'),
-      }),
-    }),
-  },
-  async ({ userId }) => {
-    console.log(`Analyzing data for user: ${userId}`);
-    // Mock data simulates a good week of progress.
-    return {
-      analysisReport: "Excellent consistency this week, Sara! You nailed every workout and your weight is trending downwards perfectly. Let's keep this momentum going!",
-      adaptationSuggestions: {
-        calorieAdjustment: "Maintain your current calorie target. It's working perfectly.",
-        cardioAdjustment: 'Consider adding 10 minutes of light walking after your strength sessions to improve recovery.',
-      },
-    };
-  }
-);
-
-
-/**
- * Tool 2: Generates a new program based on adaptation suggestions.
- * In a real app, this would generate a detailed plan. Here we simulate it.
- */
-const generateAdaptedProgram = ai.defineTool(
-    {
-        name: 'generateAdaptedProgram',
-        description: 'Generates a new, adapted workout and nutrition plan for the upcoming week based on specific adaptation suggestions.',
-        inputSchema: z.object({
-            userId: z.string(),
-            suggestions: z.object({
-                calorieAdjustment: z.string().optional(),
-                cardioAdjustment: z.string().optional(),
-                muscleGroupAdjustment: z.string().optional(),
-            }),
-        }),
-        outputSchema: z.object({
-            nextWeekWorkoutPlan: z.string().describe("Summary of the new workout plan."),
-            nextWeekNutritionPlan: z.string().describe("Summary of the new nutrition plan."),
-        }),
-    },
-    async ({ userId, suggestions }) => {
-        console.log(`Generating new plan for user ${userId} with suggestions:`, suggestions);
-        // Mock response based on suggestions
-        const workoutPlan = `The workout plan for next week maintains the current structure but incorporates an additional 10-minute cool-down walk after each strength session as you suggested.`;
-        const nutritionPlan = `The nutrition plan for next week keeps the calorie target stable. We will continue to focus on high-protein meals to support recovery.`;
-        return {
-            nextWeekWorkoutPlan: workoutPlan,
-            nextWeekNutritionPlan: nutritionPlan,
-        };
-    }
-);
-
-
-/**
  * The Orchestrator Prompt
- * This prompt uses the defined tools to perform a multi-step process.
+ * This prompt uses multiple tools in a chain to perform a complex, multi-step process.
  */
 const dynamicAdaptationPrompt = ai.definePrompt({
   name: 'dynamicAdaptationPrompt',
-  tools: [getWeeklyAnalysis, generateAdaptedProgram],
+  tools: [getUserDataForWeeklyReview, saveWeeklyReport, generateWorkoutProgram, generateNutritionProgram],
   input: {schema: DynamicProgramAdaptationInputSchema},
   output: {schema: DynamicProgramAdaptationOutputSchema},
   model: 'googleai/gemini-1.5-flash',
-  prompt: `You are the master AI coach for the NeoFit application. Your job is to orchestrate a weekly review for the user.
-  
-  Follow these steps precisely:
-  1.  Call the 'getWeeklyAnalysis' tool to get a data-driven analysis of the user's past week.
-  2.  Review the 'adaptationSuggestions' from the analysis.
-  3.  Call the 'generateAdaptedProgram' tool, passing the user's ID and the exact suggestions you received.
-  4.  Finally, consolidate all the information from both tool calls into the final JSON output format. Ensure every field in the output schema is populated.
+  prompt: `You are the master AI coach for the NeoFit application. Your primary job is to conduct a thorough, data-driven weekly review for the user and then create their plans for the upcoming week.
 
-  Start the process for User ID: {{{userId}}}
+  Follow these steps with precision for User ID: {{{userId}}}
+
+  **Step 1: Comprehensive Data Analysis**
+  - Call the 'getUserDataForWeeklyReview' tool to get a complete picture of the user's situation. This includes their core profile, all historical weekly reports, and all of their activity, meal, and weight logs from the last 7 days.
+
+  **Step 2: Generate the User-Facing Weekly Report**
+  - Based on ALL the data from Step 1, write a comprehensive, insightful, and encouraging report for the user.
+  - Analyze their adherence to workout and nutrition plans.
+  - Highlight progress (e.g., weight change, increased workout volume).
+  - Acknowledge any logged feedback (e.g., replaced exercises, disliked meals).
+  - Keep the tone positive and motivational.
+
+  **Step 3: Create a Structured JSON Analysis for AI Specialists**
+  - Synthesize your findings into a structured JSON object. This will be the 'history' parameter for the specialist AIs. It should summarize adherence, progress, and key feedback points clearly.
+  
+  **Step 4: Save the Report**
+  - Call the 'saveWeeklyReport' tool. Pass the 'userId' and the beautiful, human-readable 'analysisReport' you just wrote in Step 2. This creates a permanent record.
+
+  **Step 5: Generate Next Week's Plans**
+  - Now, act as the orchestrator for the specialists.
+  - Call the 'generateWorkoutProgram' flow. For the 'history' parameter, pass the structured JSON analysis you created in Step 3.
+  - Call the 'generateNutritionProgram' flow. For the 'history' parameter, pass the same structured JSON analysis.
+  
+  **Step 6: Final Output**
+  - Consolidate the results into the final output format.
+  - The 'analysisReport' should be the full text from Step 2.
+  - The 'nextWeekWorkoutPlanSummary' and 'nextWeekNutritionPlanSummary' should be the summaries from the newly generated plans in Step 5.
   `,
 });
 
@@ -131,6 +85,7 @@ export const dynamicProgramAdaptationFlow = ai.defineFlow(
     outputSchema: DynamicProgramAdaptationOutputSchema,
   },
   async (input) => {
+    // This prompt now handles the entire orchestration logic.
     const {output} = await dynamicAdaptationPrompt(input);
     return output!;
   }
