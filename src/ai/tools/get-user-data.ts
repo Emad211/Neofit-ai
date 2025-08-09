@@ -55,15 +55,15 @@ export const getUserDataForWeeklyReview = ai.defineTool(
 
     // Helper to fetch all historical documents (like reports), sorted by date.
     const fetchAllHistorical = async (ref: CollectionReference, dateField: string) => {
-        const q = query(ref, orderBy(dateField, 'desc'));
-        const snapshot = await getDocs(q);
+        const q = ref.orderBy(dateField, 'desc');
+        const snapshot = await q.get();
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     };
     
     // Helper to fetch recent documents from the start of the current week.
     const fetchRecent = async (ref: CollectionReference, dateField: string) => {
-        const q = query(ref, where(dateField, '>=', startOfCurrentWeekTimestamp), orderBy(dateField, 'desc'));
-        const snapshot = await getDocs(q);
+        const q = ref.where(dateField, '>=', startOfCurrentWeekTimestamp).orderBy(dateField, 'desc');
+        const snapshot = await q.get();
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     };
     
