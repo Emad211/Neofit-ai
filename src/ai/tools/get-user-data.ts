@@ -66,7 +66,7 @@ export const getUserDataForWeeklyReview = ai.defineTool(
             fetchCollection(mealLogsRef),             // Fetch recent logs
             fetchCollection(activityLogsRef),          // Fetch recent logs
             fetchCollection(weightLogsRef),            // Fetch recent logs
-            fetchCollection(workoutLogsRef),           // Fetch recent logs
+            fetchCollection(workoutLogsRef, 'completedAt'), // Workout logs use completedAt
         ]);
 
         const userProfile = profileSnap.exists() ? profileSnap.data() : null;
@@ -75,13 +75,19 @@ export const getUserDataForWeeklyReview = ai.defineTool(
             throw new Error(`User profile not found for userId: ${userId}`);
         }
         
+        // Manually filter workout logs for the last 7 days since they don't use 'loggedAt'
+        const recentWorkoutLogs = workoutLogs.filter(log => {
+            const logDate = new Date(log.completedAt);
+            return logDate >= sevenDaysAgo;
+        });
+
         return {
             userProfile,
             historicalReports,
             mealLogs,
             activityLogs,
             weightLogs,
-            workoutLogs,
+            workoutLogs: recentWorkoutLogs,
         };
 
     } catch (error) {
