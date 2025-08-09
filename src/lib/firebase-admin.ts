@@ -32,5 +32,5 @@ if (!admin.apps.length) {
   }
 }
 
-export const adminApp = admin.apps.length > 0 ? admin.apps[0] : null;
+export const adminApp = admin.apps[0]!;
 export default admin;
