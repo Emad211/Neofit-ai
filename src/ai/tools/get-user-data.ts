@@ -1,7 +1,7 @@
 /**
  * @fileOverview This file contains tools for fetching data from Firestore for Genkit flows.
  */
-import { getFirestore, collection, getDocs, query, where, orderBy, Timestamp, doc, getDoc } from 'firebase-admin/firestore';
+import * as firestore from 'firebase-admin/firestore';
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
@@ -24,36 +24,36 @@ export const getUserDataForWeeklyReview = ai.defineTool(
   async ({ userId }) => {
     // Ensure Firebase is initialized before proceeding
     const adminApp = getFirebaseAdmin();
-    const db = getFirestore(adminApp);
+    const db = firestore.getFirestore(adminApp);
     
     console.log(`Fetching data for current week's review for user: ${userId}`);
 
     // Calculate the start of the current week (assuming Monday is the first day).
     const now = new Date();
     const startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 1 });
-    const startOfCurrentWeekTimestamp = Timestamp.fromDate(startOfCurrentWeek);
+    const startOfCurrentWeekTimestamp = firestore.Timestamp.fromDate(startOfCurrentWeek);
     
-    console.log(`Current week start timestamp: ${startOfCurrentWeekTimestamp.toDate().toISOString()}`);
+    console.log(`Current week start timestamp: ${startOfCurrentWeek.toISOString()}`);
 
 
-    const profileRef = doc(db, `profiles/${userId}`);
-    const reportsRef = collection(db, `profiles/${userId}/weekly_reports`);
-    const mealLogsRef = collection(db, `profiles/${userId}/meal_logs`);
-    const activityLogsRef = collection(db, `profiles/${userId}/activity_logs`);
-    const weightLogsRef = collection(db, `profiles/${userId}/weight_logs`);
-    const workoutLogsRef = collection(db, `profiles/${userId}/workout_logs`);
+    const profileRef = firestore.doc(db, `profiles/${userId}`);
+    const reportsRef = firestore.collection(db, `profiles/${userId}/weekly_reports`);
+    const mealLogsRef = firestore.collection(db, `profiles/${userId}/meal_logs`);
+    const activityLogsRef = firestore.collection(db, `profiles/${userId}/activity_logs`);
+    const weightLogsRef = firestore.collection(db, `profiles/${userId}/weight_logs`);
+    const workoutLogsRef = firestore.collection(db, `profiles/${userId}/workout_logs`);
 
     // Helper to fetch all historical documents (like reports), sorted by date.
-    const fetchAllHistorical = async (ref: FirebaseFirestore.CollectionReference, dateField: string) => {
-        const q = query(ref, orderBy(dateField, 'desc'));
-        const snapshot = await getDocs(q);
+    const fetchAllHistorical = async (ref: firestore.CollectionReference, dateField: string) => {
+        const q = firestore.query(ref, firestore.orderBy(dateField, 'desc'));
+        const snapshot = await firestore.getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     };
     
     // Helper to fetch recent documents from the start of the current week.
-    const fetchRecent = async (ref: FirebaseFirestore.CollectionReference, dateField: string) => {
-        const q = query(ref, where(dateField, '>=', startOfCurrentWeekTimestamp), orderBy(dateField, 'desc'));
-        const snapshot = await getDocs(q);
+    const fetchRecent = async (ref: firestore.CollectionReference, dateField: string) => {
+        const q = firestore.query(ref, firestore.where(dateField, '>=', startOfCurrentWeekTimestamp), firestore.orderBy(dateField, 'desc'));
+        const snapshot = await firestore.getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     };
     
@@ -66,7 +66,7 @@ export const getUserDataForWeeklyReview = ai.defineTool(
             weightLogs,
             workoutLogs
         ] = await Promise.all([
-            getDoc(profileRef),
+            firestore.getDoc(profileRef),
             fetchAllHistorical(reportsRef, 'reportDate'), // Reports are historical, fetch all of them.
             fetchRecent(mealLogsRef, 'loggedAt'),         // All logs should be from the current week.
             fetchRecent(activityLogsRef, 'loggedAt'),
