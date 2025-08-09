@@ -105,19 +105,19 @@ export default function ProfilePage() {
                     icon={<UserCog className="h-6 w-6"/>}
                     title="Edit Profile"
                     description="Change your name and profile picture"
-                    href="#" // Placeholder link
+                    href="/profile/account"
                 />
                  <SettingsItem 
                     icon={<Mail className="h-6 w-6"/>}
                     title="Change Email"
                     description="Update the email address for your account"
-                    href="#" // Placeholder link
+                    href="/profile/account"
                 />
                  <SettingsItem 
                     icon={<Lock className="h-6 w-6"/>}
                     title="Change Password"
                     description="Update your account password"
-                    href="#" // Placeholder link
+                    href="/profile/account"
                 />
             </CardContent>
         </Card>

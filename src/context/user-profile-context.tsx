@@ -3,7 +3,7 @@
 
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, addDoc, onSnapshot, query, orderBy, updateDoc } from 'firebase/firestore';
-import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, User, EmailAuthProvider, reauthenticateWithCredential, updateProfile, updateEmail, updatePassword } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import type { GenerateNutritionProgramOutput } from '@/ai/flows/generate-nutrition-program';
 import type { GenerateWorkoutProgramOutput } from '@/ai/flows/generate-workout-program';
@@ -98,6 +98,10 @@ interface UserDataContextType {
   updateLog: (logId: string, logType: CombinedLog['logType'], data: Partial<CombinedLog>) => Promise<void>;
   deleteLog: (logId: string, logType: CombinedLog['logType']) => Promise<void>;
   resetUserData: () => Promise<void>;
+  reauthenticateUser: (password: string) => Promise<void>;
+  updateUserAccount: (data: {displayName?: string, photoURL?: string}) => Promise<void>;
+  updateUserEmail: (newEmail: string) => Promise<void>;
+  updateUserPassword: (newPassword: string) => Promise<void>;
   combinedLogs: CombinedLog[];
   isLoading: boolean;
 }
@@ -284,9 +288,34 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
     }
   };
 
+  const reauthenticateUser = async (password: string) => {
+    if (!user || !user.email) {
+      throw new Error("User not signed in or email is missing.");
+    }
+    const credential = EmailAuthProvider.credential(user.email, password);
+    await reauthenticateWithCredential(user, credential);
+  }
+
+  const updateUserAccount = async (data: {displayName?: string, photoURL?: string}) => {
+    if (!user) throw new Error("User not signed in.");
+    await updateProfile(user, data);
+    setUser({ ...user }); // Trigger a re-render
+  }
+
+  const updateUserEmail = async (newEmail: string) => {
+    if (!user) throw new Error("User not signed in.");
+    await updateEmail(user, newEmail);
+    setUser({ ...user, email: newEmail });
+  }
+
+  const updateUserPassword = async (newPassword: string) => {
+    if (!user) throw new Error("User not signed in.");
+    await updatePassword(user, newPassword);
+  }
+
 
   return (
-    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, saveUserProfile, savePlans, saveWorkoutLog, logMeal, logActivity, logWeight, updateLog, deleteLog, resetUserData, combinedLogs, isLoading }}>
+    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, saveUserProfile, savePlans, saveWorkoutLog, logMeal, logActivity, logWeight, updateLog, deleteLog, resetUserData, reauthenticateUser, updateUserAccount, updateUserEmail, updateUserPassword, combinedLogs, isLoading }}>
       {children}
     </UserDataContext.Provider>
   );
