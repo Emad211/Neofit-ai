@@ -1,26 +1,12 @@
 /**
  * @fileOverview This file contains tools for fetching data from Firestore for Genkit flows.
  */
-import { getFirestore, collection, getDocs, query, where, orderBy, limit,Timestamp, getDoc } from 'firebase-admin/firestore';
-import admin from 'firebase-admin';
+import { getFirestore, collection, getDocs, query, where, orderBy, limit,Timestamp, doc, getDoc } from 'firebase-admin/firestore';
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { adminApp } from '@/lib/firebase-admin';
 
-// Ensure Firebase is initialized
-if (!admin.apps.length) {
-  try {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      }),
-    });
-     console.log('Firebase Admin SDK initialized successfully IN GET-USER-DATA.');
-  } catch (error: any) {
-    console.error('Firebase Admin SDK initialization error IN GET-USER-DATA:', error.message);
-  }
-}
+const db = getFirestore(adminApp);
 
 export const getUserDataForWeeklyReview = ai.defineTool(
   {
@@ -37,8 +23,6 @@ export const getUserDataForWeeklyReview = ai.defineTool(
     }),
   },
   async ({ userId }) => {
-    // Initialize DB connection inside the tool to ensure Firebase is ready
-    const db = getFirestore();
     console.log(`Fetching all data for user weekly review: ${userId}`);
 
     const sevenDaysAgo = new Date();
@@ -82,7 +66,7 @@ export const getUserDataForWeeklyReview = ai.defineTool(
             fetchCollection(workoutLogsRef),
         ]);
 
-        const userProfile = profileSnap.exists ? profileSnap.data() : null;
+        const userProfile = profileSnap.exists() ? profileSnap.data() : null;
 
         if (!userProfile) {
             throw new Error(`User profile not found for userId: ${userId}`);

@@ -2,25 +2,11 @@
  * @fileOverview A Genkit tool to save the generated weekly report to Firestore.
  */
 import { getFirestore, collection, addDoc, Timestamp } from 'firebase-admin/firestore';
-import admin from 'firebase-admin';
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { adminApp } from '@/lib/firebase-admin';
 
-// Ensure Firebase is initialized
-if (!admin.apps.length) {
-  try {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      }),
-    });
-    console.log('Firebase Admin SDK initialized successfully IN SAVE-WEEKLY-REPORT.');
-  } catch (error: any) {
-    console.error('Firebase Admin SDK initialization error IN SAVE-WEEKLY-REPORT:', error.message);
-  }
-}
+const db = getFirestore(adminApp);
 
 export const saveWeeklyReport = ai.defineTool(
   {
@@ -36,7 +22,6 @@ export const saveWeeklyReport = ai.defineTool(
     }),
   },
   async ({ userId, analysisReport }) => {
-    const db = getFirestore();
     console.log(`Saving weekly report for user: ${userId}`);
     
     try {
