@@ -1,3 +1,4 @@
+import { DebugDataFetcher } from "@/components/progress/debug-data-fetcher";
 import { ProgressPhotos } from "@/components/progress/progress-photos";
 import { WeeklyAiReport } from "@/components/progress/weekly-ai-report";
 import { WeightChart } from "@/components/progress/weight-chart";
@@ -19,6 +20,7 @@ export default function ProgressPage() {
         <WeightChart />
         <WorkoutVolumeChart />
         <ProgressPhotos />
+        <DebugDataFetcher />
       </main>
     </div>
   );
