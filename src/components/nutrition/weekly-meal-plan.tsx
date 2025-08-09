@@ -7,13 +7,15 @@ import { format } from 'date-fns';
 import { Skeleton } from "../ui/skeleton";
 import type { GenerateNutritionProgramOutput } from "@/ai/flows/generate-nutrition-program";
 import { useUserData } from "@/context/user-profile-context";
+import { useToast } from "@/hooks/use-toast";
 
 type DailyMealPlan = GenerateNutritionProgramOutput['weeklyMealPlan'][0];
 
 export function WeeklyMealPlan() {
-  const { nutritionPlan, savePlans, workoutPlan, isLoading } = useUserData();
+  const { nutritionPlan, savePlans, workoutPlan, isLoading, logMeal } = useUserData();
   const [mealPlan, setMealPlan] = React.useState<DailyMealPlan[]>([]);
   const [error, setError] = React.useState<string | null>(null);
+  const { toast } = useToast();
 
   React.useEffect(() => {
     if (!isLoading) {
@@ -38,6 +40,45 @@ export function WeeklyMealPlan() {
         }
     }
   }, [nutritionPlan, isLoading]);
+  
+  const handleLogAndRemoveMeal = async (mealToLog: Meal) => {
+    try {
+        await logMeal({
+            mealType: mealToLog.type.toLowerCase() as any,
+            description: mealToLog.name,
+            calories: mealToLog.calories,
+        });
+
+        setMealPlan(currentPlan => {
+            const updatedPlan = currentPlan.map(dayPlan => ({
+                ...dayPlan,
+                meals: dayPlan.meals.filter((meal: Meal) => meal.id !== mealToLog.id),
+            }));
+            
+            // Persist the removal back to Firestore
+            const planToSave = updatedPlan.map(({ date, ...rest }) => rest);
+            if(workoutPlan) {
+                savePlans({ nutritionPlan: planToSave, workoutPlan });
+            }
+            
+            return updatedPlan;
+        });
+
+        toast({
+            title: "Meal Logged!",
+            description: `${mealToLog.name} has been successfully logged as eaten.`,
+        });
+
+    } catch (error) {
+        console.error("Failed to log meal:", error);
+        toast({
+            variant: "destructive",
+            title: "Logging Failed",
+            description: "There was a problem logging your meal. Please try again.",
+        });
+    }
+  };
+
 
   const handleUpdateMeal = (mealIdToUpdate: string, newMealName: string) => {
     setMealPlan(currentPlan => {
@@ -114,6 +155,7 @@ export function WeeklyMealPlan() {
                             key={meal.id} 
                             meal={meal}
                             onUpdateMeal={handleUpdateMeal} 
+                            onLogMeal={handleLogAndRemoveMeal}
                           />
                       ))}
                   </div>

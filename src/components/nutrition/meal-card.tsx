@@ -28,17 +28,20 @@ export interface Meal {
 interface MealCardProps {
     meal: Meal;
     onUpdateMeal: (mealId: string, newMealName: string) => void;
+    onLogMeal: (meal: Meal) => void;
 }
 
-export function MealCard({ meal, onUpdateMeal }: MealCardProps) {
+export function MealCard({ meal, onUpdateMeal, onLogMeal }: MealCardProps) {
     const [isDetailsOpen, setIsDetailsOpen] = React.useState(false);
     const [isReplaceOpen, setIsReplaceOpen] = React.useState(false);
 
     const handleLogAction = () => {
-        console.log(`Logging as eaten: ${meal.name}`);
+        onLogMeal(meal);
     };
     
     const handleRemoveAction = () => {
+        // This functionality could be implemented similarly to onLogMeal,
+        // but for now, it's just a console log.
         console.log(`Removing from plan: ${meal.name}`);
     };
 
