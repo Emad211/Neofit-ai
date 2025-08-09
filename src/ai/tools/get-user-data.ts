@@ -31,9 +31,10 @@ export const getUserDataForWeeklyReview = ai.defineTool(
     // Calculate the start of the current week (assuming Monday is the first day).
     const now = new Date();
     const startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 1 });
-    const startOfCurrentWeekTimestamp = Timestamp.fromDate(startOfCurrentWeek);
+    // IMPORTANT FIX: Logs are stored as ISO strings, so we must query with an ISO string.
+    const startOfCurrentWeekISO = startOfCurrentWeek.toISOString();
     
-    console.log(`Current week start timestamp: ${startOfCurrentWeek.toISOString()}`);
+    console.log(`Current week start ISO string: ${startOfCurrentWeekISO}`);
 
 
     const profileRef = db.collection('profiles').doc(userId);
@@ -50,9 +51,9 @@ export const getUserDataForWeeklyReview = ai.defineTool(
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     };
     
-    // Helper to fetch recent documents from the start of the current week.
+    // Helper to fetch recent documents from the start of the current week using an ISO string.
     const fetchRecent = async (ref: FirebaseFirestore.CollectionReference, dateField: string) => {
-        const q = ref.where(dateField, '>=', startOfCurrentWeekTimestamp).orderBy(dateField, 'desc');
+        const q = ref.where(dateField, '>=', startOfCurrentWeekISO).orderBy(dateField, 'desc');
         const snapshot = await q.get();
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     };
@@ -67,11 +68,11 @@ export const getUserDataForWeeklyReview = ai.defineTool(
             workoutLogs
         ] = await Promise.all([
             profileRef.get(),
-            fetchAllHistorical(reportsRef, 'reportDate'), // Reports are historical, fetch all of them.
-            fetchRecent(mealLogsRef, 'loggedAt'),         // All logs should be from the current week.
+            fetchAllHistorical(reportsRef, 'reportDate'), // Reports use Firestore Timestamps, this is correct.
+            fetchRecent(mealLogsRef, 'loggedAt'),         // All logs use ISO strings.
             fetchRecent(activityLogsRef, 'loggedAt'),
             fetchRecent(weightLogsRef, 'loggedAt'),
-            fetchRecent(workoutLogsRef, 'loggedAt'), // Use the correct field 'loggedAt' for workout logs.
+            fetchRecent(workoutLogsRef, 'loggedAt'),
         ]);
 
         const userProfile = profileSnap.exists ? profileSnap.data() : null;
