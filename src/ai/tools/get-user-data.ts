@@ -4,7 +4,7 @@
 import { getFirestore, collection, getDocs, query, where, orderBy, Timestamp, doc, getDoc } from 'firebase-admin/firestore';
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { adminApp } from '@/lib/firebase-admin';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { startOfWeek } from 'date-fns';
 
 export const getUserDataForWeeklyReview = ai.defineTool(
@@ -22,14 +22,13 @@ export const getUserDataForWeeklyReview = ai.defineTool(
     }),
   },
   async ({ userId }) => {
-    if (!adminApp) {
-        throw new Error("Firebase Admin SDK not initialized. Cannot fetch user data.");
-    }
+    // Ensure Firebase is initialized before proceeding
+    const adminApp = getFirebaseAdmin();
     const db = getFirestore(adminApp);
+    
     console.log(`Fetching data for current week's review for user: ${userId}`);
 
-    // **CORE LOGIC FIX**: Calculate the start of the current week (assuming Monday is the first day).
-    // This correctly aligns the data fetching with the user's current 7-day plan cycle.
+    // Calculate the start of the current week (assuming Monday is the first day).
     const now = new Date();
     const startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 1 });
     const startOfCurrentWeekTimestamp = Timestamp.fromDate(startOfCurrentWeek);

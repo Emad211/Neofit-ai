@@ -4,7 +4,7 @@
 import { getFirestore, collection, addDoc, Timestamp } from 'firebase-admin/firestore';
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { adminApp } from '@/lib/firebase-admin';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
 export const saveWeeklyReport = ai.defineTool(
   {
@@ -20,10 +20,10 @@ export const saveWeeklyReport = ai.defineTool(
     }),
   },
   async ({ userId, analysisReport }) => {
-    if (!adminApp) {
-        throw new Error("Firebase Admin SDK not initialized. Cannot save report.");
-    }
+    // Ensure Firebase is initialized before proceeding
+    const adminApp = getFirebaseAdmin();
     const db = getFirestore(adminApp);
+
     console.log(`Saving weekly report for user: ${userId}`);
     
     try {

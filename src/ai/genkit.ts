@@ -1,8 +1,6 @@
 
 import {genkit, Genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
-import { adminApp } from '@/lib/firebase-admin';
-import { getFirestore, doc, getDoc } from 'firebase-admin/firestore';
 
 // This prevents re-initialization during hot-reloading in development.
 if (!(global as any).genkit) {
