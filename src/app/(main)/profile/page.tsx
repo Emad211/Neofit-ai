@@ -103,20 +103,8 @@ export default function ProfilePage() {
             <CardContent className="p-0 divide-y divide-border">
                  <SettingsItem 
                     icon={<UserCog className="h-6 w-6"/>}
-                    title="Edit Profile"
-                    description="Change your name and profile picture"
-                    href="/profile/account"
-                />
-                 <SettingsItem 
-                    icon={<Mail className="h-6 w-6"/>}
-                    title="Change Email"
-                    description="Update the email address for your account"
-                    href="/profile/account"
-                />
-                 <SettingsItem 
-                    icon={<Lock className="h-6 w-6"/>}
-                    title="Change Password"
-                    description="Update your account password"
+                    title="Manage Account"
+                    description="Update profile, email, and password"
                     href="/profile/account"
                 />
             </CardContent>
