@@ -79,12 +79,20 @@ export async function generateOnDemandReport(input: GenerateOnDemandReportInput)
 
         {{#if userData.activityLogs}}
         - **Activities**: Praise their logged activities. For example: "Awesome job on that {{{userData.activityLogs.0.durationMinutes}}}-minute {{{userData.activityLogs.0.activityType}}}!"
+        - Here are the activities you've logged:
+        {{#each userData.activityLogs}}
+        - A {{{this.durationMinutes}}} minute {{{this.activityType}}}.
+        {{/each}}
         {{else}}
         - **Activities**: If no separate activities are logged, gently encourage it. For example: "Don't forget to log any activities you do, every bit counts!"
         {{/if}}
 
         {{#if userData.workoutLogs}}
         - **Workouts**: Commend them for completing their workouts. For example: "Great job completing the '{{{userData.workoutLogs.0.workoutName}}}' workout!"
+        - Here are the workouts you've logged:
+        {{#each userData.workoutLogs}}
+        - {{{this.workoutName}}}
+        {{/each}}
         {{else}}
         - **Workouts**: If no full workouts are logged, encourage them. For example: "Try to complete one of your planned workouts this week to stay on track!"
         {{/if}}
