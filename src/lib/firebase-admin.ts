@@ -2,7 +2,7 @@
 import admin from 'firebase-admin';
 import * as dotenv from 'dotenv';
 
-// Ensure dotenv is configured at the earliest point
+// This ensures dotenv is loaded, but the primary call is in genkit.ts
 dotenv.config();
 
 // This prevents re-initialization during hot-reloading in development.
@@ -16,16 +16,19 @@ if (!admin.apps.length) {
 
     // Check if all required service account details are present
     if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
-        console.warn("Firebase Admin environment variables (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) are not fully set in .env file. SDK not initialized. AI tools requiring database access will fail.");
-    } else {
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount as any),
-        });
-        console.log('Firebase Admin SDK initialized successfully from environment variables.');
+        // This will now be a clear error instead of a silent failure.
+        // It helps diagnose if the .env file is not loaded or configured correctly.
+        throw new Error("Firebase service account details are missing in environment variables. Please check your .env file.");
     }
+
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount as any),
+    });
+    console.log('Firebase Admin SDK initialized successfully.');
 
   } catch (error: any) {
     console.error('Firebase Admin SDK initialization error:', error.message);
+    // Do not export a null app if initialization fails. Let it throw.
   }
 }
 

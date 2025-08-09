@@ -1,12 +1,12 @@
 
+import * as dotenv from 'dotenv';
+// IMPORTANT: Configure dotenv before any other imports that might use environment variables.
+dotenv.config(); 
+
 import {genkit, Genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import { adminApp } from '@/lib/firebase-admin';
 import { getFirestore, doc, getDoc } from 'firebase-admin/firestore';
-import * as dotenv from 'dotenv';
-
-// .env configuration is now handled in firebase-admin.ts to ensure it runs first.
-// dotenv.config(); 
 
 // This prevents re-initialization during hot-reloading in development.
 if (!(global as any).genkit) {
