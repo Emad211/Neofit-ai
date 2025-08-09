@@ -38,20 +38,21 @@ export const getUserDataForWeeklyReview = ai.defineTool(
     const weightLogsRef = collection(db, `profiles/${userId}/weight_logs`);
     const workoutLogsRef = collection(db, `profiles/${userId}/workout_logs`);
 
-    // Helper to fetch collections. If a dateField is provided, it sorts by that field without a time filter (for all-time historical data).
-    // Otherwise, it filters by 'loggedAt' for the last 7 days.
-    const fetchCollection = async (ref: FirebaseFirestore.CollectionReference, dateField?: string) => {
-        let q;
-        if (dateField) {
-             q = query(ref, orderBy(dateField, 'desc'));
-        } else {
-             q = query(ref, where('loggedAt', '>=', sevenDaysAgoTimestamp), orderBy('loggedAt', 'desc'));
-        }
+    // Helper to fetch collections.
+    // Fetches all documents sorted by a date field.
+    const fetchAllHistorical = async (ref: FirebaseFirestore.CollectionReference, dateField: string) => {
+        const q = query(ref, orderBy(dateField, 'desc'));
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     };
     
-    // Fetch all data in parallel
+    // Helper to fetch recent documents from the last 7 days.
+    const fetchRecent = async (ref: FirebaseFirestore.CollectionReference, dateField: string) => {
+        const q = query(ref, where(dateField, '>=', sevenDaysAgoTimestamp), orderBy(dateField, 'desc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    };
+    
     try {
         const [
             profileSnap,
@@ -62,11 +63,11 @@ export const getUserDataForWeeklyReview = ai.defineTool(
             workoutLogs
         ] = await Promise.all([
             getDoc(profileRef),
-            fetchCollection(reportsRef, 'reportDate'), // Fetch all historical reports
-            fetchCollection(mealLogsRef),             // Fetch recent logs
-            fetchCollection(activityLogsRef),          // Fetch recent logs
-            fetchCollection(weightLogsRef),            // Fetch recent logs
-            fetchCollection(workoutLogsRef, 'completedAt'), // Workout logs use completedAt
+            fetchAllHistorical(reportsRef, 'reportDate'),
+            fetchRecent(mealLogsRef, 'loggedAt'),
+            fetchRecent(activityLogsRef, 'loggedAt'),
+            fetchRecent(weightLogsRef, 'loggedAt'),
+            fetchRecent(workoutLogsRef, 'completedAt'), // Correctly query workout logs by 'completedAt'
         ]);
 
         const userProfile = profileSnap.exists() ? profileSnap.data() : null;
@@ -75,19 +76,13 @@ export const getUserDataForWeeklyReview = ai.defineTool(
             throw new Error(`User profile not found for userId: ${userId}`);
         }
         
-        // Manually filter workout logs for the last 7 days since they don't use 'loggedAt'
-        const recentWorkoutLogs = workoutLogs.filter(log => {
-            const logDate = new Date(log.completedAt);
-            return logDate >= sevenDaysAgo;
-        });
-
         return {
             userProfile,
             historicalReports,
             mealLogs,
             activityLogs,
             weightLogs,
-            workoutLogs: recentWorkoutLogs,
+            workoutLogs,
         };
 
     } catch (error) {
