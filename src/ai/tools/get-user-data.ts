@@ -6,8 +6,6 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { adminApp } from '@/lib/firebase-admin';
 
-const db = getFirestore(adminApp);
-
 export const getUserDataForWeeklyReview = ai.defineTool(
   {
     name: 'getUserDataForWeeklyReview',
@@ -23,6 +21,7 @@ export const getUserDataForWeeklyReview = ai.defineTool(
     }),
   },
   async ({ userId }) => {
+    const db = getFirestore(adminApp);
     console.log(`Fetching all data for user weekly review: ${userId}`);
 
     const sevenDaysAgo = new Date();

@@ -6,8 +6,6 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { adminApp } from '@/lib/firebase-admin';
 
-const db = getFirestore(adminApp);
-
 export const saveWeeklyReport = ai.defineTool(
   {
     name: 'saveWeeklyReport',
@@ -22,6 +20,7 @@ export const saveWeeklyReport = ai.defineTool(
     }),
   },
   async ({ userId, analysisReport }) => {
+    const db = getFirestore(adminApp);
     console.log(`Saving weekly report for user: ${userId}`);
     
     try {
