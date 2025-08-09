@@ -51,7 +51,8 @@ export async function dynamicProgramAdaptation(input: DynamicProgramAdaptationIn
           output: {schema: DynamicProgramAdaptationOutputSchema},
           model: 'googleai/gemini-1.5-flash',
           config: {
-            toolChoice: 'tool', // Force the model to use tools
+            // Force the model to use tools
+            tool_config: { tool_choice: 'any' },
           },
           prompt: `You are the master AI coach for the NeoFit application. Your primary job is to conduct a thorough, data-driven weekly review for the user and then create their plans for the upcoming week.
 

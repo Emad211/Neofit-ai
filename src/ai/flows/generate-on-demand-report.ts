@@ -49,7 +49,8 @@ export async function generateOnDemandReport(input: GenerateOnDemandReportInput)
         model: 'googleai/gemini-1.5-flash',
         config: {
           apiKey: input.geminiApiKey,
-          toolChoice: 'tool', // Force the model to use the tool
+          // Force the model to use the tool
+          tool_config: { tool_choice: 'any' },
         },
         prompt: `You are the friendly AI coach for the NeoFit application. Your job is to provide an encouraging, on-demand summary of the user's progress so far in their current week.
 
