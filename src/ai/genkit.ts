@@ -1,6 +1,6 @@
 
 import {genkit, Genkit} from 'genkit';
-import {googleAI} from '@gen-ai/googleai';
+import {googleAI} from '@genkit-ai/googleai';
 
 // This prevents re-initialization during hot-reloading in development.
 if (!(global as any).genkit) {
