@@ -38,11 +38,12 @@ export const getUserDataForWeeklyReview = ai.defineTool(
     const weightLogsRef = collection(db, `profiles/${userId}/weight_logs`);
     const workoutLogsRef = collection(db, `profiles/${userId}/workout_logs`);
 
-    // Helper to fetch collections
-    const fetchCollection = async (ref: FirebaseFirestore.CollectionReference, historical = false) => {
+    // Helper to fetch collections. If a dateField is provided, it sorts by that field without a time filter (for all-time historical data).
+    // Otherwise, it filters by 'loggedAt' for the last 7 days.
+    const fetchCollection = async (ref: FirebaseFirestore.CollectionReference, dateField?: string) => {
         let q;
-        if (historical) {
-             q = query(ref, orderBy('reportDate', 'desc'));
+        if (dateField) {
+             q = query(ref, orderBy(dateField, 'desc'));
         } else {
              q = query(ref, where('loggedAt', '>=', sevenDaysAgoTimestamp), orderBy('loggedAt', 'desc'));
         }
@@ -61,11 +62,11 @@ export const getUserDataForWeeklyReview = ai.defineTool(
             workoutLogs
         ] = await Promise.all([
             getDoc(profileRef),
-            fetchCollection(reportsRef, true),
-            fetchCollection(mealLogsRef),
-            fetchCollection(activityLogsRef),
-            fetchCollection(weightLogsRef),
-            fetchCollection(workoutLogsRef),
+            fetchCollection(reportsRef, 'reportDate'), // Fetch all historical reports
+            fetchCollection(mealLogsRef),             // Fetch recent logs
+            fetchCollection(activityLogsRef),          // Fetch recent logs
+            fetchCollection(weightLogsRef),            // Fetch recent logs
+            fetchCollection(workoutLogsRef),           // Fetch recent logs
         ]);
 
         const userProfile = profileSnap.exists() ? profileSnap.data() : null;
