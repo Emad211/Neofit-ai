@@ -1,7 +1,13 @@
 /**
  * @fileOverview This file contains tools for fetching data from Firestore for Genkit flows.
  */
-import * as firestore from 'firebase-admin/firestore';
+import {
+  getFirestore,
+  DocumentReference,
+  Query,
+  CollectionReference,
+  Timestamp,
+} from 'firebase-admin/firestore';
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
@@ -24,36 +30,36 @@ export const getUserDataForWeeklyReview = ai.defineTool(
   async ({ userId }) => {
     // Ensure Firebase is initialized before proceeding
     const adminApp = getFirebaseAdmin();
-    const db = firestore.getFirestore(adminApp);
+    const db = getFirestore(adminApp);
     
     console.log(`Fetching data for current week's review for user: ${userId}`);
 
     // Calculate the start of the current week (assuming Monday is the first day).
     const now = new Date();
     const startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 1 });
-    const startOfCurrentWeekTimestamp = firestore.Timestamp.fromDate(startOfCurrentWeek);
+    const startOfCurrentWeekTimestamp = Timestamp.fromDate(startOfCurrentWeek);
     
     console.log(`Current week start timestamp: ${startOfCurrentWeek.toISOString()}`);
 
 
-    const profileRef = firestore.doc(db, `profiles/${userId}`);
-    const reportsRef = firestore.collection(db, `profiles/${userId}/weekly_reports`);
-    const mealLogsRef = firestore.collection(db, `profiles/${userId}/meal_logs`);
-    const activityLogsRef = firestore.collection(db, `profiles/${userId}/activity_logs`);
-    const weightLogsRef = firestore.collection(db, `profiles/${userId}/weight_logs`);
-    const workoutLogsRef = firestore.collection(db, `profiles/${userId}/workout_logs`);
+    const profileRef = db.collection('profiles').doc(userId);
+    const reportsRef = db.collection(`profiles/${userId}/weekly_reports`);
+    const mealLogsRef = db.collection(`profiles/${userId}/meal_logs`);
+    const activityLogsRef = db.collection(`profiles/${userId}/activity_logs`);
+    const weightLogsRef = db.collection(`profiles/${userId}/weight_logs`);
+    const workoutLogsRef = db.collection(`profiles/${userId}/workout_logs`);
 
     // Helper to fetch all historical documents (like reports), sorted by date.
-    const fetchAllHistorical = async (ref: firestore.CollectionReference, dateField: string) => {
-        const q = firestore.query(ref, firestore.orderBy(dateField, 'desc'));
-        const snapshot = await firestore.getDocs(q);
+    const fetchAllHistorical = async (ref: CollectionReference, dateField: string) => {
+        const q = ref.orderBy(dateField, 'desc');
+        const snapshot = await q.get();
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     };
     
     // Helper to fetch recent documents from the start of the current week.
-    const fetchRecent = async (ref: firestore.CollectionReference, dateField: string) => {
-        const q = firestore.query(ref, firestore.where(dateField, '>=', startOfCurrentWeekTimestamp), firestore.orderBy(dateField, 'desc'));
-        const snapshot = await firestore.getDocs(q);
+    const fetchRecent = async (ref: CollectionReference, dateField: string) => {
+        const q = ref.where(dateField, '>=', startOfCurrentWeekTimestamp).orderBy(dateField, 'desc');
+        const snapshot = await q.get();
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     };
     
@@ -66,7 +72,7 @@ export const getUserDataForWeeklyReview = ai.defineTool(
             weightLogs,
             workoutLogs
         ] = await Promise.all([
-            firestore.getDoc(profileRef),
+            profileRef.get(),
             fetchAllHistorical(reportsRef, 'reportDate'), // Reports are historical, fetch all of them.
             fetchRecent(mealLogsRef, 'loggedAt'),         // All logs should be from the current week.
             fetchRecent(activityLogsRef, 'loggedAt'),
@@ -74,7 +80,7 @@ export const getUserDataForWeeklyReview = ai.defineTool(
             fetchRecent(workoutLogsRef, 'completedAt'), // Use the correct field 'completedAt' for workout logs.
         ]);
 
-        const userProfile = profileSnap.exists() ? profileSnap.data() : null;
+        const userProfile = profileSnap.exists ? profileSnap.data() : null;
 
         if (!userProfile) {
             throw new Error(`User profile not found for userId: ${userId}`);
