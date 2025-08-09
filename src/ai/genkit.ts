@@ -33,7 +33,8 @@ if (!(global as any).genkit) {
   require('@/ai/tools/get-user-data');
   require('@/ai/tools/save-weekly-report');
   require('@/ai/flows/get-alternative-exercise.ts');
-  require('@/ai/flows/dynamic-program-adaptation.ts');
+  require('@/ai/flows/generateNewWeeklyPlans.ts');
+  require('@/ai/flows/generateWeeklyReport.ts');
   require('@/ai/flows/suggest-meal-alternative.ts');
   require('@/ai/flows/calculate-activity-calories.ts');
   require('@/ai/flows/food-lookup.ts');

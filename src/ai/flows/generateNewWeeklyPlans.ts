@@ -1,13 +1,8 @@
 
-
 'use server';
 /**
- * @fileOverview This file defines the Genkit flow for dynamically adapting a user's program.
- * It orchestrates other tools to first analyze weekly data and then generate a new plan.
- *
- * - dynamicProgramAdaptation - The main orchestration flow.
- * - DynamicProgramAdaptationInput - The input type for the flow.
- * - DynamicProgramAdaptationOutput - The return type for the flow.
+ * @fileOverview This file defines the Genkit flow for generating a new weekly plan.
+ * It's designed to be run automatically at the end of a 7-day cycle.
  */
 
 import {ai} from '@/ai/genkit';
@@ -19,31 +14,31 @@ import { generateNutritionProgram } from './generate-nutrition-program';
 
 
 // Define the input schema for the main flow
-const DynamicProgramAdaptationInputSchema = z.object({
+const GenerateNewWeeklyPlansInputSchema = z.object({
   userId: z.string().describe('The ID of the user for whom the analysis and adaptation is being generated.'),
 });
-export type DynamicProgramAdaptationInput = z.infer<typeof DynamicProgramAdaptationInputSchema>;
+export type GenerateNewWeeklyPlansInput = z.infer<typeof GenerateNewWeeklyPlansInputSchema>;
 
 // Define the final output schema for the main flow
-const DynamicProgramAdaptationOutputSchema = z.object({
-  analysisReport: z.string().describe("A comprehensive, encouraging, and human-readable summary of the user's weekly progress, adherence, and achievements."),
+const GenerateNewWeeklyPlansOutputSchema = z.object({
+  reportId: z.string().describe("The ID of the saved weekly report in Firestore."),
   nextWeekWorkoutPlanSummary: z.string().describe("A summary of the new workout plan for the upcoming week."),
   nextWeekNutritionPlanSummary: z.string().describe("A summary of the new nutrition plan for the upcoming week."),
 });
-export type DynamicProgramAdaptationOutput = z.infer<typeof DynamicProgramAdaptationOutputSchema>;
+export type GenerateNewWeeklyPlansOutput = z.infer<typeof GenerateNewWeeklyPlansOutputSchema>;
 
 
 /**
  * The Orchestrator Prompt
  * This prompt uses multiple tools in a chain to perform a complex, multi-step process.
  */
-const dynamicAdaptationPrompt = ai.definePrompt({
-  name: 'dynamicAdaptationPrompt',
+const orchestratorPrompt = ai.definePrompt({
+  name: 'generateNewWeeklyPlansPrompt',
   tools: [getUserDataForWeeklyReview, saveWeeklyReport, generateWorkoutProgram, generateNutritionProgram],
-  input: {schema: DynamicProgramAdaptationInputSchema},
-  output: {schema: DynamicProgramAdaptationOutputSchema},
+  input: {schema: GenerateNewWeeklyPlansInputSchema},
+  output: {schema: GenerateNewWeeklyPlansOutputSchema},
   model: 'googleai/gemini-1.5-flash',
-  prompt: `You are the master AI coach for the NeoFit application. Your primary job is to conduct a thorough, data-driven weekly review for the user and then create their plans for the upcoming week.
+  prompt: `You are the master AI coach for the NeoFit application. Your job is to run the automated end-of-week process for a user.
 
   Follow these steps with precision for User ID: {{{userId}}}
 
@@ -70,7 +65,7 @@ const dynamicAdaptationPrompt = ai.definePrompt({
   
   **Step 6: Final Output**
   - Consolidate the results into the final output format.
-  - The 'analysisReport' should be the full text from Step 2.
+  - The 'reportId' should be the ID returned from the 'saveWeeklyReport' tool.
   - The 'nextWeekWorkoutPlanSummary' and 'nextWeekNutritionPlanSummary' should be the summaries from the newly generated plans in Step 5.
   `,
 });
@@ -79,22 +74,22 @@ const dynamicAdaptationPrompt = ai.definePrompt({
 /**
  * The main flow that orchestrates the entire process.
  */
-const dynamicProgramAdaptationFlow = ai.defineFlow(
+const generateNewWeeklyPlansFlow = ai.defineFlow(
   {
-    name: 'dynamicProgramAdaptationFlow',
-    inputSchema: DynamicProgramAdaptationInputSchema,
-    outputSchema: DynamicProgramAdaptationOutputSchema,
+    name: 'generateNewWeeklyPlansFlow',
+    inputSchema: GenerateNewWeeklyPlansInputSchema,
+    outputSchema: GenerateNewWeeklyPlansOutputSchema,
   },
   async (input) => {
     // This prompt now handles the entire orchestration logic.
-    const {output} = await dynamicAdaptationPrompt(input);
+    const {output} = await orchestratorPrompt(input);
     return output!;
   }
 );
 
 /**
- * Wrapper function to be called from the frontend.
+ * Wrapper function to be called by a scheduler (e.g., cron job).
  */
-export async function dynamicProgramAdaptation(input: DynamicProgramAdaptationInput): Promise<DynamicProgramAdaptationOutput> {
-  return dynamicProgramAdaptationFlow(input);
+export async function generateNewWeeklyPlans(input: GenerateNewWeeklyPlansInput): Promise<GenerateNewWeeklyPlansOutput> {
+  return generateNewWeeklyPlansFlow(input);
 }
