@@ -34,7 +34,7 @@ export type DynamicProgramAdaptationOutput = z.infer<typeof DynamicProgramAdapta
 
 // NEW: Define an intermediate schema for the AI analysis prompt
 const AIAnalysisInputSchema = z.object({
-    userData: z.any().describe("A JSON object containing all of the user's data for the week: profile, logs, and historical reports."),
+    userData: z.any().describe("A JSON object containing all of the user's data for the week: profile, base plans, logs, and historical reports."),
 });
 
 // NEW: Define the output for the analysis prompt, which includes the report and a structured history object
@@ -65,20 +65,48 @@ export async function dynamicProgramAdaptation(input: DynamicProgramAdaptationIn
           input: { schema: AIAnalysisInputSchema },
           output: { schema: AIAnalysisOutputSchema },
           model: 'googleai/gemini-1.5-flash',
-          prompt: `You are the master AI coach for the NeoFit application. You have been provided with a complete data dump for a user.
-          
-          USER DATA:
+          prompt: `You are the master AI coach for the NeoFit application. You are performing the official end-of-week analysis. You have been provided with a complete data dump for a user, including their base plans for the week and all the activities they logged.
+
+          **USER DATA:**
           {{{json userData}}}
 
-          **YOUR TASKS:**
-          1.  **Generate the User-Facing Weekly Report**: Based on ALL the provided data, write a comprehensive, insightful, and encouraging report for the user.
-              - Analyze their adherence to workout and nutrition plans.
-              - Highlight progress (e.g., weight change, increased workout volume).
-              - Acknowledge any logged feedback (e.g., replaced exercises, disliked meals).
-              - Keep the tone positive and motivational.
+          **YOUR DETAILED TASKS:**
 
-          2.  **Create a Structured JSON Analysis for AI Specialists**: Synthesize your findings into a structured JSON object string. This will be the 'history' parameter for the specialist AIs. It should summarize adherence, progress, and key feedback points clearly.
+          **PART 1: GENERATE THE USER-FACING WEEKLY REPORT**
+          Write a comprehensive, insightful, and encouraging report for the user. Address the following points by comparing the 'base' plans with the 'logged' data.
+
+          *   **Greeting:** Start with a positive, personalized greeting.
+          *   **Workout Adherence:**
+              *   Compare the number of logged workouts (\`workoutLogs\`) to the number of planned workouts (\`baseWorkoutPlan\`).
+              *   Mention their consistency. If they missed workouts, be encouraging, not critical.
+          *   **Nutrition Adherence:**
+              *   Analyze the logged meals (\`mealLogs\`). Calculate the average daily calorie intake from the logs.
+              *   Compare this average to the target daily calories from the nutrition plan (\`baseNutritionPlan.totalCalories\`).
+              *   Comment on how well they adhered to their calorie targets.
+          *   **Performance & Progress:**
+              *   Look at the \`workoutLogs\`. Is there an increase in \`totalVolume\` compared to previous weeks (if historical data is available)?
+              *   Analyze the trend in \`weightLogs\`. Is their weight moving in the direction of their goal (\`userProfile.goal\`)?
+              *   Celebrate any strength gains or positive weight trends.
+          *   **User Feedback & Adaptations:**
+              *   Check if any logged workouts have different exercise names than the base plan, which might indicate a user-initiated replacement. Acknowledge this.
+              *   Note any patterns in meal logging. Are they consistently logging certain types of food?
+          *   **Closing:** End with a motivational summary and a forward-looking statement for the week ahead.
+
+          **PART 2: CREATE A STRUCTURED JSON ANALYSIS FOR AI SPECIALISTS**
+          Synthesize your findings into a structured JSON object string. This will be the 'history' parameter for the specialist AIs. It MUST be a valid JSON string.
           
+          *   **Format:**
+              \`\`\`json
+              {
+                "workout_adherence": "X out of Y workouts completed",
+                "nutrition_adherence": "User was typically X calories over/under their daily target of Y calories.",
+                "performance_summary": "Weight trended down/up by Z kg. Strength volume increased/decreased/stalled.",
+                "user_feedback": "User replaced [Exercise A] with [Exercise B]. Seems to prefer simpler/quicker meals at lunchtime.",
+                "key_takeaway": "User struggles with late-night snacking but is very consistent with workouts. Suggest increasing protein at dinner and maintaining workout intensity."
+              }
+              \`\`\`
+          *   **Content:** Fill the JSON with specific, data-driven insights from your analysis above. This history is CRITICAL for the next week's plan generation.
+
           Return both the human-readable 'analysisReport' and the 'structuredHistory' JSON string.
           `,
         });

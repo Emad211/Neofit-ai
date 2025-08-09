@@ -1,19 +1,21 @@
 /**
  * @fileOverview This file contains tools for fetching data from Firestore for Genkit flows.
  */
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
-import { startOfWeek } from 'date-fns';
+import { startOfWeek, endOfWeek } from 'date-fns';
 
 export const getUserDataForWeeklyReview = ai.defineTool(
   {
     name: 'getUserDataForWeeklyReview',
-    description: 'Fetches all relevant user data from the start of the current week from Firestore for a progress review. This includes profile, historical reports, and recent logs for the current planning cycle.',
+    description: 'Fetches all relevant user data from the start of the current week from Firestore for a progress review. This includes profile, historical reports, current plans, and recent logs for the current planning cycle.',
     inputSchema: z.object({ userId: z.string() }),
     outputSchema: z.object({
         userProfile: z.any().describe("The user's core profile object."),
+        baseWorkoutPlan: z.any().describe("The user's current workout plan for the week."),
+        baseNutritionPlan: z.any().describe("The user's current nutrition plan for the week."),
         historicalReports: z.array(z.any()).describe("An array of all past weekly reports."),
         mealLogs: z.array(z.any()).describe("An array of all meal logs from the current week."),
         activityLogs: z.array(z.any()).describe("An array of all activity logs from the current week."),
@@ -31,13 +33,13 @@ export const getUserDataForWeeklyReview = ai.defineTool(
     // Calculate the start of the current week (assuming Monday is the first day).
     const now = new Date();
     const startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 1 });
-    // IMPORTANT FIX: Logs are stored as ISO strings, so we must query with an ISO string.
     const startOfCurrentWeekISO = startOfCurrentWeek.toISOString();
     
     console.log(`Current week start ISO string: ${startOfCurrentWeekISO}`);
 
 
     const profileRef = db.collection('profiles').doc(userId);
+    const plansRef = db.collection('plans').doc(userId); // NEW: Reference to the plans document
     const reportsRef = db.collection(`profiles/${userId}/weekly_reports`);
     const mealLogsRef = db.collection(`profiles/${userId}/meal_logs`);
     const activityLogsRef = db.collection(`profiles/${userId}/activity_logs`);
@@ -45,15 +47,15 @@ export const getUserDataForWeeklyReview = ai.defineTool(
     const workoutLogsRef = db.collection(`profiles/${userId}/workout_logs`);
 
     // Helper to fetch all historical documents (like reports), sorted by date.
-    const fetchAllHistorical = async (ref: FirebaseFirestore.CollectionReference, dateField: string) => {
-        const q = ref.orderBy(dateField, 'desc');
+    const fetchAllHistorical = async (ref: FirebaseFirestore.CollectionReference) => {
+        const q = ref.orderBy('reportDate', 'desc');
         const snapshot = await q.get();
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     };
     
     // Helper to fetch recent documents from the start of the current week using an ISO string.
-    const fetchRecent = async (ref: FirebaseFirestore.CollectionReference, dateField: string) => {
-        const q = ref.where(dateField, '>=', startOfCurrentWeekISO).orderBy(dateField, 'desc');
+    const fetchRecent = async (ref: FirebaseFirestore.CollectionReference) => {
+        const q = ref.where('loggedAt', '>=', startOfCurrentWeekISO).orderBy('loggedAt', 'desc');
         const snapshot = await q.get();
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     };
@@ -61,6 +63,7 @@ export const getUserDataForWeeklyReview = ai.defineTool(
     try {
         const [
             profileSnap,
+            plansSnap, // NEW: Fetch the plans document
             historicalReports,
             mealLogs,
             activityLogs,
@@ -68,14 +71,17 @@ export const getUserDataForWeeklyReview = ai.defineTool(
             workoutLogs
         ] = await Promise.all([
             profileRef.get(),
-            fetchAllHistorical(reportsRef, 'reportDate'), // Reports use Firestore Timestamps, this is correct.
-            fetchRecent(mealLogsRef, 'loggedAt'),         // All logs use ISO strings.
-            fetchRecent(activityLogsRef, 'loggedAt'),
-            fetchRecent(weightLogsRef, 'loggedAt'),
-            fetchRecent(workoutLogsRef, 'loggedAt'),
+            plansRef.get(), // NEW
+            fetchAllHistorical(reportsRef),
+            fetchRecent(mealLogsRef),
+            fetchRecent(activityLogsRef),
+            fetchRecent(weightLogsRef),
+            fetchRecent(workoutLogsRef),
         ]);
 
         const userProfile = profileSnap.exists ? profileSnap.data() : null;
+        const plansData = plansSnap.exists ? plansSnap.data() : { workoutPlan: null, nutritionPlan: null };
+
 
         if (!userProfile) {
             throw new Error(`User profile not found for userId: ${userId}`);
@@ -83,6 +89,8 @@ export const getUserDataForWeeklyReview = ai.defineTool(
         
         const fetchedData = {
             userProfile,
+            baseWorkoutPlan: plansData?.workoutPlan || [], // NEW
+            baseNutritionPlan: plansData?.nutritionPlan || [], // NEW
             historicalReports,
             mealLogs,
             activityLogs,
@@ -95,6 +103,9 @@ export const getUserDataForWeeklyReview = ai.defineTool(
         console.log("Fetched activity logs for current week:", fetchedData.activityLogs.length);
         console.log("Fetched weight logs for current week:", fetchedData.weightLogs.length);
         console.log("Fetched workout logs for current week:", fetchedData.workoutLogs.length);
+        console.log("Fetched base workout plan:", !!fetchedData.baseWorkoutPlan);
+        console.log("Fetched base nutrition plan:", !!fetchedData.baseNutritionPlan);
+
 
         return fetchedData;
 
