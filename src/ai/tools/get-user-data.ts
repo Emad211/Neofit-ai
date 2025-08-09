@@ -3,7 +3,7 @@
 /**
  * @fileOverview This file contains tools for fetching data from Firestore for Genkit flows.
  */
-import { getFirestore, collection, getDocs, query, where, orderBy, limit,Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, collection, getDocs, query, where, orderBy, limit,Timestamp, getDoc } from 'firebase-admin/firestore';
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { adminApp } from '@/lib/firebase-admin';
@@ -68,7 +68,7 @@ export const getUserDataForWeeklyReview = ai.defineTool(
             fetchCollection(workoutLogsRef),
         ]);
 
-        const userProfile = profileSnap.exists() ? profileSnap.data() : null;
+        const userProfile = profileSnap.exists ? profileSnap.data() : null;
 
         if (!userProfile) {
             throw new Error(`User profile not found for userId: ${userId}`);
