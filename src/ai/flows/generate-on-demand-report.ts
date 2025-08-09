@@ -11,14 +11,14 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
-import { getUserDataForWeeklyReview } from '../tools/get-user-data';
 
-// Define the input schema for the flow
+// Define the input schema for the flow, which now accepts the data directly
 const GenerateOnDemandReportInputSchema = z.object({
-  userId: z.string().describe('The ID of the user for whom the report is being generated.'),
+  userData: z.any().describe("A JSON object containing all of the user's data for the week: profile, plans, and logs."),
   geminiApiKey: z.string().optional().describe('Optional Gemini API key for the user.'),
 });
 export type GenerateOnDemandReportInput = z.infer<typeof GenerateOnDemandReportInputSchema>;
+
 
 // Define the final output schema for the flow
 const GenerateOnDemandReportOutputSchema = z.object({
@@ -26,15 +26,8 @@ const GenerateOnDemandReportOutputSchema = z.object({
 });
 export type GenerateOnDemandReportOutput = z.infer<typeof GenerateOnDemandReportOutputSchema>;
 
-// NEW: Define an intermediate schema for the AI prompt, which now directly receives the data
-const ReportPromptInputSchema = z.object({
-    userData: z.any().describe("A JSON object containing all of the user's data for the week: profile and logs."),
-    geminiApiKey: z.string().optional(),
-});
-
-
 /**
- * Wrapper function to be called from the frontend.
+ * Main flow function. It now takes user data directly as input.
  */
 export async function generateOnDemandReport(input: GenerateOnDemandReportInput): Promise<GenerateOnDemandReportOutput> {
   const generateOnDemandReportFlow = ai.defineFlow(
@@ -43,32 +36,27 @@ export async function generateOnDemandReport(input: GenerateOnDemandReportInput)
       inputSchema: GenerateOnDemandReportInputSchema,
       outputSchema: GenerateOnDemandReportOutputSchema,
     },
-    async (flowInput) => {
+    async ({ userData, geminiApiKey }) => {
 
-      // STEP 1: Programmatically fetch the user data. This is now a guaranteed step.
-      const userData = await getUserDataForWeeklyReview({ userId: flowInput.userId });
-
-      // STEP 2: Define a prompt that expects the data directly.
       const onDemandReportPrompt = ai.definePrompt({
         name: 'onDemandReportPrompt',
-        input: {schema: ReportPromptInputSchema},
+        input: {schema: z.any()},
         output: {schema: GenerateOnDemandReportOutputSchema},
         model: 'googleai/gemini-1.5-flash',
         config: {
-          apiKey: flowInput.geminiApiKey,
+          apiKey: geminiApiKey,
         },
         prompt: `You are the friendly and encouraging AI coach for the NeoFit application. Your task is to write a short, motivational on-demand progress report for the user based *only* on the data provided for the current week.
 
-        **USER PROFILE:**
-        - Name: {{{userData.userProfile.name}}}
-        - Goal: {{{userData.userProfile.goal}}}
+        **USER DATA:**
+        {{{json userData}}}
 
         **YOUR TASK:**
         1.  Start with a friendly and encouraging greeting, using the user's name (e.g., "Hey {{{userData.userProfile.name}}}, great work this week!").
-        2.  Carefully review the logs provided for the current week. Address EACH category based on whether it has data or not, using the exact text provided.
+        2.  Carefully review the logs provided for the current week. Address EACH category based on whether it has data or not.
 
         {{#if userData.mealLogs}}
-        - **Meals**: Acknowledge all meals they've logged. List them out. For example: "I see you've logged some meals, like the '{{{userData.mealLogs.0.description}}}' - sounds delicious!"
+        - **Meals**: Acknowledge all meals they've logged. List out their descriptions. For example: "I see you've logged some meals, like the '{{{userData.mealLogs.0.description}}}' and '{{{userData.mealLogs.1.description}}}' - sounds delicious!"
         - Here are the meals you've logged:
         {{#each userData.mealLogs}}
         - {{{this.description}}}
@@ -78,10 +66,10 @@ export async function generateOnDemandReport(input: GenerateOnDemandReportInput)
         {{/if}}
 
         {{#if userData.activityLogs}}
-        - **Activities**: Praise their logged activities. For example: "Awesome job on that {{{userData.activityLogs.0.durationMinutes}}}-minute {{{userData.activityLogs.0.activityType}}}!"
+        - **Activities**: Praise their logged activities and list what they did. For example: "Awesome job on that {{{userData.activityLogs.0.durationMinutes}}}-minute {{{userData.activityLogs.0.activityType}}}!"
         - Here are the activities you've logged:
         {{#each userData.activityLogs}}
-        - A {{{this.durationMinutes}}} minute {{{this.activityType}}}.
+        - A {{{this.durationMinutes}}}-minute {{{this.activityType}}}.
         {{/each}}
         {{else}}
         - **Activities**: If no separate activities are logged, gently encourage it. For example: "Don't forget to log any activities you do, every bit counts!"
@@ -110,8 +98,7 @@ export async function generateOnDemandReport(input: GenerateOnDemandReportInput)
         `,
       });
       
-      // STEP 3: Call the prompt with the fetched user data.
-      const {output} = await onDemandReportPrompt({ userData, geminiApiKey: flowInput.geminiApiKey });
+      const {output} = await onDemandReportPrompt(userData);
       
       if (!output) {
         throw new Error("The AI failed to generate a report based on the provided data.");

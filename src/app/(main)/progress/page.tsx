@@ -1,3 +1,6 @@
+// src/app/(main)/progress/page.tsx
+"use client"
+import * as React from "react";
 import { DebugDataFetcher } from "@/components/progress/debug-data-fetcher";
 import { ProgressPhotos } from "@/components/progress/progress-photos";
 import { WeeklyAiReport } from "@/components/progress/weekly-ai-report";
@@ -5,6 +8,9 @@ import { WeightChart } from "@/components/progress/weight-chart";
 import { WorkoutVolumeChart } from "@/components/progress/workout-volume-chart";
 
 export default function ProgressPage() {
+  const [externalReport, setExternalReport] = React.useState<any>(null);
+  const [isLoadingExternal, setIsLoadingExternal] = React.useState<boolean>(false);
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <header className="mb-8">
@@ -16,11 +22,18 @@ export default function ProgressPage() {
         </p>
       </header>
       <main className="space-y-8">
-        <WeeklyAiReport />
+        <WeeklyAiReport
+          externalReport={externalReport}
+          isLoadingExternal={isLoadingExternal}
+          clearExternalReport={() => setExternalReport(null)}
+        />
         <WeightChart />
         <WorkoutVolumeChart />
         <ProgressPhotos />
-        <DebugDataFetcher />
+        <DebugDataFetcher
+          setExternalReport={setExternalReport}
+          setIsLoadingExternal={setIsLoadingExternal}
+        />
       </main>
     </div>
   );

@@ -1,15 +1,26 @@
-
 // src/components/progress/weekly-ai-report.tsx
 "use client";
 
 import * as React from "react";
-import { generateOnDemandReport, GenerateOnDemandReportOutput } from "@/ai/flows/generate-on-demand-report";
+import { generateReportFromData } from "@/app/actions/debug-actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { BrainCircuit, Loader2, Wand2 } from "lucide-react";
 import { useUserData } from "@/context/user-profile-context";
 import { Button } from "../ui/button";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { AnimatePresence, motion } from "framer-motion";
+import { fetchDebugData } from "@/app/actions/debug-actions";
+
+type GenerateOnDemandReportOutput = {
+    analysisReport: string;
+}
+
+interface WeeklyAiReportProps {
+  externalReport: GenerateOnDemandReportOutput | null;
+  isLoadingExternal: boolean;
+  clearExternalReport: () => void;
+}
+
 
 function ReportDisplay({ report }: { report: GenerateOnDemandReportOutput }) {
     return (
@@ -31,7 +42,7 @@ function ReportDisplay({ report }: { report: GenerateOnDemandReportOutput }) {
         </CardHeader>
         <CardContent>
             <p className="mb-6 text-foreground/90 italic whitespace-pre-wrap">
-            &quot;{report.analysisReport}&quot;
+             {report.analysisReport}
             </p>
              <div className="text-center">
                  <p className="text-xs text-muted-foreground">Your official weekly plan will be updated automatically at the end of the week. Keep up the great work!</p>
@@ -43,29 +54,34 @@ function ReportDisplay({ report }: { report: GenerateOnDemandReportOutput }) {
 }
 
 
-export function WeeklyAiReport() {
-  const [report, setReport] = React.useState<GenerateOnDemandReportOutput | null>(null);
-  const [isLoading, setIsLoading] = React.useState(false);
+export function WeeklyAiReport({ externalReport, isLoadingExternal, clearExternalReport }: WeeklyAiReportProps) {
+  const [internalReport, setInternalReport] = React.useState<GenerateOnDemandReportOutput | null>(null);
+  const [isLoadingInternal, setIsLoadingInternal] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const { user, userProfile } = useUserData();
+
+  const report = externalReport || internalReport;
+  const isLoading = isLoadingExternal || isLoadingInternal;
 
   const handleGenerateReport = async () => {
     if (!user || !userProfile) {
         setError("Please log in to generate your report.");
         return;
     }
-    setIsLoading(true);
+    setIsLoadingInternal(true);
+    clearExternalReport();
     setError(null);
-    setReport(null);
+    setInternalReport(null);
     
     try {
-        const result = await generateOnDemandReport({ userId: user.uid, geminiApiKey: userProfile.geminiApiKey });
-        setReport(result);
+        const userData = await fetchDebugData({ userId: user.uid });
+        const result = await generateReportFromData({ userData, geminiApiKey: userProfile.geminiApiKey });
+        setInternalReport(result);
     } catch (e: any) {
         console.error("Failed to fetch on-demand report", e);
         setError("Could not generate your weekly report. This can happen during periods of high traffic. Please try again in a moment.");
     } finally {
-        setIsLoading(false);
+        setIsLoadingInternal(false);
     }
   }
 
