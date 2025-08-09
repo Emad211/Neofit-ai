@@ -31,18 +31,19 @@ const GetAlternativeExerciseOutputSchema = z.object({
 });
 export type GetAlternativeExerciseOutput = z.infer<typeof GetAlternativeExerciseOutputSchema>;
 
-export async function getAlternativeExercise(
-  input: GetAlternativeExerciseInput
-): Promise<GetAlternativeExerciseOutput> {
-  return getAlternativeExerciseFlow(input);
-}
-
-const prompt = ai.definePrompt({
-  name: 'getAlternativeExercisePrompt',
-  input: {schema: GetAlternativeExerciseInputSchema},
-  output: {schema: GetAlternativeExerciseOutputSchema},
-  model: 'googleai/gemini-1.5-flash',
-  prompt: `You are an expert fitness trainer specializing in creating safe and effective workout modifications. A user is unable to perform their current exercise and needs a personalized alternative.
+const getAlternativeExerciseFlow = ai.defineFlow(
+  {
+    name: 'getAlternativeExerciseFlow',
+    inputSchema: GetAlternativeExerciseInputSchema,
+    outputSchema: GetAlternativeExerciseOutputSchema,
+  },
+  async (input) => {
+    const prompt = ai.definePrompt({
+      name: 'getAlternativeExercisePrompt',
+      input: {schema: GetAlternativeExerciseInputSchema},
+      output: {schema: GetAlternativeExerciseOutputSchema},
+      model: 'googleai/gemini-1.5-flash',
+      prompt: `You are an expert fitness trainer specializing in creating safe and effective workout modifications. A user is unable to perform their current exercise and needs a personalized alternative.
 
 Analyze the user's context carefully:
 - **Original Exercise**: {{{exerciseId}}}
@@ -57,16 +58,16 @@ Your task is to suggest a safe and effective alternative exercise that targets t
 
 Provide a concise explanation in the 'reason' field, justifying why your suggestion is a good fit for their specific situation (equipment and limitations).
 `,
-});
+    });
 
-const getAlternativeExerciseFlow = ai.defineFlow(
-  {
-    name: 'getAlternativeExerciseFlow',
-    inputSchema: GetAlternativeExerciseInputSchema,
-    outputSchema: GetAlternativeExerciseOutputSchema,
-  },
-  async input => {
     const {output} = await prompt(input);
     return output!;
   }
 );
+
+
+export async function getAlternativeExercise(
+  input: GetAlternativeExerciseInput
+): Promise<GetAlternativeExerciseOutput> {
+  return getAlternativeExerciseFlow(input);
+}

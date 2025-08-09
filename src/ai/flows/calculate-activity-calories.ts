@@ -31,16 +31,19 @@ const CalculateActivityCaloriesOutputSchema = z.object({
 });
 export type CalculateActivityCaloriesOutput = z.infer<typeof CalculateActivityCaloriesOutputSchema>;
 
-export async function calculateActivityCalories(input: CalculateActivityCaloriesInput): Promise<CalculateActivityCaloriesOutput> {
-  return calculateActivityCaloriesFlow(input);
-}
-
-const prompt = ai.definePrompt({
-  name: 'calculateActivityCaloriesPrompt',
-  input: {schema: CalculateActivityCaloriesInputSchema},
-  output: {schema: CalculateActivityCaloriesOutputSchema},
-  model: 'googleai/gemini-1.5-flash',
-  prompt: `You are an expert exercise physiologist. Your task is to accurately estimate the number of calories a person has burned during a specific physical activity.
+const calculateActivityCaloriesFlow = ai.defineFlow(
+  {
+    name: 'calculateActivityCaloriesFlow',
+    inputSchema: CalculateActivityCaloriesInputSchema,
+    outputSchema: CalculateActivityCaloriesOutputSchema,
+  },
+  async (input) => {
+    const prompt = ai.definePrompt({
+      name: 'calculateActivityCaloriesPrompt',
+      input: {schema: CalculateActivityCaloriesInputSchema},
+      output: {schema: CalculateActivityCaloriesOutputSchema},
+      model: 'googleai/gemini-1.5-flash',
+      prompt: `You are an expert exercise physiologist. Your task is to accurately estimate the number of calories a person has burned during a specific physical activity.
 
 Use the user's detailed data and the activity information to perform a precise calculation. 
 
@@ -65,16 +68,14 @@ Based on this comprehensive information, calculate the total calories burned.
 
 Return the result as an integer in the 'caloriesBurned' field. Do not include any other text or explanation in your response.
 `,
-});
+    });
 
-const calculateActivityCaloriesFlow = ai.defineFlow(
-  {
-    name: 'calculateActivityCaloriesFlow',
-    inputSchema: CalculateActivityCaloriesInputSchema,
-    outputSchema: CalculateActivityCaloriesOutputSchema,
-  },
-  async input => {
     const {output} = await prompt(input);
     return output!;
   }
 );
+
+
+export async function calculateActivityCalories(input: CalculateActivityCaloriesInput): Promise<CalculateActivityCaloriesOutput> {
+  return calculateActivityCaloriesFlow(input);
+}
