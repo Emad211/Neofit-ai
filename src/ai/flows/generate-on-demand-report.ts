@@ -48,47 +48,44 @@ export async function generateOnDemandReport(input: GenerateOnDemandReportInput)
         },
         prompt: `You are the friendly and encouraging AI coach for the NeoFit application. Your task is to write a short, motivational on-demand progress report for the user based *only* on the data provided for the current week.
 
-        **USER DATA:**
-        {{{json userData}}}
-
         **YOUR TASK:**
-        1.  Start with a friendly and encouraging greeting, using the user's name (e.g., "Hey {{{userData.userProfile.name}}}, great work this week!").
+        1.  Start with a friendly and encouraging greeting, using the user's name (e.g., "Hey {{userProfile.name}}, great work this week!").
         2.  Carefully review the logs provided for the current week. Address EACH category based on whether it has data or not.
 
-        {{#if userData.mealLogs}}
-        - **Meals**: Acknowledge all meals they've logged. List out their descriptions. For example: "I see you've logged some meals, like the '{{{userData.mealLogs.0.description}}}' and '{{{userData.mealLogs.1.description}}}' - sounds delicious!"
+        {{#if mealLogs}}
+        - **Meals**: I see you've logged some meals, like the '{{mealLogs.0.description}}' and '{{mealLogs.1.description}}' - sounds delicious!
         - Here are the meals you've logged:
-        {{#each userData.mealLogs}}
+        {{#each mealLogs}}
         - {{{this.description}}}
         {{/each}}
         {{else}}
-        - **Meals**: Gently encourage them to log their meals. For example: "Remember to log your meals to keep track of your nutrition."
+        - **Meals**: Remember to log your meals to keep track of your nutrition.
         {{/if}}
 
-        {{#if userData.activityLogs}}
-        - **Activities**: Praise their logged activities and list what they did. For example: "Awesome job on that {{{userData.activityLogs.0.durationMinutes}}}-minute {{{userData.activityLogs.0.activityType}}}!"
+        {{#if activityLogs}}
+        - **Activities**: Awesome job on that {{activityLogs.0.durationMinutes}}-minute {{activityLogs.0.activityType}}!
         - Here are the activities you've logged:
-        {{#each userData.activityLogs}}
-        - A {{{this.durationMinutes}}}-minute {{{this.activityType}}}.
+        {{#each activityLogs}}
+        - A {{this.durationMinutes}}-minute {{this.activityType}}.
         {{/each}}
         {{else}}
-        - **Activities**: If no separate activities are logged, gently encourage it. For example: "Don't forget to log any activities you do, every bit counts!"
+        - **Activities**: Don't forget to log any activities you do, every bit counts!
         {{/if}}
 
-        {{#if userData.workoutLogs}}
-        - **Workouts**: Commend them for completing their workouts. For example: "Great job completing the '{{{userData.workoutLogs.0.workoutName}}}' workout!"
+        {{#if workoutLogs}}
+        - **Workouts**: Great job completing the '{{workoutLogs.0.workoutName}}' workout!
         - Here are the workouts you've logged:
-        {{#each userData.workoutLogs}}
+        {{#each workoutLogs}}
         - {{{this.workoutName}}}
         {{/each}}
         {{else}}
-        - **Workouts**: If no full workouts are logged, encourage them. For example: "Try to complete one of your planned workouts this week to stay on track!"
+        - **Workouts**: Try to complete one of your planned workouts this week to stay on track!
         {{/if}}
 
-        {{#if userData.weightLogs}}
-        - **Weight**: Mention their latest weight log. For example: "Thanks for logging your weight! Your latest weigh-in was {{{userData.weightLogs.0.weight}}} kg."
+        {{#if weightLogs}}
+        - **Weight**: Thanks for logging your weight! Your latest weigh-in was {{weightLogs.0.weight}} kg.
         {{else}}
-        - **Weight**: Gently remind them to log their weight. For example: "I don't see a weight log for this week yet. Remember to weigh in to track your progress!"
+        - **Weight**: I don't see a weight log for this week yet. Remember to weigh in to track your progress!
         {{/if}}
 
         3.  Conclude with a motivational closing statement.
