@@ -13,8 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { MoveLeft, Save, Loader2, Camera } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { MoveLeft, Save, Loader2 } from 'lucide-react';
 
 
 const ProfileSchema = z.object({
@@ -37,11 +36,10 @@ const PasswordSchema = z.object({
 
 
 export default function AccountSettingsPage() {
-    const { user, updateUserAccount, reauthenticateUser, updateUserEmail, updateUserPassword, uploadProfilePictureAndUpdateUser } = useUserData();
+    const { user, updateUserAccount, reauthenticateUser, updateUserEmail, updateUserPassword } = useUserData();
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = React.useState<string | null>(null);
-    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const profileForm = useForm<z.infer<typeof ProfileSchema>>({
         resolver: zodResolver(ProfileSchema),
@@ -89,21 +87,6 @@ export default function AccountSettingsPage() {
             toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
         } finally {
             setIsSubmitting(null);
-        }
-    };
-
-    const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            setIsSubmitting('photo');
-            try {
-                await uploadProfilePictureAndUpdateUser(file);
-                toast({ title: 'Photo Updated!', description: 'Your profile picture has been changed.'});
-            } catch (error: any) {
-                 toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-            } finally {
-                setIsSubmitting(null);
-            }
         }
     };
 
@@ -158,27 +141,10 @@ export default function AccountSettingsPage() {
             <main className="space-y-8 max-w-2xl mx-auto">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Display Information</CardTitle>
-                        <CardDescription>Update your public profile details.</CardDescription>
+                        <CardTitle>Display Name</CardTitle>
+                        <CardDescription>Update your public display name.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="flex flex-col items-center gap-4">
-                            <div className="relative">
-                                <Avatar className="h-32 w-32 border-4 border-primary">
-                                    <AvatarImage src={user?.photoURL || "https://placehold.co/128x128.png"} alt={user?.displayName || "User"} data-ai-hint="profile picture" />
-                                    <AvatarFallback>{user?.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                                {isSubmitting === 'photo' && (
-                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
-                                        <Loader2 className="h-8 w-8 animate-spin text-white" />
-                                    </div>
-                                )}
-                            </div>
-                            <input type="file" accept="image/*" ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" />
-                            <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting === 'photo'}>
-                                <Camera className="mr-2 h-4 w-4" /> Change Photo
-                            </Button>
-                        </div>
+                    <CardContent>
                         <Form {...profileForm}>
                             <form onSubmit={profileForm.handleSubmit(handleProfileSubmit)} className="space-y-4">
                                 <FormField

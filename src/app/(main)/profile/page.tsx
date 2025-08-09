@@ -104,7 +104,7 @@ export default function ProfilePage() {
                  <SettingsItem 
                     icon={<UserCog className="h-6 w-6"/>}
                     title="Manage Account"
-                    description="Update profile, email, and password"
+                    description="Update display name, email, and password"
                     href="/profile/account"
                 />
             </CardContent>
