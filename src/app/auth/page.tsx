@@ -13,7 +13,6 @@ import {
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { app } from '@/lib/firebase';
-import { doc, setDoc, getFirestore } from 'firebase/firestore';
 
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -25,7 +24,6 @@ import { Dumbbell, Loader2 } from 'lucide-react';
 import { useUserData } from '@/context/user-profile-context';
 
 const auth = getAuth(app);
-const db = getFirestore(app);
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -39,14 +37,15 @@ const signupSchema = z.object({
 });
 
 export default function AuthPage() {
-    const { user, isLoading } = useUserData();
+    const { user, isLoading, userProfile } = useUserData();
     const router = useRouter();
 
     React.useEffect(() => {
-        if (!isLoading && user) {
+        // If the user is logged in and has a profile, they shouldn't be on the auth page.
+        if (!isLoading && user && userProfile) {
             router.push('/today');
         }
-    }, [user, isLoading, router]);
+    }, [user, isLoading, userProfile, router]);
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
@@ -90,7 +89,9 @@ function LoginForm() {
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       toast({ title: 'Login Successful!', description: 'Welcome back!' });
-      router.push('/today');
+      // The redirection is handled by the layout and page logic,
+      // so we can just push to a neutral page and let them sort it out.
+      router.push('/');
     } catch (error: any) {
       console.error(error);
       toast({
@@ -167,17 +168,14 @@ function SignupForm() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       
-      // Update display name
-      if (auth.currentUser) {
-        await updateProfile(auth.currentUser, { displayName: values.displayName });
+      // Update display name in Firebase Auth
+      if (userCredential.user) {
+        await updateProfile(userCredential.user, { displayName: values.displayName });
       }
       
-      // Create user profile document in Firestore
-      await setDoc(doc(db, 'profiles', userCredential.user.uid), {
-        name: values.displayName,
-        email: values.email,
-        // Initialize other profile fields as needed or leave them for onboarding
-      });
+      // IMPORTANT: We do NOT create a Firestore profile here.
+      // The profile is only created after the onboarding is complete.
+      // This is the key to differentiating new users from users with a profile.
       
       toast({ title: 'Account Created!', description: "Let's get you set up." });
       router.push('/'); // Redirect to start of onboarding
