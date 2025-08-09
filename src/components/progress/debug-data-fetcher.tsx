@@ -7,10 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui
 import { Code, TestTube2, Loader2, Wand2, X } from "lucide-react";
 import { useUserData } from "@/context/user-profile-context";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
-import { generateOnDemandReport } from "@/app/actions/debug-actions";
+import { generateReportFromData } from "@/app/actions/debug-actions";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "../ui/textarea";
 import { Label } from "../ui/label";
+import { fetchDebugData } from "@/app/actions/debug-actions";
+
 
 const fullWeekTestData = {
   "userProfile": {
@@ -131,9 +133,13 @@ export function DebugDataFetcher({ setExternalReport, setIsLoadingExternal }: { 
     setError(null);
     setLiveData(null);
     try {
-      // This is a placeholder for a future fetchDebugData action
-      const data = "This feature is not yet implemented. Please use the default test data.";
+      const data = await fetchDebugData({ userId: user.uid });
       setLiveData(data);
+      setTestJson(JSON.stringify(data, null, 2));
+      toast({
+        title: "Live Data Fetched",
+        description: "The editor has been populated with your current weekly data.",
+      });
     } catch (e: any) {
       console.error("Debug fetch failed:", e);
       setError(e.message || "An unknown error occurred while fetching data.");
@@ -147,11 +153,13 @@ export function DebugDataFetcher({ setExternalReport, setIsLoadingExternal }: { 
     try {
         if (testJson.trim()) {
             dataToGenerate = JSON.parse(testJson);
+        } else if (liveData) {
+            dataToGenerate = liveData;
         } else {
              toast({
                 variant: "destructive",
                 title: "No Data",
-                description: "Please provide test JSON in the editor before generating a report.",
+                description: "Please provide test JSON or fetch live data before generating a report.",
             });
             return;
         }
@@ -170,7 +178,7 @@ export function DebugDataFetcher({ setExternalReport, setIsLoadingExternal }: { 
     setError(null);
 
     try {
-        const report = await generateOnDemandReport({ userData: dataToGenerate, geminiApiKey: userProfile?.geminiApiKey });
+        const report = await generateReportFromData({ userData: dataToGenerate, geminiApiKey: userProfile?.geminiApiKey });
         setExternalReport(report);
         toast({
             title: "Report Generated",
@@ -198,14 +206,18 @@ export function DebugDataFetcher({ setExternalReport, setIsLoadingExternal }: { 
             <span>AI Analysis Debugging Tool</span>
         </CardTitle>
         <CardDescription>
-            Use this tool to test the AI's analysis capabilities. You can edit the pre-filled JSON data below or paste your own. Then, click "Generate Report" to see how the AI interprets it. Fetching live data is disabled for this test.
+            Use this tool to test the AI's analysis capabilities. You can edit the pre-filled JSON data below, paste your own, or fetch your live data. Then, click "Generate Report from Editor" to see how the AI interprets it.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-4">
-            <Button onClick={handleFetchData} disabled={true}>
-              <Code className="mr-2 h-4 w-4" />
-              Fetch Live Data (Disabled)
+            <Button onClick={handleFetchData} disabled={isFetching || !user}>
+              {isFetching ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Code className="mr-2 h-4 w-4" />
+                )}
+              Fetch User Data
             </Button>
             <Button onClick={handleGenerateFromData} disabled={isGenerating} variant="secondary">
               {isGenerating ? (
@@ -213,7 +225,7 @@ export function DebugDataFetcher({ setExternalReport, setIsLoadingExternal }: { 
               ) : (
                   <Wand2 className="mr-2 h-4 w-4" />
               )}
-              Generate Report from Editor Data
+              Generate Report from Editor
             </Button>
         </div>
 
@@ -231,7 +243,7 @@ export function DebugDataFetcher({ setExternalReport, setIsLoadingExternal }: { 
             </div>
             <Textarea
                 id="test-json-editor"
-                placeholder="Paste your test JSON here, or click 'Fetch Live Data' to populate."
+                placeholder="Paste your test JSON here, or click 'Fetch User Data' to populate."
                 value={testJson}
                 onChange={(e) => setTestJson(e.target.value)}
                 className="h-96 font-code text-xs"
