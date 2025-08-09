@@ -46,10 +46,13 @@ export async function dynamicProgramAdaptation(input: DynamicProgramAdaptationIn
       async (input) => {
         const dynamicAdaptationPrompt = ai.definePrompt({
           name: 'dynamicAdaptationPrompt',
-          tools: [getUserDataForWeeklyReview, saveWeeklyReport, getGenerateWorkoutProgramTool(), getGenerateNutritionProgramTool()],
+          tools: [getUserDataForWeeklyReview, saveWeeklyReport, await getGenerateWorkoutProgramTool(), await getGenerateNutritionProgramTool()],
           input: {schema: DynamicProgramAdaptationInputSchema},
           output: {schema: DynamicProgramAdaptationOutputSchema},
           model: 'googleai/gemini-1.5-flash',
+          config: {
+            toolChoice: 'tool', // Force the model to use tools
+          },
           prompt: `You are the master AI coach for the NeoFit application. Your primary job is to conduct a thorough, data-driven weekly review for the user and then create their plans for the upcoming week.
 
           Follow these steps with precision for User ID: {{{userId}}}
