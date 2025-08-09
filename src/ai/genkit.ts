@@ -30,6 +30,8 @@ if (!(global as any).genkit) {
   });
 
   // Import all flows and tools here to register them with the initialized Genkit instance.
+  require('@/ai/tools/get-user-data');
+  require('@/ai/tools/save-weekly-report');
   require('@/ai/flows/get-alternative-exercise.ts');
   require('@/ai/flows/dynamic-program-adaptation.ts');
   require('@/ai/flows/suggest-meal-alternative.ts');
@@ -38,8 +40,6 @@ if (!(global as any).genkit) {
   require('@/ai/flows/generate-recipe.ts');
   require('@/ai/flows/generate-workout-program');
   require('@/ai/flows/generate-nutrition-program');
-  require('@/ai/tools/get-user-data');
-  require('@/ai/tools/save-weekly-report');
 }
 
 export const ai: Genkit = (global as any).genkit;
