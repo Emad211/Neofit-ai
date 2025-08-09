@@ -11,6 +11,8 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Search, Loader2, Wheat } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
+import { useUserData } from '@/context/user-profile-context';
+import { useToast } from '@/hooks/use-toast';
 
 const searchSchema = z.object({
   query: z.string().min(2, 'Please enter at least 2 characters.'),
@@ -30,18 +32,28 @@ export function FoodLibrary() {
   const [result, setResult] = React.useState<FoodLookupOutput | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const { user } = useUserData();
+  const { toast } = useToast();
   
   const form = useForm<SearchFormValues>({
     resolver: zodResolver(searchSchema),
   });
 
   const onSubmit: SubmitHandler<SearchFormValues> = async (data) => {
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'User not found',
+        description: 'Please log in to use this feature.'
+      });
+      return;
+    }
     setIsLoading(true);
     setError(null);
     setResult(null);
 
     try {
-      const response = await foodLookup({ foodName: data.query });
+      const response = await foodLookup({ userId: user.uid, foodName: data.query });
       setResult(response);
     } catch (e) {
       console.error(e);

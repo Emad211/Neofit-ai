@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import { useUserData } from "@/context/user-profile-context";
 
 const NutrientDisplay = ({
   label,
@@ -40,6 +41,7 @@ export function FoodCameraLookup() {
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
+  const { user } = useUserData();
 
   React.useEffect(() => {
     const getCameraPermission = async () => {
@@ -70,7 +72,16 @@ export function FoodCameraLookup() {
   }, []);
 
   const handleAnalyze = async () => {
-    if (!videoRef.current || !canvasRef.current) return;
+    if (!videoRef.current || !canvasRef.current || !user) {
+        if (!user) {
+            toast({
+                variant: 'destructive',
+                title: 'User not found',
+                description: 'Please log in to use this feature.'
+            });
+        }
+        return;
+    };
 
     setIsLoading(true);
     setResult(null);
@@ -86,7 +97,7 @@ export function FoodCameraLookup() {
     const dataUri = canvas.toDataURL("image/jpeg");
 
     try {
-      const response = await foodLookup({ foodName: "", photoDataUri: dataUri });
+      const response = await foodLookup({ userId: user.uid, foodName: "", photoDataUri: dataUri });
       setResult(response);
     } catch (e) {
       console.error(e);

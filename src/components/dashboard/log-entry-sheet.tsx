@@ -60,7 +60,7 @@ interface LogEntrySheetProps {
 export function LogEntrySheet({ open, onOpenChange, logType, editableLog, onClose }: LogEntrySheetProps) {
     const config = logType ? logConfig[logType] : null;
     const { toast } = useToast();
-    const { userProfile, logMeal, logActivity, logWeight, updateLog } = useUserData();
+    const { user, userProfile, logMeal, logActivity, logWeight, updateLog } = useUserData();
     const [isCalculating, setIsCalculating] = React.useState(false);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [calculatedCalories, setCalculatedCalories] = React.useState<number | null>(null);
@@ -108,7 +108,7 @@ export function LogEntrySheet({ open, onOpenChange, logType, editableLog, onClos
             })
             return;
         }
-        if (!userProfile) {
+        if (!userProfile || !user) {
             toast({
                 variant: "destructive",
                 title: "User Profile not found",
@@ -120,6 +120,7 @@ export function LogEntrySheet({ open, onOpenChange, logType, editableLog, onClos
         setCalculatedCalories(null);
         try {
             const result = await calculateActivityCalories({
+                userId: user.uid,
                 activityType: activityType,
                 durationMinutes: parseInt(durationMinutes, 10),
                 intensity: intensity as "low" | "medium" | "high",

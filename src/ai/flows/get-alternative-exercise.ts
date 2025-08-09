@@ -31,43 +31,42 @@ const GetAlternativeExerciseOutputSchema = z.object({
 });
 export type GetAlternativeExerciseOutput = z.infer<typeof GetAlternativeExerciseOutputSchema>;
 
-const getAlternativeExerciseFlow = ai.defineFlow(
-  {
-    name: 'getAlternativeExerciseFlow',
-    inputSchema: GetAlternativeExerciseInputSchema,
-    outputSchema: GetAlternativeExerciseOutputSchema,
-  },
-  async (input) => {
-    const prompt = ai.definePrompt({
-      name: 'getAlternativeExercisePrompt',
-      input: {schema: GetAlternativeExerciseInputSchema},
-      output: {schema: GetAlternativeExerciseOutputSchema},
-      model: 'googleai/gemini-1.5-flash',
-      prompt: `You are an expert fitness trainer specializing in creating safe and effective workout modifications. A user is unable to perform their current exercise and needs a personalized alternative.
-
-Analyze the user's context carefully:
-- **Original Exercise**: {{{exerciseId}}}
-- **Available Equipment**: {{{availableEquipment}}}
-- **Medical Limitations**: {{{medicalLimitations}}}
-
-Your task is to suggest a safe and effective alternative exercise that targets the **same primary muscle group(s)** as the original exercise.
-
-**Crucially, your suggestion MUST be:**
-1.  **Feasible** with the user's available equipment.
-2.  **Safe** considering their stated medical limitations. If they mention a knee injury, avoid high-impact leg exercises. If they mention shoulder pain, avoid heavy overhead presses.
-
-Provide a concise explanation in the 'reason' field, justifying why your suggestion is a good fit for their specific situation (equipment and limitations).
-`,
-    });
-
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
-
 
 export async function getAlternativeExercise(
   input: GetAlternativeExerciseInput
 ): Promise<GetAlternativeExerciseOutput> {
+  const getAlternativeExerciseFlow = ai.defineFlow(
+    {
+      name: 'getAlternativeExerciseFlow',
+      inputSchema: GetAlternativeExerciseInputSchema,
+      outputSchema: GetAlternativeExerciseOutputSchema,
+    },
+    async (input) => {
+      const prompt = ai.definePrompt({
+        name: 'getAlternativeExercisePrompt',
+        input: {schema: GetAlternativeExerciseInputSchema},
+        output: {schema: GetAlternativeExerciseOutputSchema},
+        model: 'googleai/gemini-1.5-flash',
+        prompt: `You are an expert fitness trainer specializing in creating safe and effective workout modifications. A user is unable to perform their current exercise and needs a personalized alternative.
+
+  Analyze the user's context carefully:
+  - **Original Exercise**: {{{exerciseId}}}
+  - **Available Equipment**: {{{availableEquipment}}}
+  - **Medical Limitations**: {{{medicalLimitations}}}
+
+  Your task is to suggest a safe and effective alternative exercise that targets the **same primary muscle group(s)** as the original exercise.
+
+  **Crucially, your suggestion MUST be:**
+  1.  **Feasible** with the user's available equipment.
+  2.  **Safe** considering their stated medical limitations. If they mention a knee injury, avoid high-impact leg exercises. If they mention shoulder pain, avoid heavy overhead presses.
+
+  Provide a concise explanation in the 'reason' field, justifying why your suggestion is a good fit for their specific situation (equipment and limitations).
+  `,
+      });
+
+      const {output} = await prompt(input);
+      return output!;
+    }
+  );
   return getAlternativeExerciseFlow(input);
 }

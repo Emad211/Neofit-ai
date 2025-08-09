@@ -15,6 +15,7 @@ import { Checkbox } from "../ui/checkbox";
 import { generateRecipe } from "@/ai/flows/generate-recipe";
 import { Loader2 } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
+import { useUserData } from "@/context/user-profile-context"
 
 type MealDetailsDialogProps = {
   meal: Meal | null;
@@ -34,15 +35,17 @@ export function MealDetailsDialog({ meal, isOpen, onOpenChange }: MealDetailsDia
     const [recipe, setRecipe] = React.useState<string | null>(null);
     const [isLoadingRecipe, setIsLoadingRecipe] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
+    const { user } = useUserData();
 
     React.useEffect(() => {
-        if (isOpen && meal) {
+        if (isOpen && meal && user) {
             const fetchRecipe = async () => {
                 setIsLoadingRecipe(true);
                 setError(null);
                 setRecipe(null);
                 try {
                     const result = await generateRecipe({
+                        userId: user.uid,
                         mealName: meal.name,
                         ingredients: meal.ingredients,
                     });
@@ -56,7 +59,7 @@ export function MealDetailsDialog({ meal, isOpen, onOpenChange }: MealDetailsDia
             };
             fetchRecipe();
         }
-    }, [isOpen, meal]);
+    }, [isOpen, meal, user]);
 
   if (!meal) return null;
 

@@ -28,10 +28,11 @@ if (!(global as any).genkit) {
     plugins: [googleAI({
       apiVersion: 'v1',
       // The API key is now determined dynamically based on the user's profile.
-      // We pass the userId in the custom metadata of a flow, and use this function
+      // We pass the userId in the flow's input, and use this function
       // to retrieve their key from Firestore.
       apiKey: async (flow) => {
-        const userId = flow.metadata?.userId;
+        // Use 'any' for input to accommodate different flow input schemas
+        const userId = (flow.input as any)?.userId;
         if (!userId) {
           // Fallback to environment variable if no user context is provided
           return process.env.GEMINI_API_KEY || '';

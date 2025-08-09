@@ -35,35 +35,34 @@ export type SuggestMealAlternativeOutput = z.infer<
   typeof SuggestMealAlternativeOutputSchema
 >;
 
-const suggestMealAlternativeFlow = ai.defineFlow(
-  {
-    name: 'suggestMealAlternativeFlow',
-    inputSchema: SuggestMealAlternativeInputSchema,
-    outputSchema: SuggestMealAlternativeOutputSchema,
-  },
-  async (input) => {
-    const prompt = ai.definePrompt({
-      name: 'suggestMealAlternativePrompt',
-      input: {schema: SuggestMealAlternativeInputSchema},
-      output: {schema: SuggestMealAlternativeOutputSchema},
-      model: 'googleai/gemini-1.5-flash',
-      prompt: `You are a nutrition expert. A user is looking for an alternative meal suggestion.
-
-      Original Meal ID: {{{mealId}}}
-      Context: {{{context}}}
-
-      Suggest an alternative meal, taking into account any dietary restrictions, available ingredients, and time constraints provided in the context.
-      Return ONLY the suggested meal; do not include any additional text or explanation.`,
-    });
-    
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
-
 
 export async function suggestMealAlternative(
   input: SuggestMealAlternativeInput
 ): Promise<SuggestMealAlternativeOutput> {
+  const suggestMealAlternativeFlow = ai.defineFlow(
+    {
+      name: 'suggestMealAlternativeFlow',
+      inputSchema: SuggestMealAlternativeInputSchema,
+      outputSchema: SuggestMealAlternativeOutputSchema,
+    },
+    async (input) => {
+      const prompt = ai.definePrompt({
+        name: 'suggestMealAlternativePrompt',
+        input: {schema: SuggestMealAlternativeInputSchema},
+        output: {schema: SuggestMealAlternativeOutputSchema},
+        model: 'googleai/gemini-1.5-flash',
+        prompt: `You are a nutrition expert. A user is looking for an alternative meal suggestion.
+
+        Original Meal ID: {{{mealId}}}
+        Context: {{{context}}}
+
+        Suggest an alternative meal, taking into account any dietary restrictions, available ingredients, and time constraints provided in the context.
+        Return ONLY the suggested meal; do not include any additional text or explanation.`,
+      });
+      
+      const {output} = await prompt(input);
+      return output!;
+    }
+  );
   return suggestMealAlternativeFlow(input);
 }
