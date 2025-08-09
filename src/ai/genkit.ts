@@ -1,8 +1,4 @@
 
-import * as dotenv from 'dotenv';
-// IMPORTANT: Configure dotenv before any other imports that might use environment variables.
-dotenv.config(); 
-
 import {genkit, Genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import { adminApp } from '@/lib/firebase-admin';
