@@ -28,8 +28,9 @@ if (!(global as any).genkit) {
   require('@/ai/flows/calculate-activity-calories.ts');
   require('@/ai/flows/food-lookup.ts');
   require('@/ai/flows/generate-recipe.ts');
-  require('@/ai/flows/generate-workout-program');
-  require('@/ai/flows/generate-nutrition-program');
+  // Note: We don't require the tool-defining files directly anymore
+  // to prevent circular dependencies. They are loaded at runtime
+  // by the flows that need them.
 }
 
 export const ai: Genkit = (global as any).genkit;

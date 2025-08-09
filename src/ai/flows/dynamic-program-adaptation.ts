@@ -14,8 +14,8 @@ import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 import { getUserDataForWeeklyReview } from '../tools/get-user-data';
 import { saveWeeklyReport } from '../tools/save-weekly-report';
-import { generateWorkoutProgram } from './generate-workout-program';
-import { generateNutritionProgram } from './generate-nutrition-program';
+import { getGenerateWorkoutProgramTool } from './generate-workout-program';
+import { getGenerateNutritionProgramTool } from './generate-nutrition-program';
 
 
 // Define the input schema for the main flow
@@ -46,7 +46,7 @@ export async function dynamicProgramAdaptation(input: DynamicProgramAdaptationIn
       async (input) => {
         const dynamicAdaptationPrompt = ai.definePrompt({
           name: 'dynamicAdaptationPrompt',
-          tools: [getUserDataForWeeklyReview, saveWeeklyReport, generateWorkoutProgram, generateNutritionProgram],
+          tools: [getUserDataForWeeklyReview, saveWeeklyReport, getGenerateWorkoutProgramTool(), getGenerateNutritionProgramTool()],
           input: {schema: DynamicProgramAdaptationInputSchema},
           output: {schema: DynamicProgramAdaptationOutputSchema},
           model: 'googleai/gemini-1.5-flash',
