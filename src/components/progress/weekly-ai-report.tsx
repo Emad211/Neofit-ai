@@ -3,7 +3,7 @@
 "use client";
 
 import * as React from "react";
-import { generateWeeklyReport, GenerateWeeklyReportOutput } from "@/ai/flows/generateWeeklyReport";
+import { generateOnDemandReport, GenerateOnDemandReportOutput } from "@/ai/flows/generate-on-demand-report";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { BrainCircuit, Loader2, Wand2 } from "lucide-react";
 import { useUserData } from "@/context/user-profile-context";
@@ -11,7 +11,7 @@ import { Button } from "../ui/button";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { AnimatePresence, motion } from "framer-motion";
 
-function ReportDisplay({ report }: { report: GenerateWeeklyReportOutput }) {
+function ReportDisplay({ report }: { report: GenerateOnDemandReportOutput }) {
     return (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -30,11 +30,11 @@ function ReportDisplay({ report }: { report: GenerateWeeklyReportOutput }) {
             </div>
         </CardHeader>
         <CardContent>
-            <p className="mb-6 text-foreground/90 italic">
+            <p className="mb-6 text-foreground/90 italic whitespace-pre-wrap">
             &quot;{report.analysisReport}&quot;
             </p>
              <div className="text-center">
-                 <p className="text-xs text-muted-foreground">Your new plans for next week will be generated automatically. Keep an eye out for a notification on your 'Today' screen!</p>
+                 <p className="text-xs text-muted-foreground">Your official weekly plan will be updated automatically at the end of the week. Keep up the great work!</p>
              </div>
         </CardContent>
         </Card>
@@ -44,7 +44,7 @@ function ReportDisplay({ report }: { report: GenerateWeeklyReportOutput }) {
 
 
 export function WeeklyAiReport() {
-  const [report, setReport] = React.useState<GenerateWeeklyReportOutput | null>(null);
+  const [report, setReport] = React.useState<GenerateOnDemandReportOutput | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const { user } = useUserData();
@@ -59,10 +59,10 @@ export function WeeklyAiReport() {
     setReport(null);
     
     try {
-        const result = await generateWeeklyReport({ userId: user.uid });
+        const result = await generateOnDemandReport({ userId: user.uid });
         setReport(result);
     } catch (e: any) {
-        console.error("Failed to fetch weekly report", e);
+        console.error("Failed to fetch on-demand report", e);
         setError("Could not generate your weekly report. This can happen during periods of high traffic. Please try again in a moment.");
     } finally {
         setIsLoading(false);
@@ -77,7 +77,7 @@ export function WeeklyAiReport() {
                     <Card>
                         <CardHeader>
                             <CardTitle className="font-headline">Generating Report...</CardTitle>
-                            <CardDescription>Your AI coach is analyzing your week.</CardDescription>
+                            <CardDescription>Your AI coach is analyzing your progress so far this week.</CardDescription>
                         </CardHeader>
                         <CardContent className="flex flex-col items-center justify-center text-center p-8 space-y-4">
                             <Loader2 className="h-12 w-12 text-primary animate-spin" />
@@ -106,11 +106,11 @@ export function WeeklyAiReport() {
                     <Card className="bg-secondary/50">
                     <CardContent className="p-6 text-center">
                             <Wand2 className="h-12 w-12 mx-auto text-primary/80 mb-4" />
-                            <h3 className="text-xl font-bold font-headline">Check Your Weekly Progress</h3>
-                            <p className="text-muted-foreground mt-2 mb-6">Let your AI coach analyze your progress so far this week and provide live insights.</p>
+                            <h3 className="text-xl font-bold font-headline">Check In On Your Progress</h3>
+                            <p className="text-muted-foreground mt-2 mb-6">Get a real-time, AI-powered analysis of your progress so far this week.</p>
                             <Button onClick={handleGenerateReport} size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
                                 <BrainCircuit className="mr-2 h-5 w-5" />
-                                Analyze My Progress
+                                Analyze My Progress So Far
                             </Button>
                     </CardContent>
                     </Card>

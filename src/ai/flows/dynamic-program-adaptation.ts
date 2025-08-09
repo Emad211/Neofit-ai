@@ -1,9 +1,9 @@
 
-
 'use server';
 /**
- * @fileOverview This file defines the Genkit flow for dynamically adapting a user's program.
- * It orchestrates other tools to first analyze weekly data and then generate a new plan.
+ * @fileOverview This file defines the Genkit flow for dynamically adapting a user's program
+ * AT THE END OF A 7-DAY CYCLE. It is the master orchestrator responsible for weekly analysis
+ * and generating the subsequent week's plans.
  *
  * - dynamicProgramAdaptation - The main orchestration flow.
  * - DynamicProgramAdaptationInput - The input type for the flow.
@@ -78,6 +78,7 @@ const dynamicAdaptationPrompt = ai.definePrompt({
 
 /**
  * The main flow that orchestrates the entire process.
+ * THIS IS INTENDED TO BE RUN AS AN AUTOMATED, END-OF-WEEK JOB.
  */
 const dynamicProgramAdaptationFlow = ai.defineFlow(
   {
@@ -93,7 +94,7 @@ const dynamicProgramAdaptationFlow = ai.defineFlow(
 );
 
 /**
- * Wrapper function to be called from the frontend.
+ * Wrapper function to be called from the server (e.g., a scheduled job).
  */
 export async function dynamicProgramAdaptation(input: DynamicProgramAdaptationInput): Promise<DynamicProgramAdaptationOutput> {
   return dynamicProgramAdaptationFlow(input);
