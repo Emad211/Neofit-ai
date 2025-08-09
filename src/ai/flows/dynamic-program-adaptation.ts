@@ -18,13 +18,13 @@ import { generateNutritionProgram } from './generate-nutrition-program';
 
 
 // Define the input schema for the main flow
-export const DynamicProgramAdaptationInputSchema = z.object({
+const DynamicProgramAdaptationInputSchema = z.object({
   userId: z.string().describe('The ID of the user for whom the analysis and adaptation is being generated.'),
 });
 export type DynamicProgramAdaptationInput = z.infer<typeof DynamicProgramAdaptationInputSchema>;
 
 // Define the final output schema for the main flow
-export const DynamicProgramAdaptationOutputSchema = z.object({
+const DynamicProgramAdaptationOutputSchema = z.object({
   analysisReport: z.string().describe("A comprehensive, encouraging, and human-readable summary of the user's weekly progress, adherence, and achievements."),
   nextWeekWorkoutPlanSummary: z.string().describe("A summary of the new workout plan for the upcoming week."),
   nextWeekNutritionPlanSummary: z.string().describe("A summary of the new nutrition plan for the upcoming week."),
@@ -78,7 +78,7 @@ const dynamicAdaptationPrompt = ai.definePrompt({
 /**
  * The main flow that orchestrates the entire process.
  */
-export const dynamicProgramAdaptationFlow = ai.defineFlow(
+const dynamicProgramAdaptationFlow = ai.defineFlow(
   {
     name: 'dynamicProgramAdaptationFlow',
     inputSchema: DynamicProgramAdaptationInputSchema,
