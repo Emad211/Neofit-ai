@@ -37,6 +37,7 @@ export type UserProfile = {
   medicalHistory?: string;
   dietaryPreference?: string;
   timezone: string;
+  geminiApiKey?: string;
 };
 
 // Add types for the plans and logs

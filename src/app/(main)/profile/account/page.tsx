@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { MoveLeft, Save, Loader2 } from 'lucide-react';
+import { MoveLeft, Save, Loader2, KeyRound } from 'lucide-react';
 
 
 const ProfileSchema = z.object({
@@ -34,9 +34,13 @@ const PasswordSchema = z.object({
   path: ["confirmPassword"],
 });
 
+const ApiKeySchema = z.object({
+    geminiApiKey: z.string().optional(),
+});
+
 
 export default function AccountSettingsPage() {
-    const { user, updateUserAccount, reauthenticateUser, updateUserEmail, updateUserPassword } = useUserData();
+    const { user, userProfile, saveUserProfile, reauthenticateUser, updateUserEmail, updateUserPassword } = useUserData();
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = React.useState<string | null>(null);
@@ -65,6 +69,14 @@ export default function AccountSettingsPage() {
         }
     });
     
+     const apiKeyForm = useForm<z.infer<typeof ApiKeySchema>>({
+        resolver: zodResolver(ApiKeySchema),
+        defaultValues: {
+            geminiApiKey: userProfile?.geminiApiKey || '',
+        }
+    });
+
+
     React.useEffect(() => {
         if (user) {
             profileForm.reset({
@@ -75,7 +87,12 @@ export default function AccountSettingsPage() {
                 currentPasswordForEmail: ''
             });
         }
-    }, [user, profileForm, emailForm]);
+        if (userProfile) {
+            apiKeyForm.reset({
+                geminiApiKey: userProfile.geminiApiKey || '',
+            })
+        }
+    }, [user, userProfile, profileForm, emailForm, apiKeyForm]);
 
 
     const handleProfileSubmit = async (values: z.infer<typeof ProfileSchema>) => {
@@ -119,6 +136,19 @@ export default function AccountSettingsPage() {
         }
     };
 
+    const handleApiKeySubmit = async (values: z.infer<typeof ApiKeySchema>) => {
+        setIsSubmitting('apiKey');
+        try {
+            if (!userProfile) throw new Error("Profile not loaded");
+            await saveUserProfile({ ...userProfile, geminiApiKey: values.geminiApiKey });
+            toast({ title: 'API Key Saved', description: 'Your Gemini API Key has been updated.' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        } finally {
+            setIsSubmitting(null);
+        }
+    }
+
 
     return (
         <div className="p-4 sm:p-6 lg:p-8">
@@ -134,7 +164,7 @@ export default function AccountSettingsPage() {
                     Account Settings
                 </h1>
                 <p className="text-muted-foreground">
-                    Manage your account details.
+                    Manage your account details and API keys.
                 </p>
             </header>
 
@@ -255,6 +285,35 @@ export default function AccountSettingsPage() {
                         </Form>
                     </CardContent>
                 </Card>
+                
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><KeyRound/> Gemini API Key</CardTitle>
+                        <CardDescription>Provide your own Google AI Studio API key. This key will be used for all AI-powered features in the app.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                          <Form {...apiKeyForm}>
+                            <form onSubmit={apiKeyForm.handleSubmit(handleApiKeySubmit)} className="space-y-4">
+                                <FormField
+                                    control={apiKeyForm.control}
+                                    name="geminiApiKey"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Your API Key</FormLabel>
+                                            <FormControl><Input type="password" {...field} placeholder="Enter your Gemini API Key" /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <Button type="submit" disabled={isSubmitting === 'apiKey'}>
+                                    {isSubmitting === 'apiKey' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    <Save className="mr-2 h-4 w-4" /> Save API Key
+                                </Button>
+                            </form>
+                        </Form>
+                    </CardContent>
+                </Card>
+
             </main>
         </div>
     )
