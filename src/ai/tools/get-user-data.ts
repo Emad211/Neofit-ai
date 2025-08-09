@@ -81,7 +81,7 @@ export const getUserDataForWeeklyReview = ai.defineTool(
             fetchRecent(mealLogsRef, 'loggedAt'),         // All logs should be from the current week.
             fetchRecent(activityLogsRef, 'loggedAt'),
             fetchRecent(weightLogsRef, 'loggedAt'),
-            fetchRecent(workoutLogsRef, 'completedAt'), // Use the correct field 'completedAt' for workout logs.
+            fetchRecent(workoutLogsRef, 'loggedAt'), // Use the correct field 'loggedAt' for workout logs.
         ]);
 
         const userProfile = profileSnap.exists ? profileSnap.data() : null;
