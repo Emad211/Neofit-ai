@@ -1,23 +1,24 @@
 /**
  * @fileOverview This file contains tools for fetching data from Firestore for Genkit flows.
  */
-import { getFirestore, collection, getDocs, query, where, orderBy, limit,Timestamp, doc, getDoc } from 'firebase-admin/firestore';
+import { getFirestore, collection, getDocs, query, where, orderBy, Timestamp, doc, getDoc } from 'firebase-admin/firestore';
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { adminApp } from '@/lib/firebase-admin';
+import { startOfWeek } from 'date-fns';
 
 export const getUserDataForWeeklyReview = ai.defineTool(
   {
     name: 'getUserDataForWeeklyReview',
-    description: 'Fetches all relevant user data from the last 7 days from Firestore for a weekly review. This includes profile, historical reports, and recent logs.',
+    description: 'Fetches all relevant user data from the start of the current week from Firestore for a progress review. This includes profile, historical reports, and recent logs for the current planning cycle.',
     inputSchema: z.object({ userId: z.string() }),
     outputSchema: z.object({
         userProfile: z.any().describe("The user's core profile object."),
         historicalReports: z.array(z.any()).describe("An array of all past weekly reports."),
-        mealLogs: z.array(z.any()).describe("An array of all meal logs from the last 7 days."),
-        activityLogs: z.array(z.any()).describe("An array of all activity logs from the last 7 days."),
-        weightLogs: z.array(z.any()).describe("An array of all weight logs from the last 7 days."),
-        workoutLogs: z.array(z.any()).describe("An array of all workout logs from the last 7 days."),
+        mealLogs: z.array(z.any()).describe("An array of all meal logs from the current week."),
+        activityLogs: z.array(z.any()).describe("An array of all activity logs from the current week."),
+        weightLogs: z.array(z.any()).describe("An array of all weight logs from the current week."),
+        workoutLogs: z.array(z.any()).describe("An array of all workout logs from the current week."),
     }),
   },
   async ({ userId }) => {
@@ -25,11 +26,16 @@ export const getUserDataForWeeklyReview = ai.defineTool(
         throw new Error("Firebase Admin SDK not initialized. Cannot fetch user data.");
     }
     const db = getFirestore(adminApp);
-    console.log(`Fetching all data for user weekly review: ${userId}`);
+    console.log(`Fetching data for current week's review for user: ${userId}`);
 
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const sevenDaysAgoTimestamp = Timestamp.fromDate(sevenDaysAgo);
+    // **CORE LOGIC FIX**: Calculate the start of the current week (assuming Monday is the first day).
+    // This correctly aligns the data fetching with the user's current 7-day plan cycle.
+    const now = new Date();
+    const startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 1 });
+    const startOfCurrentWeekTimestamp = Timestamp.fromDate(startOfCurrentWeek);
+    
+    console.log(`Current week start timestamp: ${startOfCurrentWeekTimestamp.toDate().toISOString()}`);
+
 
     const profileRef = doc(db, `profiles/${userId}`);
     const reportsRef = collection(db, `profiles/${userId}/weekly_reports`);
@@ -38,17 +44,16 @@ export const getUserDataForWeeklyReview = ai.defineTool(
     const weightLogsRef = collection(db, `profiles/${userId}/weight_logs`);
     const workoutLogsRef = collection(db, `profiles/${userId}/workout_logs`);
 
-    // Helper to fetch collections.
-    // Fetches all documents sorted by a date field.
+    // Helper to fetch all historical documents (like reports), sorted by date.
     const fetchAllHistorical = async (ref: FirebaseFirestore.CollectionReference, dateField: string) => {
         const q = query(ref, orderBy(dateField, 'desc'));
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     };
     
-    // Helper to fetch recent documents from the last 7 days.
+    // Helper to fetch recent documents from the start of the current week.
     const fetchRecent = async (ref: FirebaseFirestore.CollectionReference, dateField: string) => {
-        const q = query(ref, where(dateField, '>=', sevenDaysAgoTimestamp), orderBy(dateField, 'desc'));
+        const q = query(ref, where(dateField, '>=', startOfCurrentWeekTimestamp), orderBy(dateField, 'desc'));
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     };
@@ -63,11 +68,11 @@ export const getUserDataForWeeklyReview = ai.defineTool(
             workoutLogs
         ] = await Promise.all([
             getDoc(profileRef),
-            fetchAllHistorical(reportsRef, 'reportDate'),
-            fetchRecent(mealLogsRef, 'loggedAt'),
+            fetchAllHistorical(reportsRef, 'reportDate'), // Reports are historical, fetch all of them.
+            fetchRecent(mealLogsRef, 'loggedAt'),         // All logs should be from the current week.
             fetchRecent(activityLogsRef, 'loggedAt'),
             fetchRecent(weightLogsRef, 'loggedAt'),
-            fetchRecent(workoutLogsRef, 'completedAt'), // Correctly query workout logs by 'completedAt'
+            fetchRecent(workoutLogsRef, 'completedAt'), // Use the correct field 'completedAt' for workout logs.
         ]);
 
         const userProfile = profileSnap.exists() ? profileSnap.data() : null;
@@ -76,7 +81,7 @@ export const getUserDataForWeeklyReview = ai.defineTool(
             throw new Error(`User profile not found for userId: ${userId}`);
         }
         
-        return {
+        const fetchedData = {
             userProfile,
             historicalReports,
             mealLogs,
@@ -85,9 +90,17 @@ export const getUserDataForWeeklyReview = ai.defineTool(
             workoutLogs,
         };
 
+        // Log what was fetched for easier debugging
+        console.log("Fetched meal logs for current week:", fetchedData.mealLogs.length);
+        console.log("Fetched activity logs for current week:", fetchedData.activityLogs.length);
+        console.log("Fetched weight logs for current week:", fetchedData.weightLogs.length);
+        console.log("Fetched workout logs for current week:", fetchedData.workoutLogs.length);
+
+        return fetchedData;
+
     } catch (error) {
-        console.error("Error fetching user data from Firestore:", error);
-        // Re-throw the error to be caught by the calling flow
+        console.error("Error fetching user data from Firestore for weekly review:", error);
+        // Re-throw a more informative error to be caught by the calling flow
         throw new Error(`Failed to fetch user data for weekly review. Details: ${error}`);
     }
   }
