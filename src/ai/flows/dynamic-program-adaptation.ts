@@ -50,10 +50,6 @@ export async function dynamicProgramAdaptation(input: DynamicProgramAdaptationIn
           input: {schema: DynamicProgramAdaptationInputSchema},
           output: {schema: DynamicProgramAdaptationOutputSchema},
           model: 'googleai/gemini-1.5-flash',
-          config: {
-            // Force the model to use tools
-            tool_config: { tool_choice: 'any' },
-          },
           prompt: `You are the master AI coach for the NeoFit application. Your primary job is to conduct a thorough, data-driven weekly review for the user and then create their plans for the upcoming week.
 
           Follow these steps with precision for User ID: {{{userId}}}
@@ -87,7 +83,7 @@ export async function dynamicProgramAdaptation(input: DynamicProgramAdaptationIn
         });
         
         // This prompt now handles the entire orchestration logic.
-        const {output} = await dynamicAdaptationPrompt(input);
+        const {output} = await dynamicAdaptationPrompt(input, { toolConfig: { toolChoice: 'any' } });
         return output!;
       }
     );
