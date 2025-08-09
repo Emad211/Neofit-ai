@@ -4,6 +4,7 @@
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, addDoc, onSnapshot, query, orderBy, updateDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, User, EmailAuthProvider, reauthenticateWithCredential, updateProfile, updateEmail, updatePassword } from 'firebase/auth';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { app } from '@/lib/firebase';
 import type { GenerateNutritionProgramOutput } from '@/ai/flows/generate-nutrition-program';
 import type { GenerateWorkoutProgramOutput } from '@/ai/flows/generate-workout-program';
@@ -11,6 +12,7 @@ import { useRouter } from 'next/navigation';
 
 const db = getFirestore(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
 
 // Keep the same UserProfile type
 export type UserProfile = {
@@ -102,6 +104,7 @@ interface UserDataContextType {
   updateUserAccount: (data: {displayName?: string, photoURL?: string}) => Promise<void>;
   updateUserEmail: (newEmail: string) => Promise<void>;
   updateUserPassword: (newPassword: string) => Promise<void>;
+  uploadProfilePictureAndUpdateUser: (file: File) => Promise<void>;
   combinedLogs: CombinedLog[];
   isLoading: boolean;
 }
@@ -299,7 +302,7 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
   const updateUserAccount = async (data: {displayName?: string, photoURL?: string}) => {
     if (!user) throw new Error("User not signed in.");
     await updateProfile(user, data);
-    setUser({ ...user }); // Trigger a re-render
+    setUser({ ...user, ...data }); // Trigger a re-render
   }
 
   const updateUserEmail = async (newEmail: string) => {
@@ -313,9 +316,20 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
     await updatePassword(user, newPassword);
   }
 
+  const uploadProfilePictureAndUpdateUser = async (file: File) => {
+    if (!user) throw new Error("User not signed in.");
+    const filePath = `profile-pictures/${user.uid}/${file.name}`;
+    const storageRef = ref(storage, filePath);
+    
+    const snapshot = await uploadBytes(storageRef, file);
+    const photoURL = await getDownloadURL(snapshot.ref);
+
+    await updateUserAccount({ photoURL });
+  }
+
 
   return (
-    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, saveUserProfile, savePlans, saveWorkoutLog, logMeal, logActivity, logWeight, updateLog, deleteLog, resetUserData, reauthenticateUser, updateUserAccount, updateUserEmail, updateUserPassword, combinedLogs, isLoading }}>
+    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, saveUserProfile, savePlans, saveWorkoutLog, logMeal, logActivity, logWeight, updateLog, deleteLog, resetUserData, reauthenticateUser, updateUserAccount, updateUserEmail, updateUserPassword, uploadProfilePictureAndUpdateUser, combinedLogs, isLoading }}>
       {children}
     </UserDataContext.Provider>
   );
