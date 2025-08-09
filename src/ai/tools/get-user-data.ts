@@ -21,6 +21,9 @@ export const getUserDataForWeeklyReview = ai.defineTool(
     }),
   },
   async ({ userId }) => {
+    if (!adminApp) {
+        throw new Error("Firebase Admin SDK not initialized. Cannot fetch user data.");
+    }
     const db = getFirestore(adminApp);
     console.log(`Fetching all data for user weekly review: ${userId}`);
 

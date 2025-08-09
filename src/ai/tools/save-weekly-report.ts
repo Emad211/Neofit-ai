@@ -20,6 +20,9 @@ export const saveWeeklyReport = ai.defineTool(
     }),
   },
   async ({ userId, analysisReport }) => {
+    if (!adminApp) {
+        throw new Error("Firebase Admin SDK not initialized. Cannot save report.");
+    }
     const db = getFirestore(adminApp);
     console.log(`Saving weekly report for user: ${userId}`);
     
