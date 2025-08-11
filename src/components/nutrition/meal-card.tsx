@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AlternativeMealDialog } from './alternative-meal-dialog';
-import { MealDetailsDialog } from './meal-details-dialog';
+import { MealDetailsSheet } from './meal-details-sheet';
 
 export interface Meal {
     id: string;
@@ -89,7 +89,7 @@ export function MealCard({ meal, onUpdateMeal, onLogMeal }: MealCardProps) {
             </CardContent>
         </Card>
 
-        <MealDetailsDialog 
+        <MealDetailsSheet 
             meal={meal}
             isOpen={isDetailsOpen}
             onOpenChange={setIsDetailsOpen}
