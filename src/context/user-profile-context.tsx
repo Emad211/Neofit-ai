@@ -1,4 +1,3 @@
-
 // src/context/user-profile-context.tsx
 "use client";
 
@@ -44,6 +43,7 @@ export type UserProfile = {
 // Add types for the plans and logs
 type NutritionPlan = GenerateNutritionProgramOutput['weeklyMealPlan'];
 type WorkoutPlan = GenerateWorkoutProgramOutput['weeklyWorkoutPlan'];
+type ShoppingListState = { [itemName: string]: boolean };
 
 export type MealLog = {
     id?: string;
@@ -90,8 +90,10 @@ interface UserDataContextType {
   userProfile: UserProfile | null;
   nutritionPlan: NutritionPlan | null;
   workoutPlan: WorkoutPlan | null;
+  shoppingListState: ShoppingListState | null;
   saveUserProfile: (profileData: UserProfile) => Promise<void>;
   savePlans: (plans: { nutritionPlan: NutritionPlan, workoutPlan: WorkoutPlan }) => Promise<void>;
+  updateShoppingListState: (state: ShoppingListState) => Promise<void>;
   saveWorkoutLog: (logData: Omit<WorkoutLog, 'logType' | 'loggedAt' | 'id'>) => Promise<void>;
   logMeal: (logData: Omit<MealLog, 'logType' | 'loggedAt' | 'id'>) => Promise<void>;
   logActivity: (logData: Omit<ActivityLog, 'logType' | 'loggedAt'| 'id'>) => Promise<void>;
@@ -121,6 +123,7 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [nutritionPlan, setNutritionPlan] = useState<NutritionPlan | null>(null);
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
+  const [shoppingListState, setShoppingListState] = useState<ShoppingListState | null>(null);
   const [combinedLogs, setCombinedLogs] = useState<CombinedLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -136,6 +139,7 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
             setUserProfile(null);
             setNutritionPlan(null);
             setWorkoutPlan(null);
+            setShoppingListState(null);
             setCombinedLogs([]);
             router.push('/auth');
         }
@@ -163,9 +167,11 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
         if (data) {
             setNutritionPlan(data.nutritionPlan);
             setWorkoutPlan(data.workoutPlan);
+            setShoppingListState(data.shoppingListState || null);
         } else {
             setNutritionPlan(null);
             setWorkoutPlan(null);
+            setShoppingListState(null);
         }
     });
     
@@ -218,7 +224,7 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
     }
     try {
         const plansRef = doc(db, 'plans', user.uid);
-        await setDoc(plansRef, plans);
+        await setDoc(plansRef, plans, { merge: true });
         setNutritionPlan(plans.nutritionPlan);
         setWorkoutPlan(plans.workoutPlan);
     } catch (error) {
@@ -226,6 +232,20 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
         throw error;
     }
   }
+  
+  const updateShoppingListState = async (state: ShoppingListState) => {
+      if (!user) {
+          throw new Error("No user is signed in to update shopping list.");
+      }
+      try {
+          const plansRef = doc(db, 'plans', user.uid);
+          await setDoc(plansRef, { shoppingListState: state }, { merge: true });
+          setShoppingListState(state);
+      } catch (error) {
+          console.error("Failed to update shopping list state", error);
+          throw error;
+      }
+  };
 
   const logGeneric = async (collectionName: string, logData: object) => {
     if (!user) {
@@ -280,6 +300,7 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
       setUserProfile(null);
       setNutritionPlan(null);
       setWorkoutPlan(null);
+      setShoppingListState(null);
       setCombinedLogs([]);
     } catch (error) {
       console.error("Failed to reset user data in Firestore", error);
@@ -315,7 +336,7 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
   }
 
   return (
-    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, saveUserProfile, savePlans, saveWorkoutLog, logMeal, logActivity, logWeight, updateLog, deleteLog, resetUserData, reauthenticateUser, updateUserAccount, updateUserEmail, updateUserPassword, combinedLogs, isLoading }}>
+    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, shoppingListState, saveUserProfile, savePlans, updateShoppingListState, saveWorkoutLog, logMeal, logActivity, logWeight, updateLog, deleteLog, resetUserData, reauthenticateUser, updateUserAccount, updateUserEmail, updateUserPassword, combinedLogs, isLoading }}>
       {children}
     </UserDataContext.Provider>
   );
@@ -328,5 +349,3 @@ export const useUserData = () => {
   }
   return context;
 };
-
-    

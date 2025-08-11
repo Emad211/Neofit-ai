@@ -5,9 +5,9 @@ import * as React from "react";
 import { Checkbox } from "../ui/checkbox";
 import { Leaf, Egg, Milk, Wheat, Apple as FruitIcon } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
-import type { GenerateNutritionProgramOutput } from "@/ai/flows/generate-nutrition-program";
 import { useUserData } from "@/context/user-profile-context";
 import { cn } from "@/lib/utils";
+import type { GenerateNutritionProgramOutput } from "@/ai/flows/generate-nutrition-program";
 
 type DailyMealPlan = GenerateNutritionProgramOutput['weeklyMealPlan'][0];
 
@@ -15,6 +15,8 @@ type Ingredient = {
     name: string;
     quantity: string;
     category: string;
+    unit?: string;
+    totalAmount?: number;
 };
 
 const categoryIcons: { [key: string]: React.ElementType } = {
@@ -25,27 +27,76 @@ const categoryIcons: { [key: string]: React.ElementType } = {
     "Pantry": Wheat,
 };
 
+
+function parseQuantity(quantityStr: string): { amount: number; unit?: string } {
+    const quantity = quantityStr.toLowerCase().trim();
+    
+    // Handle fractions like "1/2", "1/4"
+    const fractionMatch = quantity.match(/^(\d+)\/(\d+)/);
+    if (fractionMatch) {
+        const num = parseInt(fractionMatch[1], 10);
+        const den = parseInt(fractionMatch[2], 10);
+        if (den !== 0) {
+            const amount = num / den;
+            const unit = quantity.replace(fractionMatch[0], '').trim();
+            return { amount, unit: unit || undefined };
+        }
+    }
+
+    // Handle numbers like "1", "1.5", "0.5"
+    const numberMatch = quantity.match(/^(\d*\.?\d+)/);
+    if (numberMatch) {
+        const amount = parseFloat(numberMatch[0]);
+        const unit = quantity.replace(numberMatch[0], '').trim();
+        return { amount, unit: unit || undefined };
+    }
+    
+    // Fallback for non-numeric quantities like "a pinch"
+    return { amount: 1, unit: quantity };
+}
+
+
 function aggregateIngredients(mealData: DailyMealPlan[]): { [key: string]: Ingredient[] } {
-    const ingredientMap: { [key: string]: { quantity: string[]; category: string } } = {};
+    const ingredientMap: { [key: string]: { quantities: { amount: number; unit?: string }[]; category: string } } = {};
 
     mealData.forEach(day => {
         day.meals.forEach(meal => {
             meal.ingredients.forEach(ingredient => {
                 const key = ingredient.name.toLowerCase();
                 if (!ingredientMap[key]) {
-                    ingredientMap[key] = { quantity: [], category: ingredient.category };
+                    ingredientMap[key] = { quantities: [], category: ingredient.category };
                 }
-                ingredientMap[key].quantity.push(ingredient.quantity);
+                ingredientMap[key].quantities.push(parseQuantity(ingredient.quantity));
             });
         });
     });
-
+    
     const aggregated: { [key: string]: Ingredient[] } = {};
     Object.keys(ingredientMap).forEach(key => {
         const item = ingredientMap[key];
-        const combinedQuantity = item.quantity.join(', '); // Simple aggregation for now
-        const name = key.charAt(0).toUpperCase() + key.slice(1); // Capitalize first letter
+        const name = key.charAt(0).toUpperCase() + key.slice(1);
 
+        const aggregatedQuantities: { [unit: string]: number } = {};
+
+        item.quantities.forEach(q => {
+            const unitKey = q.unit || 'count';
+            if (!aggregatedQuantities[unitKey]) {
+                aggregatedQuantities[unitKey] = 0;
+            }
+            aggregatedQuantities[unitKey] += q.amount;
+        });
+
+        const combinedQuantity = Object.entries(aggregatedQuantities)
+            .map(([unit, amount]) => {
+                // Round to 2 decimal places to handle float inaccuracies
+                const roundedAmount = Math.round(amount * 100) / 100;
+                if (unit === 'count') return `${roundedAmount} ${name.endsWith('s') ? '' : 's'}`.trim();
+                // pluralize unit
+                const pluralUnit = roundedAmount > 1 && !unit.endsWith('s') ? `${unit}s` : unit;
+                return `${roundedAmount} ${pluralUnit}`;
+            })
+            .join(', ');
+            
         if (!aggregated[item.category]) {
             aggregated[item.category] = [];
         }
@@ -71,12 +122,15 @@ function aggregateIngredients(mealData: DailyMealPlan[]): { [key: string]: Ingre
     return sortedAggregated;
 }
 
-const ShoppingListItem = ({ item }: { item: Ingredient }) => {
-    const [isChecked, setIsChecked] = React.useState(false);
+
+const ShoppingListItem = ({ item, isChecked, onCheckedChange }: { item: Ingredient, isChecked: boolean, onCheckedChange: (checked: boolean) => void }) => {
+    const handleItemClick = () => {
+        onCheckedChange(!isChecked);
+    };
 
     return (
         <div 
-            onClick={() => setIsChecked(!isChecked)}
+            onClick={handleItemClick}
             className={cn(
                 "flex items-center space-x-4 rounded-lg border p-3 cursor-pointer transition-colors",
                 isChecked ? "bg-secondary/50" : "bg-background"
@@ -84,7 +138,7 @@ const ShoppingListItem = ({ item }: { item: Ingredient }) => {
         >
             <Checkbox 
                 checked={isChecked}
-                onCheckedChange={() => setIsChecked(!isChecked)}
+                onCheckedChange={onCheckedChange}
                 id={`item-${item.category}-${item.name}`} 
                 className="h-6 w-6" 
             />
@@ -104,20 +158,28 @@ const ShoppingListItem = ({ item }: { item: Ingredient }) => {
 
 
 export function ShoppingList() {
-    const { nutritionPlan, isLoading } = useUserData();
+    const { nutritionPlan, isLoading, shoppingListState, updateShoppingListState } = useUserData();
     const [shoppingList, setShoppingList] = React.useState<{ [key: string]: Ingredient[] } | null>(null);
     const [error, setError] = React.useState<string | null>(null);
 
     React.useEffect(() => {
         if (!isLoading) {
-            if (nutritionPlan) {
+            if (nutritionPlan && nutritionPlan.length > 0) {
                 const list = aggregateIngredients(nutritionPlan);
                 setShoppingList(list);
             } else {
-                setError("No nutrition plan found. Please complete the onboarding process.");
+                setError("No nutrition plan found to generate a shopping list.");
             }
         }
     }, [nutritionPlan, isLoading]);
+    
+    const handleCheckedChange = (itemName: string, isChecked: boolean) => {
+        const lowerCaseItemName = itemName.toLowerCase();
+        const currentState = shoppingListState || {};
+        const newState = { ...currentState, [lowerCaseItemName]: isChecked };
+        updateShoppingListState(newState);
+    };
+
 
     if (isLoading) {
         return (
@@ -156,7 +218,12 @@ export function ShoppingList() {
                         </h3>
                         <div className="space-y-3">
                             {items.map((item, index) => (
-                                <ShoppingListItem key={index} item={item} />
+                                <ShoppingListItem 
+                                    key={`${item.name}-${index}`} 
+                                    item={item} 
+                                    isChecked={shoppingListState?.[item.name.toLowerCase()] || false}
+                                    onCheckedChange={(checked) => handleCheckedChange(item.name, checked)}
+                                />
                             ))}
                         </div>
                     </div>
