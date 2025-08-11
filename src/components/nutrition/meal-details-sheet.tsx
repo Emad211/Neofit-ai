@@ -106,13 +106,13 @@ export function MealDetailsSheet({ meal, isOpen, onOpenChange }: MealDetailsShee
 
                 <div>
                     <h3 className="font-semibold mb-3 text-lg">Ingredients</h3>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                     {meal.ingredients.map((item, index) => (
-                        <div key={index} className="flex items-center space-x-3 p-2 rounded-md bg-secondary/50">
-                            <Checkbox id={`ing-${meal.id}-${index}`} />
+                        <div key={index} className="flex items-center space-x-4 rounded-lg bg-secondary/50 border p-3 cursor-pointer has-[:checked]:bg-primary/20 has-[:checked]:border-primary">
+                             <Checkbox id={`ing-${meal.id}-${index}`} className="h-6 w-6" />
                             <label
                                 htmlFor={`ing-${meal.id}-${index}`}
-                                className="flex-1 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                className="flex-1 text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                             >
                                 <span className="font-semibold text-foreground">{item.name}</span>
                                 <span className="text-muted-foreground ml-2">({item.quantity})</span>
