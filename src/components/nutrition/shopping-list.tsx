@@ -2,15 +2,14 @@
 "use client"
 
 import * as React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Checkbox } from "../ui/checkbox";
 import { Leaf, Egg, Milk, Wheat, Apple as FruitIcon } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 import type { GenerateNutritionProgramOutput } from "@/ai/flows/generate-nutrition-program";
 import { useUserData } from "@/context/user-profile-context";
+import { cn } from "@/lib/utils";
 
 type DailyMealPlan = GenerateNutritionProgramOutput['weeklyMealPlan'][0];
-type Meal = DailyMealPlan['meals'][0];
 
 type Ingredient = {
     name: string;
@@ -69,9 +68,40 @@ function aggregateIngredients(mealData: DailyMealPlan[]): { [key: string]: Ingre
         }
     })
 
-
     return sortedAggregated;
 }
+
+const ShoppingListItem = ({ item }: { item: Ingredient }) => {
+    const [isChecked, setIsChecked] = React.useState(false);
+
+    return (
+        <div 
+            onClick={() => setIsChecked(!isChecked)}
+            className={cn(
+                "flex items-center space-x-4 rounded-lg border p-3 cursor-pointer transition-colors",
+                isChecked ? "bg-secondary/50" : "bg-background"
+            )}
+        >
+            <Checkbox 
+                checked={isChecked}
+                onCheckedChange={() => setIsChecked(!isChecked)}
+                id={`item-${item.category}-${item.name}`} 
+                className="h-6 w-6" 
+            />
+            <label
+                htmlFor={`item-${item.category}-${item.name}`}
+                className={cn(
+                    "flex-1 text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 transition-all",
+                    isChecked && "line-through text-muted-foreground"
+                )}
+            >
+                <span className="font-semibold text-foreground">{item.name}</span>
+                <span className="text-muted-foreground ml-2">({item.quantity})</span>
+            </label>
+        </div>
+    );
+};
+
 
 export function ShoppingList() {
     const { nutritionPlan, isLoading } = useUserData();
@@ -91,23 +121,16 @@ export function ShoppingList() {
 
     if (isLoading) {
         return (
-             <div className="space-y-6">
+             <div className="space-y-8 p-4">
                 {[...Array(4)].map((_, i) => (
-                    <Card key={i}>
-                        <CardHeader>
-                            <Skeleton className="h-6 w-32" />
-                        </CardHeader>
-                        <CardContent className="space-y-4">
+                    <div key={i} className="space-y-4">
+                        <Skeleton className="h-6 w-32" />
+                        <div className="space-y-3">
                            {[...Array(3)].map((_, j) => (
-                                <div key={j} className="flex items-center space-x-3">
-                                    <Skeleton className="h-5 w-5 rounded" />
-                                    <div className="flex-1">
-                                        <Skeleton className="h-5 w-full" />
-                                    </div>
-                                </div>
+                                <Skeleton key={j} className="h-14 w-full rounded-lg" />
                            ))}
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 ))}
             </div>
         )
@@ -122,34 +145,21 @@ export function ShoppingList() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8 p-4">
             {Object.entries(shoppingList).map(([category, items]) => {
                 const Icon = categoryIcons[category] || Leaf;
                 return (
-                    <Card key={category}>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 font-headline text-xl">
-                                <Icon className="h-5 w-5 text-primary"/>
-                                {category}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-3">
-                                {items.map((item, index) => (
-                                    <div key={index} className="flex items-center space-x-3">
-                                        <Checkbox id={`item-${category}-${index}`} />
-                                        <label
-                                            htmlFor={`item-${category}-${index}`}
-                                            className="flex-1 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                        >
-                                            <span className="font-semibold text-foreground">{item.name}</span>
-                                            <span className="text-muted-foreground ml-2">({item.quantity})</span>
-                                        </label>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <div key={category} className="space-y-4">
+                        <h3 className="flex items-center gap-3 text-xl font-bold font-headline">
+                            <Icon className="h-6 w-6 text-primary"/>
+                            {category}
+                        </h3>
+                        <div className="space-y-3">
+                            {items.map((item, index) => (
+                                <ShoppingListItem key={index} item={item} />
+                            ))}
+                        </div>
+                    </div>
                 )
             })}
         </div>
