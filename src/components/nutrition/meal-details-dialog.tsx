@@ -2,7 +2,6 @@
 "use client"
 
 import * as React from "react"
-import Image from "next/image"
 import {
   Dialog,
   DialogContent,
@@ -75,9 +74,6 @@ export function MealDetailsDialog({ meal, isOpen, onOpenChange }: MealDetailsDia
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <div className="relative w-full h-48 rounded-lg overflow-hidden mb-4">
-              <Image src={meal.image} alt={meal.name} layout="fill" objectFit="cover" data-ai-hint={meal.dataAiHint} />
-          </div>
           <DialogTitle className="text-2xl font-headline">{meal.name}</DialogTitle>
           <DialogDescription>{meal.calories} kcal · {meal.type}</DialogDescription>
         </DialogHeader>

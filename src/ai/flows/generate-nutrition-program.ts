@@ -36,8 +36,6 @@ const MealSchema = z.object({
     type: z.string().describe("The type of meal (e.g., Breakfast, Lunch, Dinner, Snack)."),
     name: z.string().describe("The name of the meal."),
     calories: z.number().int().describe("Estimated calories for the meal."),
-    image: z.string().describe("A placeholder image URL for the meal. This must be a valid URL, for example: https://placehold.co/600x400.png."),
-    dataAiHint: z.string().describe("One or two keywords for a relevant image search, like 'chicken salad'."),
     ingredients: z.array(z.object({
         name: z.string(),
         quantity: z.string(),
@@ -103,8 +101,6 @@ export async function generateNutritionProgram(input: GenerateNutritionProgramIn
                 - A descriptive name (e.g., "Grilled Chicken Salad with Avocado").
                 - Estimated calories (as an integer).
                 - A list of simple ingredients with quantities and a category.
-                - A placeholder image URL: ALWAYS use \`https://placehold.co/600x400.png\`.
-                - A \`dataAiHint\` with one or two keywords for image generation (e.g., "grilled chicken").
             5.  **Summarize**: Write a brief, encouraging summary of the plan you've created. In the summary, specifically mention how the plan is tailored to the user's goal ({{{goals}}}), budget ({{{costLevel}}}), cooking skill ({{{cookingSkill}}}), and how it adapts based on their recent progress from the 'history'.
 
             Return the complete, valid JSON object containing the 7-day meal plan and the summary.

@@ -9,7 +9,7 @@ import type { GenerateNutritionProgramOutput } from "@/ai/flows/generate-nutriti
 import { useUserData } from "@/context/user-profile-context";
 import { useToast } from "@/hooks/use-toast";
 
-type DailyMealPlan = GenerateNutritionProgramOutput['weeklyMealPlan'][0];
+type DailyMealPlan = GenerateNutritionProgramOutput['weeklyMealPlan'];
 
 export function WeeklyMealPlan() {
   const { nutritionPlan, savePlans, workoutPlan, isLoading, logMeal } = useUserData();
@@ -86,7 +86,7 @@ export function WeeklyMealPlan() {
         ...dayPlan,
         meals: dayPlan.meals.map((meal: Meal) => {
           if (meal.id === mealIdToUpdate) {
-            return { ...meal, name: newMealName, calories: meal.calories + 50, image: 'https://placehold.co/600x400.png', dataAiHint: 'healthy food' };
+            return { ...meal, name: newMealName, calories: meal.calories + 50 };
           }
           return meal;
         }),
@@ -114,14 +114,13 @@ export function WeeklyMealPlan() {
                           </div>
                           <div className="space-y-4">
                               {[...Array(3)].map((_, j) => (
-                                   <div key={j} className="flex items-center">
-                                       <Skeleton className="w-24 h-24 flex-shrink-0" />
-                                       <div className="p-3 flex-grow space-y-2">
-                                           <Skeleton className="h-4 w-20" />
-                                           <Skeleton className="h-5 w-32" />
-                                           <Skeleton className="h-4 w-16" />
-                                       </div>
-                                   </div>
+                                   <Card key={j} className="overflow-hidden shadow-sm bg-secondary/50">
+                                       <CardContent className="p-3 space-y-2">
+                                           <Skeleton className="h-4 w-1/4" />
+                                           <Skeleton className="h-5 w-3/4" />
+                                           <Skeleton className="h-4 w-1/2" />
+                                       </CardContent>
+                                   </Card>
                               ))}
                           </div>
                            <div className="text-center mt-4 pt-4 border-t space-y-2">
