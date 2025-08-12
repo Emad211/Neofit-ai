@@ -17,6 +17,7 @@ import { Skeleton } from "../ui/skeleton";
 import { useUserData } from "@/context/user-profile-context"
 import { ScrollArea } from "../ui/scroll-area";
 import { Button } from "../ui/button";
+import { cn } from "@/lib/utils";
 
 type MealDetailsSheetProps = {
   meal: Meal | null;
@@ -36,7 +37,7 @@ export function MealDetailsSheet({ meal, isOpen, onOpenChange }: MealDetailsShee
     const [recipe, setRecipe] = React.useState<string | null>(null);
     const [isLoadingRecipe, setIsLoadingRecipe] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
-    const { user, userProfile } = useUserData();
+    const { user, userProfile, checkedIngredientsState, updateCheckedIngredientsState } = useUserData();
 
     const fetchRecipe = React.useCallback(async () => {
         if (!meal || !user || !userProfile) return;
@@ -74,6 +75,11 @@ export function MealDetailsSheet({ meal, isOpen, onOpenChange }: MealDetailsShee
             setIsLoadingRecipe(false);
         }
     };
+    
+    const handleCheckedChange = (ingredientName: string, isChecked: boolean) => {
+        if (!meal) return;
+        updateCheckedIngredientsState(meal.id, ingredientName, isChecked);
+    }
 
 
   if (!meal) return null;
@@ -107,18 +113,37 @@ export function MealDetailsSheet({ meal, isOpen, onOpenChange }: MealDetailsShee
                 <div>
                     <h3 className="font-semibold mb-3 text-lg">Ingredients</h3>
                     <div className="space-y-3">
-                    {meal.ingredients.map((item, index) => (
-                        <div key={index} className="flex items-center space-x-4 rounded-lg bg-secondary/50 border p-3 cursor-pointer has-[:checked]:bg-primary/20 has-[:checked]:border-primary">
-                             <Checkbox id={`ing-${meal.id}-${index}`} className="h-6 w-6" />
-                            <label
-                                htmlFor={`ing-${meal.id}-${index}`}
-                                className="flex-1 text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    {meal.ingredients.map((item, index) => {
+                        const isChecked = checkedIngredientsState?.[meal.id]?.[item.name] || false;
+                        const uniqueId = `ing-${meal.id}-${index}`;
+                        return (
+                            <div 
+                                key={uniqueId}
+                                onClick={() => handleCheckedChange(item.name, !isChecked)}
+                                className={cn(
+                                    "flex items-center space-x-4 rounded-lg border p-3 cursor-pointer transition-colors",
+                                    isChecked ? "bg-primary/20 border-primary" : "bg-secondary/50"
+                                )}
                             >
-                                <span className="font-semibold text-foreground">{item.name}</span>
-                                <span className="text-muted-foreground ml-2">({item.quantity})</span>
-                            </label>
-                        </div>
-                    ))}
+                                <Checkbox 
+                                    id={uniqueId} 
+                                    className="h-6 w-6" 
+                                    checked={isChecked}
+                                    onCheckedChange={(checked) => handleCheckedChange(item.name, !!checked)}
+                                />
+                                <label
+                                    htmlFor={uniqueId}
+                                    className={cn(
+                                        "flex-1 text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 transition-all",
+                                        isChecked && "line-through text-muted-foreground"
+                                    )}
+                                >
+                                    <span className="font-semibold text-foreground">{item.name}</span>
+                                    <span className="text-muted-foreground ml-2">({item.quantity})</span>
+                                </label>
+                            </div>
+                        )
+                    })}
                     </div>
                 </div>
 

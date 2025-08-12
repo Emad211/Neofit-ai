@@ -44,6 +44,8 @@ export type UserProfile = {
 type NutritionPlan = GenerateNutritionProgramOutput['weeklyMealPlan'];
 type WorkoutPlan = GenerateWorkoutProgramOutput['weeklyWorkoutPlan'];
 type ShoppingListState = { [itemName: string]: boolean };
+type CheckedIngredientsState = { [mealId: string]: { [ingredientName: string]: boolean } };
+
 
 export type MealLog = {
     id?: string;
@@ -91,9 +93,11 @@ interface UserDataContextType {
   nutritionPlan: NutritionPlan | null;
   workoutPlan: WorkoutPlan | null;
   shoppingListState: ShoppingListState | null;
+  checkedIngredientsState: CheckedIngredientsState | null;
   saveUserProfile: (profileData: UserProfile) => Promise<void>;
   savePlans: (plans: { nutritionPlan: NutritionPlan, workoutPlan: WorkoutPlan }) => Promise<void>;
   updateShoppingListState: (state: ShoppingListState) => Promise<void>;
+  updateCheckedIngredientsState: (mealId: string, ingredientName: string, isChecked: boolean) => Promise<void>;
   saveWorkoutLog: (logData: Omit<WorkoutLog, 'logType' | 'loggedAt' | 'id'>) => Promise<void>;
   logMeal: (logData: Omit<MealLog, 'logType' | 'loggedAt' | 'id'>) => Promise<void>;
   logActivity: (logData: Omit<ActivityLog, 'logType' | 'loggedAt'| 'id'>) => Promise<void>;
@@ -124,6 +128,7 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
   const [nutritionPlan, setNutritionPlan] = useState<NutritionPlan | null>(null);
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
   const [shoppingListState, setShoppingListState] = useState<ShoppingListState | null>(null);
+  const [checkedIngredientsState, setCheckedIngredientsState] = useState<CheckedIngredientsState | null>(null);
   const [combinedLogs, setCombinedLogs] = useState<CombinedLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -140,6 +145,7 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
             setNutritionPlan(null);
             setWorkoutPlan(null);
             setShoppingListState(null);
+            setCheckedIngredientsState(null);
             setCombinedLogs([]);
             router.push('/auth');
         }
@@ -168,10 +174,12 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
             setNutritionPlan(data.nutritionPlan);
             setWorkoutPlan(data.workoutPlan);
             setShoppingListState(data.shoppingListState || null);
+            setCheckedIngredientsState(data.checkedIngredientsState || null);
         } else {
             setNutritionPlan(null);
             setWorkoutPlan(null);
             setShoppingListState(null);
+            setCheckedIngredientsState(null);
         }
     });
     
@@ -246,6 +254,27 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
           throw error;
       }
   };
+  
+    const updateCheckedIngredientsState = async (mealId: string, ingredientName: string, isChecked: boolean) => {
+        if (!user) {
+            throw new Error("No user is signed in to update ingredient state.");
+        }
+        try {
+            const plansRef = doc(db, 'plans', user.uid);
+            const newState = { ...checkedIngredientsState };
+            if (!newState[mealId]) {
+                newState[mealId] = {};
+            }
+            newState[mealId][ingredientName] = isChecked;
+
+            await setDoc(plansRef, { checkedIngredientsState: newState }, { merge: true });
+            setCheckedIngredientsState(newState);
+        } catch (error) {
+            console.error("Failed to update checked ingredients state", error);
+            throw error;
+        }
+    };
+
 
   const logGeneric = async (collectionName: string, logData: object) => {
     if (!user) {
@@ -301,6 +330,7 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
       setNutritionPlan(null);
       setWorkoutPlan(null);
       setShoppingListState(null);
+      setCheckedIngredientsState(null);
       setCombinedLogs([]);
     } catch (error) {
       console.error("Failed to reset user data in Firestore", error);
@@ -336,7 +366,7 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
   }
 
   return (
-    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, shoppingListState, saveUserProfile, savePlans, updateShoppingListState, saveWorkoutLog, logMeal, logActivity, logWeight, updateLog, deleteLog, resetUserData, reauthenticateUser, updateUserAccount, updateUserEmail, updateUserPassword, combinedLogs, isLoading }}>
+    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, shoppingListState, checkedIngredientsState, saveUserProfile, savePlans, updateShoppingListState, updateCheckedIngredientsState, saveWorkoutLog, logMeal, logActivity, logWeight, updateLog, deleteLog, resetUserData, reauthenticateUser, updateUserAccount, updateUserEmail, updateUserPassword, combinedLogs, isLoading }}>
       {children}
     </UserDataContext.Provider>
   );
