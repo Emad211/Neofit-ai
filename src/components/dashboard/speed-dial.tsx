@@ -41,18 +41,18 @@ export function SpeedDial() {
             onClick={() => setIsOpen(false)}
         />
         
-        <div className="fixed bottom-24 right-4 z-50 sm:bottom-6">
-            <div className="relative flex flex-col items-center gap-4">
+        <div className="fixed bottom-6 right-4 z-50">
+            <div className="relative flex flex-col items-end gap-4">
                 {/* Action Buttons */}
                 <div
                     className={cn(
-                        'flex flex-col items-center gap-4 transition-all duration-300',
-                        isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'
+                        'flex flex-col items-end gap-4 transition-all duration-300',
+                        isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
                     )}
                 >
-                {actions.map((action, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                         <div className="bg-card text-card-foreground rounded-md px-3 py-1 text-sm shadow-md">
+                {actions.map((action) => (
+                    <div key={action.logType} className="flex items-center gap-3">
+                         <div className="bg-card text-card-foreground rounded-md px-3 py-1.5 text-sm font-semibold shadow-md">
                             {action.label}
                         </div>
                         <Button
@@ -76,13 +76,13 @@ export function SpeedDial() {
                     <Plus
                         className={cn(
                             'h-8 w-8 transition-all duration-300 absolute',
-                            isOpen ? 'rotate-45 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'
+                            isOpen ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'
                         )}
                     />
                     <X
                         className={cn(
                             'h-8 w-8 transition-all duration-300 absolute',
-                            isOpen ? 'rotate-0 scale-100 opacity-100' : '-rotate-45 scale-0 opacity-0'
+                            isOpen ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-0 opacity-0'
                         )}
                     />
                     <span className="sr-only">Toggle speed dial</span>
