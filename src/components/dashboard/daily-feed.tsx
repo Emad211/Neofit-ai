@@ -40,8 +40,8 @@ const iconMapping = {
     workout: Dumbbell,
 }
 
-export function DailyFeed({ quote }: { quote: string }) {
-    const { combinedLogs, isLoading, deleteLog } = useUserData();
+export function DailyFeed({ quote, logs }: { quote: string, logs: CombinedLog[] }) {
+    const { isLoading, deleteLog } = useUserData();
     const { toast } = useToast();
     
     const [isSheetOpen, setIsSheetOpen] = React.useState(false);
@@ -181,8 +181,8 @@ export function DailyFeed({ quote }: { quote: string }) {
             <div className="space-y-6">
                 <DailyMotivationCard quote={quote} />
                 {isLoading ? renderSkeleton() : (
-                    combinedLogs.length > 0 ? (
-                        combinedLogs.map(renderFeedItem)
+                    logs.length > 0 ? (
+                        logs.map(renderFeedItem)
                     ) : (
                          <Card className="text-center p-8">
                             <p className="text-muted-foreground">You haven't logged anything yet today.</p>

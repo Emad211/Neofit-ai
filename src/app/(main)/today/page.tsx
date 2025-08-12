@@ -9,9 +9,10 @@ import { getPersonalizedQuote } from "@/lib/data/static-quotes";
 import { useUserData } from '@/context/user-profile-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
-import type { MealLog, ActivityLog } from '@/context/user-profile-context';
+import type { MealLog, ActivityLog, WorkoutLog } from '@/context/user-profile-context';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { PartyPopper } from 'lucide-react';
+import type { Meal } from '@/components/nutrition/meal-card';
 
 
 function getQuote(userName: string) {
@@ -27,32 +28,55 @@ function getQuote(userName: string) {
 
 
 export default function TodayPage() {
-  const { user, userProfile, isLoading, combinedLogs } = useUserData();
+  const { user, userProfile, isLoading, combinedLogs, nutritionPlan, workoutPlan } = useUserData();
   const [showNewPlanNotification, setShowNewPlanNotification] = React.useState(false);
 
-  // In a real app, you'd get the user's name from auth. For now, use a fallback.
   const userName = userProfile?.name || "Sara";
   const quote = getQuote(userName);
 
-  const todayProgress = React.useMemo(() => {
+  const todaysLogs = React.useMemo(() => {
+    if (!combinedLogs) return [];
     const today = format(new Date(), 'yyyy-MM-dd');
-    
-    const todaysLogs = combinedLogs.filter(log => log.loggedAt.startsWith(today));
-    
+    return combinedLogs.filter(log => format(new Date(log.loggedAt), 'yyyy-MM-dd') === today);
+  }, [combinedLogs]);
+
+  const todayProgress = React.useMemo(() => {
     const calories = todaysLogs
         .filter((log): log is MealLog => log.logType === 'meal')
         .reduce((sum, log) => sum + log.calories, 0);
 
-    const protein = 0; // Placeholder until protein is logged with meals
-
     const workout = todaysLogs
-        .filter((log): log is ActivityLog => log.logType === 'activity')
+        .filter((log): log is ActivityLog | WorkoutLog => log.logType === 'activity' || log.logType === 'workout')
         .reduce((sum, log) => sum + log.durationMinutes, 0);
+    
+    // --- Dynamic Goal Calculation ---
+    
+    // Calculate Calorie Goal from Nutrition Plan
+    const calorieGoal = nutritionPlan 
+        ? Math.round(nutritionPlan.reduce((sum, day) => sum + day.totalCalories, 0) / nutritionPlan.length)
+        : 2500; // Fallback
 
-    // TODO: Pull goals from the user's nutrition and workout plans
-    const calorieGoal = userProfile?.goal === 'lose_weight' ? 2200 : (userProfile?.goal === 'gain_muscle' ? 3000 : 2600);
-    const proteinGoal = userProfile?.goal === 'gain_muscle' ? 180 : 140;
-    const workoutGoal = parseInt(userProfile?.trainingDuration?.split('-')[1] || '60', 10);
+    // Calculate Protein Goal from an average day in the Nutrition Plan
+    const proteinGoal = nutritionPlan && nutritionPlan.length > 0
+        ? Math.round(nutritionPlan[0].meals.reduce((sum, meal: Meal) => {
+            // This calculation should match the one in meal-details-sheet
+            const proteinPerMeal = Math.round(meal.calories * 0.3 / 4);
+            return sum + proteinPerMeal;
+          }, 0))
+        : 150; // Fallback
+
+    // Calculate Workout Goal from Workout Plan
+    const workoutGoal = workoutPlan && workoutPlan.length > 0
+        ? parseInt(workoutPlan[0].duration.split('-')[1] || '60', 10)
+        : 60; // Fallback
+    
+    // Calculate today's protein intake
+     const protein = todaysLogs
+        .filter((log): log is MealLog => log.logType === 'meal')
+        .reduce((sum, log) => {
+            const proteinPerMeal = Math.round(log.calories * 0.3 / 4);
+            return sum + proteinPerMeal;
+        }, 0);
 
 
     return {
@@ -61,7 +85,7 @@ export default function TodayPage() {
       workout: { value: workout, goal: workoutGoal },
     };
 
-  }, [combinedLogs, userProfile]);
+  }, [todaysLogs, nutritionPlan, workoutPlan]);
 
 
   if (isLoading && !userProfile) {
@@ -106,7 +130,7 @@ export default function TodayPage() {
         )}
 
         <ActivityRings progress={todayProgress} />
-        <DailyFeed quote={quote} />
+        <DailyFeed quote={quote} logs={todaysLogs} />
       </main>
 
       <SpeedDial />
