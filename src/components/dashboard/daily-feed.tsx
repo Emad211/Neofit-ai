@@ -4,7 +4,7 @@
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Apple, Dumbbell, Weight, MoreVertical, Edit, Trash2, Flame, Clock } from 'lucide-react';
+import { Apple, Dumbbell, Weight, MoreVertical, Edit, Trash2, Flame, Clock, LineChart } from 'lucide-react';
 import { DailyMotivationCard } from "./daily-motivation-card";
 import { useUserData } from "@/context/user-profile-context";
 import { format } from 'date-fns';
@@ -30,12 +30,13 @@ import {
 import { LogEntrySheet } from "./log-entry-sheet";
 import { useToast } from "@/hooks/use-toast";
 
-const iconMapping = {
-    meal: { icon: Apple, color: 'bg-green-500/10 text-green-500 border-green-500/20', iconColor: 'text-green-500'},
-    activity: { icon: Dumbbell, color: 'bg-orange-500/10 text-orange-500 border-orange-500/20', iconColor: 'text-orange-500'},
-    weight: { icon: Weight, color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', iconColor: 'text-blue-500'},
-    workout: { icon: Dumbbell, color: 'bg-purple-500/10 text-purple-500 border-purple-500/20', iconColor: 'text-purple-500'},
-}
+// Use theme-based colors for better consistency
+const iconMapping: { [key in CombinedLog['logType']]: { icon: React.ElementType, color: string, style: React.CSSProperties } } = {
+    meal: { icon: Apple, color: 'var(--chart-1)', style: { '--bg-color': 'hsl(var(--chart-1))', '--text-color': 'hsl(var(--chart-1))' } as React.CSSProperties },
+    activity: { icon: Flame, color: 'var(--chart-2)', style: { '--bg-color': 'hsl(var(--chart-2))', '--text-color': 'hsl(var(--chart-2))' } as React.CSSProperties },
+    weight: { icon: LineChart, color: 'var(--chart-3)', style: { '--bg-color': 'hsl(var(--chart-3))', '--text-color': 'hsl(var(--chart-3))' } as React.CSSProperties },
+    workout: { icon: Dumbbell, color: 'var(--chart-4)', style: { '--bg-color': 'hsl(var(--chart-4))', '--text-color': 'hsl(var(--chart-4))' } as React.CSSProperties },
+};
 
 const Stat = ({ icon, value, label }: { icon: React.ReactNode, value: string | number, label: string }) => (
     <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-secondary/50 text-center">
@@ -77,7 +78,7 @@ export function DailyFeed({ quote, logs }: { quote: string, logs: CombinedLog[] 
     
 
     const renderFeedItem = (item: CombinedLog) => {
-        const config = iconMapping[item.logType as keyof typeof iconMapping] || iconMapping.activity;
+        const config = iconMapping[item.logType];
         const Icon = config.icon;
         
         const itemDate = new Date(item.loggedAt);
@@ -92,14 +93,14 @@ export function DailyFeed({ quote, logs }: { quote: string, logs: CombinedLog[] 
         }
 
         return (
-            <Card key={item.id} className={`overflow-hidden animate-in fade-in-50 border ${config.color}`}>
-                <CardHeader className={`flex flex-row items-start gap-4 space-y-0 p-4 ${config.color}`}>
+            <Card key={item.id} style={config.style} className={`overflow-hidden animate-in fade-in-50 border-[var(--bg-color)]/20`}>
+                <CardHeader className={`flex flex-row items-start gap-4 space-y-0 p-4 bg-[var(--bg-color)]/10`}>
                     <div className={`p-2 rounded-full bg-background/50`}>
-                        <Icon className={`h-6 w-6 ${config.iconColor}`} />
+                        <Icon className={`h-6 w-6 text-[var(--text-color)]`} />
                     </div>
                     <div className="flex-1">
                         <CardTitle className="text-base font-bold">{title}</CardTitle>
-                        <CardDescription className={`${config.iconColor} font-semibold`}>{timeString}</CardDescription>
+                        <CardDescription className={`text-[var(--text-color)] font-semibold`}>{timeString}</CardDescription>
                     </div>
                     <AlertDialog>
                         <DropdownMenu>
