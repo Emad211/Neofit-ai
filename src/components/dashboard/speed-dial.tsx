@@ -52,12 +52,12 @@ export function SpeedDial() {
                 >
                 {actions.map((action) => (
                     <div key={action.logType} className="flex items-center gap-3">
-                         <div className="bg-card text-card-foreground rounded-md px-3 py-1.5 text-sm font-semibold shadow-md">
+                         <div className="bg-secondary text-secondary-foreground rounded-md px-4 py-2 text-sm font-bold shadow-md">
                             {action.label}
                         </div>
                         <Button
                             size="icon"
-                            variant="default" // Changed from secondary
+                            variant="default"
                             className="h-12 w-12 rounded-full shadow-lg"
                             onClick={() => handleActionClick(action.logType)}
                         >
