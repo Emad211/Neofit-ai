@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Menu, Eye, Replace, CheckCircle, Trash2, MoreVertical } from "lucide-react";
+import { Eye, Replace, CheckCircle, Trash2, MoreVertical } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,14 +48,18 @@ export function MealCard({ meal, isLogged, isToday, onUpdateMeal, onLogMeal }: M
     };
 
     const handleSelectAlternative = (newMealName: string) => {
-        // Here we would also update the calories, image etc.
-        // For now, we just update the name to show it's working.
         onUpdateMeal(meal.id, newMealName);
     }
     
     const openReplaceDialog = (e: React.MouseEvent) => {
         e.stopPropagation();
         setIsReplaceOpen(true);
+    }
+    
+    const openDetailsSheet = () => {
+        if (isToday && !isLogged) {
+            setIsDetailsOpen(true);
+        }
     }
 
     const canLog = isToday && !isLogged;
@@ -64,51 +68,46 @@ export function MealCard({ meal, isLogged, isToday, onUpdateMeal, onLogMeal }: M
     <>
         <div 
             className={cn(
-                "overflow-hidden shadow-sm hover:shadow-md transition-all rounded-lg border bg-card",
+                "relative overflow-hidden shadow-sm hover:shadow-md transition-all rounded-lg border bg-card group",
                 (isLogged || !isToday) ? "opacity-60 bg-secondary/30" : "cursor-pointer"
             )}
-            onClick={() => (isToday && !isLogged) && setIsDetailsOpen(true)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && isToday && !isLogged) setIsDetailsOpen(true); }}
+            onClick={openDetailsSheet}
+            onKeyDown={(e) => { if (e.key === 'Enter') openDetailsSheet(); }}
             role="button"
             tabIndex={isToday && !isLogged ? 0 : -1}
             aria-label={`View details for ${meal.name}`}
         >
-            <CardContent className="p-4 space-y-3">
-                <div className="flex-grow">
+            <CardContent className="p-4 flex flex-col justify-between h-full min-h-[140px]">
+                <div className="flex-grow pr-8"> {/* Add padding to the right to avoid overlap with dropdown */}
                     <p className="font-semibold text-sm text-primary">{meal.type}</p>
                     <p className="font-bold text-base text-foreground leading-tight">{meal.name}</p>
-                        {isLogged ? (
+                    {isLogged ? (
                         <div className="flex items-center gap-1 text-sm text-green-600 font-semibold mt-1">
                             <CheckCircle className="h-4 w-4" />
                             Logged
                         </div>
                     ) : (
-                            <p className="text-sm text-muted-foreground">{meal.calories} kcal</p>
+                        <p className="text-sm text-muted-foreground">{meal.calories} kcal</p>
                     )}
                 </div>
-                <div className="flex items-center gap-2 justify-end">
-                        <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleLogAction}
-                        className="h-9 w-18"
-                        disabled={!canLog}
-                    >
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Log
-                    </Button>
+
+                <div className="absolute top-2 right-2">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-9 w-9 flex-shrink-0"
+                                    className="h-8 w-8 flex-shrink-0"
                                     onClick={(e) => e.stopPropagation()} // Prevent card click
                                 >
                                     <MoreVertical className="h-4 w-4" />
                                 </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                             <DropdownMenuItem onClick={() => setIsDetailsOpen(true)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                <span>View Details</span>
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={openReplaceDialog}>
                                 <Replace className="mr-2 h-4 w-4" />
                                 <span>Replace Meal</span>
@@ -119,6 +118,19 @@ export function MealCard({ meal, isLogged, isToday, onUpdateMeal, onLogMeal }: M
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
+                </div>
+                
+                <div className="flex justify-end mt-2">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleLogAction}
+                        className="h-9 w-18"
+                        disabled={!canLog}
+                    >
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Log
+                    </Button>
                 </div>
             </CardContent>
         </div>
