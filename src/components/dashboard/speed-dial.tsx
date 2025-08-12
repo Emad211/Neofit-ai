@@ -70,7 +70,7 @@ export function SpeedDial() {
                 {/* Main FAB */}
                 <Button
                     size="icon"
-                    className="h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90 relative"
+                    className="h-16 w-16 rounded-full shadow-lg bg-accent hover:bg-accent/90 relative"
                     onClick={() => setIsOpen(!isOpen)}
                 >
                     <Plus
