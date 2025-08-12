@@ -1,3 +1,4 @@
+
 // src/context/user-profile-context.tsx
 "use client";
 
@@ -8,6 +9,7 @@ import { app } from '@/lib/firebase';
 import type { GenerateNutritionProgramOutput } from '@/ai/flows/generate-nutrition-program';
 import type { GenerateWorkoutProgramOutput } from '@/ai/flows/generate-workout-program';
 import { useRouter } from 'next/navigation';
+import { startOfDay } from 'date-fns';
 
 const db = getFirestore(app);
 const auth = getAuth(app);
@@ -45,6 +47,10 @@ type NutritionPlan = GenerateNutritionProgramOutput['weeklyMealPlan'];
 type WorkoutPlan = GenerateWorkoutProgramOutput['weeklyWorkoutPlan'];
 type ShoppingListState = { [itemName: string]: boolean };
 type CheckedIngredientsState = { [mealId: string]: { [ingredientName: string]: boolean } };
+type LoggedMealsState = {
+    date: string; // ISO date string for the start of the day
+    mealIds: string[];
+};
 
 
 export type MealLog = {
@@ -94,10 +100,12 @@ interface UserDataContextType {
   workoutPlan: WorkoutPlan | null;
   shoppingListState: ShoppingListState | null;
   checkedIngredientsState: CheckedIngredientsState | null;
+  loggedMealsState: string[] | null;
   saveUserProfile: (profileData: UserProfile) => Promise<void>;
   savePlans: (plans: { nutritionPlan: NutritionPlan, workoutPlan: WorkoutPlan }) => Promise<void>;
   updateShoppingListState: (state: ShoppingListState) => Promise<void>;
   updateCheckedIngredientsState: (mealId: string, ingredientName: string, isChecked: boolean) => Promise<void>;
+  updateLoggedMealsState: (mealIds: string[]) => Promise<void>;
   saveWorkoutLog: (logData: Omit<WorkoutLog, 'logType' | 'loggedAt' | 'id'>) => Promise<void>;
   logMeal: (logData: Omit<MealLog, 'logType' | 'loggedAt' | 'id'>) => Promise<void>;
   logActivity: (logData: Omit<ActivityLog, 'logType' | 'loggedAt'| 'id'>) => Promise<void>;
@@ -129,6 +137,7 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
   const [shoppingListState, setShoppingListState] = useState<ShoppingListState | null>(null);
   const [checkedIngredientsState, setCheckedIngredientsState] = useState<CheckedIngredientsState | null>(null);
+  const [loggedMealsState, setLoggedMealsState] = useState<string[] | null>(null);
   const [combinedLogs, setCombinedLogs] = useState<CombinedLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -146,6 +155,7 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
             setWorkoutPlan(null);
             setShoppingListState(null);
             setCheckedIngredientsState(null);
+            setLoggedMealsState(null);
             setCombinedLogs([]);
             router.push('/auth');
         }
@@ -170,16 +180,28 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
 
     const unsubPlans = onSnapshot(plansRef, (doc) => {
         const data = doc.data();
+        const todayDateStr = startOfDay(new Date()).toISOString().split('T')[0];
+
         if (data) {
             setNutritionPlan(data.nutritionPlan);
             setWorkoutPlan(data.workoutPlan);
             setShoppingListState(data.shoppingListState || null);
             setCheckedIngredientsState(data.checkedIngredientsState || null);
+            
+            // Check if loggedMealsState is for today, otherwise reset it
+            const storedLoggedMeals: LoggedMealsState = data.loggedMealsState;
+            if (storedLoggedMeals && storedLoggedMeals.date === todayDateStr) {
+                setLoggedMealsState(storedLoggedMeals.mealIds);
+            } else {
+                setLoggedMealsState([]); // Reset for the new day
+            }
+
         } else {
             setNutritionPlan(null);
             setWorkoutPlan(null);
             setShoppingListState(null);
             setCheckedIngredientsState(null);
+            setLoggedMealsState(null);
         }
     });
     
@@ -275,6 +297,25 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
         }
     };
 
+  const updateLoggedMealsState = async (mealIds: string[]) => {
+      if (!user) {
+          throw new Error("No user is signed in to update logged meals.");
+      }
+      try {
+          const plansRef = doc(db, 'plans', user.uid);
+          const todayDateStr = startOfDay(new Date()).toISOString().split('T')[0];
+          const stateToSave: LoggedMealsState = {
+              date: todayDateStr,
+              mealIds: mealIds,
+          };
+          await setDoc(plansRef, { loggedMealsState: stateToSave }, { merge: true });
+          setLoggedMealsState(mealIds);
+      } catch (error) {
+          console.error("Failed to update logged meals state", error);
+          throw error;
+      }
+  };
+
 
   const logGeneric = async (collectionName: string, logData: object) => {
     if (!user) {
@@ -331,6 +372,7 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
       setWorkoutPlan(null);
       setShoppingListState(null);
       setCheckedIngredientsState(null);
+      setLoggedMealsState(null);
       setCombinedLogs([]);
     } catch (error) {
       console.error("Failed to reset user data in Firestore", error);
@@ -366,7 +408,7 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
   }
 
   return (
-    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, shoppingListState, checkedIngredientsState, saveUserProfile, savePlans, updateShoppingListState, updateCheckedIngredientsState, saveWorkoutLog, logMeal, logActivity, logWeight, updateLog, deleteLog, resetUserData, reauthenticateUser, updateUserAccount, updateUserEmail, updateUserPassword, combinedLogs, isLoading }}>
+    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, shoppingListState, checkedIngredientsState, loggedMealsState, saveUserProfile, savePlans, updateShoppingListState, updateCheckedIngredientsState, updateLoggedMealsState, saveWorkoutLog, logMeal, logActivity, logWeight, updateLog, deleteLog, resetUserData, reauthenticateUser, updateUserAccount, updateUserEmail, updateUserPassword, combinedLogs, isLoading }}>
       {children}
     </UserDataContext.Provider>
   );

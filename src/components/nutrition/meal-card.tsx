@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AlternativeMealDialog } from './alternative-meal-dialog';
 import { MealDetailsSheet } from './meal-details-sheet';
+import { cn } from '@/lib/utils';
 
 export interface Meal {
     id: string;
@@ -24,11 +25,12 @@ export interface Meal {
 
 interface MealCardProps {
     meal: Meal;
+    isLogged: boolean;
     onUpdateMeal: (mealId: string, newMealName: string) => void;
     onLogMeal: (meal: Meal) => void;
 }
 
-export function MealCard({ meal, onUpdateMeal, onLogMeal }: MealCardProps) {
+export function MealCard({ meal, isLogged, onUpdateMeal, onLogMeal }: MealCardProps) {
     const [isDetailsOpen, setIsDetailsOpen] = React.useState(false);
     const [isReplaceOpen, setIsReplaceOpen] = React.useState(false);
 
@@ -57,12 +59,15 @@ export function MealCard({ meal, onUpdateMeal, onLogMeal }: MealCardProps) {
 
   return (
     <>
-        <Card 
-            className="overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => setIsDetailsOpen(true)}
-            onKeyDown={(e) => { if (e.key === 'Enter') setIsDetailsOpen(true); }}
+        <div 
+            className={cn(
+                "overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer rounded-lg border bg-card",
+                isLogged && "opacity-60 bg-secondary/30"
+            )}
+            onClick={() => !isLogged && setIsDetailsOpen(true)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !isLogged) setIsDetailsOpen(true); }}
             role="button"
-            tabIndex={0}
+            tabIndex={isLogged ? -1 : 0}
             aria-label={`View details for ${meal.name}`}
         >
             <CardContent className="p-4">
@@ -70,7 +75,14 @@ export function MealCard({ meal, onUpdateMeal, onLogMeal }: MealCardProps) {
                     <div className="flex-grow">
                         <p className="font-semibold text-sm text-primary">{meal.type}</p>
                         <p className="font-bold text-base text-foreground leading-tight">{meal.name}</p>
-                        <p className="text-sm text-muted-foreground">{meal.calories} kcal</p>
+                         {isLogged ? (
+                            <div className="flex items-center gap-1 text-sm text-green-600 font-semibold mt-1">
+                                <CheckCircle className="h-4 w-4" />
+                                Logged
+                            </div>
+                        ) : (
+                             <p className="text-sm text-muted-foreground">{meal.calories} kcal</p>
+                        )}
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
                          <Button
@@ -78,6 +90,7 @@ export function MealCard({ meal, onUpdateMeal, onLogMeal }: MealCardProps) {
                             variant="outline"
                             onClick={handleLogAction}
                             className="h-9 w-18"
+                            disabled={isLogged}
                         >
                             <CheckCircle className="mr-2 h-4 w-4" />
                             Log
@@ -89,6 +102,7 @@ export function MealCard({ meal, onUpdateMeal, onLogMeal }: MealCardProps) {
                                         size="icon"
                                         className="h-9 w-9 flex-shrink-0"
                                         onClick={(e) => e.stopPropagation()} // Prevent card click
+                                        disabled={isLogged}
                                     >
                                         <MoreVertical className="h-4 w-4" />
                                     </Button>
@@ -107,7 +121,7 @@ export function MealCard({ meal, onUpdateMeal, onLogMeal }: MealCardProps) {
                     </div>
                 </div>
             </CardContent>
-        </Card>
+        </div>
 
         <MealDetailsSheet 
             meal={meal}
