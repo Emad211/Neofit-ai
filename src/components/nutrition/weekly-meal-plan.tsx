@@ -150,12 +150,13 @@ export function WeeklyMealPlan() {
                   </div>
                   <div className="space-y-4">
                       {dayPlan.meals.map((meal: Meal) => {
-                          const isLogged = isToday && (loggedMealsState || []).includes(meal.id);
+                          const isLogged = (loggedMealsState || []).includes(meal.id);
                           return (
                           <MealCard 
                             key={meal.id} 
                             meal={meal}
                             isLogged={isLogged}
+                            isToday={isToday}
                             onUpdateMeal={handleUpdateMeal} 
                             onLogMeal={handleLogMeal}
                           />

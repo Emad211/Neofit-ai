@@ -26,11 +26,12 @@ export interface Meal {
 interface MealCardProps {
     meal: Meal;
     isLogged: boolean;
+    isToday: boolean;
     onUpdateMeal: (mealId: string, newMealName: string) => void;
     onLogMeal: (meal: Meal) => void;
 }
 
-export function MealCard({ meal, isLogged, onUpdateMeal, onLogMeal }: MealCardProps) {
+export function MealCard({ meal, isLogged, isToday, onUpdateMeal, onLogMeal }: MealCardProps) {
     const [isDetailsOpen, setIsDetailsOpen] = React.useState(false);
     const [isReplaceOpen, setIsReplaceOpen] = React.useState(false);
 
@@ -57,17 +58,19 @@ export function MealCard({ meal, isLogged, onUpdateMeal, onLogMeal }: MealCardPr
         setIsReplaceOpen(true);
     }
 
+    const canLog = isToday && !isLogged;
+
   return (
     <>
         <div 
             className={cn(
-                "overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer rounded-lg border bg-card",
-                isLogged && "opacity-60 bg-secondary/30"
+                "overflow-hidden shadow-sm hover:shadow-md transition-all rounded-lg border bg-card",
+                (isLogged || !isToday) ? "opacity-60 bg-secondary/30" : "cursor-pointer"
             )}
-            onClick={() => !isLogged && setIsDetailsOpen(true)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !isLogged) setIsDetailsOpen(true); }}
+            onClick={() => (isToday && !isLogged) && setIsDetailsOpen(true)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && isToday && !isLogged) setIsDetailsOpen(true); }}
             role="button"
-            tabIndex={isLogged ? -1 : 0}
+            tabIndex={isToday && !isLogged ? 0 : -1}
             aria-label={`View details for ${meal.name}`}
         >
             <CardContent className="p-4">
@@ -90,7 +93,7 @@ export function MealCard({ meal, isLogged, onUpdateMeal, onLogMeal }: MealCardPr
                             variant="outline"
                             onClick={handleLogAction}
                             className="h-9 w-18"
-                            disabled={isLogged}
+                            disabled={!canLog}
                         >
                             <CheckCircle className="mr-2 h-4 w-4" />
                             Log
@@ -102,7 +105,6 @@ export function MealCard({ meal, isLogged, onUpdateMeal, onLogMeal }: MealCardPr
                                         size="icon"
                                         className="h-9 w-9 flex-shrink-0"
                                         onClick={(e) => e.stopPropagation()} // Prevent card click
-                                        disabled={isLogged}
                                     >
                                         <MoreVertical className="h-4 w-4" />
                                     </Button>
