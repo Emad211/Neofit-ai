@@ -73,54 +73,52 @@ export function MealCard({ meal, isLogged, isToday, onUpdateMeal, onLogMeal }: M
             tabIndex={isToday && !isLogged ? 0 : -1}
             aria-label={`View details for ${meal.name}`}
         >
-            <CardContent className="p-4">
-                <div className="flex justify-between items-center gap-4">
-                    <div className="flex-grow">
-                        <p className="font-semibold text-sm text-primary">{meal.type}</p>
-                        <p className="font-bold text-base text-foreground leading-tight">{meal.name}</p>
-                         {isLogged ? (
-                            <div className="flex items-center gap-1 text-sm text-green-600 font-semibold mt-1">
-                                <CheckCircle className="h-4 w-4" />
-                                Logged
-                            </div>
-                        ) : (
-                             <p className="text-sm text-muted-foreground">{meal.calories} kcal</p>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                         <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={handleLogAction}
-                            className="h-9 w-18"
-                            disabled={!canLog}
-                        >
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Log
-                        </Button>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-9 w-9 flex-shrink-0"
-                                        onClick={(e) => e.stopPropagation()} // Prevent card click
-                                    >
-                                        <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                                <DropdownMenuItem onClick={openReplaceDialog}>
-                                    <Replace className="mr-2 h-4 w-4" />
-                                    <span>Replace Meal</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleRemoveAction} className="text-destructive">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    <span>Remove from Plan</span>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
+            <CardContent className="p-4 space-y-3">
+                <div className="flex-grow">
+                    <p className="font-semibold text-sm text-primary">{meal.type}</p>
+                    <p className="font-bold text-base text-foreground leading-tight">{meal.name}</p>
+                        {isLogged ? (
+                        <div className="flex items-center gap-1 text-sm text-green-600 font-semibold mt-1">
+                            <CheckCircle className="h-4 w-4" />
+                            Logged
+                        </div>
+                    ) : (
+                            <p className="text-sm text-muted-foreground">{meal.calories} kcal</p>
+                    )}
+                </div>
+                <div className="flex items-center gap-2 justify-end">
+                        <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleLogAction}
+                        className="h-9 w-18"
+                        disabled={!canLog}
+                    >
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Log
+                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-9 w-9 flex-shrink-0"
+                                    onClick={(e) => e.stopPropagation()} // Prevent card click
+                                >
+                                    <MoreVertical className="h-4 w-4" />
+                                </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                            <DropdownMenuItem onClick={openReplaceDialog}>
+                                <Replace className="mr-2 h-4 w-4" />
+                                <span>Replace Meal</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleRemoveAction} className="text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>Remove from Plan</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </CardContent>
         </div>
