@@ -3,11 +3,14 @@
 
 import * as React from "react"
 import { MealCard, Meal } from "./meal-card";
-import { format, startOfDay } from 'date-fns';
+import { format, isToday as fnsIsToday } from 'date-fns';
 import { Skeleton } from "../ui/skeleton";
 import type { GenerateNutritionProgramOutput } from "@/ai/flows/generate-nutrition-program";
 import { useUserData } from "@/context/user-profile-context";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "../ui/button";
+import Link from "next/link";
+import { Card } from "../ui/card";
 
 type DailyMealPlan = GenerateNutritionProgramOutput['weeklyMealPlan'][number] & { date: Date };
 
@@ -19,11 +22,11 @@ export function WeeklyMealPlan() {
 
   React.useEffect(() => {
     if (!isLoading) {
-        if (nutritionPlan) {
+        if (nutritionPlan && nutritionPlan.length > 0) {
             // Add date objects to the plan for display purposes
             const today = new Date();
             const planWithDates = nutritionPlan.map((dayPlan: any, index: number) => {
-                const date = new Date();
+                const date = new Date(today);
                 date.setDate(today.getDate() + index);
                 return {
                     ...dayPlan,
@@ -37,7 +40,7 @@ export function WeeklyMealPlan() {
             });
             setMealPlan(planWithDates);
         } else {
-            setError("No nutrition plan found. Please complete the onboarding process.");
+             setError("No nutrition plan found.");
         }
     }
   }, [nutritionPlan, isLoading]);
@@ -95,80 +98,87 @@ export function WeeklyMealPlan() {
 
   if (isLoading) {
       return (
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(3)].map((_, i) => (
-                  <div key={i} className="p-1">
-                      <div className="bg-card border rounded-lg p-4 h-full space-y-4">
-                          <div className="text-center mb-4 space-y-2">
-                              <Skeleton className="h-6 w-24 mx-auto" />
-                              <Skeleton className="h-4 w-32 mx-auto" />
-                          </div>
-                          <div className="space-y-4">
-                              {[...Array(3)].map((_, j) => (
-                                   <div key={j} className="rounded-lg border bg-card p-4">
-                                       <div className="flex justify-between items-center gap-4">
-                                           <div className="flex-grow space-y-2">
-                                                <Skeleton className="h-4 w-1/4" />
-                                                <Skeleton className="h-5 w-3/4" />
-                                                <Skeleton className="h-4 w-1/2" />
-                                           </div>
-                                            <div className="flex items-center gap-1 flex-shrink-0">
-                                                <Skeleton className="h-9 w-16" />
-                                                <Skeleton className="h-9 w-9" />
-                                            </div>
-                                       </div>
-                                   </div>
-                              ))}
-                          </div>
-                           <div className="text-center mt-4 pt-4 border-t space-y-2">
-                              <Skeleton className="h-4 w-24 mx-auto" />
-                              <Skeleton className="h-6 w-16 mx-auto" />
-                          </div>
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                  <Card key={i} className="p-4 h-full space-y-4">
+                      <div className="text-center mb-4 space-y-2">
+                          <Skeleton className="h-6 w-24 mx-auto" />
+                          <Skeleton className="h-4 w-32 mx-auto" />
                       </div>
-                  </div>
+                      <div className="space-y-4 flex-grow">
+                          {[...Array(3)].map((_, j) => (
+                              <Card key={j} className="p-3">
+                                  <div className="flex justify-between items-center gap-4">
+                                      <div className="flex-grow space-y-2">
+                                           <Skeleton className="h-4 w-1/4" />
+                                           <Skeleton className="h-5 w-3/4" />
+                                           <Skeleton className="h-4 w-1/2" />
+                                      </div>
+                                       <div className="flex-shrink-0">
+                                           <Skeleton className="h-9 w-16" />
+                                       </div>
+                                  </div>
+                              </Card>
+                          ))}
+                      </div>
+                       <div className="text-center mt-2 space-y-1">
+                          <Skeleton className="h-4 w-24 mx-auto" />
+                          <Skeleton className="h-6 w-16 mx-auto" />
+                      </div>
+                  </Card>
               ))}
           </div>
       )
   }
   
   if (error) {
-    return <div className="text-center text-destructive p-8">{error}</div>;
+    return (
+        <Card className="col-span-full flex flex-col items-center justify-center p-12 text-center">
+            <h3 className="text-xl font-semibold">No Nutrition Plan Available</h3>
+            <p className="text-muted-foreground mt-2">
+                It seems you don't have a nutrition plan yet.
+            </p>
+            <Button asChild className="mt-4">
+                <Link href="/profile/edit">
+                    Create a New Plan
+                </Link>
+            </Button>
+        </Card>
+    )
   }
 
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {mealPlan.map((dayPlan, index) => {
-          const isToday = format(dayPlan.date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+          const isToday = fnsIsToday(dayPlan.date);
           
           return (
-          <div key={index}>
-              <div className="bg-card border rounded-lg p-4 h-full">
-                  <div className="text-center mb-4">
-                      <p className="text-lg font-bold font-headline">{dayPlan.day}</p>
-                      <p className="text-sm text-muted-foreground">{format(dayPlan.date, 'do MMMM')}</p>
-                  </div>
-                  <div className="space-y-4">
-                      {dayPlan.meals.map((meal: Meal) => {
-                          const isLogged = (loggedMealsState || []).includes(meal.id);
-                          return (
-                          <MealCard 
-                            key={meal.id} 
-                            meal={meal}
-                            isLogged={isLogged}
-                            isToday={isToday}
-                            onUpdateMeal={handleUpdateMeal} 
-                            onLogMeal={handleLogMeal}
-                          />
-                          )
-                      })}
-                  </div>
-                   <div className="text-center mt-4 pt-4 border-t">
-                      <p className="text-sm text-muted-foreground">Total Calories</p>
-                      <p className="text-xl font-bold text-primary">{dayPlan.totalCalories} kcal</p>
-                  </div>
+          <Card key={index} className="p-4 flex flex-col">
+              <div className="text-center mb-4">
+                  <p className="text-lg font-bold font-headline">{dayPlan.day}</p>
+                  <p className="text-sm text-muted-foreground">{format(dayPlan.date, 'do MMMM')}</p>
               </div>
-          </div>
+              <div className="space-y-4 flex-grow">
+                  {dayPlan.meals.map((meal: Meal) => {
+                      const isLogged = (loggedMealsState || []).includes(meal.id);
+                      return (
+                      <MealCard 
+                        key={meal.id} 
+                        meal={meal}
+                        isLogged={isLogged}
+                        isToday={isToday}
+                        onUpdateMeal={handleUpdateMeal} 
+                        onLogMeal={handleLogMeal}
+                      />
+                      )
+                  })}
+              </div>
+               <div className="text-center mt-4 pt-2">
+                  <p className="text-sm text-muted-foreground">Total Calories</p>
+                  <p className="text-xl font-bold text-primary">{dayPlan.totalCalories} kcal</p>
+              </div>
+          </Card>
           )
         })}
     </div>
