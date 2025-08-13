@@ -20,7 +20,7 @@ export type GetExerciseDetailsInput = z.infer<typeof GetExerciseDetailsInputSche
 
 const GetExerciseDetailsOutputSchema = z.object({
   description: z.string().describe('A detailed, step-by-step guide on how to perform the exercise correctly and safely. This should be formatted with clear paragraphs.'),
-  youtubeUrl: z.string().describe('A direct URL to a high-quality YouTube video tutorial for the specified exercise.'),
+  youtubeUrl: z.string().describe("A direct, watchable URL to a high-quality YouTube video tutorial for the specified exercise. It must be a full URL to a specific video, e.g., 'https://www.youtube.com/watch?v=xxxxxxxxxxx'."),
 });
 export type GetExerciseDetailsOutput = z.infer<typeof GetExerciseDetailsOutputSchema>;
 
@@ -56,7 +56,7 @@ export async function getExerciseDetails(input: GetExerciseDetailsInput): Promis
         2.  **Find a YouTube Video**:
             *   Search YouTube for a high-quality, instructional video that clearly demonstrates the correct form for the "{{{exerciseName}}}".
             *   Prioritize videos from reputable fitness channels (e.g., Athlean-X, ScottHermanFitness, Jeff Nippard, etc.), but the primary factor is the quality of instruction.
-            *   You MUST return a direct, watchable URL (e.g., "https://www.youtube.com/watch?v=..."). Do not return a search URL or a channel URL.
+            *   You MUST return a direct, watchable URL (e.g., "https://www.youtube.com/watch?v=..."). Do not return a search URL, a channel URL, or a generic domain like "youtube.com".
 
         Return a single, valid JSON object with the 'description' and 'youtubeUrl'.
         `,
