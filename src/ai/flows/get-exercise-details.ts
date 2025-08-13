@@ -20,7 +20,7 @@ export type GetExerciseDetailsInput = z.infer<typeof GetExerciseDetailsInputSche
 
 const GetExerciseDetailsOutputSchema = z.object({
   description: z.string().describe('A detailed, step-by-step guide on how to perform the exercise correctly and safely. This should be formatted with clear paragraphs.'),
-  youtubeUrl: z.string().url().describe('A direct URL to a high-quality YouTube video tutorial for the specified exercise.'),
+  youtubeUrl: z.string().describe('A direct URL to a high-quality YouTube video tutorial for the specified exercise.'),
 });
 export type GetExerciseDetailsOutput = z.infer<typeof GetExerciseDetailsOutputSchema>;
 
