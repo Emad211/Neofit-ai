@@ -10,6 +10,7 @@ import {
   SkipForward,
   Check,
   History,
+  Loader2,
 } from "lucide-react";
 import { WorkoutTimer } from "./workout-timer";
 import { AlternativeExerciseDialog } from "./alternative-exercise-dialog";
@@ -36,17 +37,19 @@ import { useRouter } from "next/navigation";
 import { WorkoutCompletion } from "./workout-completion";
 import { useUserData } from "@/context/user-profile-context";
 import { Skeleton } from "../ui/skeleton";
-import { Card, CardContent } from "../ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
-import { Separator } from "../ui/separator";
+import { getExerciseDetails, GetExerciseDetailsOutput } from "@/ai/flows/get-exercise-details";
+import { YouTubePlayer } from "./youtube-player";
+import { ScrollArea } from "../ui/scroll-area";
 
 
 export type Log = { set: number; reps: string; weight: string };
 export type Exercise = {
   id: string;
   name: string;
-  videoUrl?: string; // Made optional for robustness
-  dataAiHint?: string; // Made optional
+  videoUrl?: string; 
+  dataAiHint?: string;
   sets: number;
   reps: string;
   rest: number;
@@ -71,18 +74,22 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
   const [isWorkoutComplete, setIsWorkoutComplete] = React.useState(false);
   const [startTime, setStartTime] = React.useState<number | null>(null);
 
+  // New state for AI Form Guide
+  const [formGuide, setFormGuide] = React.useState<GetExerciseDetailsOutput | null>(null);
+  const [isFormGuideLoading, setIsFormGuideLoading] = React.useState(false);
+  const [formGuideError, setFormGuideError] = React.useState<string | null>(null);
+  const [isFormGuideDialogOpen, setIsFormGuideDialogOpen] = React.useState(false);
+
+
   React.useEffect(() => {
     if (workoutPlan) {
       const activeWorkout = workoutPlan.find(w => w.id === workoutId);
       if (activeWorkout) {
-        // Initialize the session with logs placeholder
         const exercisesWithLogs: Exercise[] = activeWorkout.exercises.map((ex, exIndex) => ({
           ...ex,
-          id: `${workoutId}-${exIndex}`, // Create a unique ID for the exercise instance
-          videoUrl: "/placehold.co/1280x720.png", // Placeholder
-          dataAiHint: ex.name.toLowerCase(), // Basic hint
-          rest: 90, // Default rest
-          sets: parseInt(ex.sets, 10) || 3, // Ensure sets is a number
+          id: `${workoutId}-${exIndex}`,
+          rest: 90,
+          sets: parseInt(ex.sets, 10) || 3,
           logs: Array.from({ length: parseInt(ex.sets, 10) || 3 }, (_, i) => ({
             set: i + 1,
             reps: '',
@@ -100,30 +107,32 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
     }
   }, [workoutId, workoutPlan]);
   
-  if (!session || !userProfile) {
-    return (
-        <div className="flex h-screen flex-col bg-gray-950 text-white">
-            <header className="flex items-center justify-between p-4"><Skeleton className="h-8 w-8 rounded-full" /><Skeleton className="h-6 w-32" /><Skeleton className="h-8 w-10" /></header>
-            
-            <div className="flex justify-center gap-2 p-4"><Skeleton className="h-2 w-8 rounded-full" /><Skeleton className="h-2 w-8 rounded-full" /><Skeleton className="h-2 w-8 rounded-full" /></div>
-            <main className="flex-grow space-y-6 p-4">
-                <Skeleton className="h-10 w-24 mx-auto" />
-                <div className="grid grid-cols-2 gap-4">
-                     <Skeleton className="h-28 w-full" />
-                     <Skeleton className="h-28 w-full" />
-                </div>
-            </main>
-            <footer className="grid grid-cols-3 items-center gap-4 p-4"><Skeleton className="h-10 w-24" /><Skeleton className="h-20 w-20 rounded-full" /><Skeleton className="h-10 w-10 justify-self-end" /></footer>
-        </div>
-    )
-  }
-
-  const currentExercise = session.exercises[currentExerciseIndex];
-  const currentLog = currentExercise.logs[currentSetIndex];
+  const currentExercise = session?.exercises[currentExerciseIndex];
+  const currentLog = currentExercise?.logs[currentSetIndex];
   const isSetLogComplete = currentLog && currentLog.reps.trim() !== '' && currentLog.weight.trim() !== '';
+
+  const handleFetchFormGuide = async () => {
+    if (!currentExercise || !userProfile) return;
+    setIsFormGuideLoading(true);
+    setFormGuideError(null);
+    setFormGuide(null);
+    try {
+        const details = await getExerciseDetails({
+            exerciseName: currentExercise.name,
+            geminiApiKey: userProfile.geminiApiKey,
+        });
+        setFormGuide(details);
+    } catch (error) {
+        console.error("Failed to fetch form guide:", error);
+        setFormGuideError("Sorry, we couldn't fetch the guide right now. Please try again.");
+    } finally {
+        setIsFormGuideLoading(false);
+    }
+  };
 
 
   const handleLogChange = (field: 'reps' | 'weight', value: string) => {
+    if (!session) return;
     const newSession = { ...session };
     newSession.exercises[currentExerciseIndex].logs[currentSetIndex][field] = value;
     setSession(newSession as WorkoutSession);
@@ -138,12 +147,14 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
             name: newExerciseName,
             logs: newExercises[currentExerciseIndex].logs.map(log => ({ ...log, reps: '', weight: '' }))
         };
+        // Reset form guide for the new exercise
+        setFormGuide(null);
         return { ...prevSession, exercises: newExercises };
     });
   };
 
   const handleNextSet = () => {
-    if (!isSetLogComplete) return; // Prevent advancing without logging
+    if (!isSetLogComplete || !currentExercise || !session) return;
 
     if (currentSetIndex < currentExercise.logs.length - 1) {
       setCurrentSetIndex(currentSetIndex + 1);
@@ -152,6 +163,7 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
       if (currentExerciseIndex < session.exercises.length - 1) {
         setCurrentExerciseIndex(currentExerciseIndex + 1);
         setCurrentSetIndex(0);
+        setFormGuide(null); // Reset form guide for next exercise
         setIsResting(true);
       } else {
         setIsWorkoutComplete(true);
@@ -160,15 +172,25 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
   };
 
   const handleNextExercise = () => {
+     if (!session) return;
     if (currentExerciseIndex < session.exercises.length - 1) {
       setCurrentExerciseIndex(currentExerciseIndex + 1);
       setCurrentSetIndex(0);
+      setFormGuide(null);
       setIsResting(false);
     }
   };
 
-  const completedSets = currentExercise.logs.filter(log => log.reps.trim() !== '' && log.weight.trim() !== '');
+  const completedSets = currentExercise?.logs.filter(log => log.reps.trim() !== '' && log.weight.trim() !== '');
 
+  if (!session || !userProfile || !currentExercise) {
+    return (
+        <div className="flex h-screen flex-col bg-gray-950 text-white p-4">
+           <Skeleton className="h-full w-full" />
+        </div>
+    )
+  }
+  
   if(isWorkoutComplete && startTime) {
     const totalDuration = Math.round((Date.now() - startTime) / 60000); // in minutes
     return <WorkoutCompletion session={session} totalDuration={totalDuration} />
@@ -193,7 +215,7 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
 
   return (
     <div className="flex h-screen flex-col bg-gray-950 text-white">
-      <header className="flex items-center justify-between p-4">
+      <header className="flex items-center justify-between p-4 border-b border-gray-800">
         <AlertDialog>
           <AlertDialogTrigger asChild>
              <Button variant="ghost" size="icon">
@@ -219,142 +241,151 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
         <div className="text-center">
           <h1 className="text-xl font-bold">{currentExercise.name}</h1>
           <p className="text-sm text-gray-400">
-            {currentExerciseIndex + 1} / {session.exercises.length}
+            Exercise {currentExerciseIndex + 1} of {session.exercises.length}
           </p>
         </div>
-        <div className="w-10"></div>
-      </header>
-
-      <div className="flex justify-center gap-2 p-4">
-        {Array.from({ length: currentExercise.logs.length }).map((_, index) => (
-          <div
-            key={index}
-            className={`h-2 w-8 rounded-full ${
-              index < currentSetIndex
-                ? "bg-primary"
-                : index === currentSetIndex
-                ? "bg-primary/50"
-                : "bg-gray-700"
-            }`}
-          />
-        ))}
-      </div>
-
-      <main className="flex-grow flex flex-col space-y-4 p-4">
-        <div className="text-center">
-          <h2 className="text-5xl font-bold text-primary">
-            Set {currentSetIndex + 1}
-          </h2>
-        </div>
-        
-        <Card className="bg-gray-900/50 border-gray-800">
-            <CardContent className="grid grid-cols-2 gap-4 p-4">
-                 <div className="text-center">
-                    <label
-                    htmlFor="weight"
-                    className="text-sm font-medium text-gray-400"
-                    >
-                    Weight (kg)
-                    </label>
-                    <Input
-                    id="weight"
-                    type="number"
-                    placeholder="--"
-                    value={currentLog.weight}
-                    onChange={(e) => handleLogChange('weight', e.target.value)}
-                    className="mt-1 h-20 w-full bg-gray-800 text-center text-4xl font-bold text-white [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                    />
-                </div>
-                <div className="text-center">
-                    <label
-                    htmlFor="reps"
-                    className="text-sm font-medium text-gray-400"
-                    >
-                    Reps
-                    </label>
-                    <Input
-                    id="reps"
-                    type="number"
-                    placeholder={currentExercise.reps}
-                    value={currentLog.reps}
-                    onChange={(e) => handleLogChange('reps', e.target.value)}
-                    className="mt-1 h-20 w-full bg-gray-800 text-center text-4xl font-bold text-white [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                    />
-                </div>
-            </CardContent>
-        </Card>
-        
-        {completedSets.length > 0 && (
-            <div className="flex-grow flex flex-col">
-                 <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <History className="h-5 w-5" />
-                    <h3 className="font-semibold">Set History</h3>
-                </div>
-                <div className="flex-grow rounded-lg bg-gray-900/50 p-2 overflow-y-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="border-gray-800">
-                                <TableHead className="w-[80px]">Set</TableHead>
-                                <TableHead>Weight</TableHead>
-                                <TableHead className="text-right">Reps</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {completedSets.map((log, index) => (
-                                <TableRow key={index} className="border-gray-800">
-                                <TableCell className="font-medium">{log.set}</TableCell>
-                                <TableCell>{log.weight} kg</TableCell>
-                                <TableCell className="text-right">{log.reps}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            </div>
-        )}
-
-      </main>
-
-      <footer className="grid grid-cols-3 items-center gap-4 p-4 mt-auto">
-        <div className="flex justify-start gap-2">
-          <AlternativeExerciseDialog
+        <div className="flex justify-end items-center gap-2">
+           <AlternativeExerciseDialog
             currentExerciseName={currentExercise.name}
             onSelectExercise={handleReplaceExercise}
             availableEquipment={userProfile.availableEquipment || 'gym'}
             medicalLimitations={userProfile.medicalHistory || 'none'}
           />
-          <Dialog>
+          <Dialog open={isFormGuideDialogOpen} onOpenChange={setIsFormGuideDialogOpen}>
               <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" onClick={handleFetchFormGuide}>
                     <HelpCircle className="h-6 w-6" />
                   </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-3xl">
                   <DialogHeader>
                       <DialogTitle>Form Guide: {currentExercise.name}</DialogTitle>
-                      <DialogDescription>
-                          A detailed video with audio commentary explaining the correct form for this exercise would be displayed here to ensure safety and effectiveness.
-                      </DialogDescription>
                   </DialogHeader>
+                  {isFormGuideLoading && (
+                      <div className="flex items-center justify-center h-48">
+                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      </div>
+                  )}
+                  {formGuideError && <p className="text-destructive">{formGuideError}</p>}
+                  {formGuide && (
+                      <ScrollArea className="max-h-[60vh] pr-4">
+                        <p className="whitespace-pre-wrap text-muted-foreground">{formGuide.description}</p>
+                      </ScrollArea>
+                  )}
               </DialogContent>
           </Dialog>
         </div>
-        <div className="text-center">
-          <Button
-            className="h-20 w-20 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 disabled:bg-gray-700"
-            onClick={handleNextSet}
-            disabled={!isSetLogComplete}
-          >
-            <Check className="h-10 w-10" />
-          </Button>
-        </div>
-        <div className="flex justify-end">
-          <Button variant="ghost" size="icon" onClick={handleNextExercise}>
-            <SkipForward className="h-6 w-6" />
-          </Button>
-        </div>
-      </footer>
+      </header>
+
+      <div className="flex flex-col md:flex-row flex-grow min-h-0">
+          {/* Left Column: Video Player */}
+          <div className="w-full md:w-1/2 lg:w-3/5 p-4 flex flex-col items-center justify-center bg-black">
+              <YouTubePlayer url={formGuide?.youtubeUrl} />
+          </div>
+
+          {/* Right Column: Controls & History */}
+          <main className="w-full md:w-1/2 lg:w-2/5 flex flex-col space-y-4 p-4 overflow-y-auto">
+            <div className="flex justify-center gap-2">
+                {Array.from({ length: currentExercise.logs.length }).map((_, index) => (
+                <div
+                    key={index}
+                    className={`h-2 flex-1 rounded-full ${
+                    index < currentSetIndex
+                        ? "bg-primary"
+                        : index === currentSetIndex
+                        ? "bg-primary/50"
+                        : "bg-gray-700"
+                    }`}
+                />
+                ))}
+            </div>
+
+            <div className="text-center">
+                <h2 className="text-5xl font-bold text-primary">
+                    Set {currentSetIndex + 1}
+                </h2>
+            </div>
+            
+            <Card className="bg-gray-900/50 border-gray-800">
+                <CardContent className="grid grid-cols-2 gap-4 p-4">
+                    <div className="text-center">
+                        <label
+                        htmlFor="weight"
+                        className="text-sm font-medium text-gray-400"
+                        >
+                        Weight (kg)
+                        </label>
+                        <Input
+                        id="weight"
+                        type="number"
+                        placeholder="--"
+                        value={currentLog.weight}
+                        onChange={(e) => handleLogChange('weight', e.target.value)}
+                        className="mt-1 h-20 w-full bg-gray-800 text-center text-4xl font-bold text-white [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        />
+                    </div>
+                    <div className="text-center">
+                        <label
+                        htmlFor="reps"
+                        className="text-sm font-medium text-gray-400"
+                        >
+                        Reps
+                        </label>
+                        <Input
+                        id="reps"
+                        type="number"
+                        placeholder={currentExercise.reps}
+                        value={currentLog.reps}
+                        onChange={(e) => handleLogChange('reps', e.target.value)}
+                        className="mt-1 h-20 w-full bg-gray-800 text-center text-4xl font-bold text-white [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+            
+            {completedSets.length > 0 && (
+                <div className="flex-grow flex flex-col min-h-0">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                        <History className="h-5 w-5" />
+                        <h3 className="font-semibold">Set History</h3>
+                    </div>
+                    <div className="flex-grow rounded-lg bg-gray-900/50 p-2 overflow-y-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="border-gray-800 hover:bg-gray-800/20">
+                                    <TableHead className="w-[80px]">Set</TableHead>
+                                    <TableHead>Weight</TableHead>
+                                    <TableHead className="text-right">Reps</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {completedSets.map((log, index) => (
+                                    <TableRow key={index} className="border-gray-800 hover:bg-gray-800/20">
+                                    <TableCell className="font-medium">{log.set}</TableCell>
+                                    <TableCell>{log.weight} kg</TableCell>
+                                    <TableCell className="text-right">{log.reps}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+            )}
+             <div className="mt-auto flex items-center justify-between pt-4">
+                <div>{/* Placeholder for alignment */}</div>
+                <Button
+                    className="h-20 w-20 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 disabled:bg-gray-700"
+                    onClick={handleNextSet}
+                    disabled={!isSetLogComplete}
+                >
+                    <Check className="h-10 w-10" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={handleNextExercise}>
+                    <SkipForward className="h-6 w-6" />
+                </Button>
+             </div>
+          </main>
+      </div>
     </div>
   );
-
-    
+}
