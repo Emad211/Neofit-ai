@@ -9,29 +9,30 @@ import { FoodCameraLookup } from "@/components/nutrition/food-camera-lookup";
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ListChecks, Search, Camera } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ListChecks, Search, Camera, ArrowRight } from 'lucide-react';
 
 const NutritionToolCard = ({ icon, title, description, children }: { icon: React.ReactNode, title: string, description: string, children: React.ReactNode }) => {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Card className="cursor-pointer hover:border-primary transition-colors hover:bg-secondary/30">
-                    <CardHeader className="flex flex-row items-center gap-4">
-                        <div className="bg-primary/10 text-primary p-3 rounded-lg">
-                            {icon}
+                <Card className="group cursor-pointer hover:border-primary transition-colors flex flex-col h-full">
+                    <CardContent className="p-6 flex flex-col items-center text-center flex-grow">
+                        <div className="bg-primary/10 text-primary p-4 rounded-full mb-4">
+                            {React.cloneElement(icon as React.ReactElement, { className: "h-8 w-8" })}
                         </div>
-                        <div>
-                            <CardTitle>{title}</CardTitle>
-                            <CardDescription>{description}</CardDescription>
-                        </div>
-                    </CardHeader>
+                        <CardTitle className="mb-2 font-bold text-xl">{title}</CardTitle>
+                        <CardDescription className="mb-6 flex-grow">{description}</CardDescription>
+                        <Button variant="ghost" className="mt-auto">
+                            Open Tool <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </Button>
+                    </CardContent>
                 </Card>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[625px]">
                  <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        {icon} {title}
+                        {React.cloneElement(icon as React.ReactElement, { className: "h-5 w-5" })} {title}
                     </DialogTitle>
                 </DialogHeader>
                 {children}
@@ -85,17 +86,17 @@ export default function NutritionPage() {
             <h2 className="text-2xl font-bold font-headline mb-4">Nutrition Tools</h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <NutritionToolCard 
-                    icon={<Search className="h-6 w-6" />}
+                    icon={<Search />}
                     title="Food Library"
-                    description="Look up nutritional information for any food."
+                    description="Look up detailed nutritional information for any food item to stay on track with your goals."
                 >
                     <FoodLibrary />
                 </NutritionToolCard>
 
                  <NutritionToolCard 
-                    icon={<Camera className="h-6 w-6" />}
+                    icon={<Camera />}
                     title="Scan a Meal"
-                    description="Use your camera to identify food and get its details."
+                    description="Use your camera to instantly identify food and get its complete nutritional details."
                 >
                     <FoodCameraLookup />
                 </NutritionToolCard>
