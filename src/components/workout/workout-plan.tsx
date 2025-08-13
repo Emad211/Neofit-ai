@@ -4,7 +4,7 @@
 import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { Button } from "../ui/button";
-import { PlayCircle, Flame, Clock } from "lucide-react";
+import { PlayCircle, Flame, Clock, Coffee } from "lucide-react";
 import { Badge } from "../ui/badge";
 import Link from "next/link";
 import { Skeleton } from "../ui/skeleton";
@@ -69,7 +69,10 @@ export function WorkoutPlan() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {workoutPlan.map((workout, index) => (
+        {workoutPlan.map((workout, index) => {
+          const isRestDay = workout.title.toLowerCase().includes('rest');
+
+          return (
           <div key={index} className="h-full">
               <Card className="flex flex-col h-full">
                   <CardHeader>
@@ -78,40 +81,51 @@ export function WorkoutPlan() {
                               <CardDescription className="text-primary font-semibold">{workout.day}</CardDescription>
                               <CardTitle className="font-headline text-2xl">{workout.title}</CardTitle>
                           </div>
-                          <Badge variant="secondary">{workout.focus}</Badge>
+                          {!isRestDay && <Badge variant="secondary">{workout.focus}</Badge>}
                       </div>
-                       <div className="flex items-center text-sm text-muted-foreground gap-4 pt-2">
-                          <div className="flex items-center gap-1">
-                              <Clock className="h-4 w-4" />
-                              <span>{workout.duration}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                              <Flame className="h-4 w-4" />
-                              <span>{workout.calories}</span>
-                          </div>
-                      </div>
+                      {!isRestDay && (
+                        <div className="flex items-center text-sm text-muted-foreground gap-4 pt-2">
+                            <div className="flex items-center gap-1">
+                                <Clock className="h-4 w-4" />
+                                <span>{workout.duration}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <Flame className="h-4 w-4" />
+                                <span>{workout.calories}</span>
+                            </div>
+                        </div>
+                      )}
                   </CardHeader>
                   <CardContent className="flex-grow">
-                      <ul className="divide-y">
-                          {workout.exercises.map((exercise, exIndex) => (
-                              <li key={exIndex} className="py-2 flex justify-between items-center">
-                                  <span className="font-medium">{exercise.name}</span>
-                                  <span className="text-muted-foreground">{exercise.sets} x {exercise.reps}</span>
-                              </li>
-                          ))}
-                      </ul>
+                      {isRestDay ? (
+                          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                              <Coffee className="h-12 w-12 mb-4" />
+                              <p className="font-semibold">Take a break and recover.</p>
+                          </div>
+                      ) : (
+                        <ul className="divide-y">
+                            {workout.exercises.map((exercise, exIndex) => (
+                                <li key={exIndex} className="py-2 flex justify-between items-center">
+                                    <span className="font-medium">{exercise.name}</span>
+                                    <span className="text-muted-foreground">{exercise.sets} x {exercise.reps}</span>
+                                </li>
+                            ))}
+                        </ul>
+                      )}
                   </CardContent>
-                  <div className="p-6 pt-0 mt-auto">
-                      <Button className="w-full" asChild>
-                          <Link href={`/workout-player/${workout.id}`}>
-                              <PlayCircle className="mr-2 h-5 w-5" />
-                              Start Workout
-                          </Link>
-                      </Button>
-                  </div>
+                  {!isRestDay && (
+                    <div className="p-6 pt-0 mt-auto">
+                        <Button className="w-full" asChild>
+                            <Link href={`/workout-player/${workout.id}`}>
+                                <PlayCircle className="mr-2 h-5 w-5" />
+                                Start Workout
+                            </Link>
+                        </Button>
+                    </div>
+                  )}
               </Card>
           </div>
-        ))}
+        )})}
     </div>
   )
 }
