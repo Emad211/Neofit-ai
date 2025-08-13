@@ -15,13 +15,14 @@ import {z} from 'genkit';
 
 const GetAlternativeExerciseInputSchema = z.object({
   userId: z.string().describe('The ID of the user requesting an alternative exercise.'),
-  exerciseId: z.string().describe('The ID of the original exercise that needs an alternative.'),
+  exerciseName: z.string().describe('The name of the original exercise that needs an alternative.'),
   availableEquipment: z
     .string()
     .describe(
       'A comma-separated list of equipment available to the user. Example: dumbbells, resistance band'
     ),
   medicalLimitations: z.string().optional().describe('Any medical limitations the user has that might affect exercise choice, e.g., "previous knee injury".'),
+  reasonForChange: z.enum(['no_equipment', 'causes_pain']).describe("The user's primary reason for needing an alternative."),
   geminiApiKey: z.string().optional().describe('Optional Gemini API key for the user.'),
 });
 export type GetAlternativeExerciseInput = z.infer<typeof GetAlternativeExerciseInputSchema>;
@@ -51,21 +52,31 @@ export async function getAlternativeExercise(
         config: {
             apiKey: input.geminiApiKey,
         },
-        prompt: `You are an expert fitness trainer specializing in creating safe and effective workout modifications. A user is unable to perform their current exercise and needs a personalized alternative.
+        prompt: `You are an expert fitness trainer specializing in creating safe and effective workout modifications. A user needs a personalized alternative for an exercise.
 
-  Analyze the user's context carefully:
-  - **Original Exercise**: {{{exerciseId}}}
-  - **Available Equipment**: {{{availableEquipment}}}
-  - **Medical Limitations**: {{{medicalLimitations}}}
+          **User's Context:**
+          - **Original Exercise**: {{{exerciseName}}}
+          - **Reason for Change**: {{{reasonForChange}}}
+          - **Available Equipment**: {{{availableEquipment}}}
+          - **User's Medical Limitations**: {{{medicalLimitations}}}
 
-  Your task is to suggest a safe and effective alternative exercise that targets the **same primary muscle group(s)** as the original exercise.
+          **Your Task:**
+          Suggest a safe and effective alternative exercise that targets the **same primary muscle group(s)** as the original exercise.
 
-  **Crucially, your suggestion MUST be:**
-  1.  **Feasible** with the user's available equipment.
-  2.  **Safe** considering their stated medical limitations. If they mention a knee injury, avoid high-impact leg exercises. If they mention shoulder pain, avoid heavy overhead presses.
+          **CRITICAL INSTRUCTIONS:**
 
-  Provide a concise explanation in the 'reason' field, justifying why your suggestion is a good fit for their specific situation (equipment and limitations).
-  `,
+          1.  **Analyze the Reason for Change**:
+              *   If \`reasonForChange\` is **'no_equipment'**: Your primary goal is to find an alternative that **DOES NOT** require the equipment needed for the '{{{exerciseName}}}' but **CAN** be performed with the 'Available Equipment'. For example, if the original is 'Barbell Squat' and the user only has 'dumbbells, bodyweight', suggest 'Dumbbell Goblet Squat'.
+              *   If \`reasonForChange\` is **'causes_pain'**: Your primary goal is **SAFETY**. Suggest a lower-impact, joint-friendly alternative. For example, if 'Running' causes knee pain, suggest 'Cycling' or 'Swimming'. If a user reports general pain for an exercise, avoid variations of that same movement pattern.
+          
+          2.  **Respect Medical Limitations**: Always consider the 'User's Medical Limitations'. If they mention a knee injury, avoid high-impact leg exercises, even if they have the equipment. If they mention shoulder pain, avoid heavy overhead presses.
+
+          3.  **Provide a Justification**: In the 'reason' field, provide a concise explanation justifying *why* your suggestion is a good fit.
+              *   For 'no_equipment': "This targets the same muscles as {{{exerciseName}}} but can be done with the equipment you have."
+              *   For 'causes_pain': "This is a lower-impact alternative that works the same muscles but puts less stress on your joints."
+
+          Return a single, valid JSON object with the 'alternativeExercise' and 'reason'.
+          `,
       });
 
       const {output} = await prompt(input);
