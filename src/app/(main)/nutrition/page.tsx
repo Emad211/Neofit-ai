@@ -55,7 +55,7 @@ export default function NutritionPage() {
             </div>
             <Sheet>
                 <SheetTrigger asChild>
-                    <Button>
+                    <Button className="w-full sm:w-auto">
                         <ListChecks className="mr-2 h-4 w-4" />
                         View Shopping List
                     </Button>
