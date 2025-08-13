@@ -10,24 +10,26 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ListChecks, Search, Camera, ArrowRight } from 'lucide-react';
+import { ListChecks, Search, Camera, ChevronRight } from 'lucide-react';
 
 const NutritionToolCard = ({ icon, title, description, children }: { icon: React.ReactNode, title: string, description: string, children: React.ReactNode }) => {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Card className="group cursor-pointer hover:border-primary transition-colors flex flex-col h-full">
-                    <CardContent className="p-6 flex flex-col items-center text-center flex-grow">
-                        <div className="bg-primary/10 text-primary p-4 rounded-full mb-4">
-                            {React.cloneElement(icon as React.ReactElement, { className: "h-8 w-8" })}
+                <div className="group cursor-pointer rounded-lg border bg-card text-card-foreground shadow-sm transition-colors hover:bg-secondary/50">
+                    <div className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-4">
+                            <div className="text-primary">
+                                {React.cloneElement(icon as React.ReactElement, { className: "h-6 w-6" })}
+                            </div>
+                            <div>
+                                <p className="font-semibold">{title}</p>
+                                <p className="text-sm text-muted-foreground">{description}</p>
+                            </div>
                         </div>
-                        <CardTitle className="mb-2 font-bold text-xl">{title}</CardTitle>
-                        <CardDescription className="mb-6 flex-grow">{description}</CardDescription>
-                        <Button variant="ghost" className="mt-auto">
-                            Open Tool <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                        </Button>
-                    </CardContent>
-                </Card>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
+                    </div>
+                </div>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[625px]">
                  <DialogHeader>
@@ -84,11 +86,11 @@ export default function NutritionPage() {
 
         <div>
             <h2 className="text-2xl font-bold font-headline mb-4">Nutrition Tools</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-4">
                 <NutritionToolCard 
                     icon={<Search />}
                     title="Food Library"
-                    description="Look up detailed nutritional information for any food item to stay on track with your goals."
+                    description="Look up detailed nutritional information for any food."
                 >
                     <FoodLibrary />
                 </NutritionToolCard>
@@ -96,7 +98,7 @@ export default function NutritionPage() {
                  <NutritionToolCard 
                     icon={<Camera />}
                     title="Scan a Meal"
-                    description="Use your camera to instantly identify food and get its complete nutritional details."
+                    description="Use your camera to instantly identify food items."
                 >
                     <FoodCameraLookup />
                 </NutritionToolCard>
