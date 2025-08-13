@@ -9,6 +9,7 @@ import {
   HelpCircle,
   SkipForward,
   Check,
+  History,
 } from "lucide-react";
 import { WorkoutTimer } from "./workout-timer";
 import { AlternativeExerciseDialog } from "./alternative-exercise-dialog";
@@ -35,6 +36,9 @@ import { useRouter } from "next/navigation";
 import { WorkoutCompletion } from "./workout-completion";
 import { useUserData } from "@/context/user-profile-context";
 import { Skeleton } from "../ui/skeleton";
+import { Card, CardContent } from "../ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
+import { Separator } from "../ui/separator";
 
 
 export type Log = { set: number; reps: string; weight: string };
@@ -163,6 +167,8 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
     }
   };
 
+  const completedSets = currentExercise.logs.filter(log => log.reps.trim() !== '' && log.weight.trim() !== '');
+
   if(isWorkoutComplete && startTime) {
     const totalDuration = Math.round((Date.now() - startTime) / 60000); // in minutes
     return <WorkoutCompletion session={session} totalDuration={totalDuration} />
@@ -234,49 +240,82 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
         ))}
       </div>
 
-      <main className="flex-grow space-y-6 p-4">
+      <main className="flex-grow flex flex-col space-y-4 p-4">
         <div className="text-center">
-          <h2 className="text-4xl font-bold text-primary">
+          <h2 className="text-5xl font-bold text-primary">
             Set {currentSetIndex + 1}
           </h2>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="text-center">
-            <label
-              htmlFor="weight"
-              className="text-sm font-medium text-gray-400"
-            >
-              Weight (kg)
-            </label>
-            <Input
-              id="weight"
-              type="number"
-              placeholder="--"
-              value={currentLog.weight}
-              onChange={(e) => handleLogChange('weight', e.target.value)}
-              className="mt-1 h-20 w-full bg-gray-800 text-center text-4xl font-bold text-white [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-          </div>
-          <div className="text-center">
-            <label
-              htmlFor="reps"
-              className="text-sm font-medium text-gray-400"
-            >
-              Reps
-            </label>
-            <Input
-              id="reps"
-              type="number"
-              placeholder={currentExercise.reps}
-              value={currentLog.reps}
-              onChange={(e) => handleLogChange('reps', e.target.value)}
-              className="mt-1 h-20 w-full bg-gray-800 text-center text-4xl font-bold text-white [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-          </div>
-        </div>
+        
+        <Card className="bg-gray-900/50 border-gray-800">
+            <CardContent className="grid grid-cols-2 gap-4 p-4">
+                 <div className="text-center">
+                    <label
+                    htmlFor="weight"
+                    className="text-sm font-medium text-gray-400"
+                    >
+                    Weight (kg)
+                    </label>
+                    <Input
+                    id="weight"
+                    type="number"
+                    placeholder="--"
+                    value={currentLog.weight}
+                    onChange={(e) => handleLogChange('weight', e.target.value)}
+                    className="mt-1 h-20 w-full bg-gray-800 text-center text-4xl font-bold text-white [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                </div>
+                <div className="text-center">
+                    <label
+                    htmlFor="reps"
+                    className="text-sm font-medium text-gray-400"
+                    >
+                    Reps
+                    </label>
+                    <Input
+                    id="reps"
+                    type="number"
+                    placeholder={currentExercise.reps}
+                    value={currentLog.reps}
+                    onChange={(e) => handleLogChange('reps', e.target.value)}
+                    className="mt-1 h-20 w-full bg-gray-800 text-center text-4xl font-bold text-white [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                </div>
+            </CardContent>
+        </Card>
+        
+        {completedSets.length > 0 && (
+            <div className="flex-grow flex flex-col">
+                 <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                    <History className="h-5 w-5" />
+                    <h3 className="font-semibold">Set History</h3>
+                </div>
+                <div className="flex-grow rounded-lg bg-gray-900/50 p-2 overflow-y-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="border-gray-800">
+                                <TableHead className="w-[80px]">Set</TableHead>
+                                <TableHead>Weight</TableHead>
+                                <TableHead className="text-right">Reps</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {completedSets.map((log, index) => (
+                                <TableRow key={index} className="border-gray-800">
+                                <TableCell className="font-medium">{log.set}</TableCell>
+                                <TableCell>{log.weight} kg</TableCell>
+                                <TableCell className="text-right">{log.reps}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            </div>
+        )}
+
       </main>
 
-      <footer className="grid grid-cols-3 items-center gap-4 p-4">
+      <footer className="grid grid-cols-3 items-center gap-4 p-4 mt-auto">
         <div className="flex justify-start gap-2">
           <AlternativeExerciseDialog
             currentExerciseName={currentExercise.name}
@@ -317,4 +356,5 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
       </footer>
     </div>
   );
-}
+
+    
