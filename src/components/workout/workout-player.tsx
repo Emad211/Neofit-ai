@@ -2,7 +2,6 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -101,7 +100,7 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
     return (
         <div className="flex h-screen flex-col bg-gray-950 text-white">
             <header className="flex items-center justify-between p-4"><Skeleton className="h-8 w-8 rounded-full" /><Skeleton className="h-6 w-32" /><Skeleton className="h-8 w-10" /></header>
-            <Skeleton className="relative aspect-video w-full" />
+            
             <div className="flex justify-center gap-2 p-4"><Skeleton className="h-2 w-8 rounded-full" /><Skeleton className="h-2 w-8 rounded-full" /><Skeleton className="h-2 w-8 rounded-full" /></div>
             <main className="flex-grow space-y-6 p-4">
                 <Skeleton className="h-10 w-24 mx-auto" />
@@ -219,16 +218,6 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
         </div>
         <div className="w-10"></div>
       </header>
-
-      <div className="relative aspect-video w-full">
-        <Image
-          src={currentExercise.videoUrl || `https://placehold.co/1280x720.png`}
-          alt={currentExercise.name}
-          layout="fill"
-          objectFit="cover"
-          data-ai-hint={currentExercise.dataAiHint || 'exercise video'}
-        />
-      </div>
 
       <div className="flex justify-center gap-2 p-4">
         {Array.from({ length: currentExercise.logs.length }).map((_, index) => (
