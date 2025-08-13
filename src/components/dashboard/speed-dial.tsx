@@ -41,7 +41,7 @@ export function SpeedDial() {
             onClick={() => setIsOpen(false)}
         />
         
-        <div className="fixed bottom-24 right-4 z-50">
+        <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50">
             <div className="relative flex flex-col items-end gap-4">
                 {/* Action Buttons */}
                 <div
@@ -57,7 +57,7 @@ export function SpeedDial() {
                         </div>
                         <Button
                             size="icon"
-                            variant="default"
+                            variant="secondary"
                             className="h-12 w-12 rounded-full shadow-lg"
                             onClick={() => handleActionClick(action.logType)}
                         >
