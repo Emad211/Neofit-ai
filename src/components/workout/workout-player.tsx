@@ -40,7 +40,6 @@ import { Skeleton } from "../ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { getExerciseDetails, GetExerciseDetailsOutput } from "@/ai/flows/get-exercise-details";
-import { YouTubePlayer } from "./youtube-player";
 import { ScrollArea } from "../ui/scroll-area";
 
 
@@ -277,14 +276,7 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
         </div>
       </header>
 
-      <div className="flex flex-col md:flex-row flex-grow min-h-0">
-          {/* Left Column: Video Player */}
-          <div className="w-full md:w-1/2 lg:w-3/5 p-4 flex flex-col items-center justify-center bg-black">
-              <YouTubePlayer url={formGuide?.youtubeUrl} />
-          </div>
-
-          {/* Right Column: Controls & History */}
-          <main className="w-full md:w-1/2 lg:w-2/5 flex flex-col space-y-4 p-4 overflow-y-auto">
+          <main className="w-full flex flex-col space-y-4 p-4 overflow-y-auto">
             <div className="flex justify-center gap-2">
                 {Array.from({ length: currentExercise.logs.length }).map((_, index) => (
                 <div
@@ -385,7 +377,6 @@ export function WorkoutPlayer({ workoutId }: { workoutId: string }) {
                 </Button>
              </div>
           </main>
-      </div>
     </div>
   );
 }

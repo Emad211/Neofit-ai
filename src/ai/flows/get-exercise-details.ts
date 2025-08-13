@@ -2,9 +2,9 @@
 'use server';
 
 /**
- * @fileOverview A flow to get detailed information and a tutorial video for a specific exercise.
+ * @fileOverview A flow to get detailed information for a specific exercise.
  *
- * - getExerciseDetails - A function that returns a description and YouTube URL for an exercise.
+ * - getExerciseDetails - A function that returns a description for an exercise.
  * - GetExerciseDetailsInput - The input type for the function.
  * - GetExerciseDetailsOutput - The return type for the function.
  */
@@ -20,7 +20,6 @@ export type GetExerciseDetailsInput = z.infer<typeof GetExerciseDetailsInputSche
 
 const GetExerciseDetailsOutputSchema = z.object({
   description: z.string().describe('A detailed, step-by-step guide on how to perform the exercise correctly and safely. This should be formatted with clear paragraphs.'),
-  youtubeUrl: z.string().describe("A direct, watchable URL to a high-quality YouTube video tutorial for the specified exercise. It must be a full URL to a specific video, e.g., 'https://www.youtube.com/watch?v=xxxxxxxxxxx'."),
 });
 export type GetExerciseDetailsOutput = z.infer<typeof GetExerciseDetailsOutputSchema>;
 
@@ -40,12 +39,12 @@ export async function getExerciseDetails(input: GetExerciseDetailsInput): Promis
         config: {
             apiKey: input.geminiApiKey,
         },
-        prompt: `You are an expert Strength and Conditioning Coach and content curator. Your task is to provide a detailed guide and find a high-quality YouTube tutorial for a given exercise.
+        prompt: `You are an expert Strength and Conditioning Coach. Your task is to provide a detailed guide for a given exercise.
 
         Exercise Name: {{{exerciseName}}}
 
-        **YOUR TASKS:**
-        1.  **Write a Detailed Description**:
+        **YOUR TASK:**
+        **Write a Detailed Description**:
             *   Provide a clear, step-by-step guide on how to perform the exercise.
             *   Start with the initial setup (e.g., "Stand with your feet shoulder-width apart...").
             *   Describe the execution of the movement in detail.
@@ -53,12 +52,7 @@ export async function getExerciseDetails(input: GetExerciseDetailsInput): Promis
             *   Mention the primary muscles targeted by the exercise.
             *   The tone should be encouraging and informative. Use paragraphs for readability.
 
-        2.  **Find a YouTube Video**:
-            *   Search YouTube for a high-quality, instructional video that clearly demonstrates the correct form for the "{{{exerciseName}}}".
-            *   Prioritize videos from reputable fitness channels (e.g., Athlean-X, ScottHermanFitness, Jeff Nippard, etc.), but the primary factor is the quality of instruction.
-            *   You MUST return a direct, watchable URL (e.g., "https://www.youtube.com/watch?v=..."). Do not return a search URL, a channel URL, or a generic domain like "youtube.com".
-
-        Return a single, valid JSON object with the 'description' and 'youtubeUrl'.
+        Return a single, valid JSON object with the 'description'.
         `,
       });
 
