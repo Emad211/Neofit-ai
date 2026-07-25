@@ -89,7 +89,7 @@ export function AppText({
   );
 }
 
-export function PageTitle({ title, subtitle }: { title: string; subtitle?: string }) {
+export function PageTitle({ title, subtitle }: { title: string; subtitle?: string | undefined }) {
   return (
     <View style={{ gap: 6 }}>
       <AppText size={32} weight="800">{title}</AppText>
