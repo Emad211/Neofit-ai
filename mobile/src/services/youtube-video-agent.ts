@@ -97,9 +97,9 @@ function parseIsoDuration(value: string) {
 }
 
 function thumbnailOf(thumbnails: {
-  high?: { url: string };
-  medium?: { url: string };
-  default?: { url: string };
+  high?: { url: string } | undefined;
+  medium?: { url: string } | undefined;
+  default?: { url: string } | undefined;
 }) {
   return thumbnails.high?.url || thumbnails.medium?.url || thumbnails.default?.url || '';
 }
