@@ -3,6 +3,7 @@ import { getLocales } from 'expo-localization';
 import { z } from 'zod';
 import { clearExpiredAiCache } from '@/db/ai-repository';
 import { getDatabase, resetLocalDatabase } from '@/db/database';
+import { clearExpiredExerciseVideoCache } from '@/db/exercise-video-repository';
 import { getDailySummary } from '@/db/log-repository';
 import { getActiveNutritionPlan, getActiveWorkoutPlan } from '@/db/plan-repository';
 import { getProfile, saveProfile as persistProfile } from '@/db/profile-repository';
@@ -15,7 +16,11 @@ import {
   LocaleSchema,
 } from '@/domain/models';
 import { translations, TranslationKey } from '@/i18n/translations';
-import { deleteAvalAiApiKey, getAvalAiApiKey } from '@/services/secure-settings';
+import {
+  deletePersonalSecrets,
+  getAvalAiApiKey,
+  getYouTubeApiKey,
+} from '@/services/secure-settings';
 
 const LOCALE_SETTING = 'app.locale';
 const LOCALE_SELECTED_SETTING = 'app.locale.selected';
@@ -34,6 +39,7 @@ type AppContextValue = {
   nutritionPlan: NutritionPlan | null;
   dailySummary: DailySummary | null;
   hasAvalAiKey: boolean;
+  hasYouTubeKey: boolean;
   t: (key: TranslationKey, values?: Record<string, string | number>) => string;
   setLocale: (locale: Locale) => Promise<void>;
   saveProfile: (profile: Profile) => Promise<void>;
@@ -69,6 +75,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [nutritionPlan, setNutritionPlan] = React.useState<NutritionPlan | null>(null);
   const [dailySummary, setDailySummary] = React.useState<DailySummary | null>(null);
   const [hasAvalAiKey, setHasAvalAiKey] = React.useState(false);
+  const [hasYouTubeKey, setHasYouTubeKey] = React.useState(false);
 
   const refreshPlans = React.useCallback(async () => {
     const [workout, nutrition] = await Promise.all([
@@ -85,7 +92,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refreshApiKeyState = React.useCallback(async () => {
-    setHasAvalAiKey(Boolean(await getAvalAiApiKey()));
+    const [avalAiKey, youTubeKey] = await Promise.all([
+      getAvalAiApiKey(),
+      getYouTubeApiKey(),
+    ]);
+    setHasAvalAiKey(Boolean(avalAiKey));
+    setHasYouTubeKey(Boolean(youTubeKey));
   }, []);
 
   const refreshAll = React.useCallback(async () => {
@@ -107,7 +119,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const initialize = async () => {
       try {
         await getDatabase();
-        await clearExpiredAiCache();
+        await Promise.all([
+          clearExpiredAiCache(),
+          clearExpiredExerciseVideoCache(),
+        ]);
         const [storedLocale, localeSelected] = await Promise.all([
           getSetting(LOCALE_SETTING, LocaleSchema, deviceLocale()),
           getSetting(LOCALE_SELECTED_SETTING, BooleanSchema, false),
@@ -159,13 +174,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [refreshDailySummary]);
 
   const deleteAllLocalData = React.useCallback(async () => {
-    await deleteAvalAiApiKey();
+    await deletePersonalSecrets();
     await resetLocalDatabase();
     setProfile(null);
     setWorkoutPlan(null);
     setNutritionPlan(null);
     setDailySummary(null);
     setHasAvalAiKey(false);
+    setHasYouTubeKey(false);
     setHasChosenLocale(false);
     setLocaleState(deviceLocale());
   }, []);
@@ -191,6 +207,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     nutritionPlan,
     dailySummary,
     hasAvalAiKey,
+    hasYouTubeKey,
     t,
     setLocale,
     saveProfile,
@@ -205,6 +222,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     error,
     hasAvalAiKey,
     hasChosenLocale,
+    hasYouTubeKey,
     isReady,
     locale,
     nutritionPlan,
