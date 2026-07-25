@@ -1,4 +1,4 @@
-import { Profile, ProfileDetailsSchema, ProfileSchema } from '@/domain/models';
+import { Profile, ProfileDetailsSchema, ProfileSchema, WorkoutLocation } from '@/domain/models';
 import { getDatabase } from '@/db/database';
 
 interface ProfileRow {
@@ -33,6 +33,12 @@ function parseStringArray(value: string) {
   }
 }
 
+function normalizeEquipment(items: string[], location: WorkoutLocation) {
+  const cleaned = items.map((item) => item.trim()).filter(Boolean);
+  if (cleaned.length > 0) return cleaned;
+  return location === 'gym' ? ['standard gym equipment'] : ['bodyweight'];
+}
+
 function parseDetails(value?: string) {
   try {
     return ProfileDetailsSchema.parse(value ? JSON.parse(value) as unknown : {});
@@ -43,6 +49,7 @@ function parseDetails(value?: string) {
 }
 
 function mapRow(row: ProfileRow): Profile {
+  const location = row.workout_location as WorkoutLocation;
   return ProfileSchema.parse({
     name: row.name,
     locale: row.locale,
@@ -55,8 +62,8 @@ function mapRow(row: ProfileRow): Profile {
     activityLevel: row.activity_level,
     trainingDays: row.training_days,
     sessionMinutes: row.session_minutes,
-    workoutLocation: row.workout_location,
-    availableEquipment: parseStringArray(row.available_equipment_json),
+    workoutLocation: location,
+    availableEquipment: normalizeEquipment(parseStringArray(row.available_equipment_json), location),
     dietaryPreferences: parseStringArray(row.dietary_preferences_json),
     allergies: parseStringArray(row.allergies_json),
     medicalNotes: row.medical_notes,
@@ -74,7 +81,11 @@ export async function getProfile() {
 }
 
 export async function saveProfile(input: Profile) {
-  const profile = ProfileSchema.parse(input);
+  const parsed = ProfileSchema.parse(input);
+  const profile = ProfileSchema.parse({
+    ...parsed,
+    availableEquipment: normalizeEquipment(parsed.availableEquipment, parsed.workoutLocation),
+  });
   const database = await getDatabase();
   const now = new Date().toISOString();
 
