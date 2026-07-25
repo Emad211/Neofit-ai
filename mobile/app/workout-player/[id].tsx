@@ -4,6 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { z } from 'zod';
 import { AppText, Card, Field, InlineNotice, MetricCard, PrimaryButton, Screen } from '@/components/ui';
+import { ExerciseTutorialCard } from '@/components/exercise-tutorial-card';
 import { logWorkoutSession } from '@/db/log-repository';
 import { deleteSetting, getSetting, setSetting } from '@/db/settings-repository';
 import { WorkoutSetLogInput } from '@/domain/models';
@@ -234,12 +235,25 @@ export default function WorkoutPlayerScreen() {
         <AppText muted size={13}>{day.title}</AppText>
         <AppText size={29} weight="800">{exercise.name}</AppText>
         <AppText muted>{exercise.notes}</AppText>
-        <View style={{ flexDirection: 'row', gap: 10 }}>
+        <AppText muted size={13}>{exercise.primaryMuscles.join(' · ')}{exercise.equipment.length ? ` · ${exercise.equipment.join(' · ')}` : ''}</AppText>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
           <MetricCard label={label('Set', 'ست')} value={`${setIndex + 1}/${exercise.sets}`} />
           <MetricCard label={label('Target', 'هدف')} value={exercise.reps} />
+          <MetricCard label="RIR" value={exercise.targetRir} />
+          <MetricCard label={label('Tempo', 'تمپو')} value={exercise.tempo} />
           <MetricCard label={label('Rest', 'استراحت')} value={exercise.restSeconds} unit="s" />
         </View>
+        <View style={{ gap: 4 }}>
+          <AppText weight="800">{label('Form cues', 'نکات اجرای صحیح')}</AppText>
+          {exercise.formCues.map((cue) => <AppText key={cue} muted size={13}>• {cue}</AppText>)}
+        </View>
+        <View style={{ gap: 4 }}>
+          <AppText weight="800">{label('Avoid', 'اشتباه‌های رایج')}</AppText>
+          {exercise.commonMistakes.map((mistake) => <AppText key={mistake} muted size={13}>• {mistake}</AppText>)}
+        </View>
       </Card>
+
+      <ExerciseTutorialCard key={exercise.id} exercise={exercise} autoLoad />
 
       <Card>
         <Field label={label('Repetitions', 'تعداد تکرار')} value={reps} onChangeText={setReps} keyboardType="number-pad" />
