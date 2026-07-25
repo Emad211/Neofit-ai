@@ -200,8 +200,6 @@ export async function requestStructured<T>(input: {
 
   const response = await requestCompletion({
     kind: input.kind,
-    model: input.model,
-    maxTokens: input.maxTokens,
     jsonMode: true,
     messages: [
       {
@@ -216,6 +214,8 @@ export async function requestStructured<T>(input: {
       },
       { role: 'user', content: userContent },
     ],
+    ...(input.model !== undefined ? { model: input.model } : {}),
+    ...(input.maxTokens !== undefined ? { maxTokens: input.maxTokens } : {}),
   });
 
   let json: unknown;
