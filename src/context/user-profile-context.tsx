@@ -24,7 +24,6 @@ import {
   updateProfile,
   User,
 } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
 import { app } from '@/lib/firebase';
 import type { GenerateNutritionProgramOutput, GenerateWorkoutProgramOutput } from '@/ai/schemas';
 
@@ -55,6 +54,7 @@ export const UserProfileSchema = z.object({
   costLevel: z.enum(['low', 'medium', 'high']),
   medicalHistory: z.string().max(2_000).optional(),
   timezone: z.string().min(1).max(100),
+  locale: z.enum(['en', 'fa']).optional(),
 });
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 
@@ -160,8 +160,13 @@ function localDayKey(date: Date, timeZone?: string) {
 
 function normalizeTimestamp(value: unknown) {
   if (typeof value === 'string') return value;
-  if (value && typeof value === 'object' && 'toDate' in value && typeof (value as any).toDate === 'function') {
-    return (value as any).toDate().toISOString();
+  if (
+    value
+    && typeof value === 'object'
+    && 'toDate' in value
+    && typeof (value as { toDate?: unknown }).toDate === 'function'
+  ) {
+    return (value as { toDate: () => Date }).toDate().toISOString();
   }
   return new Date(0).toISOString();
 }
@@ -176,7 +181,6 @@ export function UserDataProvider({ children }: { children: React.ReactNode }) {
   const [loggedMealsState, setLoggedMealsState] = React.useState<string[] | null>(null);
   const [combinedLogs, setCombinedLogs] = React.useState<CombinedLog[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
-  const router = useRouter();
 
   React.useEffect(() => onAuthStateChanged(auth, (firebaseUser) => {
     setIsLoading(true);
@@ -190,9 +194,8 @@ export function UserDataProvider({ children }: { children: React.ReactNode }) {
       setLoggedMealsState(null);
       setCombinedLogs([]);
       setIsLoading(false);
-      router.replace('/auth');
     }
-  }), [router]);
+  }), []);
 
   React.useEffect(() => {
     if (!user) return;
@@ -210,8 +213,9 @@ export function UserDataProvider({ children }: { children: React.ReactNode }) {
     const plansRef = doc(db, 'plans', user.uid);
 
     const unsubProfile = onSnapshot(profileRef, (snapshot) => {
-      if (!snapshot.exists()) setUserProfile(null);
-      else {
+      if (!snapshot.exists()) {
+        setUserProfile(null);
+      } else {
         const parsed = UserProfileSchema.safeParse(snapshot.data());
         setUserProfile(parsed.success ? parsed.data : null);
         if (!parsed.success) console.error('Invalid profile data:', parsed.error.flatten());
@@ -232,7 +236,7 @@ export function UserDataProvider({ children }: { children: React.ReactNode }) {
         setShoppingListState(data.shoppingListState || null);
         setCheckedIngredientsState(data.checkedIngredientsState || null);
         const stored = data.loggedMealsState as LoggedMealsState | undefined;
-        setLoggedMealsState(stored?.date === localDayKey(new Date()) ? stored.mealIds : []);
+        setLoggedMealsState(stored?.date === localDayKey(new Date(), userProfile?.timezone) ? stored.mealIds : []);
       } else {
         setNutritionPlan(null);
         setWorkoutPlan(null);
@@ -275,7 +279,7 @@ export function UserDataProvider({ children }: { children: React.ReactNode }) {
       unsubPlans();
       logUnsubscribers.forEach((unsubscribe) => unsubscribe());
     };
-  }, [user]);
+  }, [user, userProfile?.timezone]);
 
   const saveUserProfile = React.useCallback(async (profileData: UserProfile) => {
     if (!user) throw new Error('No signed-in user.');
@@ -394,11 +398,31 @@ export function UserDataProvider({ children }: { children: React.ReactNode }) {
     combinedLogs,
     isLoading,
   }), [
-    user, userProfile, nutritionPlan, workoutPlan, shoppingListState, checkedIngredientsState,
-    loggedMealsState, saveUserProfile, savePlans, updateShoppingListState,
-    updateCheckedIngredientsState, updateLoggedMealsState, saveWorkoutLog, logMeal,
-    logActivity, logWeight, updateLog, deleteLog, resetUserData, reauthenticateUser,
-    updateUserAccount, updateUserEmail, updateUserPassword, combinedLogs, isLoading,
+    user,
+    userProfile,
+    nutritionPlan,
+    workoutPlan,
+    shoppingListState,
+    checkedIngredientsState,
+    loggedMealsState,
+    saveUserProfile,
+    savePlans,
+    updateShoppingListState,
+    updateCheckedIngredientsState,
+    updateLoggedMealsState,
+    saveWorkoutLog,
+    logMeal,
+    logActivity,
+    logWeight,
+    updateLog,
+    deleteLog,
+    resetUserData,
+    reauthenticateUser,
+    updateUserAccount,
+    updateUserEmail,
+    updateUserPassword,
+    combinedLogs,
+    isLoading,
   ]);
 
   return <UserDataContext.Provider value={value}>{children}</UserDataContext.Provider>;
