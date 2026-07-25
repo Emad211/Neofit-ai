@@ -9,7 +9,7 @@ on:
       - master
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: mobile-ci-${{ github.ref }}
@@ -33,77 +33,20 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
 
-      - name: Install mobile dependencies
-        run: npm install --no-audit --no-fund
-
-      - name: Commit generated lockfile
-        if: github.event_name == 'push'
-        shell: bash
-        run: |
-          if [[ -n "$(git status --porcelain -- package-lock.json)" ]]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add package-lock.json
-            git commit -m "lock mobile dependencies"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
-          fi
-
-      - name: Upload generated lockfile
-        uses: actions/upload-artifact@v4
-        with:
-          name: mobile-package-lock
-          path: mobile/package-lock.json
-          if-no-files-found: error
-          retention-days: 3
+      - name: Install locked mobile dependencies
+        run: npm ci --no-audit --no-fund
 
       - name: Check Expo package versions
         run: npx expo install --check
 
-      - name: Capture Expo Doctor diagnostics
-        id: doctor
-        shell: bash
-        run: |
-          set +e
-          npm run doctor > expo-doctor.log 2>&1
-          code=$?
-          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-          exit 0
+      - name: Expo dependency doctor
+        run: npm run doctor
 
-      - name: Upload Expo Doctor diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: expo-doctor-diagnostics
-          path: mobile/expo-doctor.log
-          if-no-files-found: error
-          retention-days: 3
-
-      - name: Capture TypeScript diagnostics
-        id: typecheck
-        shell: bash
-        run: |
-          set +e
-          npm run typecheck > typecheck.log 2>&1
-          code=$?
-          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-          exit 0
-
-      - name: Upload TypeScript diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: typescript-diagnostics
-          path: mobile/typecheck.log
-          if-no-files-found: error
-          retention-days: 3
+      - name: Typecheck
+        run: npm run typecheck
 
       - name: Export Android bundle
         run: npx expo export --platform android --output-dir dist
-
-      - name: Enforce validation results
-        if: steps.doctor.outputs.exit_code != '0' || steps.typecheck.outputs.exit_code != '0'
-        run: |
-          echo "Expo Doctor exit code: ${{ steps.doctor.outputs.exit_code }}"
-          echo "TypeScript exit code: ${{ steps.typecheck.outputs.exit_code }}"
-          exit 1
