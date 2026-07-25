@@ -1,0 +1,49 @@
+name: Mobile CI
+
+on:
+  push:
+    branches:
+      - agent/mobile-local-first-expo
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      CI: '1'
+      EXPO_NO_TELEMETRY: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Expo dependency doctor
+        run: npx expo-doctor
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Export Android bundle
+        run: npx expo export --platform android --output-dir dist
