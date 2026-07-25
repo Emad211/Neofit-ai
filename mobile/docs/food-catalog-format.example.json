@@ -1,0 +1,36 @@
+{
+  "format": "neofit-food-catalog",
+  "version": 1,
+  "sourceLabel": "Example licensed or owner-verified dataset",
+  "exportedAt": "2026-07-25T00:00:00.000Z",
+  "foods": [
+    {
+      "id": "example-ghormeh-sabzi-standard-serving",
+      "nameFa": "قورمه‌سبزی",
+      "nameEn": "Ghormeh sabzi",
+      "aliasesFa": [
+        "قورمه سبزی",
+        "قرمه سبزی"
+      ],
+      "aliasesEn": [
+        "ghormeh sabzi",
+        "Persian herb stew"
+      ],
+      "category": "stew",
+      "portionLabelFa": "یک پرس بدون برنج",
+      "portionLabelEn": "1 serving without rice",
+      "portionGrams": null,
+      "calories": 330,
+      "proteinG": 22,
+      "carbsG": 14,
+      "fatG": 20,
+      "variabilityPct": 25,
+      "confidence": "medium",
+      "sourceType": "imported",
+      "sourceLabel": "Example source; replaced by the file-level sourceLabel during import",
+      "notesFa": "دستور پخت، روغن، نوع گوشت و اندازه سهم می‌تواند مقدار واقعی را تغییر دهد.",
+      "notesEn": "Recipe, oil, meat choice, and serving size can materially change the actual value.",
+      "updatedAt": "2026-07-25T00:00:00.000Z"
+    }
+  ]
+}
