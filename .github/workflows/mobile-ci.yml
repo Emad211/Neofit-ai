@@ -9,7 +9,7 @@ on:
       - master
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: mobile-ci-${{ github.ref }}
@@ -33,21 +33,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
 
-      - name: Regenerate mobile dependency lock
-        run: npm install --no-audit --no-fund
-
-      - name: Commit regenerated lockfile
-        if: github.event_name == 'push'
-        shell: bash
-        run: |
-          if [[ -n "$(git status --porcelain -- package-lock.json)" ]]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add package-lock.json
-            git commit -m "refresh mobile dependency lock"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
-          fi
+      - name: Install locked mobile dependencies
+        run: npm ci --no-audit --no-fund
 
       - name: Check Expo package versions
         run: npx expo install --check
