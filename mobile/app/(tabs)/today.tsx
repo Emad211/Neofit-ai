@@ -2,7 +2,7 @@ import * as React from 'react';
 import { View } from 'react-native';
 import { router } from 'expo-router';
 import { AppText, Card, InlineNotice, MetricCard, PageTitle, PrimaryButton, Screen } from '@/components/ui';
-import { saveNutritionPlan, saveWorkoutPlan } from '@/db/plan-repository';
+import { savePlanBundle } from '@/db/plan-repository';
 import { useApp } from '@/providers/app-provider';
 import { generateNutritionPlan, generateWorkoutPlan } from '@/services/ai-features';
 import { AvalAiError } from '@/services/avalai-client';
@@ -41,14 +41,15 @@ export default function TodayScreen() {
     setError(null);
     setMessage(label('Generating the workout plan…', 'در حال ساخت برنامه تمرینی…'));
     try {
-      const workout = await generateWorkoutPlan(profile);
+      const workoutPlanResult = await generateWorkoutPlan(profile);
       setMessage(label('Generating the nutrition plan…', 'در حال ساخت برنامه غذایی…'));
-      const nutrition = await generateNutritionPlan(profile);
+      const nutritionPlanResult = await generateNutritionPlan(profile);
       setMessage(label('Saving both plans on this phone…', 'در حال ذخیره هر دو برنامه روی گوشی…'));
-      await Promise.all([
-        saveWorkoutPlan(workout, 'ai'),
-        saveNutritionPlan(nutrition, 'ai'),
-      ]);
+      await savePlanBundle({
+        workoutPlan: workoutPlanResult,
+        nutritionPlan: nutritionPlanResult,
+        source: 'ai',
+      });
       await refreshPlans();
       setMessage(t('ai.saved'));
     } catch (caught) {
