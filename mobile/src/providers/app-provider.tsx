@@ -18,6 +18,8 @@ import { translations, TranslationKey } from '@/i18n/translations';
 import { deleteAvalAiApiKey, getAvalAiApiKey } from '@/services/secure-settings';
 
 const LOCALE_SETTING = 'app.locale';
+const LOCALE_SELECTED_SETTING = 'app.locale.selected';
+const BooleanSchema = z.boolean();
 
 type DailySummary = Awaited<ReturnType<typeof getDailySummary>>;
 
@@ -25,6 +27,7 @@ type AppContextValue = {
   isReady: boolean;
   error: string | null;
   locale: Locale;
+  hasChosenLocale: boolean;
   direction: 'rtl' | 'ltr';
   profile: Profile | null;
   workoutPlan: WorkoutPlan | null;
@@ -60,6 +63,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isReady, setIsReady] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [locale, setLocaleState] = React.useState<Locale>('en');
+  const [hasChosenLocale, setHasChosenLocale] = React.useState(false);
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [workoutPlan, setWorkoutPlan] = React.useState<WorkoutPlan | null>(null);
   const [nutritionPlan, setNutritionPlan] = React.useState<NutritionPlan | null>(null);
@@ -92,7 +96,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       refreshApiKeyState(),
     ]);
     setProfile(storedProfile);
-    if (storedProfile) setLocaleState(storedProfile.locale);
+    if (storedProfile) {
+      setLocaleState(storedProfile.locale);
+      setHasChosenLocale(true);
+    }
   }, [refreshApiKeyState, refreshDailySummary, refreshPlans]);
 
   React.useEffect(() => {
@@ -101,13 +108,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         await getDatabase();
         await clearExpiredAiCache();
-        const storedLocale = await getSetting(
-          LOCALE_SETTING,
-          LocaleSchema,
-          deviceLocale(),
-        );
+        const [storedLocale, localeSelected] = await Promise.all([
+          getSetting(LOCALE_SETTING, LocaleSchema, deviceLocale()),
+          getSetting(LOCALE_SELECTED_SETTING, BooleanSchema, false),
+        ]);
         if (!active) return;
         setLocaleState(storedLocale);
+        setHasChosenLocale(localeSelected);
         await refreshAll();
       } catch (caught) {
         console.error('Application initialization failed:', caught);
@@ -126,8 +133,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const setLocale = React.useCallback(async (nextLocale: Locale) => {
     const validated = LocaleSchema.parse(nextLocale);
-    await setSetting(LOCALE_SETTING, validated);
+    await Promise.all([
+      setSetting(LOCALE_SETTING, validated),
+      setSetting(LOCALE_SELECTED_SETTING, true),
+    ]);
     setLocaleState(validated);
+    setHasChosenLocale(true);
     if (profile) {
       const updated = { ...profile, locale: validated };
       await persistProfile(updated);
@@ -137,9 +148,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const saveProfile = React.useCallback(async (nextProfile: Profile) => {
     const stored = await persistProfile(nextProfile);
-    await setSetting(LOCALE_SETTING, stored.locale);
+    await Promise.all([
+      setSetting(LOCALE_SETTING, stored.locale),
+      setSetting(LOCALE_SELECTED_SETTING, true),
+    ]);
     setProfile(stored);
     setLocaleState(stored.locale);
+    setHasChosenLocale(true);
     await refreshDailySummary();
   }, [refreshDailySummary]);
 
@@ -151,9 +166,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setNutritionPlan(null);
     setDailySummary(null);
     setHasAvalAiKey(false);
-    const fallbackLocale = deviceLocale();
-    setLocaleState(fallbackLocale);
-    await setSetting(LOCALE_SETTING, fallbackLocale);
+    setHasChosenLocale(false);
+    setLocaleState(deviceLocale());
   }, []);
 
   const t = React.useCallback((key: TranslationKey, values?: Record<string, string | number>) => {
@@ -170,6 +184,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     isReady,
     error,
     locale,
+    hasChosenLocale,
     direction: locale === 'fa' ? 'rtl' : 'ltr',
     profile,
     workoutPlan,
@@ -189,6 +204,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     deleteAllLocalData,
     error,
     hasAvalAiKey,
+    hasChosenLocale,
     isReady,
     locale,
     nutritionPlan,
