@@ -1,133 +1,107 @@
+'use client';
 
-"use client"
-import React from 'react';
+import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Award, Check, Clock, Repeat, Weight } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Award, CheckCircle, Clock, Loader2, RefreshCw, Repeat, Weight } from 'lucide-react';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@uidotdev/usehooks';
-import type { WorkoutSession } from './workout-player';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import type { WorkoutSession } from '@/components/workout/workout-player';
 import { useUserData } from '@/context/user-profile-context';
-import { useToast } from '@/hooks/use-toast';
+import { useI18n } from '@/i18n/provider';
 
-interface WorkoutCompletionProps {
-  session: WorkoutSession;
-  totalDuration: number;
+function StatCard({ icon, title, value }: { icon: React.ReactNode; title: string; value: string | number }) {
+  return <div className="flex flex-col items-center justify-center rounded-lg bg-secondary p-4 text-center"><div className="mb-2 text-primary">{icon}</div><p className="text-sm font-medium text-muted-foreground">{title}</p><p className="text-2xl font-bold">{value}</p></div>;
 }
 
-const StatCard = ({ icon, title, value }: { icon: React.ReactNode, title: string, value: string | number }) => (
-    <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-secondary text-center">
-        <div className="text-primary mb-2">{icon}</div>
-        <p className="text-sm font-medium text-muted-foreground">{title}</p>
-        <p className="text-2xl font-bold text-foreground">{value}</p>
-    </div>
-);
-
-
-export function WorkoutCompletion({ session, totalDuration }: WorkoutCompletionProps) {
+export function WorkoutCompletion({
+  session,
+  totalDuration,
+  draftStorageKey,
+}: {
+  session: WorkoutSession;
+  totalDuration: number;
+  draftStorageKey?: string;
+}) {
   const router = useRouter();
   const { width, height } = useWindowSize();
   const { saveWorkoutLog } = useUserData();
-  const { toast } = useToast();
-  const hasLogged = React.useRef(false);
-  
-  const totalVolume = React.useMemo(() => {
-    return session.exercises.reduce((total, exercise) => {
-      const exerciseVolume = exercise.logs.reduce((exTotal, log) => {
-        const reps = parseInt(log.reps, 10);
-        const weight = parseFloat(log.weight);
-        if (!isNaN(reps) && !isNaN(weight)) {
-          return exTotal + (reps * weight);
-        }
-        return exTotal;
-      }, 0);
-      return total + exerciseVolume;
-    }, 0);
-  }, [session.exercises]);
+  const { locale } = useI18n();
+  const [saveState, setSaveState] = React.useState<'saving' | 'saved' | 'failed'>('saving');
+  const savingRef = React.useRef(false);
+  const label = React.useCallback((en: string, fa: string) => locale === 'fa' ? fa : en, [locale]);
+
+  const completedExercises = React.useMemo(() => session.exercises.map((exercise) => ({
+    ...exercise,
+    logs: exercise.logs.filter((log) => Number(log.reps) > 0).map((log) => ({
+      ...log,
+      weight: log.weight.trim() || '0',
+    })),
+  })).filter((exercise) => exercise.logs.length > 0), [session.exercises]);
+
+  const totalVolume = React.useMemo(() => completedExercises.reduce((total, exercise) => total + exercise.logs.reduce((exerciseTotal, log) => {
+    const reps = Number(log.reps);
+    const weight = Number(log.weight);
+    return Number.isFinite(reps) && Number.isFinite(weight) ? exerciseTotal + reps * weight : exerciseTotal;
+  }, 0), 0), [completedExercises]);
+
+  const save = React.useCallback(async () => {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setSaveState('saving');
+    try {
+      await saveWorkoutLog({
+        workoutId: session.id,
+        workoutName: session.title,
+        durationMinutes: totalDuration,
+        totalVolume,
+        exercises: completedExercises.map((exercise) => ({ id: exercise.id, name: exercise.name, logs: exercise.logs })),
+      });
+      if (draftStorageKey) window.sessionStorage.removeItem(draftStorageKey);
+      setSaveState('saved');
+    } catch (error) {
+      console.error('Workout log save failed:', error);
+      setSaveState('failed');
+    } finally {
+      savingRef.current = false;
+    }
+  }, [completedExercises, draftStorageKey, saveWorkoutLog, session.id, session.title, totalDuration, totalVolume]);
 
   React.useEffect(() => {
-    if (hasLogged.current) return; // Prevent double logging in Strict Mode
-
-    const logData = {
-      workoutId: session.id,
-      workoutName: session.title,
-      durationMinutes: totalDuration,
-      totalVolume: totalVolume,
-      exercises: session.exercises.map(ex => ({
-        id: ex.id,
-        name: ex.name,
-        logs: ex.logs
-      }))
-    };
-    
-    saveWorkoutLog(logData).then(() => {
-       toast({
-        title: "Workout Logged!",
-        description: "Your session has been successfully saved to your history.",
-      });
-    }).catch(error => {
-      console.error("Failed to save workout log", error);
-       toast({
-        variant: 'destructive',
-        title: "Save Failed",
-        description: "There was an error saving your workout log.",
-      });
-    });
-
-    hasLogged.current = true;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalDuration, totalVolume, session, saveWorkoutLog, toast]);
-
+    void save();
+  }, [save]);
 
   return (
     <>
-        {width && height && <Confetti
-            width={width}
-            height={height}
-            recycle={false}
-            numberOfPieces={400}
-            gravity={0.1}
-        />}
-        <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 text-center">
-            <div className="max-w-2xl">
-                <Award className="h-20 w-20 text-accent mx-auto animate-pulse" />
-                <h1 className="mt-6 text-4xl font-bold tracking-tight text-foreground sm:text-5xl font-headline">
-                    Workout Complete!
-                </h1>
-                <p className="mt-4 text-lg text-muted-foreground">
-                    Amazing work. You crushed it! Here is your summary for {session.title}.
-                </p>
+      {saveState === 'saved' && width && height && <Confetti width={width} height={height} recycle={false} numberOfPieces={300} gravity={0.1} />}
+      <main className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 text-center">
+        <div className="w-full max-w-2xl">
+          <Award className="mx-auto h-20 w-20 animate-pulse text-accent" aria-hidden="true" />
+          <h1 className="mt-6 font-headline text-4xl font-bold tracking-tight sm:text-5xl">{label('Workout complete', 'تمرین تمام شد')}</h1>
+          <p className="mt-4 text-lg text-muted-foreground">{label(`Here is the summary for ${session.title}.`, `خلاصه جلسه ${session.title} را ببینید.`)}</p>
 
-                <div className="my-8 grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <StatCard icon={<Clock className="h-8 w-8" />} title="Duration" value={`${totalDuration} min`} />
-                    <StatCard icon={<Weight className="h-8 w-8" />} title="Total Volume" value={`${Math.round(totalVolume)} kg`} />
-                    <StatCard icon={<Repeat className="h-8 w-8" />} title="Exercises" value={session.exercises.length} />
-                </div>
-                
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Exercises Completed</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ul className="divide-y divide-border">
-                            {session.exercises.map(exercise => (
-                                <li key={exercise.id} className="py-2 flex items-center justify-between text-sm">
-                                    <span className="font-medium">{exercise.name}</span>
-                                    <span className="text-muted-foreground">{exercise.logs.length} Sets</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </CardContent>
-                </Card>
-                
-                <div className="mt-10">
-                    <Button onClick={() => router.push('/today')} size="lg" className="w-full max-w-sm">
-                        Back to Dashboard
-                    </Button>
-                </div>
-            </div>
+          {saveState === 'saving' && <Alert className="mt-6"><Loader2 className="h-4 w-4 animate-spin" /><AlertDescription>{label('Saving your workout…', 'در حال ذخیره تمرین…')}</AlertDescription></Alert>}
+          {saveState === 'saved' && <Alert className="mt-6"><CheckCircle className="h-4 w-4" /><AlertDescription>{label('Your workout was saved successfully.', 'تمرین با موفقیت ذخیره شد.')}</AlertDescription></Alert>}
+          {saveState === 'failed' && <Alert variant="destructive" className="mt-6"><AlertDescription className="flex flex-col items-center justify-between gap-3 sm:flex-row"><span>{label('The workout is still stored on this device, but cloud saving failed.', 'تمرین هنوز روی این دستگاه نگه داشته شده، اما ذخیره ابری انجام نشد.')}</span><Button size="sm" variant="outline" onClick={() => void save()}><RefreshCw className="me-2 h-4 w-4" />{label('Retry save', 'تلاش دوباره')}</Button></AlertDescription></Alert>}
+
+          <div className="my-8 grid grid-cols-2 gap-4 md:grid-cols-3">
+            <StatCard icon={<Clock className="h-8 w-8" />} title={label('Duration', 'مدت')} value={`${totalDuration} ${label('min', 'دقیقه')}`} />
+            <StatCard icon={<Weight className="h-8 w-8" />} title={label('Total volume', 'حجم کل')} value={`${Math.round(totalVolume)} kg`} />
+            <StatCard icon={<Repeat className="h-8 w-8" />} title={label('Exercises', 'حرکت‌ها')} value={completedExercises.length} />
+          </div>
+
+          <Card>
+            <CardHeader><CardTitle>{label('Completed exercises', 'حرکت‌های انجام‌شده')}</CardTitle></CardHeader>
+            <CardContent>
+              {completedExercises.length ? <ul className="divide-y divide-border">{completedExercises.map((exercise) => <li key={exercise.id} className="flex items-center justify-between gap-3 py-2 text-sm"><span className="font-medium">{exercise.name}</span><span className="text-muted-foreground">{exercise.logs.length} {label('sets', 'ست')}</span></li>)}</ul> : <p className="text-muted-foreground">{label('No completed sets were recorded.', 'هیچ ست کاملی ثبت نشده است.')}</p>}
+            </CardContent>
+          </Card>
+
+          <div className="mt-10"><Button onClick={() => router.push('/today')} size="lg" className="w-full max-w-sm" disabled={saveState === 'saving'}>{label('Back to dashboard', 'بازگشت به داشبورد')}</Button></div>
         </div>
+      </main>
     </>
   );
 }
