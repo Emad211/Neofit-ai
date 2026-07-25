@@ -8,8 +8,10 @@ import { FoodEstimate, Meal } from '@/domain/models';
 import { useApp } from '@/providers/app-provider';
 import { estimateFoodFromPhoto, estimateFoodFromText } from '@/services/ai-features';
 import { AvalAiError } from '@/services/avalai-client';
+import { findBestLocalFoodMatch } from '@/services/local-food-matcher';
 
 type EstimatorMode = 'manual' | 'text' | 'photo';
+type ResultSource = 'catalog' | 'ai_text' | 'ai_photo';
 
 function initialMode(value: string | undefined): EstimatorMode {
   if (value === 'manual' || value === 'photo') return value;
@@ -29,6 +31,8 @@ export default function MealEstimatorScreen() {
   const [description, setDescription] = React.useState('');
   const [mealType, setMealType] = React.useState<Meal['type']>('snack');
   const [result, setResult] = React.useState<FoodEstimate | null>(null);
+  const [resultSource, setResultSource] = React.useState<ResultSource>('ai_text');
+  const [localRange, setLocalRange] = React.useState<{ low: number; high: number } | null>(null);
   const [manualCalories, setManualCalories] = React.useState('');
   const [manualProtein, setManualProtein] = React.useState('');
   const [manualCarbs, setManualCarbs] = React.useState('');
@@ -39,7 +43,7 @@ export default function MealEstimatorScreen() {
   const label = (en: string, fa: string) => locale === 'fa' ? fa : en;
 
   React.useEffect(() => {
-    if (mode !== 'manual' && !hasAvalAiKey) router.replace('/ai-settings');
+    if (mode === 'photo' && !hasAvalAiKey) router.replace('/ai-settings');
   }, [hasAvalAiKey, mode]);
 
   const handleError = (caught: unknown) => {
@@ -51,6 +55,24 @@ export default function MealEstimatorScreen() {
     }
   };
 
+  const estimateTextWithAi = async () => {
+    if (!hasAvalAiKey) {
+      setError(label('No close local match was found. Add an AvalAI key or use the Iranian food catalog.', 'نتیجه محلی نزدیک پیدا نشد. کلید AvalAI را اضافه کنید یا از کاتالوگ غذاهای ایرانی استفاده کنید.'));
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setLocalRange(null);
+    try {
+      setResult(await estimateFoodFromText({ description, locale }));
+      setResultSource('ai_text');
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const estimateText = async () => {
     if (description.trim().length < 2) {
       setError(label('Describe the food and serving size.', 'نام غذا و مقدار آن را بنویسید.'));
@@ -59,8 +81,33 @@ export default function MealEstimatorScreen() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setLocalRange(null);
     try {
-      setResult(await estimateFoodFromText({ description, locale }));
+      const local = await findBestLocalFoodMatch(description);
+      if (local && local.score >= 500) {
+        setResult({
+          itemName: locale === 'fa' ? local.item.nameFa : local.item.nameEn,
+          servingSize: `${locale === 'fa' ? local.item.portionLabelFa : local.item.portionLabelEn} × ${local.multiplier}`,
+          calories: local.scaled.calories,
+          proteinG: local.scaled.proteinG,
+          carbsG: local.scaled.carbsG,
+          fatG: local.scaled.fatG,
+          confidence: local.item.confidence,
+          assumptions: [
+            locale === 'fa' ? local.item.notesFa : local.item.notesEn,
+            label('Matched against the on-device Iranian food catalog.', 'با کاتالوگ غذاهای ایرانی روی گوشی تطبیق داده شد.'),
+          ].filter(Boolean),
+        });
+        setResultSource('catalog');
+        setLocalRange({ low: local.scaled.caloriesLow, high: local.scaled.caloriesHigh });
+        return;
+      }
+      if (hasAvalAiKey) {
+        setResult(await estimateFoodFromText({ description, locale }));
+        setResultSource('ai_text');
+      } else {
+        setError(label('No close local match was found. Search the catalog or enter nutrition manually.', 'نتیجه محلی نزدیک پیدا نشد. در کاتالوگ جست‌وجو کنید یا مقدارها را دستی وارد کنید.'));
+      }
     } catch (caught) {
       handleError(caught);
     } finally {
@@ -72,6 +119,7 @@ export default function MealEstimatorScreen() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setLocalRange(null);
     try {
       if (source === 'camera') {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
@@ -98,6 +146,7 @@ export default function MealEstimatorScreen() {
       const mime = asset.mimeType || 'image/jpeg';
       const imageDataUrl = `data:${mime};base64,${asset.base64}`;
       setResult(await estimateFoodFromPhoto({ imageDataUrl, description, locale }));
+      setResultSource('ai_photo');
     } catch (caught) {
       handleError(caught);
     } finally {
@@ -118,7 +167,7 @@ export default function MealEstimatorScreen() {
         proteinG: result.proteinG,
         carbsG: result.carbsG,
         fatG: result.fatG,
-        source: mode === 'photo' ? 'ai_photo' : 'ai_text',
+        source: resultSource,
       });
       await refreshDailySummary();
       router.back();
@@ -183,6 +232,8 @@ export default function MealEstimatorScreen() {
     <Screen>
       {mode === 'manual' ? (
         <InlineNotice>{label('Manual logging works completely offline and sends nothing outside this phone.', 'ثبت دستی کاملاً آفلاین است و هیچ اطلاعاتی از گوشی خارج نمی‌شود.')}</InlineNotice>
+      ) : mode === 'text' ? (
+        <InlineNotice>{label('Text lookup checks the local Iranian-food catalog first. AvalAI is used only when no strong local match exists.', 'جست‌وجوی متنی ابتدا کاتالوگ محلی غذاهای ایرانی را بررسی می‌کند و فقط نبودِ تطبیق قوی به AvalAI می‌رود.')}</InlineNotice>
       ) : (
         <InlineNotice>{t('nutrition.estimateWarning')}</InlineNotice>
       )}
@@ -191,6 +242,7 @@ export default function MealEstimatorScreen() {
         onChange={(value) => {
           setMode(value);
           setResult(null);
+          setLocalRange(null);
           setError(null);
         }}
         options={[
@@ -227,10 +279,13 @@ export default function MealEstimatorScreen() {
               value={description}
               onChangeText={setDescription}
               multiline={mode === 'photo'}
-              placeholder={label('Example: 250 g chicken rice bowl', 'مثلاً یک بشقاب برنج و مرغ حدود ۲۵۰ گرم')}
+              placeholder={label('Example: 2 bowls of ghormeh sabzi or 100 g bread', 'مثلاً دو کاسه قورمه‌سبزی یا ۱۰۰ گرم نان')}
             />
             {mode === 'text' ? (
-              <PrimaryButton title={label('Estimate nutrition', 'تخمین ارزش غذایی')} onPress={estimateText} loading={loading} />
+              <View style={{ gap: 8 }}>
+                <PrimaryButton title={label('Check local catalog / estimate', 'بررسی کاتالوگ محلی / تخمین')} onPress={estimateText} loading={loading} />
+                <PrimaryButton title={label('Browse Iranian food catalog', 'مرور کاتالوگ غذاهای ایرانی')} variant="secondary" onPress={() => router.push('/iranian-foods')} />
+              </View>
             ) : (
               <View style={{ gap: 10 }}>
                 <PrimaryButton title={label('Take a photo', 'گرفتن عکس')} onPress={() => estimatePhoto('camera')} loading={loading} />
@@ -246,16 +301,22 @@ export default function MealEstimatorScreen() {
               <View style={{ gap: 3 }}>
                 <AppText size={23} weight="800">{result.itemName}</AppText>
                 <AppText muted>{result.servingSize}</AppText>
-                <AppText muted size={13}>{label(`Confidence: ${result.confidence}`, `میزان اطمینان: ${result.confidence === 'high' ? 'زیاد' : result.confidence === 'medium' ? 'متوسط' : 'کم'}`)}</AppText>
+                <AppText muted size={13}>{resultSource === 'catalog'
+                  ? label('Source: local Iranian food catalog', 'منبع: کاتالوگ محلی غذاهای ایرانی')
+                  : label(`Confidence: ${result.confidence}`, `میزان اطمینان: ${result.confidence === 'high' ? 'زیاد' : result.confidence === 'medium' ? 'متوسط' : 'کم'}`)}</AppText>
               </View>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                 <MetricCard label={t('today.calories')} value={result.calories} unit="kcal" />
+                {localRange ? <MetricCard label={label('Likely range', 'بازه محتمل')} value={`${localRange.low}–${localRange.high}`} unit="kcal" /> : null}
                 <MetricCard label={t('today.protein')} value={Math.round(result.proteinG)} unit="g" />
                 <MetricCard label={label('Carbs', 'کربوهیدرات')} value={Math.round(result.carbsG)} unit="g" />
                 <MetricCard label={label('Fat', 'چربی')} value={Math.round(result.fatG)} unit="g" />
               </View>
               {result.assumptions.length > 0 ? (
                 <InlineNotice tone="warning">{result.assumptions.join('\n')}</InlineNotice>
+              ) : null}
+              {resultSource === 'catalog' && hasAvalAiKey ? (
+                <PrimaryButton title={label('Compare with AvalAI estimate', 'مقایسه با تخمین AvalAI')} variant="secondary" onPress={estimateTextWithAi} loading={loading} />
               ) : null}
               {mealTypeSelector}
               <PrimaryButton title={t('nutrition.logMeal')} onPress={saveEstimatedLog} loading={logging} />
