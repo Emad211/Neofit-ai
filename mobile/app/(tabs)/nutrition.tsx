@@ -80,28 +80,38 @@ export default function NutritionScreen() {
       <PageTitle title={t('nutrition.title')} subtitle={t('settings.localDataDescription')} />
       <InlineNotice>{t('nutrition.estimateWarning')}</InlineNotice>
 
-      <View style={{ gap: 10 }}>
+      <Card>
+        <AppText size={20} weight="800">{label('Accurate local logging', 'ثبت دقیق‌تر و محلی')}</AppText>
+        <AppText muted size={13}>{label(
+          'Start with the offline Iranian-food catalog. It includes serving ranges, custom foods, and does not require AvalAI.',
+          'ابتدا از کاتالوگ آفلاین غذاهای ایرانی استفاده کنید. بازه سهم، غذای سفارشی و ثبت بدون AvalAI در آن وجود دارد.',
+        )}</AppText>
+        <PrimaryButton
+          title={label('Open Iranian food catalog', 'بازکردن کاتالوگ غذاهای ایرانی')}
+          onPress={() => router.push('/iranian-foods')}
+        />
         <PrimaryButton
           title={label('Log a meal manually — offline', 'ثبت دستی وعده — آفلاین')}
+          variant="secondary"
           onPress={() => router.push({ pathname: '/meal-estimator', params: { mode: 'manual' } })}
         />
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1 }}>
             <PrimaryButton
               title={t('nutrition.foodText')}
-              variant="secondary"
+              variant="ghost"
               onPress={() => router.push({ pathname: '/meal-estimator', params: { mode: 'text' } })}
             />
           </View>
           <View style={{ flex: 1 }}>
             <PrimaryButton
               title={t('nutrition.foodPhoto')}
-              variant="secondary"
+              variant="ghost"
               onPress={() => router.push({ pathname: '/meal-estimator', params: { mode: 'photo' } })}
             />
           </View>
         </View>
-      </View>
+      </Card>
 
       {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
       {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
