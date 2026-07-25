@@ -1,225 +1,250 @@
+'use client';
 
-// This file is a suspense boundary. Read more about them here:
-// https://nextjs.org/docs/app/building-your-application/routing/loading-ui-and-streaming
-"use client"
-import React, { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-
-import { generateNutritionProgram, GenerateNutritionProgramInput, GenerateNutritionProgramOutput } from '@/ai/flows/generate-nutrition-program';
-import { generateWorkoutProgram, GenerateWorkoutProgramInput, GenerateWorkoutProgramOutput } from '@/ai/flows/generate-workout-program';
+import * as React from 'react';
+import Link from 'next/link';
+import { Apple, Dumbbell, MoveRight, ShieldAlert } from 'lucide-react';
+import { generateNutritionProgram } from '@/ai/flows/generate-nutrition-program';
+import { generateWorkoutProgram } from '@/ai/flows/generate-workout-program';
+import type { GenerateNutritionProgramOutput, GenerateWorkoutProgramOutput } from '@/ai/schemas';
 import { AnalysisAnimation } from '@/components/onboarding/analysis-animation';
 import { Button } from '@/components/ui/button';
-import { MoveRight } from 'lucide-react';
-import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Apple, Dumbbell } from 'lucide-react';
-import { UserProfile, useUserData } from '@/context/user-profile-context';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { UserProfileSchema, useUserData } from '@/context/user-profile-context';
+import { useOnboarding } from '@/context/onboarding-context';
+import { useI18n } from '@/i18n/provider';
+import { AiClientError } from '@/lib/ai-client';
 
-type AnalysisResults = {
-    nutrition: GenerateNutritionProgramOutput;
-    workout: GenerateWorkoutProgramOutput;
-}
+ type AnalysisResults = {
+  nutrition: GenerateNutritionProgramOutput;
+  workout: GenerateWorkoutProgramOutput;
+};
 
-function OnboardingAnalysisPage() {
-  return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 sm:p-6 lg:p-8">
-      <Suspense fallback={<Loading />}>
-        <AnalysisResult />
-      </Suspense>
-    </div>
-  );
-}
-
-function Loading() {
-  const messages = [
-    "Consulting with our AI Nutritionist...",
-    "Designing your personalized meal plan...",
-    "Talking to the AI Strength Coach...",
-    "Building your custom workout schedule...",
-    "Considering your goals and preferences...",
-    "Crafting the perfect plan for you...",
-  ];
-
-  const [message, setMessage] = React.useState(messages[0]);
+export default function OnboardingAnalysisPage() {
+  const { user } = useUserData();
+  const { draft, isReady: draftReady, clearDraft } = useOnboarding();
+  const { locale, t } = useI18n();
+  const [result, setResult] = React.useState<AnalysisResults | null>(null);
+  const [error, setError] = React.useState<{ message: string; upgradeRequired?: boolean } | null>(null);
+  const [attempt, setAttempt] = React.useState(0);
+  const startedRef = React.useRef(false);
 
   React.useEffect(() => {
-    let i = 0;
-    const interval = setInterval(() => {
-      i = (i + 1) % messages.length;
-      setMessage(messages[i]);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, [messages]);
+    if (!draftReady || !user || startedRef.current) return;
+    startedRef.current = true;
 
-
-  return (
-      <div className="w-full max-w-2xl text-center">
-        <AnalysisAnimation />
-        <h1 className="mt-8 text-3xl font-bold tracking-tight text-foreground sm:text-4xl font-headline">
-          Generating Your Custom Plans
-        </h1>
-        <p className="mt-4 text-lg text-muted-foreground transition-all duration-500">
-          {message}
-        </p>
-      </div>
-  )
-}
-
-function AnalysisResult() {
-  const searchParams = useSearchParams();
-  const { user, saveUserProfile, savePlans } = useUserData();
-  const [analysisResult, setAnalysisResult] = React.useState<AnalysisResults | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
     const performAnalysis = async () => {
-        if (!user) {
-            setError("No user logged in. Cannot generate plans.");
-            return;
-        }
-
-        const physicalSpecifications = `${searchParams.get('gender') || 'other'}, ${searchParams.get('age') || 25} years, ${searchParams.get('height') || 170}cm, ${searchParams.get('weight') || 70}kg, ${searchParams.get('bodyType') || 'mesomorph'}`;
-        
-        const userProfileData: UserProfile = {
-            ...Object.fromEntries(searchParams.entries()),
-            name: user.displayName || "User", // Add user's name
-        } as any;
-
-
-        const nutritionParams: GenerateNutritionProgramInput = {
-            userId: user.uid,
-            goals: userProfileData.goal,
-            performanceGoals: userProfileData.performanceGoals,
-            fitnessLevel: userProfileData.fitnessLevel,
-            physicalSpecifications: physicalSpecifications,
-            lifestyle: userProfileData.lifestyle,
-            sleepHours: userProfileData.sleepHours,
-            stressLevel: userProfileData.stressLevel,
-            eatingHabits: userProfileData.eatingHabits,
-            cookingSkill: userProfileData.cookingSkill,
-            costLevel: userProfileData.costLevel,
-            trainingDays: parseInt(userProfileData.trainingDays, 10),
-            trainingDuration: userProfileData.trainingDuration,
-            trainingTime: userProfileData.trainingTime,
-        };
-
-        const workoutParams: GenerateWorkoutProgramInput = {
-            userId: user.uid,
-            goals: userProfileData.goal,
-            performanceGoals: userProfileData.performanceGoals,
-            fitnessLevel: userProfileData.fitnessLevel,
-            trainingDays: parseInt(userProfileData.trainingDays, 10),
-            trainingDuration: userProfileData.trainingDuration,
-            trainingTime: userProfileData.trainingTime,
-            workoutLocation: userProfileData.workoutLocation,
-            availableEquipment: userProfileData.availableEquipment || 'Full gym equipment',
-            medicalHistory: userProfileData.medicalHistory || 'None',
-            physicalSpecifications: physicalSpecifications,
-            sleepHours: userProfileData.sleepHours,
-            stressLevel: userProfileData.stressLevel,
-        };
-
       try {
-        const [nutritionResult, workoutResult] = await Promise.all([
-            generateNutritionProgram(nutritionParams),
-            generateWorkoutProgram(workoutParams)
-        ]);
-
-        // Save the full user profile and the generated plans to Firestore
-        await saveUserProfile(userProfileData);
-        await savePlans({ 
-            nutritionPlan: nutritionResult.weeklyMealPlan, 
-            workoutPlan: workoutResult.weeklyWorkoutPlan 
+        const profile = UserProfileSchema.parse({
+          ...draft,
+          name: user.displayName || (locale === 'fa' ? 'کاربر' : 'User'),
         });
 
-        setAnalysisResult({ nutrition: nutritionResult, workout: workoutResult });
-      } catch (e: any) {
-        console.error(e);
-        if (typeof e.message === 'string' && e.message.includes('429')) {
-             setError("Our AI is experiencing high traffic right now. Please try again in a few moments.");
+        const physicalSpecifications = [
+          profile.gender,
+          `${profile.age} years`,
+          `${profile.height}cm`,
+          `${profile.weight}kg`,
+          profile.bodyType,
+        ].join(', ');
+        const eatingHabits = [
+          profile.dietaryPreference && profile.dietaryPreference !== 'none'
+            ? `Dietary preference: ${profile.dietaryPreference}`
+            : '',
+          profile.eatingHabits || '',
+        ].filter(Boolean).join('; ') || 'None';
+
+        // Workout is intentionally the monthly plan-generation accounting event.
+        const workout = await generateWorkoutProgram({
+          goals: profile.goal,
+          performanceGoals: profile.performanceGoals,
+          fitnessLevel: profile.fitnessLevel,
+          trainingDays: Number(profile.trainingDays),
+          trainingDuration: profile.trainingDuration,
+          trainingTime: profile.trainingTime,
+          workoutLocation: profile.workoutLocation,
+          availableEquipment: profile.availableEquipment || 'Bodyweight only',
+          medicalHistory: profile.medicalHistory || 'None',
+          physicalSpecifications,
+          sleepHours: profile.sleepHours,
+          stressLevel: profile.stressLevel,
+          locale,
+        });
+
+        const nutrition = await generateNutritionProgram({
+          goals: profile.goal,
+          performanceGoals: profile.performanceGoals,
+          fitnessLevel: profile.fitnessLevel,
+          physicalSpecifications,
+          lifestyle: profile.lifestyle,
+          sleepHours: profile.sleepHours,
+          stressLevel: profile.stressLevel,
+          eatingHabits,
+          cookingSkill: profile.cookingSkill,
+          costLevel: profile.costLevel,
+          trainingDays: Number(profile.trainingDays),
+          trainingDuration: profile.trainingDuration,
+          trainingTime: profile.trainingTime,
+          locale,
+        });
+
+        const token = await user.getIdToken();
+        const response = await fetch('/api/onboarding/finalize', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            profile,
+            locale,
+            nutritionPlan: nutrition.weeklyMealPlan,
+            workoutPlan: workout.weeklyWorkoutPlan,
+            summaries: { nutrition: nutrition.summary, workout: workout.summary },
+          }),
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null) as { error?: string } | null;
+          throw new Error(payload?.error || 'Failed to save the generated plans.');
+        }
+
+        clearDraft();
+        setResult({ nutrition, workout });
+      } catch (caught) {
+        console.error('Onboarding analysis failed:', caught);
+        if (caught instanceof AiClientError && caught.status === 429) {
+          setError({
+            message: locale === 'fa'
+              ? 'سهمیه ساخت برنامه این پلن تمام شده است. برای ادامه پلن خود را ارتقا دهید.'
+              : 'This plan has reached its plan-generation limit. Upgrade to continue.',
+            upgradeRequired: true,
+          });
         } else {
-             setError("Our AI is currently unavailable. Please try again later.");
+          setError({
+            message: locale === 'fa'
+              ? 'ساخت یا ذخیره برنامه کامل نشد. اطلاعات شما در نشانی صفحه ذخیره نشده و می‌توانید دوباره تلاش کنید.'
+              : 'Plan generation or saving did not complete. Your health data was not placed in the URL, and you can safely retry.',
+          });
         }
       }
     };
 
-    performAnalysis();
-  }, [searchParams, saveUserProfile, savePlans, user]);
+    void performAnalysis();
+  }, [attempt, clearDraft, draft, draftReady, locale, user]);
 
-  if (error) {
-    return <ErrorDisplay message={error} />
-  }
+  const retry = () => {
+    startedRef.current = false;
+    setError(null);
+    setAttempt((value) => value + 1);
+  };
 
-  if (!analysisResult) {
-    return <Loading />;
-  }
-
-  return <AnalysisContent result={analysisResult} />
+  return (
+    <main className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 sm:p-6 lg:p-8">
+      {error ? (
+        <ErrorDisplay message={error.message} upgradeRequired={error.upgradeRequired} onRetry={retry} />
+      ) : result ? (
+        <AnalysisContent result={result} />
+      ) : (
+        <Loading />
+      )}
+    </main>
+  );
 }
 
+function Loading() {
+  const { locale, t } = useI18n();
+  const messages = React.useMemo(() => locale === 'fa'
+    ? ['بررسی محدودیت‌های ایمنی…', 'ساخت برنامه تمرینی…', 'طراحی برنامه غذایی…', 'اعتبارسنجی خروجی‌ها…']
+    : ['Reviewing safety constraints…', 'Building the workout plan…', 'Designing the meal plan…', 'Validating the results…'], [locale]);
+  const [index, setIndex] = React.useState(0);
+
+  React.useEffect(() => {
+    const interval = window.setInterval(() => setIndex((value) => (value + 1) % messages.length), 2_500);
+    return () => window.clearInterval(interval);
+  }, [messages.length]);
+
+  return (
+    <div className="w-full max-w-2xl text-center" aria-live="polite" aria-busy="true">
+      <AnalysisAnimation />
+      <h1 className="mt-8 font-headline text-3xl font-bold tracking-tight sm:text-4xl">{t('onboarding.generating')}</h1>
+      <p className="mt-4 text-lg text-muted-foreground">{messages[index]}</p>
+      <p className="mt-2 text-sm text-muted-foreground">{t('onboarding.generatingDescription')}</p>
+    </div>
+  );
+}
 
 function AnalysisContent({ result }: { result: AnalysisResults }) {
+  const { locale, t } = useI18n();
+  const safetyNotes = [...result.workout.safetyNotes, ...result.nutrition.safetyNotes];
+
   return (
     <div className="w-full max-w-3xl">
-      <div className="text-center">
-        <h1 className="mt-8 text-3xl font-bold tracking-tight text-foreground sm:text-4xl font-headline">
-          Your Personal Plans are Ready!
-        </h1>
+      <header className="text-center">
+        <h1 className="mt-8 font-headline text-3xl font-bold tracking-tight sm:text-4xl">{t('onboarding.ready')}</h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Here is a summary of what our AI experts have created for you.
+          {locale === 'fa' ? 'خلاصه برنامه هفته اول را بررسی کنید.' : 'Review the summary of your first week.'}
         </p>
-      </div>
+      </header>
 
-      <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+      <div className="mt-10 grid gap-6 text-start md:grid-cols-2">
         <Card className="flex flex-col">
           <CardHeader className="flex flex-row items-center gap-4">
-            <Apple className="h-8 w-8 text-primary" />
-            <CardTitle>Nutrition Plan</CardTitle>
+            <Apple className="h-8 w-8 text-primary" aria-hidden="true" />
+            <CardTitle>{locale === 'fa' ? 'برنامه غذایی' : 'Nutrition plan'}</CardTitle>
           </CardHeader>
-          <CardContent className="flex-grow">
-            <p className="text-muted-foreground">{result.nutrition.summary}</p>
-          </CardContent>
+          <CardContent className="flex-grow"><p className="text-muted-foreground">{result.nutrition.summary}</p></CardContent>
         </Card>
         <Card className="flex flex-col">
           <CardHeader className="flex flex-row items-center gap-4">
-            <Dumbbell className="h-8 w-8 text-primary" />
-            <CardTitle>Workout Plan</CardTitle>
+            <Dumbbell className="h-8 w-8 text-primary" aria-hidden="true" />
+            <CardTitle>{locale === 'fa' ? 'برنامه تمرینی' : 'Workout plan'}</CardTitle>
           </CardHeader>
-           <CardContent className="flex-grow">
-            <p className="text-muted-foreground">{result.workout.summary}</p>
-          </CardContent>
+          <CardContent className="flex-grow"><p className="text-muted-foreground">{result.workout.summary}</p></CardContent>
         </Card>
       </div>
 
-      <div className="mt-10 text-center">
-        <Button size="lg" asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
-          <Link href="/today">
-            Start Your Journey <MoveRight className="ml-2 h-5 w-5" />
-          </Link>
+      {safetyNotes.length > 0 && (
+        <Alert className="mt-6">
+          <ShieldAlert className="h-4 w-4" aria-hidden="true" />
+          <AlertDescription>
+            <ul className="list-disc space-y-1 ps-5">{safetyNotes.map((note) => <li key={note}>{note}</li>)}</ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <p className="mt-6 text-center text-sm text-muted-foreground">{t('legal.medicalDisclaimer')}</p>
+      <div className="mt-8 text-center">
+        <Button size="lg" asChild className="bg-accent text-accent-foreground hover:bg-accent/90">
+          <Link href="/today">{t('onboarding.start')} <MoveRight className="ms-2 h-5 w-5 rtl:rotate-180" aria-hidden="true" /></Link>
         </Button>
       </div>
     </div>
   );
 }
 
-function ErrorDisplay({ message }: { message: string }) {
+function ErrorDisplay({
+  message,
+  upgradeRequired,
+  onRetry,
+}: {
+  message: string;
+  upgradeRequired?: boolean;
+  onRetry: () => void;
+}) {
+  const { locale, t } = useI18n();
   return (
-     <div className="w-full max-w-2xl text-center">
-        <h1 className="mt-8 text-3xl font-bold tracking-tight text-destructive sm:text-4xl font-headline">
-          Analysis Failed
-        </h1>
-        <p className="mt-4 text-lg text-muted-foreground">
-          {message}
-        </p>
-        <div className="mt-10">
-          <Button size="lg" asChild variant="secondary">
-            <Link href="/">
-              Return to Start
-            </Link>
-          </Button>
+    <div className="w-full max-w-2xl text-center">
+      <h1 className="font-headline text-3xl font-bold text-destructive sm:text-4xl">
+        {locale === 'fa' ? 'ساخت برنامه کامل نشد' : 'Plan generation did not complete'}
+      </h1>
+      <p className="mt-4 text-lg text-muted-foreground">{message}</p>
+      <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+        {upgradeRequired && <Button asChild><Link href="/pricing">{t('common.upgrade')}</Link></Button>}
+        <Button variant={upgradeRequired ? 'outline' : 'default'} onClick={onRetry}>{t('common.retry')}</Button>
+        <Button variant="ghost" asChild><Link href="/">{t('common.back')}</Link></Button>
       </div>
-     </div>
-  )
+    </div>
+  );
 }
-
-export default OnboardingAnalysisPage;
