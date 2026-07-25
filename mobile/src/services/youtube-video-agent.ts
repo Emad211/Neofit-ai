@@ -260,8 +260,12 @@ async function searchYouTube(input: {
 }
 
 export function getExerciseVideoCacheKey(exercise: Exercise, locale: 'fa' | 'en') {
-  const query = queryForExercise(exercise, locale);
-  return `youtube-exercise-${stableHash(`${locale}|${exercise.id}|${query}`)}`;
+  const canonicalIdentity = normalize([
+    exercise.canonicalNameEn,
+    exercise.canonicalNameFa,
+    exercise.name,
+  ].filter(Boolean).join('|'));
+  return `youtube-exercise-${stableHash(`${locale}|${canonicalIdentity}`)}`;
 }
 
 export async function findExerciseTutorials(input: {
