@@ -59,13 +59,33 @@ function BodyPart({
   );
 }
 
+function toPersianBodyName(name: string) {
+  const replacements: Array<[RegExp, string]> = [
+    [/Left/gi, 'چپ'], [/Right/gi, 'راست'], [/Head/gi, 'سر'], [/Neck/gi, 'گردن'],
+    [/shoulder/gi, 'شانه'], [/trapezius/gi, 'عضله ذوزنقه‌ای'], [/biceps/gi, 'جلو بازو'],
+    [/triceps/gi, 'پشت بازو'], [/elbow/gi, 'آرنج'], [/forearm/gi, 'ساعد'], [/wrist/gi, 'مچ دست'],
+    [/hand/gi, 'دست'], [/pectoral/gi, 'سینه'], [/rib/gi, 'دنده'], [/abdominals?/gi, 'شکم'],
+    [/obliques?/gi, 'پهلو'], [/hip/gi, 'لگن'], [/quadriceps/gi, 'جلوی ران'], [/adductor/gi, 'داخل ران'],
+    [/knee/gi, 'زانو'], [/shin/gi, 'ساق جلو'], [/ankle/gi, 'مچ پا'], [/foot/gi, 'پا'],
+    [/spinal column/gi, 'ستون فقرات'], [/scapula surface/gi, 'کتف'], [/back/gi, 'پشت'],
+    [/lumbar/gi, 'کمر'], [/buttock/gi, 'باسن'], [/hamstring/gi, 'پشت ران'], [/calf/gi, 'ساق پا'],
+    [/\(ant\.\)/gi, '(جلو)'], [/\(post\.\)/gi, '(پشت)'], [/\(L\)/g, '(چپ)'], [/\(R\)/g, '(راست)'],
+    [/\(flexors\)/gi, '(خم‌کننده‌ها)'], [/\(extensors\)/gi, '(بازکننده‌ها)'],
+    [/\(palmar surface\)/gi, '(کف دست)'], [/\(dorsale surface\)/gi, '(پشت دست)'],
+  ];
+  return replacements.reduce((value, [pattern, replacement]) => value.replace(pattern, replacement), name).trim();
+}
+
 export const BodyMap = () => {
   const [selectedParts, setSelectedParts] = useState<Set<string>>(new Set());
   const [hovered, setHovered] = useState<string | null>(null);
   const router = useRouter();
   const { draft, updateDraft } = useOnboarding();
   const { locale, t } = useI18n();
-  const bodyParts = useMemo(() => getBodyPart(locale), [locale]);
+  const bodyParts = useMemo(() => getBodyPart('en').map((part) => ({
+    ...part,
+    name: locale === 'fa' ? toPersianBodyName(part.name) : part.name,
+  })), [locale]);
   const anterior = useMemo(() => bodyParts.filter(({ face }) => face === 'ant'), [bodyParts]);
   const posterior = useMemo(() => bodyParts.filter(({ face }) => face === 'post'), [bodyParts]);
 
