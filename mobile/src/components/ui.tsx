@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '@/providers/app-provider';
 import { useAppTheme } from '@/theme/theme';
 
@@ -18,19 +19,25 @@ export function Screen({
   children,
   gap = 20,
   padded = true,
+  safeTop = true,
 }: {
   children: React.ReactNode;
   gap?: number;
   padded?: boolean;
+  safeTop?: boolean;
 }) {
   const theme = useAppTheme();
   const { direction } = useApp();
   return (
-    <>
+    <SafeAreaView
+      edges={safeTop ? ['top'] : []}
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+    >
       <StatusBar style={theme.dark ? 'light' : 'dark'} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         style={{ flex: 1, backgroundColor: theme.colors.background }}
         contentContainerStyle={{
           padding: padded ? 20 : 0,
@@ -41,7 +48,7 @@ export function Screen({
       >
         {children}
       </ScrollView>
-    </>
+    </SafeAreaView>
   );
 }
 
