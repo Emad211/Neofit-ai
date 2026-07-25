@@ -1,99 +1,116 @@
+'use client';
 
-// src/context/user-profile-context.tsx
-"use client";
-
-import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, addDoc, onSnapshot, query, orderBy, updateDoc } from 'firebase/firestore';
-import { getAuth, onAuthStateChanged, User, EmailAuthProvider, reauthenticateWithCredential, updateProfile, updateEmail, updatePassword } from 'firebase/auth';
-import { app } from '@/lib/firebase';
-import type { GenerateNutritionProgramOutput } from '@/ai/flows/generate-nutrition-program';
-import type { GenerateWorkoutProgramOutput } from '@/ai/flows/generate-workout-program';
+import * as React from 'react';
+import { z } from 'zod';
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getFirestore,
+  onSnapshot,
+  orderBy,
+  query,
+  setDoc,
+  updateDoc,
+} from 'firebase/firestore';
+import {
+  EmailAuthProvider,
+  getAuth,
+  onAuthStateChanged,
+  reauthenticateWithCredential,
+  updateEmail,
+  updatePassword,
+  updateProfile,
+  User,
+} from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { startOfDay } from 'date-fns';
+import { app } from '@/lib/firebase';
+import type { GenerateNutritionProgramOutput, GenerateWorkoutProgramOutput } from '@/ai/schemas';
 
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// Keep the same UserProfile type
-export type UserProfile = {
-  name: string;
-  goal: "lose_weight" | "gain_muscle" | "improve_fitness";
-  gender: "male" | "female" | "other";
-  age: number;
-  height: number;
-  weight: number;
-  bodyType: "ectomorph" | "mesomorph" | "endomorph";
-  fitnessLevel: "beginner" | "intermediate" | "advanced";
-  trainingDays: string;
-  trainingDuration: string;
-  trainingTime: string;
-  lifestyle: "sedentary" | "lightly_active" | "moderately_active" | "very_active";
-  sleepHours: string;
-  stressLevel: "low" | "medium" | "high";
-  eatingHabits?: string;
-  cookingSkill: "beginner" | "intermediate" | "advanced";
-  performanceGoals?: string;
-  workoutLocation: "home" | "gym";
-  availableEquipment?: string;
-  costLevel: "low" | "medium" | "high";
-  medicalHistory?: string;
-  dietaryPreference?: string;
-  timezone: string;
-  geminiApiKey?: string;
-};
+export const UserProfileSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  goal: z.enum(['lose_weight', 'gain_muscle', 'improve_fitness']),
+  gender: z.enum(['male', 'female', 'other']),
+  age: z.number().int().min(16).max(100),
+  height: z.number().min(100).max(250),
+  weight: z.number().min(30).max(300),
+  bodyType: z.enum(['ectomorph', 'mesomorph', 'endomorph']),
+  fitnessLevel: z.enum(['beginner', 'intermediate', 'advanced']),
+  trainingDays: z.string().regex(/^[2-6]$/),
+  trainingDuration: z.string().min(1).max(40),
+  trainingTime: z.string().min(1).max(40),
+  lifestyle: z.enum(['sedentary', 'lightly_active', 'moderately_active', 'very_active']),
+  sleepHours: z.string().min(1).max(40),
+  stressLevel: z.enum(['low', 'medium', 'high']),
+  eatingHabits: z.string().max(2_000).optional(),
+  dietaryPreference: z.string().max(100).optional(),
+  cookingSkill: z.enum(['beginner', 'intermediate', 'advanced']),
+  performanceGoals: z.string().max(500).optional(),
+  workoutLocation: z.enum(['home', 'gym']),
+  availableEquipment: z.string().max(1_000).optional(),
+  costLevel: z.enum(['low', 'medium', 'high']),
+  medicalHistory: z.string().max(2_000).optional(),
+  timezone: z.string().min(1).max(100),
+});
+export type UserProfile = z.infer<typeof UserProfileSchema>;
 
-// Add types for the plans and logs
 type NutritionPlan = GenerateNutritionProgramOutput['weeklyMealPlan'];
 type WorkoutPlan = GenerateWorkoutProgramOutput['weeklyWorkoutPlan'];
-type ShoppingListState = { [itemName: string]: boolean };
-type CheckedIngredientsState = { [mealId: string]: { [ingredientName: string]: boolean } };
-type LoggedMealsState = {
-    date: string; // ISO date string for the start of the day
-    mealIds: string[];
-};
-
+type ShoppingListState = Record<string, boolean>;
+type CheckedIngredientsState = Record<string, Record<string, boolean>>;
+type LoggedMealsState = { date: string; mealIds: string[] };
 
 export type MealLog = {
-    id?: string;
-    logType: 'meal';
-    loggedAt: string;
-    mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-    description: string;
-    calories: number;
-}
+  id?: string;
+  logType: 'meal';
+  loggedAt: string;
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  description: string;
+  calories: number;
+  protein?: number;
+  carbohydrates?: number;
+  fat?: number;
+};
+
 export type ActivityLog = {
-    id?: string;
-    logType: 'activity';
-    loggedAt: string;
-    activityType: string;
-    durationMinutes: number;
-    intensity: 'low' | 'medium' | 'high';
-    caloriesBurned: number;
-}
+  id?: string;
+  logType: 'activity';
+  loggedAt: string;
+  activityType: string;
+  durationMinutes: number;
+  intensity: 'low' | 'medium' | 'high';
+  caloriesBurned: number;
+};
+
 export type WeightLog = {
-    id?: string;
-    logType: 'weight';
-    loggedAt: string;
-    weight: number;
-}
+  id?: string;
+  logType: 'weight';
+  loggedAt: string;
+  weight: number;
+};
+
 export type WorkoutLog = {
-    id?: string;
-    logType: 'workout';
-    workoutId: string;
-    workoutName: string;
-    loggedAt: string;
-    durationMinutes: number;
-    totalVolume: number;
-    exercises: {
-        id: string;
-        name: string;
-        logs: { set: number; reps: string; weight: string; }[]
-    }[]
-}
+  id?: string;
+  logType: 'workout';
+  workoutId: string;
+  workoutName: string;
+  loggedAt: string;
+  durationMinutes: number;
+  totalVolume: number;
+  exercises: Array<{
+    id: string;
+    name: string;
+    logs: Array<{ set: number; reps: string; weight: string }>;
+  }>;
+};
+
 export type CombinedLog = MealLog | ActivityLog | WeightLog | WorkoutLog;
 
-
-interface UserDataContextType {
+type UserDataContextType = {
   user: User | null;
   userProfile: UserProfile | null;
   nutritionPlan: NutritionPlan | null;
@@ -102,271 +119,69 @@ interface UserDataContextType {
   checkedIngredientsState: CheckedIngredientsState | null;
   loggedMealsState: string[] | null;
   saveUserProfile: (profileData: UserProfile) => Promise<void>;
-  savePlans: (plans: { nutritionPlan: NutritionPlan, workoutPlan: WorkoutPlan }) => Promise<void>;
+  savePlans: (plans: { nutritionPlan: NutritionPlan; workoutPlan: WorkoutPlan }) => Promise<void>;
   updateShoppingListState: (state: ShoppingListState) => Promise<void>;
   updateCheckedIngredientsState: (mealId: string, ingredientName: string, isChecked: boolean) => Promise<void>;
   updateLoggedMealsState: (mealIds: string[]) => Promise<void>;
-  saveWorkoutLog: (logData: Omit<WorkoutLog, 'logType' | 'loggedAt' | 'id'>) => Promise<void>;
-  logMeal: (logData: Omit<MealLog, 'logType' | 'loggedAt' | 'id'>) => Promise<void>;
-  logActivity: (logData: Omit<ActivityLog, 'logType' | 'loggedAt'| 'id'>) => Promise<void>;
-  logWeight: (logData: Omit<WeightLog, 'logType' | 'loggedAt' | 'id'>) => Promise<void>;
+  saveWorkoutLog: (data: Omit<WorkoutLog, 'logType' | 'loggedAt' | 'id'>) => Promise<void>;
+  logMeal: (data: Omit<MealLog, 'logType' | 'loggedAt' | 'id'>) => Promise<void>;
+  logActivity: (data: Omit<ActivityLog, 'logType' | 'loggedAt' | 'id'>) => Promise<void>;
+  logWeight: (data: Omit<WeightLog, 'logType' | 'loggedAt' | 'id'>) => Promise<void>;
   updateLog: (logId: string, logType: CombinedLog['logType'], data: Partial<CombinedLog>) => Promise<void>;
   deleteLog: (logId: string, logType: CombinedLog['logType']) => Promise<void>;
   resetUserData: () => Promise<void>;
   reauthenticateUser: (password: string) => Promise<void>;
-  updateUserAccount: (data: {displayName?: string}) => Promise<void>;
+  updateUserAccount: (data: { displayName?: string }) => Promise<void>;
   updateUserEmail: (newEmail: string) => Promise<void>;
   updateUserPassword: (newPassword: string) => Promise<void>;
   combinedLogs: CombinedLog[];
   isLoading: boolean;
-}
+};
 
-const UserDataContext = createContext<UserDataContextType | undefined>(undefined);
+const UserDataContext = React.createContext<UserDataContextType | undefined>(undefined);
 
 const logTypeToCollectionName = {
-    meal: 'meal_logs',
-    activity: 'activity_logs',
-    weight: 'weight_logs',
-    workout: 'workout_logs',
+  meal: 'meal_logs',
+  activity: 'activity_logs',
+  weight: 'weight_logs',
+  workout: 'workout_logs',
 } as const;
 
-export const UserDataProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [nutritionPlan, setNutritionPlan] = useState<NutritionPlan | null>(null);
-  const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
-  const [shoppingListState, setShoppingListState] = useState<ShoppingListState | null>(null);
-  const [checkedIngredientsState, setCheckedIngredientsState] = useState<CheckedIngredientsState | null>(null);
-  const [loggedMealsState, setLoggedMealsState] = useState<string[] | null>(null);
-  const [combinedLogs, setCombinedLogs] = useState<CombinedLog[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+function localDayKey(date: Date, timeZone?: string) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const map = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${map.year}-${map.month}-${map.day}`;
+}
+
+function normalizeTimestamp(value: unknown) {
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object' && 'toDate' in value && typeof (value as any).toDate === 'function') {
+    return (value as any).toDate().toISOString();
+  }
+  return new Date(0).toISOString();
+}
+
+export function UserDataProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = React.useState<User | null>(null);
+  const [userProfile, setUserProfile] = React.useState<UserProfile | null>(null);
+  const [nutritionPlan, setNutritionPlan] = React.useState<NutritionPlan | null>(null);
+  const [workoutPlan, setWorkoutPlan] = React.useState<WorkoutPlan | null>(null);
+  const [shoppingListState, setShoppingListState] = React.useState<ShoppingListState | null>(null);
+  const [checkedIngredientsState, setCheckedIngredientsState] = React.useState<CheckedIngredientsState | null>(null);
+  const [loggedMealsState, setLoggedMealsState] = React.useState<string[] | null>(null);
+  const [combinedLogs, setCombinedLogs] = React.useState<CombinedLog[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const router = useRouter();
 
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-        setIsLoading(true);
-        if (firebaseUser) {
-            setUser(firebaseUser);
-        } else {
-            setUser(null);
-            setUserProfile(null);
-            setNutritionPlan(null);
-            setWorkoutPlan(null);
-            setShoppingListState(null);
-            setCheckedIngredientsState(null);
-            setLoggedMealsState(null);
-            setCombinedLogs([]);
-            router.push('/auth');
-        }
-    });
-
-    return () => unsubscribe();
-  }, [router]);
-
-
-  useEffect(() => {
-    if (!user) {
-        setIsLoading(false);
-        return;
-    };
-    
-    const profileRef = doc(db, 'profiles', user.uid);
-    const plansRef = doc(db, 'plans', user.uid);
-
-    const unsubProfile = onSnapshot(profileRef, (doc) => {
-        setUserProfile(doc.data() as UserProfile || null);
-    });
-
-    const unsubPlans = onSnapshot(plansRef, (doc) => {
-        const data = doc.data();
-        const todayDateStr = startOfDay(new Date()).toISOString().split('T')[0];
-
-        if (data) {
-            setNutritionPlan(data.nutritionPlan);
-            setWorkoutPlan(data.workoutPlan);
-            setShoppingListState(data.shoppingListState || null);
-            setCheckedIngredientsState(data.checkedIngredientsState || null);
-            
-            // Check if loggedMealsState is for today, otherwise reset it
-            const storedLoggedMeals: LoggedMealsState = data.loggedMealsState;
-            if (storedLoggedMeals && storedLoggedMeals.date === todayDateStr) {
-                setLoggedMealsState(storedLoggedMeals.mealIds);
-            } else {
-                setLoggedMealsState([]); // Reset for the new day
-            }
-
-        } else {
-            setNutritionPlan(null);
-            setWorkoutPlan(null);
-            setShoppingListState(null);
-            setCheckedIngredientsState(null);
-            setLoggedMealsState(null);
-        }
-    });
-    
-    // Set up listeners for all log collections
-    const logUnsubscribers = Object.entries(logTypeToCollectionName).map(([logType, collectionName]) => {
-        const q = query(collection(db, 'profiles', user.uid, collectionName), orderBy('loggedAt', 'desc'));
-        return onSnapshot(q, (querySnapshot) => {
-            const logs = querySnapshot.docs.map(doc => ({ 
-                id: doc.id, 
-                logType: logType as keyof typeof logTypeToCollectionName,
-                ...doc.data() 
-            } as CombinedLog));
-            
-            setCombinedLogs(prevLogs => {
-                const otherLogs = prevLogs.filter(log => log.logType !== logType);
-                const updatedLogs = [...otherLogs, ...logs].sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
-                return updatedLogs;
-            });
-        }, (error) => {
-            console.error(`Error listening to ${collectionName}:`, error);
-        });
-    });
-
-    setIsLoading(false);
-
-    return () => {
-        unsubProfile();
-        unsubPlans();
-        logUnsubscribers.forEach(unsub => unsub());
-    }
-  }, [user]);
-
-  const saveUserProfile = async (profileData: UserProfile) => {
-    if (!user) {
-      throw new Error("No user is signed in to save profile.");
-    }
-    try {
-      const profileRef = doc(db, 'profiles', user.uid);
-      await setDoc(profileRef, profileData, { merge: true });
-      setUserProfile(profileData);
-    } catch (error) {
-      console.error("Failed to save user profile to Firestore", error);
-      throw error;
-    }
-  };
-
-  const savePlans = async (plans: { nutritionPlan: NutritionPlan, workoutPlan: WorkoutPlan }) => {
-     if (!user) {
-      throw new Error("No user is signed in to save plans.");
-    }
-    try {
-        const plansRef = doc(db, 'plans', user.uid);
-        await setDoc(plansRef, plans, { merge: true });
-        setNutritionPlan(plans.nutritionPlan);
-        setWorkoutPlan(plans.workoutPlan);
-    } catch (error) {
-        console.error("Failed to save plans to Firestore", error);
-        throw error;
-    }
-  }
-  
-  const updateShoppingListState = async (state: ShoppingListState) => {
-      if (!user) {
-          throw new Error("No user is signed in to update shopping list.");
-      }
-      try {
-          const plansRef = doc(db, 'plans', user.uid);
-          await setDoc(plansRef, { shoppingListState: state }, { merge: true });
-          setShoppingListState(state);
-      } catch (error) {
-          console.error("Failed to update shopping list state", error);
-          throw error;
-      }
-  };
-  
-    const updateCheckedIngredientsState = async (mealId: string, ingredientName: string, isChecked: boolean) => {
-        if (!user) {
-            throw new Error("No user is signed in to update ingredient state.");
-        }
-        try {
-            const plansRef = doc(db, 'plans', user.uid);
-            const newState = { ...checkedIngredientsState };
-            if (!newState[mealId]) {
-                newState[mealId] = {};
-            }
-            newState[mealId][ingredientName] = isChecked;
-
-            await setDoc(plansRef, { checkedIngredientsState: newState }, { merge: true });
-            setCheckedIngredientsState(newState);
-        } catch (error) {
-            console.error("Failed to update checked ingredients state", error);
-            throw error;
-        }
-    };
-
-  const updateLoggedMealsState = async (mealIds: string[]) => {
-      if (!user) {
-          throw new Error("No user is signed in to update logged meals.");
-      }
-      try {
-          const plansRef = doc(db, 'plans', user.uid);
-          const todayDateStr = startOfDay(new Date()).toISOString().split('T')[0];
-          const stateToSave: LoggedMealsState = {
-              date: todayDateStr,
-              mealIds: mealIds,
-          };
-          await setDoc(plansRef, { loggedMealsState: stateToSave }, { merge: true });
-          setLoggedMealsState(mealIds);
-      } catch (error) {
-          console.error("Failed to update logged meals state", error);
-          throw error;
-      }
-  };
-
-
-  const logGeneric = async (collectionName: string, logData: object) => {
-    if (!user) {
-        throw new Error("No user is signed in to save log.");
-    }
-    const dataToSave = {
-        ...logData,
-        loggedAt: new Date().toISOString(),
-    };
-    try {
-        const logsCollectionRef = collection(db, 'profiles', user.uid, collectionName);
-        await addDoc(logsCollectionRef, dataToSave);
-    } catch (error) {
-        console.error(`Failed to save to ${collectionName}`, error);
-        throw error;
-    }
-  }
-  
-  const logMeal = (logData: Omit<MealLog, 'logType' | 'loggedAt' | 'id'>) => logGeneric('meal_logs', logData);
-  const logActivity = (logData: Omit<ActivityLog, 'logType' | 'loggedAt'| 'id'>) => logGeneric('activity_logs', logData);
-  const logWeight = (logData: Omit<WeightLog, 'logType' | 'loggedAt' | 'id'>) => logGeneric('weight_logs', logData);
-  const saveWorkoutLog = (logData: Omit<WorkoutLog, 'logType' | 'loggedAt'| 'id'>) => logGeneric('workout_logs', logData);
-
-  const updateLog = async (logId: string, logType: CombinedLog['logType'], data: Partial<CombinedLog>) => {
-    if (!user) throw new Error("No user is signed in to update log.");
-    const collectionName = logTypeToCollectionName[logType];
-    const logRef = doc(db, 'profiles', user.uid, collectionName, logId);
-    await updateDoc(logRef, data);
-  };
-
-  const deleteLog = async (logId: string, logType: CombinedLog['logType']) => {
-    if (!user) throw new Error("No user is signed in to delete log.");
-    const collectionName = logTypeToCollectionName[logType];
-    const logRef = doc(db, 'profiles', user.uid, collectionName, logId);
-    await deleteDoc(logRef);
-  };
-
-  const resetUserData = async () => {
-    if (!user) {
-      throw new Error("No user is signed in to reset data.");
-    }
+  React.useEffect(() => onAuthStateChanged(auth, (firebaseUser) => {
     setIsLoading(true);
-    try {
-      const profileRef = doc(db, 'profiles', user.uid);
-      const plansRef = doc(db, 'plans', user.uid);
-      
-      // In a real app, deleting subcollections requires a Cloud Function.
-      // For this demo, we'll just delete the main docs.
-      await deleteDoc(profileRef);
-      await deleteDoc(plansRef);
-      
+    setUser(firebaseUser);
+    if (!firebaseUser) {
       setUserProfile(null);
       setNutritionPlan(null);
       setWorkoutPlan(null);
@@ -374,50 +189,223 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
       setCheckedIngredientsState(null);
       setLoggedMealsState(null);
       setCombinedLogs([]);
-    } catch (error) {
-      console.error("Failed to reset user data in Firestore", error);
-      throw error;
-    } finally {
+      setIsLoading(false);
+      router.replace('/auth');
+    }
+  }), [router]);
+
+  React.useEffect(() => {
+    if (!user) return;
+
+    let profileLoaded = false;
+    let plansLoaded = false;
+    const loadedLogs = new Set<string>();
+    const markReady = () => {
+      if (profileLoaded && plansLoaded && loadedLogs.size === Object.keys(logTypeToCollectionName).length) {
         setIsLoading(false);
-    }
-  };
+      }
+    };
 
-  const reauthenticateUser = async (password: string) => {
-    if (!user || !user.email) {
-      throw new Error("User not signed in or email is missing.");
-    }
-    const credential = EmailAuthProvider.credential(user.email, password);
-    await reauthenticateWithCredential(user, credential);
-  }
+    const profileRef = doc(db, 'profiles', user.uid);
+    const plansRef = doc(db, 'plans', user.uid);
 
-  const updateUserAccount = async (data: {displayName?: string}) => {
-    if (!user) throw new Error("User not signed in.");
+    const unsubProfile = onSnapshot(profileRef, (snapshot) => {
+      if (!snapshot.exists()) setUserProfile(null);
+      else {
+        const parsed = UserProfileSchema.safeParse(snapshot.data());
+        setUserProfile(parsed.success ? parsed.data : null);
+        if (!parsed.success) console.error('Invalid profile data:', parsed.error.flatten());
+      }
+      profileLoaded = true;
+      markReady();
+    }, (error) => {
+      console.error('Profile listener failed:', error);
+      profileLoaded = true;
+      markReady();
+    });
+
+    const unsubPlans = onSnapshot(plansRef, (snapshot) => {
+      const data = snapshot.data();
+      if (data) {
+        setNutritionPlan(Array.isArray(data.nutritionPlan) ? data.nutritionPlan : null);
+        setWorkoutPlan(Array.isArray(data.workoutPlan) ? data.workoutPlan : null);
+        setShoppingListState(data.shoppingListState || null);
+        setCheckedIngredientsState(data.checkedIngredientsState || null);
+        const stored = data.loggedMealsState as LoggedMealsState | undefined;
+        setLoggedMealsState(stored?.date === localDayKey(new Date()) ? stored.mealIds : []);
+      } else {
+        setNutritionPlan(null);
+        setWorkoutPlan(null);
+        setShoppingListState(null);
+        setCheckedIngredientsState(null);
+        setLoggedMealsState([]);
+      }
+      plansLoaded = true;
+      markReady();
+    }, (error) => {
+      console.error('Plans listener failed:', error);
+      plansLoaded = true;
+      markReady();
+    });
+
+    const logUnsubscribers = Object.entries(logTypeToCollectionName).map(([logType, collectionName]) => {
+      const logsQuery = query(collection(db, 'profiles', user.uid, collectionName), orderBy('loggedAt', 'desc'));
+      return onSnapshot(logsQuery, (snapshot) => {
+        const logs = snapshot.docs.map((document) => ({
+          id: document.id,
+          logType,
+          ...document.data(),
+          loggedAt: normalizeTimestamp(document.data().loggedAt),
+        } as CombinedLog));
+        setCombinedLogs((current) => [
+          ...current.filter((log) => log.logType !== logType),
+          ...logs,
+        ].sort((a, b) => Date.parse(b.loggedAt) - Date.parse(a.loggedAt)));
+        loadedLogs.add(logType);
+        markReady();
+      }, (error) => {
+        console.error(`Log listener failed for ${collectionName}:`, error);
+        loadedLogs.add(logType);
+        markReady();
+      });
+    });
+
+    return () => {
+      unsubProfile();
+      unsubPlans();
+      logUnsubscribers.forEach((unsubscribe) => unsubscribe());
+    };
+  }, [user]);
+
+  const saveUserProfile = React.useCallback(async (profileData: UserProfile) => {
+    if (!user) throw new Error('No signed-in user.');
+    const validated = UserProfileSchema.parse(profileData);
+    await setDoc(doc(db, 'profiles', user.uid), validated, { merge: true });
+  }, [user]);
+
+  const savePlans = React.useCallback(async (plans: { nutritionPlan: NutritionPlan; workoutPlan: WorkoutPlan }) => {
+    if (!user) throw new Error('No signed-in user.');
+    await setDoc(doc(db, 'plans', user.uid), {
+      ...plans,
+      generatedAt: new Date().toISOString(),
+      generationSource: 'onboarding',
+    }, { merge: true });
+  }, [user]);
+
+  const updateShoppingListState = React.useCallback(async (state: ShoppingListState) => {
+    if (!user) throw new Error('No signed-in user.');
+    await setDoc(doc(db, 'plans', user.uid), { shoppingListState: state }, { merge: true });
+  }, [user]);
+
+  const updateCheckedIngredientsState = React.useCallback(async (mealId: string, ingredientName: string, isChecked: boolean) => {
+    if (!user) throw new Error('No signed-in user.');
+    const next = { ...(checkedIngredientsState || {}) };
+    next[mealId] = { ...(next[mealId] || {}), [ingredientName]: isChecked };
+    await setDoc(doc(db, 'plans', user.uid), { checkedIngredientsState: next }, { merge: true });
+  }, [user, checkedIngredientsState]);
+
+  const updateLoggedMealsState = React.useCallback(async (mealIds: string[]) => {
+    if (!user) throw new Error('No signed-in user.');
+    const state: LoggedMealsState = { date: localDayKey(new Date(), userProfile?.timezone), mealIds };
+    await setDoc(doc(db, 'plans', user.uid), { loggedMealsState: state }, { merge: true });
+  }, [user, userProfile?.timezone]);
+
+  const logGeneric = React.useCallback(async (collectionName: string, logData: object) => {
+    if (!user) throw new Error('No signed-in user.');
+    await addDoc(collection(db, 'profiles', user.uid, collectionName), {
+      ...logData,
+      loggedAt: new Date().toISOString(),
+    });
+  }, [user]);
+
+  const logMeal = React.useCallback((data: Omit<MealLog, 'logType' | 'loggedAt' | 'id'>) => logGeneric('meal_logs', data), [logGeneric]);
+  const logActivity = React.useCallback((data: Omit<ActivityLog, 'logType' | 'loggedAt' | 'id'>) => logGeneric('activity_logs', data), [logGeneric]);
+  const logWeight = React.useCallback((data: Omit<WeightLog, 'logType' | 'loggedAt' | 'id'>) => logGeneric('weight_logs', data), [logGeneric]);
+  const saveWorkoutLog = React.useCallback((data: Omit<WorkoutLog, 'logType' | 'loggedAt' | 'id'>) => logGeneric('workout_logs', data), [logGeneric]);
+
+  const updateLog = React.useCallback(async (logId: string, logType: CombinedLog['logType'], data: Partial<CombinedLog>) => {
+    if (!user) throw new Error('No signed-in user.');
+    await updateDoc(doc(db, 'profiles', user.uid, logTypeToCollectionName[logType], logId), data as Record<string, unknown>);
+  }, [user]);
+
+  const deleteLog = React.useCallback(async (logId: string, logType: CombinedLog['logType']) => {
+    if (!user) throw new Error('No signed-in user.');
+    await deleteDoc(doc(db, 'profiles', user.uid, logTypeToCollectionName[logType], logId));
+  }, [user]);
+
+  const resetUserData = React.useCallback(async () => {
+    if (!user) throw new Error('No signed-in user.');
+    const token = await user.getIdToken();
+    const response = await fetch('/api/account/reset-profile', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error('Failed to delete profile data.');
+  }, [user]);
+
+  const reauthenticateUser = React.useCallback(async (password: string) => {
+    if (!user?.email) throw new Error('User email is unavailable.');
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
+  }, [user]);
+
+  const updateUserAccount = React.useCallback(async (data: { displayName?: string }) => {
+    if (!user) throw new Error('No signed-in user.');
     await updateProfile(user, data);
-    setUser({ ...user, ...data }); // Trigger a re-render
-  }
+    await user.reload();
+    setUser(auth.currentUser);
+  }, [user]);
 
-  const updateUserEmail = async (newEmail: string) => {
-    if (!user) throw new Error("User not signed in.");
+  const updateUserEmail = React.useCallback(async (newEmail: string) => {
+    if (!user) throw new Error('No signed-in user.');
     await updateEmail(user, newEmail);
-    setUser({ ...user, email: newEmail });
-  }
+    await user.reload();
+    setUser(auth.currentUser);
+  }, [user]);
 
-  const updateUserPassword = async (newPassword: string) => {
-    if (!user) throw new Error("User not signed in.");
+  const updateUserPassword = React.useCallback(async (newPassword: string) => {
+    if (!user) throw new Error('No signed-in user.');
     await updatePassword(user, newPassword);
-  }
+  }, [user]);
 
-  return (
-    <UserDataContext.Provider value={{ user, userProfile, nutritionPlan, workoutPlan, shoppingListState, checkedIngredientsState, loggedMealsState, saveUserProfile, savePlans, updateShoppingListState, updateCheckedIngredientsState, updateLoggedMealsState, saveWorkoutLog, logMeal, logActivity, logWeight, updateLog, deleteLog, resetUserData, reauthenticateUser, updateUserAccount, updateUserEmail, updateUserPassword, combinedLogs, isLoading }}>
-      {children}
-    </UserDataContext.Provider>
-  );
-};
+  const value = React.useMemo<UserDataContextType>(() => ({
+    user,
+    userProfile,
+    nutritionPlan,
+    workoutPlan,
+    shoppingListState,
+    checkedIngredientsState,
+    loggedMealsState,
+    saveUserProfile,
+    savePlans,
+    updateShoppingListState,
+    updateCheckedIngredientsState,
+    updateLoggedMealsState,
+    saveWorkoutLog,
+    logMeal,
+    logActivity,
+    logWeight,
+    updateLog,
+    deleteLog,
+    resetUserData,
+    reauthenticateUser,
+    updateUserAccount,
+    updateUserEmail,
+    updateUserPassword,
+    combinedLogs,
+    isLoading,
+  }), [
+    user, userProfile, nutritionPlan, workoutPlan, shoppingListState, checkedIngredientsState,
+    loggedMealsState, saveUserProfile, savePlans, updateShoppingListState,
+    updateCheckedIngredientsState, updateLoggedMealsState, saveWorkoutLog, logMeal,
+    logActivity, logWeight, updateLog, deleteLog, resetUserData, reauthenticateUser,
+    updateUserAccount, updateUserEmail, updateUserPassword, combinedLogs, isLoading,
+  ]);
 
-export const useUserData = () => {
-  const context = useContext(UserDataContext);
-  if (context === undefined) {
-    throw new Error('useUserData must be used within a UserDataProvider');
-  }
+  return <UserDataContext.Provider value={value}>{children}</UserDataContext.Provider>;
+}
+
+export function useUserData() {
+  const context = React.useContext(UserDataContext);
+  if (!context) throw new Error('useUserData must be used within UserDataProvider.');
   return context;
-};
+}
