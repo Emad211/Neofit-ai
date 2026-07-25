@@ -1,39 +1,56 @@
-import type { Metadata } from "next";
-import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "@/components/theme-provider";
-import { UserDataProvider } from "@/context/user-profile-context";
+import type { Metadata, Viewport } from 'next';
+import './globals.css';
+import { Toaster } from '@/components/ui/toaster';
+import { ThemeProvider } from '@/components/theme-provider';
+import { UserDataProvider } from '@/context/user-profile-context';
+import { LocaleProvider } from '@/i18n/provider';
+import { LanguageGate } from '@/components/language-gate';
 
 export const metadata: Metadata = {
-  title: "NeoFit AI",
-  description: "Empowering users to sustainably achieve health goals with accurate, dynamic, scientifically-backed exercise/nutrition programs, analyzed and optimized by expert AI agents.",
+  applicationName: 'NeoFit AI',
+  title: {
+    default: 'NeoFit AI',
+    template: '%s | NeoFit AI',
+  },
+  description: 'Personalized fitness and nutrition planning with secure bilingual AI assistance.',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: 'NeoFit AI',
+    statusBarStyle: 'default',
+  },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
+  ],
+};
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" dir="ltr" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap" rel="stylesheet" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=Source+Code+Pro&family=Vazirmatn:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body className="font-body antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-            <UserDataProvider>
-              {children}
-            </UserDataProvider>
-          <Toaster />
-        </ThemeProvider>
+        <LocaleProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            <LanguageGate>
+              <UserDataProvider>{children}</UserDataProvider>
+            </LanguageGate>
+            <Toaster />
+          </ThemeProvider>
+        </LocaleProvider>
       </body>
     </html>
   );
