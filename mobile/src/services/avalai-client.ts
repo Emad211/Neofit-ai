@@ -58,8 +58,14 @@ function extractErrorMessage(payload: unknown, fallback: string) {
   return fallback;
 }
 
-function shouldTryNextOrigin(error: unknown) {
-  if (!(error instanceof AvalAiError)) return true;
+function shouldFailOverBillableRequest(error: AvalAiError) {
+  // Retry only when no HTTP response or request id was observed. Timeouts and
+  // server responses are ambiguous: the provider may already have accepted and
+  // billed the generation, so silently repeating it could create duplicate cost.
+  return error.status === 0 && error.requestId === null;
+}
+
+function shouldFailOverReadOnlyRequest(error: AvalAiError) {
   return error.status === 0 || error.status === 408 || error.status === 429 || error.status >= 500;
 }
 
@@ -145,7 +151,7 @@ async function requestCompletion(input: {
       const normalized = error instanceof AvalAiError
         ? error
         : error instanceof Error && error.name === 'AbortError'
-          ? new AvalAiError('AvalAI request timed out.', 'TIMEOUT', 408, requestId)
+          ? new AvalAiError('AvalAI request timed out. It was not automatically retried to avoid a duplicate charge.', 'TIMEOUT', 408, requestId)
           : new AvalAiError(
               error instanceof Error ? error.message : 'Network request failed.',
               'NETWORK_ERROR',
@@ -153,7 +159,7 @@ async function requestCompletion(input: {
               requestId,
             );
       finalError = normalized;
-      if (!shouldTryNextOrigin(normalized)) break;
+      if (!shouldFailOverBillableRequest(normalized)) break;
     } finally {
       clearTimeout(timeout);
     }
@@ -281,7 +287,7 @@ export async function testAvalAiConnection() {
             error instanceof Error && error.name === 'AbortError' ? 'TIMEOUT' : 'NETWORK_ERROR',
             error instanceof Error && error.name === 'AbortError' ? 408 : 0,
           );
-      if (!shouldTryNextOrigin(finalError)) break;
+      if (!shouldFailOverReadOnlyRequest(finalError)) break;
     } finally {
       clearTimeout(timeout);
     }
