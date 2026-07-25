@@ -80,6 +80,7 @@ export async function logWeight(input: WeightLogInput) {
 }
 
 export async function logWorkoutSession(input: {
+  sessionId?: string;
   workoutPlanId?: string;
   workoutTitle: string;
   startedAt: string;
@@ -88,7 +89,7 @@ export async function logWorkoutSession(input: {
   sets: WorkoutSetLogInput[];
 }) {
   const database = await getDatabase();
-  const sessionId = createId('workout');
+  const sessionId = input.sessionId?.trim() || createId('workout');
   const createdAt = new Date().toISOString();
   const totalVolumeKg = input.sets.reduce(
     (sum, set) => sum + Math.max(0, set.reps) * Math.max(0, set.weightKg),
@@ -100,7 +101,14 @@ export async function logWorkoutSession(input: {
       `INSERT INTO workout_sessions (
         id, workout_plan_id, workout_title, started_at, completed_at,
         duration_minutes, total_volume_kg, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        workout_plan_id = excluded.workout_plan_id,
+        workout_title = excluded.workout_title,
+        started_at = excluded.started_at,
+        completed_at = excluded.completed_at,
+        duration_minutes = excluded.duration_minutes,
+        total_volume_kg = excluded.total_volume_kg;`,
       sessionId,
       input.workoutPlanId ?? null,
       input.workoutTitle.trim(),
@@ -109,6 +117,13 @@ export async function logWorkoutSession(input: {
       Math.max(0, Math.round(input.durationMinutes)),
       totalVolumeKg,
       createdAt,
+    );
+
+    // A retry with the same session id replaces the set snapshot instead of
+    // creating a duplicate workout. The transaction keeps session and sets in sync.
+    await transaction.runAsync(
+      'DELETE FROM workout_set_logs WHERE session_id = ?;',
+      sessionId,
     );
 
     for (const set of input.sets) {
