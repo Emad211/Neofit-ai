@@ -1,7 +1,9 @@
 import { z } from 'zod';
+import { IRANIAN_FOOD_SEED } from '@/data/iranian-food-seed';
 import {
   FoodEstimate,
   FoodEstimateSchema,
+  MovementPatternSchema,
   NutritionPlan,
   NutritionPlanSchema,
   Profile,
@@ -11,14 +13,32 @@ import {
 import { createId } from '@/lib/id';
 import { getAvalAiSettings } from '@/services/ai-settings';
 import { AvalAiError, requestStructured } from '@/services/avalai-client';
+import { calculateNutritionTargets } from '@/services/nutrition-targets';
 
 const AiExerciseSchema = z.object({
   name: z.string().trim().min(1).max(160),
+  canonicalNameEn: z.string().trim().min(2).max(160),
+  canonicalNameFa: z.string().trim().min(2).max(160),
+  movementPattern: MovementPatternSchema,
+  primaryMuscles: z.array(z.string().trim().min(1).max(100)).min(1).max(8),
+  secondaryMuscles: z.array(z.string().trim().min(1).max(100)).max(8).default([]),
+  equipment: z.array(z.string().trim().min(1).max(100)).max(8).default([]),
+  difficulty: z.enum(['beginner', 'intermediate', 'advanced']),
   sets: z.number().int().min(1).max(12),
   reps: z.string().trim().min(1).max(40),
+  tempo: z.string().trim().min(1).max(40),
+  targetRir: z.number().int().min(0).max(5),
   restSeconds: z.number().int().min(15).max(600),
-  notes: z.string().trim().max(500).default(''),
+  notes: z.string().trim().max(700).default(''),
+  formCues: z.array(z.string().trim().min(1).max(220)).min(2).max(8),
+  commonMistakes: z.array(z.string().trim().min(1).max(220)).min(1).max(8),
+  videoSearchQueries: z.object({
+    en: z.array(z.string().trim().min(2).max(160)).min(1).max(3),
+    fa: z.array(z.string().trim().min(2).max(160)).min(1).max(3),
+  }),
 });
+
+type AiExercise = z.infer<typeof AiExerciseSchema>;
 
 const AiWorkoutPlanSchema = z.object({
   title: z.string().trim().min(1).max(160),
@@ -28,7 +48,7 @@ const AiWorkoutPlanSchema = z.object({
     title: z.string().trim().min(1).max(160),
     focus: z.string().trim().min(1).max(160),
     durationMinutes: z.number().int().min(10).max(240),
-    exercises: z.array(AiExerciseSchema).min(1).max(20),
+    exercises: z.array(AiExerciseSchema).min(2).max(16),
   })).min(2).max(7),
   safetyNotes: z.array(z.string().trim().min(1).max(500)).max(12).default([]),
 }).superRefine((plan, context) => {
@@ -41,6 +61,7 @@ const AiWorkoutPlanSchema = z.object({
     });
   }
 });
+type AiWorkoutPlan = z.infer<typeof AiWorkoutPlanSchema>;
 
 const AiIngredientSchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -57,15 +78,14 @@ const AiMealSchema = z.object({
   fatG: z.number().min(0).max(500),
   ingredients: z.array(AiIngredientSchema).min(1).max(30),
 });
+type AiMeal = z.infer<typeof AiMealSchema>;
 
 const AiNutritionPlanSchema = z.object({
   title: z.string().trim().min(1).max(160),
   summary: z.string().trim().min(1).max(2_000),
-  dailyCalorieTarget: z.number().int().min(800).max(7_000),
   days: z.array(z.object({
     dayIndex: z.number().int().min(0).max(6),
-    meals: z.array(AiMealSchema).min(2).max(6),
-    totalCalories: z.number().int().min(800).max(7_000),
+    meals: z.array(AiMealSchema).min(2).max(7),
   })).length(7),
   safetyNotes: z.array(z.string().trim().min(1).max(500)).max(12).default([]),
 }).superRefine((plan, context) => {
@@ -78,6 +98,19 @@ const AiNutritionPlanSchema = z.object({
     });
   }
 });
+type AiNutritionPlan = z.infer<typeof AiNutritionPlanSchema>;
+
+function normalize(value: string) {
+  return value
+    .normalize('NFKC')
+    .toLocaleLowerCase('fa')
+    .replace(/[يى]/g, 'ی')
+    .replace(/ك/g, 'ک')
+    .replace(/[ۀة]/g, 'ه')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 function profilePrompt(profile: Profile) {
   return JSON.stringify({
@@ -98,52 +131,322 @@ function profilePrompt(profile: Profile) {
     sleepHours: profile.sleepHours,
     stressLevel: profile.stressLevel,
     timezone: profile.timezone,
+    details: profile.details,
   }, null, 2);
+}
+
+function workoutJsonContract() {
+  return `{
+  "title": string,
+  "summary": string,
+  "days": [{
+    "dayIndex": integer 0..6,
+    "title": string,
+    "focus": string,
+    "durationMinutes": integer,
+    "exercises": [{
+      "name": localized display name,
+      "canonicalNameEn": conventional searchable English exercise name,
+      "canonicalNameFa": conventional Persian exercise name,
+      "movementPattern": one of squat|hinge|horizontal_push|vertical_push|horizontal_pull|vertical_pull|lunge|carry|core_anti_extension|core_anti_rotation|core_flexion|isolation|locomotion|mobility|other,
+      "primaryMuscles": string[],
+      "secondaryMuscles": string[],
+      "equipment": string[],
+      "difficulty": beginner|intermediate|advanced,
+      "sets": integer,
+      "reps": string,
+      "tempo": string such as 3-1-1-0 or controlled,
+      "targetRir": integer 0..5,
+      "restSeconds": integer,
+      "notes": string,
+      "formCues": string[2..8],
+      "commonMistakes": string[1..8],
+      "videoSearchQueries": {
+        "en": [concise English YouTube search queries],
+        "fa": [concise Persian YouTube search queries]
+      }
+    }]
+  }],
+  "safetyNotes": string[]
+}`;
+}
+
+function nutritionJsonContract() {
+  return `{
+  "title": string,
+  "summary": string,
+  "days": [{
+    "dayIndex": integer 0..6,
+    "meals": [{
+      "type": breakfast|lunch|dinner|snack,
+      "name": string,
+      "calories": integer,
+      "proteinG": number,
+      "carbsG": number,
+      "fatG": number,
+      "ingredients": [{
+        "name": string,
+        "quantity": explicit grams, millilitres, cups, pieces, or tablespoons,
+        "category": produce|fruit|protein|dairy|pantry|other
+      }]
+    }]
+  }],
+  "safetyNotes": string[]
+}`;
+}
+
+function equipmentAvailable(exercise: AiExercise, profile: Profile) {
+  if (profile.workoutLocation === 'gym') return true;
+  const declared = normalize(profile.availableEquipment.join(' '));
+  const universallyAvailable = ['bodyweight', 'body weight', 'وزن بدن', 'floor', 'زمین', 'wall', 'دیوار', 'chair', 'صندلی'];
+  return exercise.equipment.every((equipment) => {
+    const normalized = normalize(equipment);
+    return !normalized || universallyAvailable.some((value) => normalized.includes(normalize(value))) || declared.includes(normalized) || normalized.includes(declared);
+  });
+}
+
+function workoutQualityIssues(plan: AiWorkoutPlan, profile: Profile) {
+  const issues: string[] = [];
+  if (plan.days.length !== profile.trainingDays) {
+    issues.push(`Return exactly ${profile.trainingDays} workout days; received ${plan.days.length}.`);
+  }
+  const disliked = profile.details.dislikedExercises.map(normalize).filter(Boolean);
+  for (const day of plan.days) {
+    const tolerance = Math.max(12, profile.sessionMinutes * 0.3);
+    if (Math.abs(day.durationMinutes - profile.sessionMinutes) > tolerance) {
+      issues.push(`dayIndex ${day.dayIndex} duration ${day.durationMinutes} is too far from ${profile.sessionMinutes} minutes.`);
+    }
+    const seen = new Set<string>();
+    let totalSets = 0;
+    for (const exercise of day.exercises) {
+      const canonical = normalize(exercise.canonicalNameEn || exercise.name);
+      if (seen.has(canonical)) issues.push(`dayIndex ${day.dayIndex} repeats ${exercise.canonicalNameEn}.`);
+      seen.add(canonical);
+      totalSets += exercise.sets;
+      if (!equipmentAvailable(exercise, profile)) {
+        issues.push(`${exercise.canonicalNameEn} requires equipment not declared by the user.`);
+      }
+      if (disliked.some((value) => canonical.includes(value) || normalize(exercise.name).includes(value))) {
+        issues.push(`${exercise.canonicalNameEn} conflicts with a disliked exercise.`);
+      }
+      if (profile.fitnessLevel === 'beginner' && exercise.targetRir < 1) {
+        issues.push(`${exercise.canonicalNameEn} uses failure-level effort for a beginner.`);
+      }
+      if (!exercise.videoSearchQueries.en.some((query) => normalize(query).includes(normalize(exercise.canonicalNameEn)))) {
+        issues.push(`${exercise.canonicalNameEn} needs an English video query containing its canonical name.`);
+      }
+      if (!exercise.videoSearchQueries.fa.some((query) => normalize(query).includes(normalize(exercise.canonicalNameFa)))) {
+        issues.push(`${exercise.canonicalNameEn} needs a Persian video query containing its Persian canonical name.`);
+      }
+    }
+    const setCeiling = profile.fitnessLevel === 'beginner' ? 26 : profile.fitnessLevel === 'intermediate' ? 34 : 40;
+    if (totalSets > setCeiling) issues.push(`dayIndex ${day.dayIndex} has excessive total working sets (${totalSets}).`);
+  }
+  return issues.slice(0, 20);
+}
+
+async function repairWorkoutPlan(input: {
+  plan: AiWorkoutPlan;
+  issues: string[];
+  profile: Profile;
+  model: string;
+}) {
+  const response = await requestStructured({
+    kind: 'repair_workout_plan',
+    schema: AiWorkoutPlanSchema,
+    locale: input.profile.locale,
+    model: input.model,
+    maxTokens: 9_000,
+    temperature: 0.05,
+    system: 'You are a meticulous strength-program quality controller. Repair only the listed defects while preserving safe useful parts. This is general fitness programming, not treatment or rehabilitation.',
+    prompt: `Repair the candidate workout plan so every quality defect is resolved.
+
+VALIDATED PROFILE:
+${profilePrompt(input.profile)}
+
+QUALITY DEFECTS:
+${input.issues.map((issue, index) => `${index + 1}. ${issue}`).join('\n')}
+
+CANDIDATE JSON:
+${JSON.stringify(input.plan, null, 2)}
+
+REQUIRED OUTPUT CONTRACT:
+${workoutJsonContract()}
+
+Return the complete corrected JSON object. Do not explain the changes outside JSON.`,
+  });
+  return response;
+}
+
+function iranianFoodAnchors() {
+  return IRANIAN_FOOD_SEED.map((item) => (
+    `${item.nameFa} | ${item.nameEn} | ${item.portionLabelFa} | ${item.calories} kcal | P${item.proteinG} C${item.carbsG} F${item.fatG}`
+  )).join('\n');
+}
+
+function mealText(meal: AiMeal) {
+  return normalize([meal.name, ...meal.ingredients.map((ingredient) => ingredient.name)].join(' '));
+}
+
+function nutritionQualityIssues(plan: AiNutritionPlan, profile: Profile) {
+  const targets = calculateNutritionTargets(profile);
+  const issues: string[] = [];
+  const allergens = profile.allergies.map(normalize).filter(Boolean);
+  const disliked = profile.details.dislikedFoods.map(normalize).filter(Boolean);
+  const mealNames = new Map<string, number>();
+
+  for (const day of plan.days) {
+    if (day.meals.length !== profile.details.mealsPerDay) {
+      issues.push(`dayIndex ${day.dayIndex} must contain exactly ${profile.details.mealsPerDay} meals; received ${day.meals.length}.`);
+    }
+    const calories = day.meals.reduce((sum, meal) => sum + meal.calories, 0);
+    const protein = day.meals.reduce((sum, meal) => sum + meal.proteinG, 0);
+    const lower = targets.calorieRange.low * 0.92;
+    const upper = targets.calorieRange.high * 1.08;
+    if (calories < lower || calories > upper) {
+      issues.push(`dayIndex ${day.dayIndex} totals ${Math.round(calories)} kcal outside the target range ${targets.calorieRange.low}-${targets.calorieRange.high}.`);
+    }
+    if (protein < targets.proteinRangeG.low * 0.85 || protein > targets.proteinRangeG.high * 1.2) {
+      issues.push(`dayIndex ${day.dayIndex} protein ${Math.round(protein)} g is outside a practical range near ${targets.proteinRangeG.low}-${targets.proteinRangeG.high} g.`);
+    }
+
+    for (const meal of day.meals) {
+      const text = mealText(meal);
+      const allergen = allergens.find((value) => text.includes(value));
+      if (allergen) issues.push(`${meal.name} contains or names the excluded allergy term "${allergen}".`);
+      const dislikedFood = disliked.find((value) => text.includes(value));
+      if (dislikedFood) issues.push(`${meal.name} contains the disliked food "${dislikedFood}".`);
+
+      const macroCalories = meal.proteinG * 4 + meal.carbsG * 4 + meal.fatG * 9;
+      const denominator = Math.max(100, meal.calories, macroCalories);
+      if (Math.abs(meal.calories - macroCalories) / denominator > 0.32) {
+        issues.push(`${meal.name} calories (${meal.calories}) are inconsistent with its macros (${Math.round(macroCalories)} kcal).`);
+      }
+      const normalizedName = normalize(meal.name);
+      mealNames.set(normalizedName, (mealNames.get(normalizedName) || 0) + 1);
+    }
+  }
+
+  for (const [name, count] of mealNames) {
+    if (count > 3) issues.push(`Meal "${name}" is repeated ${count} times; increase variety.`);
+  }
+  return issues.slice(0, 24);
+}
+
+async function repairNutritionPlan(input: {
+  plan: AiNutritionPlan;
+  issues: string[];
+  profile: Profile;
+  model: string;
+}) {
+  const targets = calculateNutritionTargets(input.profile);
+  const response = await requestStructured({
+    kind: 'repair_nutrition_plan',
+    schema: AiNutritionPlanSchema,
+    locale: input.profile.locale,
+    model: input.model,
+    maxTokens: 12_000,
+    temperature: 0.05,
+    system: 'You are a meticulous meal-plan quality controller. Repair the listed defects without introducing allergies, extreme restriction, fake precision, or impractical recipes.',
+    prompt: `Repair the complete seven-day meal plan.
+
+VALIDATED PROFILE:
+${profilePrompt(input.profile)}
+
+LOCAL CALORIE AND MACRO TARGETS (calculated on-device, authoritative for this task):
+${JSON.stringify(targets, null, 2)}
+
+QUALITY DEFECTS:
+${input.issues.map((issue, index) => `${index + 1}. ${issue}`).join('\n')}
+
+CANDIDATE JSON:
+${JSON.stringify(input.plan, null, 2)}
+
+REQUIRED OUTPUT CONTRACT:
+${nutritionJsonContract()}
+
+Return the complete corrected JSON object only.`,
+  });
+  return response;
+}
+
+function normalizeFoodEstimate(estimate: FoodEstimate): FoodEstimate {
+  const macroCalories = estimate.proteinG * 4 + estimate.carbsG * 4 + estimate.fatG * 9;
+  const denominator = Math.max(100, estimate.calories, macroCalories);
+  const discrepancy = Math.abs(estimate.calories - macroCalories) / denominator;
+  if (discrepancy <= 0.3) return estimate;
+  return FoodEstimateSchema.parse({
+    ...estimate,
+    confidence: 'low',
+    assumptions: [
+      ...estimate.assumptions,
+      `The stated calories and macro-derived energy differ materially (${estimate.calories} vs approximately ${Math.round(macroCalories)} kcal); treat this as a broad estimate.`,
+    ].slice(0, 10),
+  });
 }
 
 export async function generateWorkoutPlan(profile: Profile): Promise<WorkoutPlan> {
   const settings = await getAvalAiSettings();
-  const response = await requestStructured({
+  const initial = await requestStructured({
     kind: 'generate_workout_plan',
     schema: AiWorkoutPlanSchema,
     locale: profile.locale,
     model: settings.textModel,
-    maxTokens: 7_000,
-    system: 'You are a cautious evidence-informed strength and conditioning planner. Create general fitness programming, not medical treatment or rehabilitation.',
-    prompt: `Create a one-week workout plan from the validated profile below.
+    maxTokens: 9_000,
+    temperature: 0.12,
+    system: 'You are a cautious evidence-informed strength and conditioning coach. Build realistic general-fitness programs. Never provide diagnosis, medical treatment, rehabilitation protocols, or advice to train through pain.',
+    prompt: `Create one realistic week of training from the validated profile.
 
-PROFILE DATA:
+VALIDATED PROFILE:
 ${profilePrompt(profile)}
 
-Hard requirements:
-- Return exactly ${profile.trainingDays} workout days with unique dayIndex values from 0 to 6.
-- Keep each day close to ${profile.sessionMinutes} minutes.
-- Use only the declared location and available equipment.
-- Beginners need conservative volume and simple movements. Advanced users still need recoverable volume.
-- Medical notes, pain, surgery, pregnancy, cardiovascular, respiratory, neurological, metabolic, or severe musculoskeletal concerns are hard safety constraints.
-- Do not diagnose, prescribe rehabilitation, or tell the user to push through pain.
-- Include safetyNotes whenever professional clearance or supervision may be appropriate.
-- Every exercise needs numeric sets, a clear reps string, restSeconds, and concise notes.
-- Never invent precision about calories burned.`,
+NON-NEGOTIABLE PROGRAM RULES:
+- Return exactly ${profile.trainingDays} workout days with unique dayIndex values from 0 through 6. Prefer the listed preferredDays when they contain enough valid days.
+- Each session should fit approximately ${profile.sessionMinutes} minutes including reasonable transitions; do not hide an unrealistic amount of work inside the stated duration.
+- Match trainingPriority, experience, fitnessLevel, preferred styles, location, and available equipment.
+- Do not include disliked exercises. Treat painAreas, injuries, healthFlags, medications, medicalNotes, surgery, pregnancy, chest symptoms, fainting, neurological symptoms, and significant cardiometabolic conditions as hard safety context.
+- When safety cannot be established, choose lower-risk general alternatives and add a concise safetyNote recommending qualified assessment; do not invent clearance.
+- Use recoverable weekly volume. Beginners generally keep 1-3 repetitions in reserve and simple stable movements. Do not prescribe routine failure training.
+- Balance movement patterns across the week and avoid redundant exercises in one session.
+- Every exercise needs a conventional searchable English and Persian canonical name, accurate movement pattern, muscles, equipment, level, tempo, RIR, rest, 2-8 actionable form cues, and 1-8 common mistakes.
+- videoSearchQueries must be concise YouTube search phrases. English queries must contain canonicalNameEn plus words such as tutorial/proper form. Persian queries must contain canonicalNameFa plus آموزش/فرم صحیح/نحوه اجرا. Do not return URLs or channel names.
+- Do not estimate calories burned.
+
+REQUIRED JSON CONTRACT:
+${workoutJsonContract()}`,
   });
 
-  if (response.data.days.length !== profile.trainingDays) {
+  let candidate = initial.data;
+  let issues = workoutQualityIssues(candidate, profile);
+  let requestId = initial.metadata.requestId;
+  if (issues.length > 0) {
+    const repaired = await repairWorkoutPlan({
+      plan: candidate,
+      issues,
+      profile,
+      model: settings.textModel,
+    });
+    candidate = repaired.data;
+    requestId = repaired.metadata.requestId;
+    issues = workoutQualityIssues(candidate, profile);
+  }
+  if (issues.length > 0) {
     throw new AvalAiError(
-      `AvalAI returned ${response.data.days.length} workout days instead of ${profile.trainingDays}.`,
-      'OUTPUT_VALIDATION_FAILED',
+      `Generated workout plan failed quality checks: ${issues.slice(0, 4).join(' ')}`,
+      'QUALITY_VALIDATION_FAILED',
       502,
-      response.metadata.requestId,
+      requestId,
     );
   }
 
   const createdAt = new Date().toISOString();
   return WorkoutPlanSchema.parse({
     id: createId('workout-plan'),
-    title: response.data.title,
-    summary: response.data.summary,
-    safetyNotes: response.data.safetyNotes,
+    title: candidate.title,
+    summary: candidate.summary,
+    safetyNotes: candidate.safetyNotes,
     createdAt,
-    days: response.data.days
+    days: candidate.days
       .sort((a, b) => a.dayIndex - b.dayIndex)
       .map((day) => ({
         id: createId('workout-day'),
@@ -161,38 +464,74 @@ Hard requirements:
 
 export async function generateNutritionPlan(profile: Profile): Promise<NutritionPlan> {
   const settings = await getAvalAiSettings();
-  const response = await requestStructured({
+  const targets = calculateNutritionTargets(profile);
+  const initial = await requestStructured({
     kind: 'generate_nutrition_plan',
     schema: AiNutritionPlanSchema,
     locale: profile.locale,
     model: settings.textModel,
-    maxTokens: 10_000,
-    system: 'You are an evidence-informed nutrition planning assistant. Create practical general-wellness meal plans, never diagnosis or disease treatment.',
-    prompt: `Create a practical seven-day meal plan from this validated profile.
+    maxTokens: 12_000,
+    temperature: 0.12,
+    system: 'You are an evidence-informed nutrition planning assistant. Build practical general-wellness meal plans. Never diagnose, treat disease, recommend crash diets, detoxes, unsafe supplements, or pretend a recipe has laboratory precision.',
+    prompt: `Create a realistic seven-day meal plan from the validated profile.
 
-PROFILE DATA:
+VALIDATED PROFILE:
 ${profilePrompt(profile)}
 
-Hard requirements:
-- Return exactly seven unique dayIndex values from 0 through 6.
-- Respect allergies as absolute exclusions and dietary preferences as constraints.
-- Use realistic foods and quantities that a normal person can prepare.
-- Every meal must include calories and proteinG, carbsG, fatG.
-- Daily totalCalories must approximately equal the sum of meal calories.
-- Do not recommend crash dieting, detoxes, unsafe supplements, or extreme restriction.
-- If the profile includes diabetes, kidney disease, pregnancy, eating-disorder history, severe allergy, or another condition needing individualized care, keep guidance conservative and add a safety note.
-- Do not claim the plan treats or cures any condition.`,
+ON-DEVICE NUTRITION TARGETS (authoritative constraints, not suggestions):
+${JSON.stringify(targets, null, 2)}
+
+IRANIAN STANDARD-SERVING ANCHORS FROM THE LOCAL CATALOG:
+${iranianFoodAnchors()}
+
+NON-NEGOTIABLE PLAN RULES:
+- Return each dayIndex 0 through 6 exactly once and exactly ${profile.details.mealsPerDay} meals per day.
+- Keep each day inside or very near ${targets.calorieRange.low}-${targets.calorieRange.high} kcal and protein near ${targets.proteinRangeG.low}-${targets.proteinRangeG.high} g.
+- Respect every allergy as an absolute exclusion, including ingredient-level sources. Respect dietary preferences and dislikedFoods.
+- Match budgetLevel, cookingAccess, cookingMinutes, workSchedule, preferred meal count, training time, and cultural context.
+- Use realistic household or gram quantities. Ingredients must be sufficient to reproduce the meal; do not write vague quantities such as "some".
+- If you use a named Iranian dish from the catalog anchors, use its standard serving as a starting point and scale calories/macros coherently. Recipe oil and portions vary, so do not claim exactness.
+- Calories should be reasonably consistent with 4 kcal/g protein, 4 kcal/g carbohydrate, and 9 kcal/g fat after ordinary rounding.
+- Avoid monotonous repetition; leftovers can repeat intentionally but no exact meal more than three times in the week.
+- Do not prescribe therapeutic diets. For health flags requiring individualized care, keep the plan conservative and add a safetyNote.
+- Do not add powders or supplements unless the profile explicitly lists them as acceptable; prefer ordinary foods.
+
+REQUIRED JSON CONTRACT:
+${nutritionJsonContract()}`,
   });
+
+  let candidate = initial.data;
+  let issues = nutritionQualityIssues(candidate, profile);
+  let requestId = initial.metadata.requestId;
+  if (issues.length > 0) {
+    const repaired = await repairNutritionPlan({
+      plan: candidate,
+      issues,
+      profile,
+      model: settings.textModel,
+    });
+    candidate = repaired.data;
+    requestId = repaired.metadata.requestId;
+    issues = nutritionQualityIssues(candidate, profile);
+  }
+  if (issues.length > 0) {
+    throw new AvalAiError(
+      `Generated nutrition plan failed quality checks: ${issues.slice(0, 4).join(' ')}`,
+      'QUALITY_VALIDATION_FAILED',
+      502,
+      requestId,
+    );
+  }
 
   const createdAt = new Date().toISOString();
   return NutritionPlanSchema.parse({
     id: createId('nutrition-plan'),
-    title: response.data.title,
-    summary: response.data.summary,
-    dailyCalorieTarget: response.data.dailyCalorieTarget,
-    safetyNotes: response.data.safetyNotes,
+    title: candidate.title,
+    summary: candidate.summary,
+    dailyCalorieTarget: targets.targetCalories,
+    safetyNotes: candidate.safetyNotes,
     createdAt,
-    days: response.data.days
+    days: candidate.days
       .sort((a, b) => a.dayIndex - b.dayIndex)
       .map((day) => ({
         dayIndex: day.dayIndex,
@@ -215,13 +554,22 @@ export async function estimateFoodFromText(input: {
     schema: FoodEstimateSchema,
     locale: input.locale,
     model: settings.textModel,
-    system: 'You estimate food nutrition conservatively. You must clearly represent uncertainty about portion size and ingredients.',
-    prompt: `Estimate nutrition for this food description:
+    temperature: 0.08,
+    system: 'You estimate food nutrition conservatively. Parse quantity and cooking method carefully, and represent uncertainty rather than fabricating exact values.',
+    prompt: `Estimate nutrition for this exact user description:
 ${JSON.stringify(input.description.trim())}
 
-Use the stated quantity when present. When quantity or ingredients are unclear, choose one plausible standard serving, lower confidence, and list assumptions. Never claim laboratory precision.`,
+Return JSON with itemName, servingSize, calories, proteinG, carbsG, fatG, confidence (low|medium|high), and assumptions (string array).
+
+Rules:
+- Preserve the stated number of servings, grams, cups, pieces, oils, sauces, and cooking method.
+- For Iranian mixed dishes, distinguish the stew/dish from accompanying rice, bread, sides, or drinks. Do not silently add them.
+- If quantity is missing, choose one plausible standard serving and state it explicitly.
+- Cooking oil, fatty meat, nuts, sugar, restaurant preparation, and hidden sauces materially change the result; mention them when unknown.
+- Do not claim laboratory precision. Use low confidence when the recipe or portion is unclear.
+- Calories and macros must be broadly energy-consistent after rounding.`,
   });
-  return response.data;
+  return normalizeFoodEstimate(response.data);
 }
 
 export async function estimateFoodFromPhoto(input: {
@@ -236,16 +584,20 @@ export async function estimateFoodFromPhoto(input: {
     locale: input.locale,
     model: settings.visionModel,
     imageDataUrl: input.imageDataUrl,
-    system: 'You estimate food identity and nutrition conservatively from images. Images cannot establish exact ingredients, cooking fat, or portion weight.',
-    prompt: `Estimate the meal shown in the image.
+    temperature: 0.05,
+    system: 'You estimate visible food identity and nutrition conservatively from one image. A photo cannot establish exact weight, hidden ingredients, oil, or recipe.',
+    prompt: `Estimate the visible meal in the image.
 Optional user description: ${JSON.stringify(input.description?.trim() || '')}
 
-Hard requirements:
-- Choose a plausible serving size and state it.
-- Use low or medium confidence unless the food and portion are exceptionally clear.
-- List all assumptions that materially change calories or macros.
-- Do not call the result exact.
-- If the image is not clearly food, return a low-confidence result explaining the limitation in assumptions.`,
+Return JSON with itemName, servingSize, calories, proteinG, carbsG, fatG, confidence (low|medium|high), and assumptions (string array).
+
+Rules:
+- First decide whether the image clearly contains food. If not, identify it as an unclear/unknown food image and use low confidence.
+- List each visible major component in itemName or assumptions; do not merge rice, stew, bread, drink, and sides into an unexplained number.
+- Use plate/bowl geometry only as a weak serving-size cue. Never imply that image pixels reveal grams exactly.
+- State a plausible serving size and the hidden-oil/recipe assumptions that drive the estimate.
+- Use low or medium confidence unless both food identity and portion are unusually clear.
+- Calories and macros must be broadly energy-consistent after rounding.`,
   });
-  return response.data;
+  return normalizeFoodEstimate(response.data);
 }
