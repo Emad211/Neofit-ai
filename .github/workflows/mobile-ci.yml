@@ -36,8 +36,28 @@ jobs:
           cache: npm
           cache-dependency-path: mobile/package-lock.json
 
-      - name: Install locked mobile dependencies
-        run: npm ci --no-audit --no-fund
+      - name: Capture locked install diagnostics
+        id: install
+        shell: bash
+        run: |
+          set +e
+          npm ci --no-audit --no-fund > npm-ci.log 2>&1
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload locked install diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-ci-diagnostics
+          path: mobile/npm-ci.log
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Enforce locked install
+        if: steps.install.outputs.exit_code != '0'
+        run: exit 1
 
       - name: Check Expo package versions
         run: npx expo install --check
