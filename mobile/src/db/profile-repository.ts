@@ -1,4 +1,4 @@
-import { Profile, ProfileSchema } from '@/domain/models';
+import { Profile, ProfileDetailsSchema, ProfileSchema } from '@/domain/models';
 import { getDatabase } from '@/db/database';
 
 interface ProfileRow {
@@ -21,6 +21,7 @@ interface ProfileRow {
   sleep_hours: number;
   stress_level: number;
   timezone: string;
+  extended_profile_json?: string;
 }
 
 function parseStringArray(value: string) {
@@ -29,6 +30,15 @@ function parseStringArray(value: string) {
     return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
   } catch {
     return [];
+  }
+}
+
+function parseDetails(value?: string) {
+  try {
+    return ProfileDetailsSchema.parse(value ? JSON.parse(value) as unknown : {});
+  } catch (error) {
+    console.error('Stored extended profile details are invalid; defaults were used.', error);
+    return ProfileDetailsSchema.parse({});
   }
 }
 
@@ -53,6 +63,7 @@ function mapRow(row: ProfileRow): Profile {
     sleepHours: row.sleep_hours,
     stressLevel: row.stress_level,
     timezone: row.timezone,
+    details: parseDetails(row.extended_profile_json),
   });
 }
 
@@ -73,9 +84,9 @@ export async function saveProfile(input: Profile) {
       fitness_level, activity_level, training_days, session_minutes,
       workout_location, available_equipment_json, dietary_preferences_json,
       allergies_json, medical_notes, sleep_hours, stress_level, timezone,
-      created_at, updated_at
+      extended_profile_json, created_at, updated_at
     ) VALUES (
-      1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+      1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
     )
     ON CONFLICT(id) DO UPDATE SET
       name = excluded.name,
@@ -97,6 +108,7 @@ export async function saveProfile(input: Profile) {
       sleep_hours = excluded.sleep_hours,
       stress_level = excluded.stress_level,
       timezone = excluded.timezone,
+      extended_profile_json = excluded.extended_profile_json,
       updated_at = excluded.updated_at;`,
     profile.name,
     profile.locale,
@@ -117,6 +129,7 @@ export async function saveProfile(input: Profile) {
     profile.sleepHours,
     profile.stressLevel,
     profile.timezone,
+    JSON.stringify(profile.details),
     now,
     now,
   );
