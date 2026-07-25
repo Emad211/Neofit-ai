@@ -1,0 +1,19 @@
+{
+  "name": "neofit-ai",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "mobile"
+  ],
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "start": "npm --workspace neofit-mobile run start",
+    "android": "npm --workspace neofit-mobile run android",
+    "ios": "npm --workspace neofit-mobile run ios",
+    "typecheck": "npm --workspace neofit-mobile run typecheck",
+    "doctor": "npm --workspace neofit-mobile run doctor",
+    "check": "npm --workspace neofit-mobile run check"
+  }
+}
