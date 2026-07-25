@@ -9,6 +9,7 @@ import { getDatabase } from '@/db/database';
 export type PlanSource = 'ai' | 'manual' | 'imported';
 
 type StoredPlan = WorkoutPlan | NutritionPlan;
+type PlanKind = 'workout' | 'nutrition';
 
 interface PlanRow {
   payload_json: string;
@@ -16,11 +17,32 @@ interface PlanRow {
 
 function parsePlan(kind: 'workout', payload: string): WorkoutPlan;
 function parsePlan(kind: 'nutrition', payload: string): NutritionPlan;
-function parsePlan(kind: 'workout' | 'nutrition', payload: string): StoredPlan {
+function parsePlan(kind: PlanKind, payload: string): StoredPlan {
   const parsed = JSON.parse(payload) as unknown;
   return kind === 'workout'
     ? WorkoutPlanSchema.parse(parsed)
     : NutritionPlanSchema.parse(parsed);
+}
+
+async function insertActivePlan(
+  transaction: Awaited<ReturnType<typeof getDatabase>>,
+  kind: PlanKind,
+  plan: StoredPlan,
+  source: PlanSource,
+) {
+  await transaction.runAsync('UPDATE plans SET is_active = 0 WHERE kind = ?;', kind);
+  await transaction.runAsync(
+    `INSERT INTO plans (
+      id, kind, title, summary, payload_json, source, is_active, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, 1, ?);`,
+    plan.id,
+    kind,
+    plan.title,
+    plan.summary,
+    JSON.stringify(plan),
+    source,
+    plan.createdAt,
+  );
 }
 
 export async function saveWorkoutPlan(plan: WorkoutPlan, source: PlanSource = 'ai') {
@@ -31,25 +53,29 @@ export async function saveNutritionPlan(plan: NutritionPlan, source: PlanSource 
   return savePlan('nutrition', NutritionPlanSchema.parse(plan), source);
 }
 
-async function savePlan(kind: 'workout' | 'nutrition', plan: StoredPlan, source: PlanSource) {
+export async function savePlanBundle(input: {
+  workoutPlan: WorkoutPlan;
+  nutritionPlan: NutritionPlan;
+  source?: PlanSource;
+}) {
+  const workoutPlan = WorkoutPlanSchema.parse(input.workoutPlan);
+  const nutritionPlan = NutritionPlanSchema.parse(input.nutritionPlan);
+  const source = input.source || 'ai';
   const database = await getDatabase();
 
   await database.withExclusiveTransactionAsync(async (transaction) => {
-    await transaction.runAsync('UPDATE plans SET is_active = 0 WHERE kind = ?;', kind);
-    await transaction.runAsync(
-      `INSERT INTO plans (
-        id, kind, title, summary, payload_json, source, is_active, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, 1, ?);`,
-      plan.id,
-      kind,
-      plan.title,
-      plan.summary,
-      JSON.stringify(plan),
-      source,
-      plan.createdAt,
-    );
+    await insertActivePlan(transaction, 'workout', workoutPlan, source);
+    await insertActivePlan(transaction, 'nutrition', nutritionPlan, source);
   });
 
+  return { workoutPlan, nutritionPlan };
+}
+
+async function savePlan(kind: PlanKind, plan: StoredPlan, source: PlanSource) {
+  const database = await getDatabase();
+  await database.withExclusiveTransactionAsync(async (transaction) => {
+    await insertActivePlan(transaction, kind, plan, source);
+  });
   return plan;
 }
 
@@ -73,7 +99,7 @@ export async function getActiveNutritionPlan() {
   return row ? parsePlan('nutrition', row.payload_json) : null;
 }
 
-export async function listPlanHistory(kind: 'workout' | 'nutrition', limit = 20) {
+export async function listPlanHistory(kind: PlanKind, limit = 20) {
   const database = await getDatabase();
   const safeLimit = Math.min(100, Math.max(1, Math.round(limit)));
   const rows = await database.getAllAsync<{
@@ -100,7 +126,7 @@ export async function listPlanHistory(kind: 'workout' | 'nutrition', limit = 20)
   }));
 }
 
-export async function activatePlan(id: string, kind: 'workout' | 'nutrition') {
+export async function activatePlan(id: string, kind: PlanKind) {
   const database = await getDatabase();
   await database.withExclusiveTransactionAsync(async (transaction) => {
     const exists = await transaction.getFirstAsync<{ id: string }>(
