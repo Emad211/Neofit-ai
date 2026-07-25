@@ -19,6 +19,9 @@ jobs:
   validate-mobile:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: mobile
     env:
       CI: '1'
       EXPO_NO_TELEMETRY: '1'
@@ -31,18 +34,18 @@ jobs:
         with:
           node-version: 22.13.1
 
-      - name: Install workspace dependencies
+      - name: Install mobile dependencies
         run: npm install --no-audit --no-fund
 
       - name: Check Expo package versions
-        run: npm exec --workspace neofit-mobile -- expo install --check
+        run: npx expo install --check
 
       - name: Capture Expo Doctor diagnostics
         id: doctor
         shell: bash
         run: |
           set +e
-          npm --workspace neofit-mobile run doctor > mobile/expo-doctor.log 2>&1
+          npm run doctor > expo-doctor.log 2>&1
           code=$?
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           exit 0
@@ -61,7 +64,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          npm --workspace neofit-mobile run typecheck > mobile/typecheck.log 2>&1
+          npm run typecheck > typecheck.log 2>&1
           code=$?
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           exit 0
@@ -76,7 +79,7 @@ jobs:
           retention-days: 3
 
       - name: Export Android bundle
-        run: npm exec --workspace neofit-mobile -- expo export --platform android --output-dir dist
+        run: npx expo export --platform android --output-dir dist
 
       - name: Enforce validation results
         if: steps.doctor.outputs.exit_code != '0' || steps.typecheck.outputs.exit_code != '0'
