@@ -1,0 +1,34 @@
+{
+  "format": "ifkb-release",
+  "schemaVersion": 1,
+  "releaseId": "IFKB-0.2.0-ingredient-foundation",
+  "version": "0.2.0",
+  "status": "research",
+  "createdAt": "2026-07-25T21:27:48.039599+00:00",
+  "counts": {
+    "canonicalIngredients": 91,
+    "p0Ingredients": 64,
+    "verifiedIngredients": 0,
+    "stagingObservations": 6,
+    "quarantinedObservations": 3,
+    "qaRules": 20
+  },
+  "authoritativeTargets": {
+    "USDA_FDC_Foundation": "2026-04",
+    "Iran_FCT": "2017 — access/licence pending",
+    "SAMAR": "raw data and permission pending"
+  },
+  "promotionGate": [
+    "authoritative source record and pinned release",
+    "food identity and state match",
+    "known unit and per-100-g basis",
+    "licence permits intended use",
+    "automated QA passed",
+    "independent scientific review"
+  ],
+  "warnings": [
+    "No ingredient is yet scientifically promoted.",
+    "Secondary mirrors are discovery/staging sources only.",
+    "Quarantined rows must never enter mobile or distributable exports."
+  ]
+}
