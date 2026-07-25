@@ -8,9 +8,11 @@ import { ExerciseTutorialCard } from '@/components/exercise-tutorial-card';
 import { logWorkoutSession } from '@/db/log-repository';
 import { deleteSetting, getSetting, setSetting } from '@/db/settings-repository';
 import { WorkoutSetLogInput } from '@/domain/models';
+import { createId } from '@/lib/id';
 import { useApp } from '@/providers/app-provider';
 
 const DraftSchema = z.object({
+  sessionId: z.string().min(1).max(100).optional(),
   startedAt: z.string().datetime(),
   currentExerciseIndex: z.number().int().min(0),
   currentSetIndex: z.number().int().min(0),
@@ -29,6 +31,7 @@ export default function WorkoutPlayerScreen() {
   const { workoutPlan, locale, refreshDailySummary } = useApp();
   const day = workoutPlan?.days.find((item) => item.id === id) || null;
   const [ready, setReady] = React.useState(false);
+  const [sessionId, setSessionId] = React.useState(() => createId('workout'));
   const [startedAt, setStartedAt] = React.useState(new Date().toISOString());
   const [exerciseIndex, setExerciseIndex] = React.useState(0);
   const [setIndex, setSetIndex] = React.useState(0);
@@ -40,6 +43,7 @@ export default function WorkoutPlayerScreen() {
   const [saving, setSaving] = React.useState(false);
   const [advancing, setAdvancing] = React.useState(false);
   const [completed, setCompleted] = React.useState<{ durationMinutes: number; totalVolumeKg: number } | null>(null);
+  const [completionWarning, setCompletionWarning] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const label = (en: string, fa: string) => locale === 'fa' ? fa : en;
   const draftKey = `workout.draft.${id || 'unknown'}`;
@@ -49,12 +53,15 @@ export default function WorkoutPlayerScreen() {
   React.useEffect(() => {
     const restore = async () => {
       const fallback: Draft = {
+        sessionId: createId('workout'),
         startedAt: new Date().toISOString(),
         currentExerciseIndex: 0,
         currentSetIndex: 0,
         completedSets: [],
       };
       const draft = await getSetting(draftKey, DraftSchema, fallback);
+      const resolvedSessionId = draft.sessionId || createId('workout');
+      setSessionId(resolvedSessionId);
       if (day && draft.currentExerciseIndex < day.exercises.length) {
         setStartedAt(draft.startedAt);
         setExerciseIndex(draft.currentExerciseIndex);
@@ -94,6 +101,7 @@ export default function WorkoutPlayerScreen() {
     sets: WorkoutSetLogInput[];
   }) => {
     await setSetting(draftKey, {
+      sessionId,
       startedAt,
       currentExerciseIndex: next.exerciseIndex,
       currentSetIndex: next.setIndex,
@@ -105,10 +113,12 @@ export default function WorkoutPlayerScreen() {
     if (!day || !workoutPlan) return;
     setSaving(true);
     setError(null);
+    setCompletionWarning(null);
     try {
       const completedAt = new Date();
       const durationMinutes = Math.max(1, Math.round((completedAt.getTime() - Date.parse(startedAt)) / 60_000));
       const result = await logWorkoutSession({
+        sessionId,
         workoutPlanId: workoutPlan.id,
         workoutTitle: day.title,
         startedAt,
@@ -116,10 +126,35 @@ export default function WorkoutPlayerScreen() {
         durationMinutes,
         sets,
       });
-      await deleteSetting(draftKey);
-      await refreshDailySummary();
+
+      // The SQLite transaction is the save boundary. Show completion
+      // immediately after it commits; cleanup and dashboard refresh are
+      // secondary operations and must never invite a duplicate save.
       setCompleted({ durationMinutes, totalVolumeKg: result.totalVolumeKg });
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+
+      const warnings: string[] = [];
+      try {
+        await deleteSetting(draftKey);
+      } catch (cleanupError) {
+        console.error('Completed workout draft cleanup failed:', cleanupError);
+        warnings.push(label(
+          'The completed session is saved, but its local draft could not be cleared. Retrying the same draft is idempotent.',
+          'جلسه کامل ذخیره شده است، اما پیش‌نویس محلی پاک نشد. ثبت دوباره همان پیش‌نویس رکورد تکراری نمی‌سازد.',
+        ));
+      }
+
+      try {
+        await refreshDailySummary();
+      } catch (refreshError) {
+        console.error('Completed workout summary refresh failed:', refreshError);
+        warnings.push(label(
+          'The completed session is saved, but dashboard totals will refresh when the app reloads.',
+          'جلسه کامل ذخیره شده است، اما مجموع‌های داشبورد با بارگذاری بعدی برنامه تازه می‌شوند.',
+        ));
+      }
+
+      if (warnings.length > 0) setCompletionWarning(warnings.join('\n'));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : label('Workout saving failed.', 'ذخیره تمرین انجام نشد.'));
     } finally {
@@ -197,6 +232,7 @@ export default function WorkoutPlayerScreen() {
         <View style={{ paddingTop: 60, gap: 16 }}>
           <AppText size={34} weight="800">{label('Workout complete', 'تمرین تمام شد')}</AppText>
           <InlineNotice tone="success">{label('The session and every completed set were saved in SQLite.', 'جلسه و تمام ست‌های کامل‌شده در SQLite ذخیره شدند.')}</InlineNotice>
+          {completionWarning ? <InlineNotice tone="warning">{completionWarning}</InlineNotice> : null}
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <MetricCard label={label('Duration', 'مدت')} value={completed.durationMinutes} unit={label('min', 'دقیقه')} />
             <MetricCard label={label('Volume', 'حجم')} value={Math.round(completed.totalVolumeKg)} unit="kg" />
