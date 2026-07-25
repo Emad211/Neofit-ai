@@ -3,9 +3,22 @@ import { Alert, View } from 'react-native';
 import { router } from 'expo-router';
 import { AppText, Card, ChoiceGrid, InlineNotice, PageTitle, PrimaryButton, Screen } from '@/components/ui';
 import { healthCheckDatabase } from '@/db/database';
-import { countFoodCatalog } from '@/db/food-repository';
+import { countFoodCatalog, deleteImportedFoodCatalog } from '@/db/food-repository';
 import { useApp } from '@/providers/app-provider';
 import { exportLocalBackup, importLocalBackup } from '@/services/backup-service';
+import {
+  exportFoodCatalogFile,
+  importFoodCatalogFile,
+} from '@/services/food-catalog-file-service';
+
+type BusyOperation =
+  | 'export'
+  | 'import'
+  | 'reset'
+  | 'health'
+  | 'catalog-import'
+  | 'catalog-export'
+  | 'catalog-delete';
 
 export default function SettingsScreen() {
   const {
@@ -19,7 +32,7 @@ export default function SettingsScreen() {
     deleteAllLocalData,
   } = useApp();
   const [foodCount, setFoodCount] = React.useState(0);
-  const [busy, setBusy] = React.useState<'export' | 'import' | 'reset' | 'health' | null>(null);
+  const [busy, setBusy] = React.useState<BusyOperation | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const label = React.useCallback((en: string, fa: string) => locale === 'fa' ? fa : en, [locale]);
@@ -29,7 +42,7 @@ export default function SettingsScreen() {
   }, []);
 
   const run = async (
-    kind: NonNullable<typeof busy>,
+    kind: BusyOperation,
     operation: () => Promise<void>,
   ) => {
     setBusy(kind);
@@ -63,6 +76,53 @@ export default function SettingsScreen() {
       `فایل پشتیبان ${result.name} بازیابی شد. کلیدهای شخصی API تغییر نکردند.`,
     ));
   });
+
+  const importCatalog = () => run('catalog-import', async () => {
+    const result = await importFoodCatalogFile();
+    if (!result.imported) return;
+    const count = await countFoodCatalog();
+    setFoodCount(count);
+    setNotice(label(
+      `${result.importedCount} validated foods were imported from ${result.name}. Previous imported datasets were replaced; built-in and custom foods were preserved.`,
+      `${result.importedCount} غذای اعتبارسنجی‌شده از فایل ${result.name} وارد شد. دیتاست وارداتی قبلی جایگزین شد و غذاهای داخلی و سفارشی حفظ شدند.`,
+    ));
+  });
+
+  const exportCatalog = () => run('catalog-export', async () => {
+    const result = await exportFoodCatalogFile();
+    setNotice(label(
+      `${result.count} food entries were prepared as a validated NeoFit JSON catalog.`,
+      `${result.count} قلم غذا به‌صورت فایل JSON اعتبارسنجی‌شده نئوفیت آماده شد.`,
+    ));
+  });
+
+  const confirmDeleteImportedCatalog = () => {
+    Alert.alert(
+      label('Remove imported food dataset?', 'دیتاست غذایی وارداتی حذف شود؟'),
+      label(
+        'Built-in and personally added foods will remain.',
+        'غذاهای داخلی و غذاهایی که خودتان اضافه کرده‌اید باقی می‌مانند.',
+      ),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: () => {
+            void run('catalog-delete', async () => {
+              const removed = await deleteImportedFoodCatalog();
+              const count = await countFoodCatalog();
+              setFoodCount(count);
+              setNotice(label(
+                `${removed} imported food entries were removed.`,
+                `${removed} قلم غذای وارداتی حذف شد.`,
+              ));
+            });
+          },
+        },
+      ],
+    );
+  };
 
   const checkDatabase = () => run('health', async () => {
     const healthy = await healthCheckDatabase();
@@ -139,10 +199,17 @@ export default function SettingsScreen() {
       <Card>
         <AppText size={20} weight="800">{label('Iranian food catalog', 'کاتالوگ غذاهای ایرانی')}</AppText>
         <AppText muted>{label(
-          `${foodCount} local entries, including any foods you added yourself.`,
-          `${foodCount} قلم محلی، شامل غذاهای سفارشی که خودتان اضافه کرده‌اید.`,
+          `${foodCount} local entries, including built-in, imported, and personally added foods.`,
+          `${foodCount} قلم محلی، شامل غذاهای داخلی، وارداتی و سفارشی.`,
         )}</AppText>
+        <InlineNotice>{label(
+          'NeoFit catalog JSON files are schema-validated before import. Importing replaces only the previous imported dataset and preserves built-in and custom foods.',
+          'فایل‌های JSON کاتالوگ نئوفیت پیش از ورود اعتبارسنجی ساختاری می‌شوند. ورود جدید فقط دیتاست وارداتی قبلی را جایگزین می‌کند و غذاهای داخلی و سفارشی را حفظ می‌کند.',
+        )}</InlineNotice>
         <PrimaryButton title={label('Open and edit food catalog', 'بازکردن و ویرایش کاتالوگ غذا')} variant="secondary" onPress={() => router.push('/iranian-foods')} />
+        <PrimaryButton title={label('Import licensed catalog JSON', 'ورود فایل JSON دیتاست دارای مجوز')} variant="secondary" onPress={importCatalog} loading={busy === 'catalog-import'} disabled={busy !== null && busy !== 'catalog-import'} />
+        <PrimaryButton title={label('Export current catalog JSON', 'خروجی JSON کاتالوگ فعلی')} variant="ghost" onPress={exportCatalog} loading={busy === 'catalog-export'} disabled={busy !== null && busy !== 'catalog-export'} />
+        <PrimaryButton title={label('Remove imported dataset', 'حذف دیتاست وارداتی')} variant="danger" onPress={confirmDeleteImportedCatalog} loading={busy === 'catalog-delete'} disabled={busy !== null && busy !== 'catalog-delete'} />
       </Card>
 
       <Card>
