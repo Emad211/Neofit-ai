@@ -110,11 +110,12 @@ async function insertFood(database: SQLite.SQLiteDatabase, item: FoodCatalogItem
       fat_g = excluded.fat_g,
       variability_pct = excluded.variability_pct,
       confidence = excluded.confidence,
+      source_type = excluded.source_type,
       source_label = excluded.source_label,
       notes_fa = excluded.notes_fa,
       notes_en = excluded.notes_en,
       updated_at = excluded.updated_at
-    WHERE food_catalog.source_type = 'seeded';`,
+    WHERE food_catalog.source_type != 'custom' OR excluded.source_type = 'custom';`,
     item.id,
     item.nameFa,
     item.nameEn,
@@ -183,6 +184,14 @@ export async function listFoodCatalog(input: {
   return rows.map(mapFood);
 }
 
+export async function listAllFoodCatalog() {
+  const database = await getDatabase();
+  const rows = await database.getAllAsync<FoodRow>(
+    'SELECT * FROM food_catalog ORDER BY category, name_fa;',
+  );
+  return rows.map(mapFood);
+}
+
 function safeFtsQuery(value: string) {
   const tokens = normalizeFoodSearch(value).split(' ').filter((token) => token.length > 0).slice(0, 8);
   return tokens.map((token) => `"${token.replaceAll('"', '""')}"*`).join(' AND ');
@@ -238,9 +247,50 @@ export async function saveCustomFood(input: Omit<FoodCatalogItem, 'id' | 'source
   return item;
 }
 
+export async function importFoodCatalogItems(input: {
+  items: FoodCatalogItem[];
+  sourceLabel: string;
+  replacePreviousImports?: boolean;
+}) {
+  if (input.items.length < 1 || input.items.length > 10_000) {
+    throw new Error('Imported food catalog must contain 1 to 10,000 items.');
+  }
+  const sourceLabel = input.sourceLabel.trim();
+  if (sourceLabel.length < 2 || sourceLabel.length > 300) {
+    throw new Error('Imported food catalog needs a valid source label.');
+  }
+  const now = new Date().toISOString();
+  const parsed = input.items.map((raw) => FoodCatalogItemSchema.parse({
+    ...raw,
+    sourceType: 'imported',
+    sourceLabel,
+    updatedAt: now,
+  }));
+  if (new Set(parsed.map((item) => item.id)).size !== parsed.length) {
+    throw new Error('Imported food catalog contains duplicate ids.');
+  }
+
+  const database = await getDatabase();
+  await database.withExclusiveTransactionAsync(async (transaction) => {
+    if (input.replacePreviousImports !== false) {
+      await transaction.runAsync("DELETE FROM food_catalog WHERE source_type = 'imported';");
+    }
+    for (const item of parsed) {
+      await insertFood(transaction, item);
+    }
+  });
+  return parsed.length;
+}
+
 export async function deleteCustomFood(id: string) {
   const database = await getDatabase();
   await database.runAsync("DELETE FROM food_catalog WHERE id = ? AND source_type = 'custom';", id);
+}
+
+export async function deleteImportedFoodCatalog() {
+  const database = await getDatabase();
+  const result = await database.runAsync("DELETE FROM food_catalog WHERE source_type = 'imported';");
+  return result.changes;
 }
 
 export function scaleFood(item: FoodCatalogItem, multiplier: number) {
