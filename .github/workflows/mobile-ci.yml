@@ -37,11 +37,33 @@ jobs:
       - name: Check Expo package versions
         run: npm exec --workspace neofit-mobile -- expo install --check
 
-      - name: Expo dependency doctor
-        run: npm --workspace neofit-mobile run doctor
+      - name: Capture Expo Doctor diagnostics
+        id: doctor
+        shell: bash
+        run: |
+          set +e
+          npm --workspace neofit-mobile run doctor > mobile/expo-doctor.log 2>&1
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload Expo Doctor diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: expo-doctor-diagnostics
+          path: mobile/expo-doctor.log
+          if-no-files-found: error
+          retention-days: 3
 
       - name: Typecheck
         run: npm --workspace neofit-mobile run typecheck
 
       - name: Export Android bundle
         run: npm exec --workspace neofit-mobile -- expo export --platform android --output-dir dist
+
+      - name: Enforce Expo Doctor result
+        if: steps.doctor.outputs.exit_code != '0'
+        run: |
+          cat mobile/expo-doctor.log
+          exit 1
