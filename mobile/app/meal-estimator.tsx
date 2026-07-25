@@ -9,21 +9,38 @@ import { useApp } from '@/providers/app-provider';
 import { estimateFoodFromPhoto, estimateFoodFromText } from '@/services/ai-features';
 import { AvalAiError } from '@/services/avalai-client';
 
+type EstimatorMode = 'manual' | 'text' | 'photo';
+
+function initialMode(value: string | undefined): EstimatorMode {
+  if (value === 'manual' || value === 'photo') return value;
+  return 'text';
+}
+
+function parseNonNegative(value: string, label: string) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) throw new Error(`${label} is invalid.`);
+  return number;
+}
+
 export default function MealEstimatorScreen() {
   const params = useLocalSearchParams<{ mode?: string }>();
   const { locale, hasAvalAiKey, t, refreshDailySummary } = useApp();
-  const [mode, setMode] = React.useState<'text' | 'photo'>(params.mode === 'photo' ? 'photo' : 'text');
+  const [mode, setMode] = React.useState<EstimatorMode>(initialMode(params.mode));
   const [description, setDescription] = React.useState('');
   const [mealType, setMealType] = React.useState<Meal['type']>('snack');
   const [result, setResult] = React.useState<FoodEstimate | null>(null);
+  const [manualCalories, setManualCalories] = React.useState('');
+  const [manualProtein, setManualProtein] = React.useState('');
+  const [manualCarbs, setManualCarbs] = React.useState('');
+  const [manualFat, setManualFat] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [logging, setLogging] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const label = (en: string, fa: string) => locale === 'fa' ? fa : en;
 
   React.useEffect(() => {
-    if (!hasAvalAiKey) router.replace('/ai-settings');
-  }, [hasAvalAiKey]);
+    if (mode !== 'manual' && !hasAvalAiKey) router.replace('/ai-settings');
+  }, [hasAvalAiKey, mode]);
 
   const handleError = (caught: unknown) => {
     console.error('Meal estimate failed:', caught);
@@ -88,7 +105,7 @@ export default function MealEstimatorScreen() {
     }
   };
 
-  const saveLog = async () => {
+  const saveEstimatedLog = async () => {
     if (!result) return;
     setLogging(true);
     setError(null);
@@ -112,9 +129,63 @@ export default function MealEstimatorScreen() {
     }
   };
 
+  const saveManualLog = async () => {
+    if (description.trim().length < 2) {
+      setError(label('Enter a meal description.', 'توضیح وعده را وارد کنید.'));
+      return;
+    }
+    setLogging(true);
+    setError(null);
+    try {
+      const calories = parseNonNegative(manualCalories, label('Calories', 'کالری'));
+      const proteinG = parseNonNegative(manualProtein || '0', label('Protein', 'پروتئین'));
+      const carbsG = parseNonNegative(manualCarbs || '0', label('Carbohydrates', 'کربوهیدرات'));
+      const fatG = parseNonNegative(manualFat || '0', label('Fat', 'چربی'));
+      if (calories > 10_000 || proteinG > 1_000 || carbsG > 2_000 || fatG > 1_000) {
+        throw new Error(label('One or more nutrition values are outside the supported range.', 'یک یا چند مقدار تغذیه‌ای خارج از محدوده قابل قبول است.'));
+      }
+      await logMeal({
+        eatenAt: new Date().toISOString(),
+        mealType,
+        description: description.trim(),
+        calories: Math.round(calories),
+        proteinG,
+        carbsG,
+        fatG,
+        source: 'manual',
+      });
+      await refreshDailySummary();
+      router.back();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : label('Meal logging failed.', 'ثبت وعده انجام نشد.'));
+    } finally {
+      setLogging(false);
+    }
+  };
+
+  const mealTypeSelector = (
+    <>
+      <AppText weight="600">{label('Meal type', 'نوع وعده')}</AppText>
+      <ChoiceGrid
+        value={mealType}
+        onChange={setMealType}
+        options={[
+          { value: 'breakfast', label: label('Breakfast', 'صبحانه') },
+          { value: 'lunch', label: label('Lunch', 'ناهار') },
+          { value: 'dinner', label: label('Dinner', 'شام') },
+          { value: 'snack', label: label('Snack', 'میان‌وعده') },
+        ]}
+      />
+    </>
+  );
+
   return (
     <Screen>
-      <InlineNotice>{t('nutrition.estimateWarning')}</InlineNotice>
+      {mode === 'manual' ? (
+        <InlineNotice>{label('Manual logging works completely offline and sends nothing outside this phone.', 'ثبت دستی کاملاً آفلاین است و هیچ اطلاعاتی از گوشی خارج نمی‌شود.')}</InlineNotice>
+      ) : (
+        <InlineNotice>{t('nutrition.estimateWarning')}</InlineNotice>
+      )}
       <ChoiceGrid
         value={mode}
         onChange={(value) => {
@@ -123,61 +194,75 @@ export default function MealEstimatorScreen() {
           setError(null);
         }}
         options={[
+          { value: 'manual', label: label('Manual', 'دستی') },
           { value: 'text', label: t('nutrition.foodText') },
           { value: 'photo', label: t('nutrition.foodPhoto') },
         ]}
+        columns={1}
       />
 
-      <Card>
-        <Field
-          label={label('Food description or portion notes', 'توضیح غذا یا مقدار سهم')}
-          value={description}
-          onChangeText={setDescription}
-          multiline={mode === 'photo'}
-          placeholder={label('Example: 250 g chicken rice bowl', 'مثلاً یک بشقاب برنج و مرغ حدود ۲۵۰ گرم')}
-        />
-        {mode === 'text' ? (
-          <PrimaryButton title={label('Estimate nutrition', 'تخمین ارزش غذایی')} onPress={estimateText} loading={loading} />
-        ) : (
-          <View style={{ gap: 10 }}>
-            <PrimaryButton title={label('Take a photo', 'گرفتن عکس')} onPress={() => estimatePhoto('camera')} loading={loading} />
-            <PrimaryButton title={label('Choose from gallery', 'انتخاب از گالری')} variant="secondary" onPress={() => estimatePhoto('library')} disabled={loading} />
-          </View>
-        )}
-      </Card>
-
-      {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
-
-      {result ? (
+      {mode === 'manual' ? (
         <Card>
-          <View style={{ gap: 3 }}>
-            <AppText size={23} weight="800">{result.itemName}</AppText>
-            <AppText muted>{result.servingSize}</AppText>
-            <AppText muted size={13}>{label(`Confidence: ${result.confidence}`, `میزان اطمینان: ${result.confidence === 'high' ? 'زیاد' : result.confidence === 'medium' ? 'متوسط' : 'کم'}`)}</AppText>
-          </View>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-            <MetricCard label={t('today.calories')} value={result.calories} unit="kcal" />
-            <MetricCard label={t('today.protein')} value={Math.round(result.proteinG)} unit="g" />
-            <MetricCard label={label('Carbs', 'کربوهیدرات')} value={Math.round(result.carbsG)} unit="g" />
-            <MetricCard label={label('Fat', 'چربی')} value={Math.round(result.fatG)} unit="g" />
-          </View>
-          {result.assumptions.length > 0 ? (
-            <InlineNotice tone="warning">{result.assumptions.join('\n')}</InlineNotice>
-          ) : null}
-          <AppText weight="600">{label('Meal type', 'نوع وعده')}</AppText>
-          <ChoiceGrid
-            value={mealType}
-            onChange={setMealType}
-            options={[
-              { value: 'breakfast', label: label('Breakfast', 'صبحانه') },
-              { value: 'lunch', label: label('Lunch', 'ناهار') },
-              { value: 'dinner', label: label('Dinner', 'شام') },
-              { value: 'snack', label: label('Snack', 'میان‌وعده') },
-            ]}
+          <Field
+            label={label('Meal description', 'توضیح وعده')}
+            value={description}
+            onChangeText={setDescription}
+            placeholder={label('Example: chicken and rice', 'مثلاً مرغ و برنج')}
           />
-          <PrimaryButton title={t('nutrition.logMeal')} onPress={saveLog} loading={logging} />
+          <Field label={t('today.calories')} value={manualCalories} onChangeText={setManualCalories} keyboardType="number-pad" />
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flex: 1 }}><Field label={`${t('today.protein')} (g)`} value={manualProtein} onChangeText={setManualProtein} keyboardType="decimal-pad" /></View>
+            <View style={{ flex: 1 }}><Field label={`${label('Carbs', 'کربوهیدرات')} (g)`} value={manualCarbs} onChangeText={setManualCarbs} keyboardType="decimal-pad" /></View>
+            <View style={{ flex: 1 }}><Field label={`${label('Fat', 'چربی')} (g)`} value={manualFat} onChangeText={setManualFat} keyboardType="decimal-pad" /></View>
+          </View>
+          {mealTypeSelector}
+          {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
+          <PrimaryButton title={t('nutrition.logMeal')} onPress={saveManualLog} loading={logging} />
         </Card>
-      ) : null}
+      ) : (
+        <>
+          <Card>
+            <Field
+              label={label('Food description or portion notes', 'توضیح غذا یا مقدار سهم')}
+              value={description}
+              onChangeText={setDescription}
+              multiline={mode === 'photo'}
+              placeholder={label('Example: 250 g chicken rice bowl', 'مثلاً یک بشقاب برنج و مرغ حدود ۲۵۰ گرم')}
+            />
+            {mode === 'text' ? (
+              <PrimaryButton title={label('Estimate nutrition', 'تخمین ارزش غذایی')} onPress={estimateText} loading={loading} />
+            ) : (
+              <View style={{ gap: 10 }}>
+                <PrimaryButton title={label('Take a photo', 'گرفتن عکس')} onPress={() => estimatePhoto('camera')} loading={loading} />
+                <PrimaryButton title={label('Choose from gallery', 'انتخاب از گالری')} variant="secondary" onPress={() => estimatePhoto('library')} disabled={loading} />
+              </View>
+            )}
+          </Card>
+
+          {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
+
+          {result ? (
+            <Card>
+              <View style={{ gap: 3 }}>
+                <AppText size={23} weight="800">{result.itemName}</AppText>
+                <AppText muted>{result.servingSize}</AppText>
+                <AppText muted size={13}>{label(`Confidence: ${result.confidence}`, `میزان اطمینان: ${result.confidence === 'high' ? 'زیاد' : result.confidence === 'medium' ? 'متوسط' : 'کم'}`)}</AppText>
+              </View>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                <MetricCard label={t('today.calories')} value={result.calories} unit="kcal" />
+                <MetricCard label={t('today.protein')} value={Math.round(result.proteinG)} unit="g" />
+                <MetricCard label={label('Carbs', 'کربوهیدرات')} value={Math.round(result.carbsG)} unit="g" />
+                <MetricCard label={label('Fat', 'چربی')} value={Math.round(result.fatG)} unit="g" />
+              </View>
+              {result.assumptions.length > 0 ? (
+                <InlineNotice tone="warning">{result.assumptions.join('\n')}</InlineNotice>
+              ) : null}
+              {mealTypeSelector}
+              <PrimaryButton title={t('nutrition.logMeal')} onPress={saveEstimatedLog} loading={logging} />
+            </Card>
+          ) : null}
+        </>
+      )}
     </Screen>
   );
 }
