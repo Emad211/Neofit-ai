@@ -148,4 +148,117 @@ export const migrations: Migration[] = [
       ON ai_cache(expires_at);
     `,
   },
+  {
+    version: 2,
+    name: 'rich-profile-food-catalog-and-exercise-video-cache',
+    sql: `
+      ALTER TABLE profile
+      ADD COLUMN extended_profile_json TEXT NOT NULL DEFAULT '{}';
+
+      ALTER TABLE meal_logs RENAME TO meal_logs_v1;
+
+      CREATE TABLE meal_logs (
+        id TEXT PRIMARY KEY NOT NULL,
+        eaten_at TEXT NOT NULL,
+        meal_type TEXT NOT NULL CHECK (meal_type IN ('breakfast', 'lunch', 'dinner', 'snack')),
+        description TEXT NOT NULL,
+        calories INTEGER NOT NULL CHECK (calories >= 0),
+        protein_g REAL NOT NULL CHECK (protein_g >= 0),
+        carbs_g REAL NOT NULL CHECK (carbs_g >= 0),
+        fat_g REAL NOT NULL CHECK (fat_g >= 0),
+        source TEXT NOT NULL CHECK (source IN ('manual', 'plan', 'ai_photo', 'ai_text', 'catalog')),
+        created_at TEXT NOT NULL
+      );
+
+      INSERT INTO meal_logs (
+        id, eaten_at, meal_type, description, calories,
+        protein_g, carbs_g, fat_g, source, created_at
+      )
+      SELECT
+        id, eaten_at, meal_type, description, calories,
+        protein_g, carbs_g, fat_g, source, created_at
+      FROM meal_logs_v1;
+
+      DROP TABLE meal_logs_v1;
+
+      CREATE INDEX idx_meal_logs_eaten_at
+      ON meal_logs(eaten_at DESC);
+
+      CREATE TABLE IF NOT EXISTS food_catalog (
+        id TEXT PRIMARY KEY NOT NULL,
+        name_fa TEXT NOT NULL,
+        name_en TEXT NOT NULL,
+        aliases_fa_json TEXT NOT NULL DEFAULT '[]',
+        aliases_en_json TEXT NOT NULL DEFAULT '[]',
+        aliases_search TEXT NOT NULL DEFAULT '',
+        category TEXT NOT NULL,
+        portion_label_fa TEXT NOT NULL,
+        portion_label_en TEXT NOT NULL,
+        portion_grams REAL,
+        calories REAL NOT NULL CHECK (calories >= 0),
+        protein_g REAL NOT NULL CHECK (protein_g >= 0),
+        carbs_g REAL NOT NULL CHECK (carbs_g >= 0),
+        fat_g REAL NOT NULL CHECK (fat_g >= 0),
+        variability_pct REAL NOT NULL DEFAULT 20 CHECK (variability_pct BETWEEN 0 AND 80),
+        confidence TEXT NOT NULL DEFAULT 'medium' CHECK (confidence IN ('low', 'medium', 'high')),
+        source_type TEXT NOT NULL DEFAULT 'seeded' CHECK (source_type IN ('seeded', 'custom', 'imported')),
+        source_label TEXT NOT NULL DEFAULT '',
+        notes_fa TEXT NOT NULL DEFAULT '',
+        notes_en TEXT NOT NULL DEFAULT '',
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_food_catalog_category
+      ON food_catalog(category, name_fa);
+
+      CREATE INDEX IF NOT EXISTS idx_food_catalog_name_fa
+      ON food_catalog(name_fa COLLATE NOCASE);
+
+      CREATE INDEX IF NOT EXISTS idx_food_catalog_name_en
+      ON food_catalog(name_en COLLATE NOCASE);
+
+      CREATE VIRTUAL TABLE IF NOT EXISTS food_catalog_fts USING fts5(
+        name_fa,
+        name_en,
+        aliases_search,
+        content='food_catalog',
+        content_rowid='rowid',
+        tokenize='unicode61 remove_diacritics 2'
+      );
+
+      CREATE TRIGGER IF NOT EXISTS food_catalog_ai AFTER INSERT ON food_catalog BEGIN
+        INSERT INTO food_catalog_fts(rowid, name_fa, name_en, aliases_search)
+        VALUES (new.rowid, new.name_fa, new.name_en, new.aliases_search);
+      END;
+
+      CREATE TRIGGER IF NOT EXISTS food_catalog_ad AFTER DELETE ON food_catalog BEGIN
+        INSERT INTO food_catalog_fts(food_catalog_fts, rowid, name_fa, name_en, aliases_search)
+        VALUES ('delete', old.rowid, old.name_fa, old.name_en, old.aliases_search);
+      END;
+
+      CREATE TRIGGER IF NOT EXISTS food_catalog_au AFTER UPDATE ON food_catalog BEGIN
+        INSERT INTO food_catalog_fts(food_catalog_fts, rowid, name_fa, name_en, aliases_search)
+        VALUES ('delete', old.rowid, old.name_fa, old.name_en, old.aliases_search);
+        INSERT INTO food_catalog_fts(rowid, name_fa, name_en, aliases_search)
+        VALUES (new.rowid, new.name_fa, new.name_en, new.aliases_search);
+      END;
+
+      INSERT INTO food_catalog_fts(rowid, name_fa, name_en, aliases_search)
+      SELECT rowid, name_fa, name_en, aliases_search FROM food_catalog;
+
+      CREATE TABLE IF NOT EXISTS exercise_video_cache (
+        cache_key TEXT PRIMARY KEY NOT NULL,
+        exercise_id TEXT NOT NULL,
+        query TEXT NOT NULL,
+        locale TEXT NOT NULL CHECK (locale IN ('fa', 'en')),
+        videos_json TEXT NOT NULL,
+        selected_index INTEGER NOT NULL DEFAULT 0 CHECK (selected_index >= 0),
+        fetched_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_exercise_video_cache_expiry
+      ON exercise_video_cache(expires_at);
+    `,
+  },
 ];
