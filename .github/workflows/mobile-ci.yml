@@ -56,14 +56,31 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
-      - name: Typecheck
-        run: npm --workspace neofit-mobile run typecheck
+      - name: Capture TypeScript diagnostics
+        id: typecheck
+        shell: bash
+        run: |
+          set +e
+          npm --workspace neofit-mobile run typecheck > mobile/typecheck.log 2>&1
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload TypeScript diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-diagnostics
+          path: mobile/typecheck.log
+          if-no-files-found: error
+          retention-days: 3
 
       - name: Export Android bundle
         run: npm exec --workspace neofit-mobile -- expo export --platform android --output-dir dist
 
-      - name: Enforce Expo Doctor result
-        if: steps.doctor.outputs.exit_code != '0'
+      - name: Enforce validation results
+        if: steps.doctor.outputs.exit_code != '0' || steps.typecheck.outputs.exit_code != '0'
         run: |
-          cat mobile/expo-doctor.log
+          echo "Expo Doctor exit code: ${{ steps.doctor.outputs.exit_code }}"
+          echo "TypeScript exit code: ${{ steps.typecheck.outputs.exit_code }}"
           exit 1
