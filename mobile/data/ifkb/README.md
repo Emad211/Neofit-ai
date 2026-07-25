@@ -24,6 +24,19 @@ Release `0.2.1` supersedes `0.2.0` and contains the first engineered ingredient 
 
 Automated energy QA found that `STG-0003` had an approximately 30% discrepancy while its old status was `candidate_secondary`. Release `0.2.0` is retained as an immutable research snapshot and marked superseded. Corrective release `0.2.1` changes it to `quarantined`; no verified or mobile record was affected.
 
+## Official source coverage release: 0.3.0
+
+Release `0.3.0` builds an acquisition map against the official USDA Foundation update inventory without importing nutrient values:
+
+- 30 canonical ingredients have an official description candidate
+- 15 are provisional exact-identity candidates (`A` match quality)
+- 15 are documented close candidates (`C`) that require an ontology split or further identity review
+- FDC IDs retrieved: 0
+- nutrient profiles imported: 0
+- verified ingredients: 0
+
+This layer deliberately separates **official inventory presence** from **composition evidence**. An update-log name may be used to schedule official raw-data retrieval, but it cannot be used to infer an FDC ID, copy calories, or promote a nutrient value.
+
 Verified ingredients remain **0**. Secondary mirrors and generic nutrition datasets are discovery sources only and may not enter a distributable release until checked against an authoritative, pinned source record and independently reviewed.
 
 ## Design principles
@@ -45,7 +58,9 @@ Verified ingredients remain **0**. Secondary mirrors and generic nutrition datas
 - `releases/0.2.0/manifest.json`: superseded ingredient-layer research snapshot.
 - `releases/0.2.0/SUPERSEDED.md`: correction notice.
 - `releases/0.2.1/manifest.json`: current corrective ingredient-layer release.
+- `releases/0.3.0/manifest.json`: official source coverage-map release.
 - `reference/ingredient-catalog-core.csv`: canonical ingredient ontology.
+- `reference/official-coverage-map.csv`: provisional official Foundation inventory mappings.
 - `staging/0.2.0/source-observations.csv`: superseded staging snapshot retained for audit.
 - `staging/0.2.1/source-observations.csv`: corrected current staging snapshot.
 - `methodology/qa-policy.md`: evidence grading, review gates, and calculation policy.
