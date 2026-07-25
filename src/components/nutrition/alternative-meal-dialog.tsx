@@ -28,13 +28,13 @@ export function AlternativeMealDialog({
   meal: Meal;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSelectAlternative: (newMealName: string) => void;
+  onSelectAlternative: (replacement: SuggestMealAlternativeOutput) => void;
 }) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [alternative, setAlternative] = React.useState<SuggestMealAlternativeOutput | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const { user, userProfile } = useUserData();
-  const { locale, t } = useI18n();
+  const { locale } = useI18n();
 
   const fetchAlternative = React.useCallback(async () => {
     if (!user || !userProfile) return;
@@ -43,16 +43,9 @@ export function AlternativeMealDialog({
     setAlternative(null);
     try {
       setAlternative(await suggestMealAlternative({
-        mealId: meal.id || meal.name,
+        mealId: meal.id,
         context: JSON.stringify({
-          originalMeal: {
-            name: meal.name,
-            calories: meal.calories,
-            protein: meal.protein,
-            carbohydrates: meal.carbohydrates,
-            fat: meal.fat,
-            ingredients: meal.ingredients,
-          },
+          originalMeal: meal,
           dietaryPreference: userProfile.dietaryPreference || 'none',
           allergiesAndDislikes: userProfile.eatingHabits || 'None',
           cookingSkill: userProfile.cookingSkill,
@@ -62,7 +55,7 @@ export function AlternativeMealDialog({
       }));
     } catch (caught) {
       console.error('Meal alternative failed:', caught);
-      setError(locale === 'fa' ? 'جایگزین قابل‌اعتمادی ساخته نشد.' : 'A reliable alternative could not be generated.');
+      setError(locale === 'fa' ? 'جایگزین کامل و قابل‌اعتباری ساخته نشد.' : 'A complete, validated alternative could not be generated.');
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +71,7 @@ export function AlternativeMealDialog({
 
   const replace = () => {
     if (!alternative) return;
-    onSelectAlternative(alternative.alternativeMeal);
+    onSelectAlternative(alternative);
     onOpenChange(false);
   };
 
@@ -94,7 +87,13 @@ export function AlternativeMealDialog({
           {error && <p className="text-center text-destructive">{error}</p>}
           {alternative && (
             <div className="w-full space-y-3">
-              <Card><CardContent className="p-4 text-center"><h3 className="text-lg font-bold text-primary">{alternative.alternativeMeal}</h3>{alternative.calories !== undefined && <p className="mt-2 text-sm text-muted-foreground">≈ {alternative.calories} kcal</p>}</CardContent></Card>
+              <Card>
+                <CardContent className="space-y-2 p-4 text-center">
+                  <h3 className="text-lg font-bold text-primary">{alternative.alternativeMeal}</h3>
+                  <p className="text-sm text-muted-foreground">{alternative.calories} kcal · {Math.round(alternative.protein)}g {locale === 'fa' ? 'پروتئین' : 'protein'}</p>
+                  <p className="text-xs text-muted-foreground">{alternative.ingredients.map((item) => `${item.name} (${item.quantity})`).join('، ')}</p>
+                </CardContent>
+              </Card>
               {alternative.warning && <Alert><AlertDescription>{alternative.warning}</AlertDescription></Alert>}
             </div>
           )}
