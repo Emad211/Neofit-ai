@@ -14,10 +14,10 @@ export class QuotaExceededError extends Error {
   }
 }
 
-const PLAN_ACTIONS = new Set<AiAction>([
-  'generateWorkoutProgram',
-  'generateNutritionProgram',
-]);
+// A complete plan consists of workout + nutrition requests. The workout request
+// is the single monthly accounting event; the paired nutrition request is still
+// covered by the daily AI quota but does not double-charge plan generation.
+const PLAN_GENERATION_ACTIONS = new Set<AiAction>(['generateWorkoutProgram']);
 
 function utcDayKey(date = new Date()) {
   return date.toISOString().slice(0, 10);
@@ -51,6 +51,7 @@ export async function consumeAiQuota(uid: string, action: AiAction) {
     const aiRequests = Number(dailyUsage.aiRequests || 0);
     const foodScans = Number(dailyUsage.foodScans || 0);
     const planGenerations = Number(monthlyUsage.planGenerations || 0);
+    const consumesPlanGeneration = PLAN_GENERATION_ACTIONS.has(action);
 
     if (aiRequests >= plan.aiRequestsPerDay) {
       throw new QuotaExceededError('Daily AI request limit reached.', plan.id, plan.aiRequestsPerDay);
@@ -60,7 +61,7 @@ export async function consumeAiQuota(uid: string, action: AiAction) {
       throw new QuotaExceededError('Daily food scan limit reached.', plan.id, plan.foodScansPerDay);
     }
 
-    if (PLAN_ACTIONS.has(action) && planGenerations >= plan.planGenerationsPerMonth) {
+    if (consumesPlanGeneration && planGenerations >= plan.planGenerationsPerMonth) {
       throw new QuotaExceededError('Monthly plan generation limit reached.', plan.id, plan.planGenerationsPerMonth);
     }
 
@@ -70,7 +71,7 @@ export async function consumeAiQuota(uid: string, action: AiAction) {
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
 
-    if (PLAN_ACTIONS.has(action)) {
+    if (consumesPlanGeneration) {
       transaction.set(monthlyUsageRef, {
         planGenerations: FieldValue.increment(1),
         updatedAt: FieldValue.serverTimestamp(),
@@ -81,7 +82,7 @@ export async function consumeAiQuota(uid: string, action: AiAction) {
       planId: plan.id,
       remainingDailyAiRequests: Math.max(0, plan.aiRequestsPerDay - aiRequests - 1),
       remainingDailyFoodScans: Math.max(0, plan.foodScansPerDay - foodScans - (action === 'foodLookup' ? 1 : 0)),
-      remainingMonthlyPlanGenerations: Math.max(0, plan.planGenerationsPerMonth - planGenerations - (PLAN_ACTIONS.has(action) ? 1 : 0)),
+      remainingMonthlyPlanGenerations: Math.max(0, plan.planGenerationsPerMonth - planGenerations - (consumesPlanGeneration ? 1 : 0)),
     };
   });
 }
