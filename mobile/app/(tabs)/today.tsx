@@ -98,7 +98,13 @@ export default function TodayScreen() {
             <AppText size={18} weight="700">{todaysWorkout.title}</AppText>
             <AppText muted>{todaysWorkout.focus}</AppText>
             <AppText muted>{t('workout.minutes', { count: todaysWorkout.durationMinutes })} · {t('workout.exercises', { count: todaysWorkout.exercises.length })}</AppText>
-            <PrimaryButton title={t('workout.start')} onPress={() => router.push(`/workout-player/${todaysWorkout.id}`)} />
+            <PrimaryButton
+              title={t('workout.start')}
+              onPress={() => router.push({
+                pathname: '/workout-player/[id]',
+                params: { id: todaysWorkout.id },
+              })}
+            />
           </>
         ) : (
           <AppText muted>{t('today.noPlan')}</AppText>
