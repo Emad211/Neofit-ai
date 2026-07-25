@@ -80,12 +80,26 @@ export default function NutritionScreen() {
       <PageTitle title={t('nutrition.title')} subtitle={t('settings.localDataDescription')} />
       <InlineNotice>{t('nutrition.estimateWarning')}</InlineNotice>
 
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        <View style={{ flex: 1 }}>
-          <PrimaryButton title={t('nutrition.foodText')} variant="secondary" onPress={() => router.push({ pathname: '/meal-estimator', params: { mode: 'text' } })} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <PrimaryButton title={t('nutrition.foodPhoto')} variant="secondary" onPress={() => router.push({ pathname: '/meal-estimator', params: { mode: 'photo' } })} />
+      <View style={{ gap: 10 }}>
+        <PrimaryButton
+          title={label('Log a meal manually — offline', 'ثبت دستی وعده — آفلاین')}
+          onPress={() => router.push({ pathname: '/meal-estimator', params: { mode: 'manual' } })}
+        />
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <View style={{ flex: 1 }}>
+            <PrimaryButton
+              title={t('nutrition.foodText')}
+              variant="secondary"
+              onPress={() => router.push({ pathname: '/meal-estimator', params: { mode: 'text' } })}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <PrimaryButton
+              title={t('nutrition.foodPhoto')}
+              variant="secondary"
+              onPress={() => router.push({ pathname: '/meal-estimator', params: { mode: 'photo' } })}
+            />
+          </View>
         </View>
       </View>
 
