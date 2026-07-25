@@ -69,7 +69,13 @@ export default function WorkoutScreen() {
                   </View>
                 ))}
               </View>
-              <PrimaryButton title={t('workout.start')} onPress={() => router.push(`/workout-player/${day.id}`)} />
+              <PrimaryButton
+                title={t('workout.start')}
+                onPress={() => router.push({
+                  pathname: '/workout-player/[id]',
+                  params: { id: day.id },
+                })}
+              />
             </Card>
           ))}
           {workoutPlan.safetyNotes.length > 0 ? (
