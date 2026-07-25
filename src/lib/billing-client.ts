@@ -14,9 +14,20 @@ export type NativePurchaseResult = {
   orderId?: string;
 };
 
+export type NativeProductDetails = {
+  planId: Exclude<PlanId, 'free'>;
+  productId: string;
+  formattedPrice: string;
+  billingPeriod: string;
+  autoRenewing: boolean;
+  freeTrialText?: string;
+  introductoryOfferText?: string;
+};
+
 declare global {
   interface Window {
     NeoFitBilling?: {
+      getProducts?: () => Promise<NativeProductDetails[]>;
       purchase: (planId: Exclude<PlanId, 'free'>) => Promise<NativePurchaseResult>;
       restore?: () => Promise<NativePurchaseResult[]>;
     };
@@ -48,6 +59,17 @@ async function verifyPurchase(purchase: NativePurchaseResult) {
     throw new BillingClientError(payload?.error || 'Purchase verification failed.', response.status);
   }
   return payload.planId;
+}
+
+export async function getStoreProducts() {
+  if (!window.NeoFitBilling?.getProducts) return [];
+  const products = await window.NeoFitBilling.getProducts();
+  return products.filter((product) =>
+    (product.planId === 'plus' || product.planId === 'pro')
+    && Boolean(product.productId)
+    && Boolean(product.formattedPrice)
+    && Boolean(product.billingPeriod),
+  );
 }
 
 export async function purchasePlan(planId: Exclude<PlanId, 'free'>) {
