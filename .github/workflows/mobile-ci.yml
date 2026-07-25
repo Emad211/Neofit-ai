@@ -19,9 +19,6 @@ jobs:
   validate-mobile:
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    defaults:
-      run:
-        working-directory: mobile
     env:
       CI: '1'
       EXPO_NO_TELEMETRY: '1'
@@ -34,17 +31,17 @@ jobs:
         with:
           node-version: 22.13.1
 
-      - name: Install dependencies
+      - name: Install workspace dependencies
         run: npm install --no-audit --no-fund
 
       - name: Check Expo package versions
-        run: npx expo install --check
+        run: npm exec --workspace neofit-mobile -- expo install --check
 
       - name: Expo dependency doctor
-        run: npx expo-doctor
+        run: npm --workspace neofit-mobile run doctor
 
       - name: Typecheck
-        run: npm run typecheck
+        run: npm --workspace neofit-mobile run typecheck
 
       - name: Export Android bundle
-        run: npx expo export --platform android --output-dir dist
+        run: npm exec --workspace neofit-mobile -- expo export --platform android --output-dir dist
