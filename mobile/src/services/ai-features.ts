@@ -3,12 +3,14 @@ import {
   FoodEstimate,
   FoodEstimateSchema,
   NutritionPlan,
+  NutritionPlanSchema,
   Profile,
   WorkoutPlan,
+  WorkoutPlanSchema,
 } from '@/domain/models';
 import { createId } from '@/lib/id';
 import { getAvalAiSettings } from '@/services/ai-settings';
-import { requestStructured } from '@/services/avalai-client';
+import { AvalAiError, requestStructured } from '@/services/avalai-client';
 
 const AiExerciseSchema = z.object({
   name: z.string().trim().min(1).max(160),
@@ -29,6 +31,15 @@ const AiWorkoutPlanSchema = z.object({
     exercises: z.array(AiExerciseSchema).min(1).max(20),
   })).min(2).max(7),
   safetyNotes: z.array(z.string().trim().min(1).max(500)).max(12).default([]),
+}).superRefine((plan, context) => {
+  const indexes = plan.days.map((day) => day.dayIndex);
+  if (new Set(indexes).size !== indexes.length) {
+    context.addIssue({
+      code: 'custom',
+      path: ['days'],
+      message: 'Workout dayIndex values must be unique.',
+    });
+  }
 });
 
 const AiIngredientSchema = z.object({
@@ -57,6 +68,15 @@ const AiNutritionPlanSchema = z.object({
     totalCalories: z.number().int().min(800).max(7_000),
   })).length(7),
   safetyNotes: z.array(z.string().trim().min(1).max(500)).max(12).default([]),
+}).superRefine((plan, context) => {
+  const indexes = new Set(plan.days.map((day) => day.dayIndex));
+  if (indexes.size !== 7 || ![0, 1, 2, 3, 4, 5, 6].every((index) => indexes.has(index))) {
+    context.addIssue({
+      code: 'custom',
+      path: ['days'],
+      message: 'Nutrition plan must contain dayIndex 0 through 6 exactly once.',
+    });
+  }
 });
 
 function profilePrompt(profile: Profile) {
@@ -107,8 +127,17 @@ Hard requirements:
 - Never invent precision about calories burned.`,
   });
 
+  if (response.data.days.length !== profile.trainingDays) {
+    throw new AvalAiError(
+      `AvalAI returned ${response.data.days.length} workout days instead of ${profile.trainingDays}.`,
+      'OUTPUT_VALIDATION_FAILED',
+      502,
+      response.metadata.requestId,
+    );
+  }
+
   const createdAt = new Date().toISOString();
-  return {
+  return WorkoutPlanSchema.parse({
     id: createId('workout-plan'),
     title: response.data.title,
     summary: response.data.summary,
@@ -127,7 +156,7 @@ Hard requirements:
           ...exercise,
         })),
       })),
-  };
+  });
 }
 
 export async function generateNutritionPlan(profile: Profile): Promise<NutritionPlan> {
@@ -156,7 +185,7 @@ Hard requirements:
   });
 
   const createdAt = new Date().toISOString();
-  return {
+  return NutritionPlanSchema.parse({
     id: createId('nutrition-plan'),
     title: response.data.title,
     summary: response.data.summary,
@@ -173,7 +202,7 @@ Hard requirements:
           ...meal,
         })),
       })),
-  };
+  });
 }
 
 export async function estimateFoodFromText(input: {
