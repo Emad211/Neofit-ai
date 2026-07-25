@@ -1,7 +1,20 @@
+import { File } from 'expo-file-system';
 import * as SQLite from 'expo-sqlite';
 import { migrations } from '@/db/migrations';
 
-const DATABASE_NAME = 'neofit.db';
+export const DATABASE_NAME = 'neofit.db';
+const REQUIRED_TABLES = [
+  'app_settings',
+  'profile',
+  'plans',
+  'meal_logs',
+  'activity_logs',
+  'weight_logs',
+  'workout_sessions',
+  'workout_set_logs',
+  'ai_requests',
+  'ai_cache',
+] as const;
 
 let databasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
@@ -39,10 +52,83 @@ export async function getDatabase() {
   return databasePromise;
 }
 
-export async function resetLocalDatabase() {
-  const database = await getDatabase();
+async function closeCurrentDatabase() {
+  if (!databasePromise) return;
+  const database = await databasePromise;
   await database.closeAsync();
   databasePromise = null;
+}
+
+async function validateBackupBytes(bytes: Uint8Array) {
+  if (bytes.byteLength < 512) throw new Error('Backup file is too small to be a valid NeoFit database.');
+  if (bytes.byteLength > 250 * 1024 * 1024) throw new Error('Backup file is larger than the supported limit.');
+
+  const memoryDatabase = await SQLite.deserializeDatabaseAsync(bytes);
+  try {
+    await memoryDatabase.execAsync('PRAGMA foreign_keys = ON;');
+    const integrity = await memoryDatabase.getFirstAsync<Record<string, string>>('PRAGMA integrity_check;');
+    const integrityValue = integrity ? Object.values(integrity)[0] : null;
+    if (integrityValue !== 'ok') throw new Error('SQLite integrity check failed.');
+
+    const rows = await memoryDatabase.getAllAsync<{ name: string }>(
+      `SELECT name FROM sqlite_master
+       WHERE type = 'table' AND name NOT LIKE 'sqlite_%';`,
+    );
+    const tableNames = new Set(rows.map((row) => row.name));
+    const missing = REQUIRED_TABLES.filter((table) => !tableNames.has(table));
+    if (missing.length > 0) {
+      throw new Error(`Backup is missing required tables: ${missing.join(', ')}`);
+    }
+
+    const versionRow = await memoryDatabase.getFirstAsync<{ user_version: number }>('PRAGMA user_version;');
+    const version = Number(versionRow?.user_version || 0);
+    const newestVersion = migrations.at(-1)?.version || 0;
+    if (version < 1 || version > newestVersion) {
+      throw new Error('Backup database version is not supported by this app version.');
+    }
+  } finally {
+    await memoryDatabase.closeAsync();
+  }
+}
+
+async function writeDatabaseBytes(bytes: Uint8Array) {
+  await SQLite.deleteDatabaseAsync(DATABASE_NAME).catch(() => undefined);
+  const file = new File(SQLite.defaultDatabaseDirectory, DATABASE_NAME);
+  file.write(bytes);
+}
+
+export async function createDatabaseBackupBytes() {
+  const database = await getDatabase();
+  await database.execAsync('PRAGMA wal_checkpoint(TRUNCATE);');
+  const bytes = await database.serializeAsync();
+  await validateBackupBytes(bytes);
+  return bytes;
+}
+
+export async function restoreDatabaseBackupBytes(bytes: Uint8Array) {
+  await validateBackupBytes(bytes);
+
+  const current = await getDatabase();
+  await current.execAsync('PRAGMA wal_checkpoint(TRUNCATE);');
+  const rollbackBytes = await current.serializeAsync();
+  await closeCurrentDatabase();
+
+  try {
+    await writeDatabaseBytes(bytes);
+    const restored = await getDatabase();
+    const integrity = await restored.getFirstAsync<Record<string, string>>('PRAGMA integrity_check;');
+    const integrityValue = integrity ? Object.values(integrity)[0] : null;
+    if (integrityValue !== 'ok') throw new Error('Restored database failed its integrity check.');
+  } catch (error) {
+    await closeCurrentDatabase().catch(() => undefined);
+    await writeDatabaseBytes(rollbackBytes);
+    await getDatabase();
+    throw error;
+  }
+}
+
+export async function resetLocalDatabase() {
+  await closeCurrentDatabase();
   await SQLite.deleteDatabaseAsync(DATABASE_NAME);
   await getDatabase();
 }
