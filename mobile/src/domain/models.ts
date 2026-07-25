@@ -80,6 +80,16 @@ export const NutritionPlanSchema = z.object({
   days: z.array(NutritionDaySchema).length(7),
   safetyNotes: z.array(z.string().trim().min(1).max(500)).max(12),
   createdAt: z.string().datetime(),
+}).superRefine((plan, context) => {
+  const dayIndexes = plan.days.map((day) => day.dayIndex);
+  const uniqueIndexes = new Set(dayIndexes);
+  if (uniqueIndexes.size !== 7 || ![0, 1, 2, 3, 4, 5, 6].every((index) => uniqueIndexes.has(index))) {
+    context.addIssue({
+      code: 'custom',
+      path: ['days'],
+      message: 'Nutrition plan must contain each dayIndex from 0 through 6 exactly once.',
+    });
+  }
 });
 export type NutritionPlan = z.infer<typeof NutritionPlanSchema>;
 
@@ -110,6 +120,15 @@ export const WorkoutPlanSchema = z.object({
   days: z.array(WorkoutDaySchema).min(2).max(7),
   safetyNotes: z.array(z.string().trim().min(1).max(500)).max(12),
   createdAt: z.string().datetime(),
+}).superRefine((plan, context) => {
+  const dayIndexes = plan.days.map((day) => day.dayIndex);
+  if (new Set(dayIndexes).size !== dayIndexes.length) {
+    context.addIssue({
+      code: 'custom',
+      path: ['days'],
+      message: 'Workout dayIndex values must be unique.',
+    });
+  }
 });
 export type WorkoutPlan = z.infer<typeof WorkoutPlanSchema>;
 
