@@ -66,7 +66,7 @@ Each generated exercise stores canonical Persian/English names, movement pattern
 - ranks likely form-tutorial content on the phone
 - displays the selected video below the exercise
 - lets the user cycle results or open YouTube directly
-- caches results locally to reduce repeated quota use
+- caches results locally across regenerated plans to reduce repeated quota use
 
 The app sends only the exercise search phrase to YouTube, not profile, health, workout history, or meal data.
 
@@ -103,10 +103,26 @@ Use Settings → Export backup to save a `.db` file outside the app. Removing th
 ## Validation
 
 ```bash
+npm ci
 npm test
-npm run typecheck
+npx expo install --check
 npm run doctor
+npm run typecheck
 npx expo export --platform android
 ```
 
-The `Mobile CI` GitHub Action runs package checks, deterministic tests, strict TypeScript, Expo Doctor, and Android export on every branch update and pull request.
+The `Mobile CI` GitHub Action enforces all six checks on every branch update and pull request. Tests currently verify the 83-item catalog, unique identifiers, schema backward compatibility, safe exercise defaults, and deterministic calorie/macro target behavior.
+
+## Device-only acceptance checks
+
+Static validation cannot prove native runtime behavior. Before a release build, test on at least one real Android phone:
+
+- first-launch language selection and Persian RTL layout
+- six-step onboarding draft resume after force-closing the app
+- SQLite migration from an older local database
+- AvalAI connection, structured workout/nutrition generation, and failed-output handling
+- YouTube search, result cycling, inline/fullscreen playback, quota errors, and cache reuse
+- camera and gallery food estimation
+- Iranian-food search, serving scaling, custom foods, and offline logging
+- workout draft resume, rest haptics, final transactional save, and progress refresh
+- backup export, valid restore, invalid-file rollback, and complete local reset
