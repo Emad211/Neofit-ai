@@ -6,11 +6,9 @@
     "orientation": "portrait",
     "scheme": "neofit",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "android": {
       "package": "com.emad211.neofit",
       "versionCode": 1,
-      "edgeToEdgeEnabled": true,
       "permissions": [
         "android.permission.CAMERA"
       ]
