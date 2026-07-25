@@ -37,6 +37,7 @@ export default function WorkoutPlayerScreen() {
   const [restSeconds, setRestSeconds] = React.useState(0);
   const [pendingPosition, setPendingPosition] = React.useState<{ exerciseIndex: number; setIndex: number } | null>(null);
   const [saving, setSaving] = React.useState(false);
+  const [advancing, setAdvancing] = React.useState(false);
   const [completed, setCompleted] = React.useState<{ durationMinutes: number; totalVolumeKg: number } | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const label = (en: string, fa: string) => locale === 'fa' ? fa : en;
@@ -126,7 +127,7 @@ export default function WorkoutPlayerScreen() {
   };
 
   const completeSet = async () => {
-    if (!day || !exercise) return;
+    if (!day || !exercise || advancing || saving) return;
     const repsNumber = Number(reps);
     const weightNumber = Number(weight || 0);
     if (!Number.isInteger(repsNumber) || repsNumber < 1 || repsNumber > 1_000) {
@@ -138,34 +139,42 @@ export default function WorkoutPlayerScreen() {
       return;
     }
 
+    setAdvancing(true);
     setError(null);
-    const entry: WorkoutSetLogInput = {
-      exerciseOrder: exerciseIndex,
-      exerciseName: exercise.name,
-      setNumber: setIndex + 1,
-      reps: repsNumber,
-      weightKg: weightNumber,
-    };
-    const nextSets = [
-      ...completedSets.filter((item) => !(item.exerciseOrder === exerciseIndex && item.setNumber === setIndex + 1)),
-      entry,
-    ].sort((a, b) => a.exerciseOrder - b.exerciseOrder || a.setNumber - b.setNumber);
-    setCompletedSets(nextSets);
+    try {
+      const entry: WorkoutSetLogInput = {
+        exerciseOrder: exerciseIndex,
+        exerciseName: exercise.name,
+        setNumber: setIndex + 1,
+        reps: repsNumber,
+        weightKg: weightNumber,
+      };
+      const nextSets = [
+        ...completedSets.filter((item) => !(item.exerciseOrder === exerciseIndex && item.setNumber === setIndex + 1)),
+        entry,
+      ].sort((a, b) => a.exerciseOrder - b.exerciseOrder || a.setNumber - b.setNumber);
+      setCompletedSets(nextSets);
 
-    const isLastSet = setIndex >= exercise.sets - 1;
-    const isLastExercise = exerciseIndex >= day.exercises.length - 1;
-    if (isLastSet && isLastExercise) {
-      await finishWorkout(nextSets);
-      return;
+      const isLastSet = setIndex >= exercise.sets - 1;
+      const isLastExercise = exerciseIndex >= day.exercises.length - 1;
+      if (isLastSet && isLastExercise) {
+        await persistDraft({ exerciseIndex, setIndex, sets: nextSets });
+        await finishWorkout(nextSets);
+        return;
+      }
+
+      const nextPosition = isLastSet
+        ? { exerciseIndex: exerciseIndex + 1, setIndex: 0 }
+        : { exerciseIndex, setIndex: setIndex + 1 };
+      await persistDraft({ ...nextPosition, sets: nextSets });
+      setPendingPosition(nextPosition);
+      setRestSeconds(exercise.restSeconds);
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : label('Set saving failed.', 'ذخیره ست انجام نشد.'));
+    } finally {
+      setAdvancing(false);
     }
-
-    const nextPosition = isLastSet
-      ? { exerciseIndex: exerciseIndex + 1, setIndex: 0 }
-      : { exerciseIndex, setIndex: setIndex + 1 };
-    await persistDraft({ ...nextPosition, sets: nextSets });
-    setPendingPosition(nextPosition);
-    setRestSeconds(exercise.restSeconds);
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
   };
 
   if (!ready) {
@@ -236,7 +245,7 @@ export default function WorkoutPlayerScreen() {
         <Field label={label('Repetitions', 'تعداد تکرار')} value={reps} onChangeText={setReps} keyboardType="number-pad" />
         <Field label={label('Weight (kg)', 'وزن (کیلوگرم)')} hint={label('Use zero for bodyweight exercises.', 'برای حرکات وزن بدن عدد صفر را وارد کنید.')} value={weight} onChangeText={setWeight} keyboardType="decimal-pad" />
         {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
-        <PrimaryButton title={label('Complete set', 'ثبت پایان ست')} onPress={completeSet} loading={saving} />
+        <PrimaryButton title={label('Complete set', 'ثبت پایان ست')} onPress={completeSet} loading={saving || advancing} />
       </Card>
 
       {completedForExercise.length > 0 ? (
