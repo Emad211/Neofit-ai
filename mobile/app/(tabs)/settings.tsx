@@ -3,6 +3,7 @@ import { Alert, View } from 'react-native';
 import { router } from 'expo-router';
 import { AppText, Card, ChoiceGrid, InlineNotice, PageTitle, PrimaryButton, Screen } from '@/components/ui';
 import { healthCheckDatabase } from '@/db/database';
+import { countFoodCatalog } from '@/db/food-repository';
 import { useApp } from '@/providers/app-provider';
 import { exportLocalBackup, importLocalBackup } from '@/services/backup-service';
 
@@ -11,15 +12,21 @@ export default function SettingsScreen() {
     locale,
     profile,
     hasAvalAiKey,
+    hasYouTubeKey,
     t,
     setLocale,
     refreshAll,
     deleteAllLocalData,
   } = useApp();
+  const [foodCount, setFoodCount] = React.useState(0);
   const [busy, setBusy] = React.useState<'export' | 'import' | 'reset' | 'health' | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
-  const label = (en: string, fa: string) => locale === 'fa' ? fa : en;
+  const label = React.useCallback((en: string, fa: string) => locale === 'fa' ? fa : en, [locale]);
+
+  React.useEffect(() => {
+    void countFoodCatalog().then(setFoodCount).catch((caught) => console.error('Food catalog count failed:', caught));
+  }, []);
 
   const run = async (
     kind: NonNullable<typeof busy>,
@@ -50,16 +57,22 @@ export default function SettingsScreen() {
     const result = await importLocalBackup();
     if (!result.imported) return;
     await refreshAll();
+    setFoodCount(await countFoodCatalog());
     setNotice(label(
-      `Backup restored from ${result.name}. The AvalAI key was not changed.`,
-      `فایل پشتیبان ${result.name} بازیابی شد. کلید AvalAI تغییر نکرد.`,
+      `Backup restored from ${result.name}. Personal API keys were not changed.`,
+      `فایل پشتیبان ${result.name} بازیابی شد. کلیدهای شخصی API تغییر نکردند.`,
     ));
   });
 
   const checkDatabase = () => run('health', async () => {
     const healthy = await healthCheckDatabase();
     if (!healthy) throw new Error(label('The local database health check failed.', 'بررسی سلامت دیتابیس محلی ناموفق بود.'));
-    setNotice(label('The local SQLite database is healthy.', 'دیتابیس محلی SQLite سالم است.'));
+    const count = await countFoodCatalog();
+    setFoodCount(count);
+    setNotice(label(
+      `The local SQLite database is healthy and contains ${count} food entries.`,
+      `دیتابیس محلی SQLite سالم است و ${count} قلم غذا دارد.`,
+    ));
   });
 
   const confirmReset = () => {
@@ -105,22 +118,38 @@ export default function SettingsScreen() {
         <AppText size={20} weight="800">{label('Personal profile', 'پروفایل شخصی')}</AppText>
         <View style={{ gap: 4 }}>
           <AppText weight="700">{profile?.name || t('common.notSet')}</AppText>
-          <AppText muted size={13}>{profile ? `${profile.weightKg} kg · ${profile.heightCm} cm · ${profile.trainingDays} ${label('training days', 'روز تمرین')}` : t('common.notSet')}</AppText>
+          <AppText muted size={13}>{profile ? `${profile.weightKg} kg · ${profile.heightCm} cm · ${profile.trainingDays} ${label('training days', 'روز تمرین')} · ${profile.details.mealsPerDay} ${label('meals/day', 'وعده در روز')}` : t('common.notSet')}</AppText>
         </View>
-        <PrimaryButton title={label('Edit profile', 'ویرایش پروفایل')} variant="secondary" onPress={() => router.push('/profile-setup')} />
+        <PrimaryButton title={label('Edit rich profile', 'ویرایش پروفایل کامل')} variant="secondary" onPress={() => router.push('/profile-setup')} />
       </Card>
 
       <Card>
-        <AppText size={20} weight="800">{t('settings.avalai')}</AppText>
-        <AppText muted>{hasAvalAiKey ? label('A personal key is stored in SecureStore.', 'کلید شخصی در SecureStore ذخیره شده است.') : t('ai.missingKey')}</AppText>
-        <PrimaryButton title={t('settings.avalai')} onPress={() => router.push('/ai-settings')} />
+        <AppText size={20} weight="800">{label('AI and exercise-video services', 'هوش مصنوعی و ویدئوی آموزشی')}</AppText>
+        <View style={{ gap: 8 }}>
+          <AppText muted>{hasAvalAiKey
+            ? label('AvalAI: personal key stored securely', 'AvalAI: کلید شخصی به‌صورت امن ذخیره شده')
+            : label('AvalAI: not configured', 'AvalAI: تنظیم نشده')}</AppText>
+          <AppText muted>{hasYouTubeKey
+            ? label('YouTube tutorial agent: personal API key stored securely', 'ایجنت ویدئوی YouTube: کلید شخصی به‌صورت امن ذخیره شده')
+            : label('YouTube tutorial agent: direct search only until configured', 'ایجنت ویدئوی YouTube: تا زمان تنظیم فقط جست‌وجوی مستقیم')}</AppText>
+        </View>
+        <PrimaryButton title={label('Configure AI and YouTube', 'تنظیم AvalAI و YouTube')} onPress={() => router.push('/ai-settings')} />
+      </Card>
+
+      <Card>
+        <AppText size={20} weight="800">{label('Iranian food catalog', 'کاتالوگ غذاهای ایرانی')}</AppText>
+        <AppText muted>{label(
+          `${foodCount} local entries, including any foods you added yourself.`,
+          `${foodCount} قلم محلی، شامل غذاهای سفارشی که خودتان اضافه کرده‌اید.`,
+        )}</AppText>
+        <PrimaryButton title={label('Open and edit food catalog', 'بازکردن و ویرایش کاتالوگ غذا')} variant="secondary" onPress={() => router.push('/iranian-foods')} />
       </Card>
 
       <Card>
         <AppText size={20} weight="800">{label('Backup and restore', 'پشتیبان‌گیری و بازیابی')}</AppText>
         <AppText muted size={13}>{label(
-          'The backup contains the local SQLite database. It does not include the AvalAI API key.',
-          'فایل پشتیبان شامل دیتابیس محلی SQLite است و کلید AvalAI را شامل نمی‌شود.',
+          'The backup contains the local SQLite database, including custom foods and cached tutorial results. It does not include AvalAI or YouTube API keys.',
+          'فایل پشتیبان شامل دیتابیس محلی SQLite، غذاهای سفارشی و نتیجه‌های کش‌شده ویدئو است؛ کلیدهای AvalAI و YouTube را شامل نمی‌شود.',
         )}</AppText>
         <InlineNotice tone="warning">{label(
           'The exported database file is not encrypted. Anyone who obtains the file may be able to read profile, health, nutrition, and workout data. Store it only in a private location.',
