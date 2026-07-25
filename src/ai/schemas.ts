@@ -155,13 +155,17 @@ export type GenerateRecipeOutput = z.infer<typeof GenerateRecipeOutputSchema>;
 export const SuggestMealAlternativeInputSchema = z.object({
   userId: z.string().optional(),
   mealId: boundedText(100),
-  context: boundedText(2_000),
+  context: boundedText(4_000),
   locale: LocaleSchema.optional(),
 });
 export type SuggestMealAlternativeInput = z.infer<typeof SuggestMealAlternativeInputSchema>;
 export const SuggestMealAlternativeOutputSchema = z.object({
-  alternativeMeal: boundedText(1_000),
-  calories: z.number().int().min(0).max(3_000).optional(),
+  alternativeMeal: boundedText(160),
+  calories: z.number().int().min(0).max(3_000),
+  protein: z.number().min(0).max(500),
+  carbohydrates: z.number().min(0).max(1_000),
+  fat: z.number().min(0).max(500),
+  ingredients: z.array(IngredientSchema).min(1).max(30),
   warning: z.string().max(500).optional(),
 });
 export type SuggestMealAlternativeOutput = z.infer<typeof SuggestMealAlternativeOutputSchema>;
