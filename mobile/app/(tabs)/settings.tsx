@@ -41,8 +41,8 @@ export default function SettingsScreen() {
   const exportBackup = () => run('export', async () => {
     const result = await exportLocalBackup();
     setNotice(label(
-      `Backup prepared (${Math.max(1, Math.round(result.size / 1024))} KB). Choose where to save it.`,
-      `فایل پشتیبان آماده شد (${Math.max(1, Math.round(result.size / 1024))} کیلوبایت). محل ذخیره را انتخاب کنید.`,
+      `Backup prepared (${Math.max(1, Math.round(result.size / 1024))} KB). Choose a private and trusted location to save it.`,
+      `فایل پشتیبان آماده شد (${Math.max(1, Math.round(result.size / 1024))} کیلوبایت). آن را فقط در محل خصوصی و مطمئن ذخیره کنید.`,
     ));
   });
 
@@ -122,6 +122,10 @@ export default function SettingsScreen() {
           'The backup contains the local SQLite database. It does not include the AvalAI API key.',
           'فایل پشتیبان شامل دیتابیس محلی SQLite است و کلید AvalAI را شامل نمی‌شود.',
         )}</AppText>
+        <InlineNotice tone="warning">{label(
+          'The exported database file is not encrypted. Anyone who obtains the file may be able to read profile, health, nutrition, and workout data. Store it only in a private location.',
+          'فایل دیتابیس خروجی رمزگذاری نشده است. هر کسی که به فایل دسترسی پیدا کند ممکن است اطلاعات پروفایل، سلامت، تغذیه و تمرین را بخواند. آن را فقط در محل خصوصی نگه دارید.',
+        )}</InlineNotice>
         <PrimaryButton title={label('Export backup', 'خروجی فایل پشتیبان')} variant="secondary" onPress={exportBackup} loading={busy === 'export'} disabled={busy !== null && busy !== 'export'} />
         <PrimaryButton title={label('Import backup', 'بازیابی از فایل')} variant="secondary" onPress={importBackup} loading={busy === 'import'} disabled={busy !== null && busy !== 'import'} />
         <PrimaryButton title={label('Check database health', 'بررسی سلامت دیتابیس')} variant="ghost" onPress={checkDatabase} loading={busy === 'health'} disabled={busy !== null && busy !== 'health'} />
