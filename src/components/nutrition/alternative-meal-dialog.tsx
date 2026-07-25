@@ -1,39 +1,40 @@
+'use client';
 
-"use client"
-
-import * as React from "react"
+import * as React from 'react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog"
-import { Button } from "../ui/button"
-import { Loader2, RefreshCw } from "lucide-react"
-import { suggestMealAlternative } from "@/ai/flows/suggest-meal-alternative"
-import { Card, CardContent } from "../ui/card"
-import type { Meal } from "./meal-card"
-import { useUserData } from "@/context/user-profile-context"
-
-type AlternativeMealDialogProps = {
-  meal: Meal;
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  onSelectAlternative: (newMealName: string) => void;
-};
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { suggestMealAlternative } from '@/ai/flows/suggest-meal-alternative';
+import type { SuggestMealAlternativeOutput } from '@/ai/schemas';
+import type { Meal } from '@/components/nutrition/meal-card';
+import { useUserData } from '@/context/user-profile-context';
+import { useI18n } from '@/i18n/provider';
 
 export function AlternativeMealDialog({
   meal,
   isOpen,
   onOpenChange,
   onSelectAlternative,
-}: AlternativeMealDialogProps) {
+}: {
+  meal: Meal;
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  onSelectAlternative: (newMealName: string) => void;
+}) {
   const [isLoading, setIsLoading] = React.useState(false);
-  const [alternative, setAlternative] = React.useState<{ alternativeMeal: string } | null>(null);
+  const [alternative, setAlternative] = React.useState<SuggestMealAlternativeOutput | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const { user, userProfile } = useUserData();
+  const { locale, t } = useI18n();
 
   const fetchAlternative = React.useCallback(async () => {
     if (!user || !userProfile) return;
@@ -41,67 +42,68 @@ export function AlternativeMealDialog({
     setError(null);
     setAlternative(null);
     try {
-      const result = await suggestMealAlternative({
-        userId: user.uid,
-        mealId: meal.name,
-        context: `User is looking for an alternative to ${meal.name}. The original meal has around ${meal.calories} calories. Suggest something similar.`,
-        geminiApiKey: userProfile.geminiApiKey,
-      });
-      setAlternative(result);
-    } catch (e) {
-      console.error(e);
-      setError("Could not fetch an alternative meal. Please try again.");
+      setAlternative(await suggestMealAlternative({
+        mealId: meal.id || meal.name,
+        context: JSON.stringify({
+          originalMeal: {
+            name: meal.name,
+            calories: meal.calories,
+            protein: meal.protein,
+            carbohydrates: meal.carbohydrates,
+            fat: meal.fat,
+            ingredients: meal.ingredients,
+          },
+          dietaryPreference: userProfile.dietaryPreference || 'none',
+          allergiesAndDislikes: userProfile.eatingHabits || 'None',
+          cookingSkill: userProfile.cookingSkill,
+          budget: userProfile.costLevel,
+        }),
+        locale,
+      }));
+    } catch (caught) {
+      console.error('Meal alternative failed:', caught);
+      setError(locale === 'fa' ? 'جایگزین قابل‌اعتمادی ساخته نشد.' : 'A reliable alternative could not be generated.');
     } finally {
       setIsLoading(false);
     }
-  }, [meal, user, userProfile]);
-  
-  React.useEffect(() => {
-    if (isOpen) {
-        fetchAlternative();
-    }
-  }, [isOpen, fetchAlternative]);
+  }, [locale, meal, user, userProfile]);
 
-  const handleReplace = () => {
-    if (alternative) {
-        onSelectAlternative(alternative.alternativeMeal);
-        onOpenChange(false);
+  React.useEffect(() => {
+    if (isOpen && !alternative && !isLoading) void fetchAlternative();
+    if (!isOpen) {
+      setAlternative(null);
+      setError(null);
     }
-  }
+  }, [alternative, fetchAlternative, isLoading, isOpen]);
+
+  const replace = () => {
+    if (!alternative) return;
+    onSelectAlternative(alternative.alternativeMeal);
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Alternative Meal Suggestion</DialogTitle>
-          <DialogDescription>
-            Here is a smart suggestion to replace {meal.name}.
-          </DialogDescription>
+          <DialogTitle>{locale === 'fa' ? 'پیشنهاد غذای جایگزین' : 'Alternative meal suggestion'}</DialogTitle>
+          <DialogDescription>{locale === 'fa' ? `جایگزین پیشنهادی برای ${meal.name}` : `A proposed replacement for ${meal.name}.`}</DialogDescription>
         </DialogHeader>
-        <div className="py-4 min-h-[10rem] flex items-center justify-center">
-            {isLoading && (
-                <div className="flex items-center justify-center h-24">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-            )}
-            {error && <p className="text-destructive text-center">{error}</p>}
-            {alternative && (
-                <Card>
-                    <CardContent className="p-4 text-center">
-                        <h3 className="font-bold text-lg text-primary">{alternative.alternativeMeal}</h3>
-                        <p className="text-sm text-muted-foreground mt-2">This meal has a similar nutritional profile and fits your goals.</p>
-                    </CardContent>
-                </Card>
-            )}
+        <div className="flex min-h-40 items-center justify-center py-4">
+          {isLoading && <Loader2 className="h-8 w-8 animate-spin text-primary" />}
+          {error && <p className="text-center text-destructive">{error}</p>}
+          {alternative && (
+            <div className="w-full space-y-3">
+              <Card><CardContent className="p-4 text-center"><h3 className="text-lg font-bold text-primary">{alternative.alternativeMeal}</h3>{alternative.calories !== undefined && <p className="mt-2 text-sm text-muted-foreground">≈ {alternative.calories} kcal</p>}</CardContent></Card>
+              {alternative.warning && <Alert><AlertDescription>{alternative.warning}</AlertDescription></Alert>}
+            </div>
+          )}
         </div>
         <DialogFooter>
-            <Button variant="secondary" onClick={fetchAlternative} disabled={isLoading}>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Suggest Another
-            </Button>
-            <Button onClick={handleReplace} disabled={!alternative}>
-                Replace Meal
-            </Button>
+          <Button variant="secondary" onClick={() => void fetchAlternative()} disabled={isLoading}>
+            <RefreshCw className="me-2 h-4 w-4" />{locale === 'fa' ? 'پیشنهاد دیگر' : 'Suggest another'}
+          </Button>
+          <Button onClick={replace} disabled={!alternative}>{locale === 'fa' ? 'جایگزین‌کردن' : 'Replace meal'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
