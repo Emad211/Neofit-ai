@@ -1,12 +1,11 @@
-"use client"
+'use client';
 
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { useRouter, useSearchParams } from "next/navigation"
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -15,247 +14,168 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Slider } from "@/components/ui/slider"
-import { Card, CardContent } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
-import { MoveRight, Info } from "lucide-react"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-
-const bodyTypes = [
-    { value: "ectomorph", label: "Ectomorph", description: "Lean and long, with difficulty building muscle.", image: "/uploads/ECTOMORFO.png", dataAiHint: "lean body", details: ["Tall and lean", "Small muscles", "High metabolism", "Hard to gain weight"] },
-    { value: "mesomorph", label: "Mesomorph", description: "Muscular and well-built, with a high metabolism.", image: "/uploads/MESOMORFO.png", dataAiHint: "muscular body", details: ["Wide shoulders", "Athletic muscles", "Efficient metabolism", "Balanced weight"] },
-    { value: "endomorph", label: "Endomorph", description: "Big, high body fat, often pear-shaped.", image: "/uploads/ENDOMORFO.png", dataAiHint: "large body", details: ["Large bone structure", "Higher body fat", "Gains weight easily", "Slower metabolism"] },
-]
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { MoveRight } from 'lucide-react';
+import { useOnboarding } from '@/context/onboarding-context';
+import { useI18n } from '@/i18n/provider';
 
 const FormSchema = z.object({
-  gender: z.enum(["male", "female", "other"], { required_error: "Please select a gender." }),
-  age: z.coerce.number().min(16, "You must be at least 16 years old.").max(100),
-  height: z.array(z.number()).min(1).max(1),
-  weight: z.array(z.number()).min(1).max(1),
-  bodyType: z.enum(["ectomorph", "mesomorph", "endomorph"], { required_error: "Please select your body type." }),
-  fitnessLevel: z.enum(["beginner", "intermediate", "advanced"], { required_error: "Please select your fitness level." }),
-})
+  gender: z.enum(['male', 'female', 'other']),
+  age: z.coerce.number().int().min(16).max(100),
+  height: z.number().int().min(100).max(250),
+  weight: z.number().min(30).max(300),
+  bodyType: z.enum(['ectomorph', 'mesomorph', 'endomorph']),
+  fitnessLevel: z.enum(['beginner', 'intermediate', 'advanced']),
+});
+
+type Values = z.infer<typeof FormSchema>;
 
 export function OnboardingDetailsForm() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const router = useRouter();
+  const { draft, updateDraft } = useOnboarding();
+  const { locale, t } = useI18n();
+  const form = useForm<Values>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      age: 25,
-      height: [175],
-      weight: [70],
+      gender: draft.gender,
+      age: draft.age || 25,
+      height: draft.height || 175,
+      weight: draft.weight || 70,
+      bodyType: draft.bodyType,
+      fitnessLevel: draft.fitnessLevel,
     },
-  })
+  });
 
-  function onSubmit(data: z.infer<typeof FormSchema>) {
-    const params = new URLSearchParams(searchParams);
-    params.set('gender', data.gender);
-    params.set('age', String(data.age));
-    params.set('height', String(data.height[0]));
-    params.set('weight', String(data.weight[0]));
-    params.set('bodyType', data.bodyType);
-    params.set('fitnessLevel', data.fitnessLevel);
-    router.push(`/onboarding/lifestyle?${params.toString()}`);
+  const bodyTypes = [
+    {
+      value: 'ectomorph' as const,
+      label: locale === 'fa' ? 'اکتومورف' : 'Ectomorph',
+      description: locale === 'fa' ? 'بدن معمولاً باریک‌تر؛ فقط یک توصیف ظاهری و نه معیار متابولیسم.' : 'Usually a leaner frame; a visual description, not a metabolic diagnosis.',
+      image: '/uploads/ECTOMORFO.png',
+    },
+    {
+      value: 'mesomorph' as const,
+      label: locale === 'fa' ? 'مزومورف' : 'Mesomorph',
+      description: locale === 'fa' ? 'بدن معمولاً عضلانی‌تر؛ این انتخاب فقط برای ترجیح بصری است.' : 'Usually a more muscular frame; used only as a visual preference.',
+      image: '/uploads/MESOMORFO.png',
+    },
+    {
+      value: 'endomorph' as const,
+      label: locale === 'fa' ? 'اندومورف' : 'Endomorph',
+      description: locale === 'fa' ? 'بدن معمولاً درشت‌تر؛ این برچسب پیش‌بینی علمی متابولیسم نیست.' : 'Usually a broader frame; this label does not scientifically predict metabolism.',
+      image: '/uploads/ENDOMORFO.png',
+    },
+  ];
+
+  function onSubmit(data: Values) {
+    updateDraft(data);
+    router.push('/onboarding/lifestyle');
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-         <FormField
-            control={form.control}
-            name="gender"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel>Gender</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    className="flex space-x-4"
-                  >
-                    <FormItem className="flex items-center space-x-2">
-                      <FormControl>
-                        <RadioGroupItem value="male" />
-                      </FormControl>
-                      <FormLabel className="font-normal">Male</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-2">
-                      <FormControl>
-                        <RadioGroupItem value="female" />
-                      </FormControl>
-                      <FormLabel className="font-normal">Female</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-2">
-                      <FormControl>
-                        <RadioGroupItem value="other" />
-                      </FormControl>
-                      <FormLabel className="font-normal">Other</FormLabel>
-                    </FormItem>
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="age"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Age</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="25" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-        <FormField
-          control={form.control}
-          name="height"
-          render={({ field }) => (
+        <div className="grid gap-6 md:grid-cols-2">
+          <FormField control={form.control} name="gender" render={({ field }) => (
             <FormItem>
-              <FormLabel>Height: {field.value} cm</FormLabel>
+              <FormLabel>{t('onboarding.gender')}</FormLabel>
               <FormControl>
-                <Slider
-                  min={100}
-                  max={250}
-                  step={1}
-                  defaultValue={field.value}
-                  onValueChange={field.onChange}
-                />
+                <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-wrap gap-4">
+                  {(['male', 'female', 'other'] as const).map((value) => (
+                    <FormItem key={value} className="flex items-center gap-2 space-y-0">
+                      <FormControl><RadioGroupItem value={value} /></FormControl>
+                      <FormLabel className="font-normal">{t(`onboarding.${value}`)}</FormLabel>
+                    </FormItem>
+                  ))}
+                </RadioGroup>
               </FormControl>
               <FormMessage />
             </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="weight"
-          render={({ field }) => (
+          )} />
+          <FormField control={form.control} name="age" render={({ field }) => (
             <FormItem>
-              <FormLabel>Weight: {field.value} kg</FormLabel>
-              <FormControl>
-                 <Slider
-                  min={30}
-                  max={300}
-                  step={1}
-                  defaultValue={field.value}
-                  onValueChange={field.onChange}
-                />
-              </FormControl>
+              <FormLabel>{t('onboarding.age')}</FormLabel>
+              <FormControl><Input type="number" inputMode="numeric" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
-          )}
-        />
+          )} />
+        </div>
 
-        <FormField
-          control={form.control}
-          name="bodyType"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>Body Type</FormLabel>
-               <FormDescription>
-                This helps us understand your metabolism and body composition.
-              </FormDescription>
-              <FormControl>
-                 <TooltipProvider>
-                    <RadioGroup
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-4"
-                    >
-                    {bodyTypes.map(type => (
-                        <FormItem key={type.value} className="h-full">
-                            <div className="relative">
-                                <FormControl>
-                                    <RadioGroupItem value={type.value} className="sr-only" />
-                                </FormControl>
-                                <FormLabel className="font-normal h-full">
-                                    <Card className={cn(
-                                        "h-full cursor-pointer transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl hover:border-primary",
-                                        field.value === type.value && "border-primary ring-2 ring-primary"
-                                    )}>
-                                        <CardContent className="flex flex-col items-center justify-start text-center p-4">
-                                            <div className="relative w-full h-64 mb-4">
-                                                <Image src={type.image} alt={type.label} layout="fill" objectFit="contain" className="rounded-t-lg" data-ai-hint={type.dataAiHint} />
-                                            </div>
-                                            <p className="text-muted-foreground text-xs mt-1">{type.description}</p>
-                                        </CardContent>
-                                    </Card>
-                                </FormLabel>
-                                <div className="absolute top-2 right-2">
-                                     <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button type="button" variant="ghost" size="icon" className="h-6 w-6 rounded-full bg-muted/50 text-muted-foreground hover:bg-muted">
-                                                <Info className="h-4 w-4"/>
-                                            </Button>
-                                        </TooltipTrigger>
-                                         <TooltipContent side="top" align="center">
-                                            <div className="p-2">
-                                                <h4 className="font-bold text-base mb-2">{type.label}</h4>
-                                                <ul className="list-disc list-inside space-y-1 text-sm">
-                                                    {type.details.map(detail => <li key={detail}>{detail}</li>)}
-                                                </ul>
-                                            </div>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </div>
-                            </div>
-                        </FormItem>
-                    ))}
-                    </RadioGroup>
-                </TooltipProvider>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="fitnessLevel"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Current Fitness Level</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select your current fitness level" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="beginner">Beginner</SelectItem>
-                  <SelectItem value="intermediate">Intermediate</SelectItem>
-                  <SelectItem value="advanced">Advanced</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                Be honest! This ensures we create a safe and effective plan for you.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <FormField control={form.control} name="height" render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t('onboarding.height')}: {field.value} cm</FormLabel>
+            <FormControl>
+              <Slider min={100} max={250} step={1} value={[field.value]} onValueChange={([value]) => field.onChange(value)} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
 
+        <FormField control={form.control} name="weight" render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t('onboarding.weight')}: {field.value} kg</FormLabel>
+            <FormControl>
+              <Slider min={30} max={300} step={1} value={[field.value]} onValueChange={([value]) => field.onChange(value)} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
 
-        <Button type="submit" size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-          Next <MoveRight className="ml-2 h-5 w-5" />
+        <FormField control={form.control} name="bodyType" render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t('onboarding.bodyType')}</FormLabel>
+            <FormDescription>
+              {locale === 'fa' ? 'تیپ‌های بدنی دسته‌بندی پزشکی نیستند و فقط برای شخصی‌سازی ظاهری استفاده می‌شوند.' : 'Body types are not medical categories and are used only for visual personalization.'}
+            </FormDescription>
+            <FormControl>
+              <RadioGroup onValueChange={field.onChange} value={field.value} className="grid gap-4 md:grid-cols-3">
+                {bodyTypes.map((type) => (
+                  <FormItem key={type.value}>
+                    <FormControl><RadioGroupItem value={type.value} className="sr-only" /></FormControl>
+                    <FormLabel className="font-normal">
+                      <Card className={cn('cursor-pointer overflow-hidden', field.value === type.value && 'border-primary ring-2 ring-primary')}>
+                        <CardContent className="p-4 text-center">
+                          <div className="relative mb-3 h-56 w-full">
+                            <Image src={type.image} alt={type.label} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-contain" />
+                          </div>
+                          <p className="font-semibold">{type.label}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{type.description}</p>
+                        </CardContent>
+                      </Card>
+                    </FormLabel>
+                  </FormItem>
+                ))}
+              </RadioGroup>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+
+        <FormField control={form.control} name="fitnessLevel" render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t('onboarding.fitnessLevel')}</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value}>
+              <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+              <SelectContent>
+                <SelectItem value="beginner">{t('onboarding.beginner')}</SelectItem>
+                <SelectItem value="intermediate">{t('onboarding.intermediate')}</SelectItem>
+                <SelectItem value="advanced">{t('onboarding.advanced')}</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )} />
+
+        <Button type="submit" size="lg" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+          {t('common.next')} <MoveRight className="ms-2 h-5 w-5 rtl:rotate-180" aria-hidden="true" />
         </Button>
       </form>
     </Form>
-  )
+  );
 }
