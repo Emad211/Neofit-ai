@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import { UserDataProvider } from '@/context/user-profile-context';
+import { OnboardingProvider } from '@/context/onboarding-context';
 import { LocaleProvider } from '@/i18n/provider';
 import { LanguageGate } from '@/components/language-gate';
 
@@ -46,7 +47,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <LocaleProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             <LanguageGate>
-              <UserDataProvider>{children}</UserDataProvider>
+              <OnboardingProvider>
+                <UserDataProvider>{children}</UserDataProvider>
+              </OnboardingProvider>
             </LanguageGate>
             <Toaster />
           </ThemeProvider>
