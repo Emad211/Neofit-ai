@@ -3,7 +3,9 @@ import * as SQLite from 'expo-sqlite';
 import { migrations } from '@/db/migrations';
 
 export const DATABASE_NAME = 'neofit.db';
-const REQUIRED_TABLES = [
+const FOOD_SEED_SETTING = 'catalog.iranian-foods.seed-version';
+const FOOD_SEED_VERSION = '1';
+const REQUIRED_V1_TABLES = [
   'app_settings',
   'profile',
   'plans',
@@ -15,6 +17,7 @@ const REQUIRED_TABLES = [
   'ai_requests',
   'ai_cache',
 ] as const;
+const REQUIRED_V2_TABLES = ['food_catalog', 'exercise_video_cache'] as const;
 
 let databasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
@@ -38,10 +41,32 @@ async function runMigrations(database: SQLite.SQLiteDatabase) {
   }
 }
 
+async function seedLocalCatalogs(database: SQLite.SQLiteDatabase) {
+  const row = await database.getFirstAsync<{ value: string }>(
+    'SELECT value FROM app_settings WHERE key = ?;',
+    FOOD_SEED_SETTING,
+  );
+  if (row?.value === FOOD_SEED_VERSION) return;
+
+  const { seedIranianFoodCatalog } = await import('@/db/food-repository');
+  await seedIranianFoodCatalog(database);
+  await database.runAsync(
+    `INSERT INTO app_settings (key, value, updated_at)
+     VALUES (?, ?, ?)
+     ON CONFLICT(key) DO UPDATE SET
+       value = excluded.value,
+       updated_at = excluded.updated_at;`,
+    FOOD_SEED_SETTING,
+    FOOD_SEED_VERSION,
+    new Date().toISOString(),
+  );
+}
+
 export async function getDatabase() {
   if (!databasePromise) {
     databasePromise = SQLite.openDatabaseAsync(DATABASE_NAME).then(async (database) => {
       await runMigrations(database);
+      await seedLocalCatalogs(database);
       return database;
     }).catch((error) => {
       databasePromise = null;
@@ -70,21 +95,24 @@ async function validateBackupBytes(bytes: Uint8Array) {
     const integrityValue = integrity ? Object.values(integrity)[0] : null;
     if (integrityValue !== 'ok') throw new Error('SQLite integrity check failed.');
 
-    const rows = await memoryDatabase.getAllAsync<{ name: string }>(
-      `SELECT name FROM sqlite_master
-       WHERE type = 'table' AND name NOT LIKE 'sqlite_%';`,
-    );
-    const tableNames = new Set(rows.map((row) => row.name));
-    const missing = REQUIRED_TABLES.filter((table) => !tableNames.has(table));
-    if (missing.length > 0) {
-      throw new Error(`Backup is missing required tables: ${missing.join(', ')}`);
-    }
-
     const versionRow = await memoryDatabase.getFirstAsync<{ user_version: number }>('PRAGMA user_version;');
     const version = Number(versionRow?.user_version || 0);
     const newestVersion = migrations.at(-1)?.version || 0;
     if (version < 1 || version > newestVersion) {
       throw new Error('Backup database version is not supported by this app version.');
+    }
+
+    const rows = await memoryDatabase.getAllAsync<{ name: string }>(
+      `SELECT name FROM sqlite_master
+       WHERE type = 'table' AND name NOT LIKE 'sqlite_%';`,
+    );
+    const tableNames = new Set(rows.map((row) => row.name));
+    const required = version >= 2
+      ? [...REQUIRED_V1_TABLES, ...REQUIRED_V2_TABLES]
+      : [...REQUIRED_V1_TABLES];
+    const missing = required.filter((table) => !tableNames.has(table));
+    if (missing.length > 0) {
+      throw new Error(`Backup is missing required tables: ${missing.join(', ')}`);
     }
   } finally {
     await memoryDatabase.closeAsync();
