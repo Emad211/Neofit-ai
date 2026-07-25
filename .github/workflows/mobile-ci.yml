@@ -37,6 +37,14 @@ jobs:
       - name: Install mobile dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Upload generated lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-package-lock
+          path: mobile/package-lock.json
+          if-no-files-found: error
+          retention-days: 3
+
       - name: Check Expo package versions
         run: npx expo install --check
 
