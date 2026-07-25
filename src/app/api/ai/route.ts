@@ -22,7 +22,9 @@ export async function POST(request: Request) {
   try {
     const user = await requireUser(request);
     const payload = RequestSchema.parse(await request.json());
-    const quota = await consumeAiQuota(user.uid, payload.action);
+    const quota = payload.action === 'calculateActivityCalories'
+      ? null
+      : await consumeAiQuota(user.uid, payload.action);
     const result = await runAiAction(payload.action, payload.input, user.uid);
 
     return NextResponse.json({
