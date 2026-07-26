@@ -16,7 +16,7 @@ permissions:
 jobs:
   acquire-licensed-pilot-images:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 12
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
         id: acquire
         continue-on-error: true
         run: |
-          python ifkb/images/download_commons_images.py \
+          python ifkb/images/download_commons_images_curl.py \
             --manifest ifkb/images/pilot_seed_manifest.csv \
             --output build/ifkb-pilot-images-v0.10
 
