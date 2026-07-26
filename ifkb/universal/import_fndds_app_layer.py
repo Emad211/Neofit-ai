@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Build a compact app-search layer from the official USDA FNDDS 2021-2023 CSV archive.
-
-The output intentionally keeps FNDDS records distinct instead of merging foods by name.
-It produces SQLite + JSON + CSV with calories, macro nutrients and available gram portions.
-"""
+"""Build a compact app-search layer from official USDA FNDDS 2021-2023 CSV data."""
 from __future__ import annotations
 
 import argparse
@@ -18,28 +14,30 @@ from pathlib import Path
 from typing import Iterable
 
 FNDDS_URL = "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_csv_2024-10-31.zip"
-USER_AGENT = "IFKB-FNDDS-Importer/1.0 (+https://github.com/Emad211/Neofit-ai)"
+USER_AGENT = "IFKB-FNDDS-Importer/1.1 (+https://github.com/Emad211/Neofit-ai)"
 
-TARGET_NUTRIENTS = {
-    "Energy": "calories_kcal",
-    "Protein": "protein_g",
-    "Total lipid (fat)": "fat_g",
-    "Carbohydrate, by difference": "carbs_g",
-    "Fiber, total dietary": "fiber_g",
-    "Sugars, total including NLEA": "sugars_g",
-    "Sodium, Na": "sodium_mg",
-    "Cholesterol": "cholesterol_mg",
+# Stable USDA nutrient IDs are safer than matching display names, which can change.
+NUTRIENT_ID_TO_FIELD = {
+    "1003": "protein_g",
+    "1004": "fat_g",
+    "1005": "carbs_g",
+    "1079": "fiber_g",
+    "2000": "sugars_g",
+    "1093": "sodium_mg",
+    "1253": "cholesterol_mg",
 }
+ENERGY_ID_PRIORITY = ("1008", "2047", "2048")
+OUTPUT_FIELDS = (
+    "calories_kcal", "protein_g", "fat_g", "carbs_g", "fiber_g",
+    "sugars_g", "sodium_mg", "cholesterol_mg",
+)
 
 
 def download(url: str, output: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(request, timeout=180) as response, output.open("wb") as handle:
-        while True:
-            chunk = response.read(1024 * 1024)
-            if not chunk:
-                break
+        while chunk := response.read(1024 * 1024):
             handle.write(chunk)
 
 
@@ -88,15 +86,11 @@ def main() -> int:
     with zipfile.ZipFile(archive_path) as archive:
         names = archive.namelist()
         food_member = find_member(names, "food.csv")
-        nutrient_member = find_member(names, "nutrient.csv")
         food_nutrient_member = find_member(names, "food_nutrient.csv")
         portion_member = find_member(names, "food_portion.csv")
         measure_member = find_member(names, "measure_unit.csv")
         survey_member = find_member(names, "survey_fndds_food.csv")
 
-        nutrient_name_by_id = {
-            row["id"]: row["name"] for row in rows_from_zip(archive, nutrient_member)
-        }
         measure_name_by_id = {
             row["id"]: row["name"] for row in rows_from_zip(archive, measure_member)
         }
@@ -105,12 +99,24 @@ def main() -> int:
         }
 
         nutrient_values: dict[str, dict[str, float]] = defaultdict(dict)
+        energy_candidates: dict[str, dict[str, float]] = defaultdict(dict)
         for row in rows_from_zip(archive, food_nutrient_member):
-            nutrient_name = nutrient_name_by_id.get(row["nutrient_id"])
-            field = TARGET_NUTRIENTS.get(nutrient_name or "")
+            nutrient_id = row.get("nutrient_id", "")
             amount = as_float(row.get("amount"))
-            if field and amount is not None:
+            if amount is None:
+                continue
+            if nutrient_id in ENERGY_ID_PRIORITY:
+                energy_candidates[row["fdc_id"]][nutrient_id] = amount
+                continue
+            field = NUTRIENT_ID_TO_FIELD.get(nutrient_id)
+            if field:
                 nutrient_values[row["fdc_id"]][field] = amount
+
+        for fdc_id, candidates in energy_candidates.items():
+            for nutrient_id in ENERGY_ID_PRIORITY:
+                if nutrient_id in candidates:
+                    nutrient_values[fdc_id]["calories_kcal"] = candidates[nutrient_id]
+                    break
 
         portions: dict[str, list[dict]] = defaultdict(list)
         for row in rows_from_zip(archive, portion_member):
@@ -132,8 +138,8 @@ def main() -> int:
             if row.get("data_type") != "survey_fndds_food":
                 continue
             fdc_id = row["fdc_id"]
-            survey = survey_by_fdc.get(fdc_id, {})
             nutrients = nutrient_values.get(fdc_id, {})
+            survey = survey_by_fdc.get(fdc_id, {})
             foods.append({
                 "id": f"fndds-{fdc_id}",
                 "fdcId": int(fdc_id),
@@ -141,9 +147,7 @@ def main() -> int:
                 "nameEn": row.get("description", "").strip(),
                 "dataType": row.get("data_type"),
                 "publicationDate": row.get("publication_date"),
-                "nutrientsPer100g": {
-                    key: nutrients.get(key) for key in TARGET_NUTRIENTS.values()
-                },
+                "nutrientsPer100g": {field: nutrients.get(field) for field in OUTPUT_FIELDS},
                 "portions": sorted(portions.get(fdc_id, []), key=lambda item: item["gramWeight"]),
                 "source": {
                     "name": "USDA FoodData Central FNDDS 2021-2023",
@@ -152,6 +156,12 @@ def main() -> int:
             })
 
     foods.sort(key=lambda item: (item["nameEn"].lower(), item["fdcId"]))
+    complete_macro_count = sum(
+        all(food["nutrientsPer100g"].get(key) is not None for key in ("calories_kcal", "protein_g", "fat_g", "carbs_g"))
+        for food in foods
+    )
+    if complete_macro_count < int(len(foods) * 0.95):
+        raise RuntimeError(f"Macro mapping incomplete: {complete_macro_count}/{len(foods)} foods")
 
     json_path = output / "fndds_2021_2023_app_layer.json"
     json_path.write_text(json.dumps({
@@ -163,22 +173,14 @@ def main() -> int:
 
     csv_path = output / "fndds_2021_2023_foods.csv"
     with csv_path.open("w", encoding="utf-8", newline="") as handle:
-        fieldnames = [
-            "id", "fdc_id", "food_code", "name_en", "calories_kcal", "protein_g",
-            "fat_g", "carbs_g", "fiber_g", "sugars_g", "sodium_mg", "cholesterol_mg",
-            "portion_count",
-        ]
+        fieldnames = ["id", "fdc_id", "food_code", "name_en", *OUTPUT_FIELDS, "portion_count"]
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         for food in foods:
-            n = food["nutrientsPer100g"]
+            nutrients = food["nutrientsPer100g"]
             writer.writerow({
                 "id": food["id"], "fdc_id": food["fdcId"], "food_code": food["foodCode"],
-                "name_en": food["nameEn"], "calories_kcal": n["calories_kcal"],
-                "protein_g": n["protein_g"], "fat_g": n["fat_g"], "carbs_g": n["carbs_g"],
-                "fiber_g": n["fiber_g"], "sugars_g": n["sugars_g"],
-                "sodium_mg": n["sodium_mg"], "cholesterol_mg": n["cholesterol_mg"],
-                "portion_count": len(food["portions"]),
+                "name_en": food["nameEn"], **nutrients, "portion_count": len(food["portions"]),
             })
 
     db_path = output / "fndds_2021_2023_app_layer.sqlite"
@@ -200,12 +202,11 @@ def main() -> int:
         CREATE INDEX portions_food_idx ON portions(food_id);
     """)
     for food in foods:
-        n = food["nutrientsPer100g"]
+        nutrients = food["nutrientsPer100g"]
         db.execute(
             "INSERT INTO foods VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
             (food["id"], food["fdcId"], food["foodCode"], food["nameEn"],
-             n["calories_kcal"], n["protein_g"], n["fat_g"], n["carbs_g"],
-             n["fiber_g"], n["sugars_g"], n["sodium_mg"], n["cholesterol_mg"]),
+             *(nutrients[field] for field in OUTPUT_FIELDS)),
         )
         db.executemany(
             "INSERT INTO portions(food_id,amount,label,measure_unit,gram_weight) VALUES (?,?,?,?,?)",
@@ -220,6 +221,8 @@ def main() -> int:
         "officialArchiveUrl": FNDDS_URL,
         "archiveSha256": sha256(archive_path),
         "foodCount": len(foods),
+        "completeMacroCount": complete_macro_count,
+        "portionCount": sum(len(food["portions"]) for food in foods),
         "jsonSha256": sha256(json_path),
         "sqliteSha256": sha256(db_path),
     }
