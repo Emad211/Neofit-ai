@@ -1,5 +1,6 @@
 from __future__ import annotations
-import argparse, csv, hashlib, io, json, random, re, time
+import argparse, csv, hashlib, io, json, os, random, re, time
+from collections import defaultdict
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -64,53 +65,65 @@ def make_contact_sheet(rows, output: Path, title: str) -> None:
     for idx, row in enumerate(rows[:6]):
         col, rr = idx % 3, idx // 3
         x, y = 25 + col * 525, 80 + rr * 520
-        with Image.open(output.parent / row["local_relative_path"]) as img:
+        with Image.open(output.parent.parent / row["local_relative_path"]) as img:
             img = ImageOps.exif_transpose(img).convert("RGB")
             thumb = ImageOps.contain(img, (490, 385))
         canvas.paste(thumb, (x + (490-thumb.width)//2, y))
         draw.text((x, y+395), f"{row['candidate_id']} | {row['title'][:42]}", fill="black", font=font)
-        draw.text((x, y+425), f"{row['source']} | {row['license']} | rank {row['query_rank']}", fill="black", font=font)
+        draw.text((x, y+425), f"{row['source']} | {row['license']} | score {row['query_rank']}", fill="black", font=font)
         draw.text((x, y+455), f"{row['creator'][:55]}", fill="black", font=font)
     canvas.save(output, quality=88, optimize=True)
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--queries", required=True, type=Path)
-    parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--max-per-class", type=int, default=6)
-    args = parser.parse_args()
+    p = argparse.ArgumentParser()
+    p.add_argument("--queries", required=True, type=Path)
+    p.add_argument("--output", required=True, type=Path)
+    p.add_argument("--max-per-class", type=int, default=6)
+    args = p.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     (args.output/"thumbnails").mkdir(exist_ok=True)
     (args.output/"class_contact_sheets").mkdir(exist_ok=True)
 
-    with args.queries.open("r",encoding="utf-8-sig",newline="") as handle:
-        classes=list(csv.DictReader(handle))
+    with args.queries.open("r",encoding="utf-8-sig",newline="") as f:
+        classes=list(csv.DictReader(f))
 
     rows=[]
     failures=[]
     summaries=[]
     seen_openverse_ids=set()
-    for cls in classes:
+    for class_index, cls in enumerate(classes, start=1):
         selected=[]
         query_list=[q.strip() for q in cls["queries_pipe"].split("|") if q.strip()]
         for q_index, query in enumerate(query_list, start=1):
-            params={"q":query,"license":"cc0,pdm,by,by-sa","page_size":"20","page":"1"}
+            params={
+                "q":query,
+                "license":"cc0,pdm,by,by-sa",
+                "page_size":"20",
+                "page":"1",
+            }
             url=API+"?"+urlencode(params)
             try:
                 data=request_json(url)
             except Exception as exc:
-                failures.append({"canon_id":cls["canon_id"],"food_name_en":cls["food_name_en"],"query":query,"stage":"api_search","error":repr(exc)})
+                failures.append({
+                    "canon_id":cls["canon_id"],"food_name_en":cls["food_name_en"],
+                    "query":query,"stage":"api_search","error":repr(exc)
+                })
                 continue
             for result in data.get("results",[]):
                 oid=str(result.get("id") or "")
                 if not oid or oid in seen_openverse_ids:
                     continue
                 license_code=str(result.get("license") or "").lower()
-                if license_code not in ALLOWED_LICENSES or result.get("mature") is True:
+                if license_code not in ALLOWED_LICENSES:
                     continue
+                if result.get("mature") is True:
+                    continue
+                width=result.get("width")
+                height=result.get("height")
                 try:
-                    width_i=int(result.get("width") or 0)
-                    height_i=int(result.get("height") or 0)
+                    width_i=int(width) if width is not None else 0
+                    height_i=int(height) if height is not None else 0
                 except Exception:
                     width_i=height_i=0
                 if width_i and height_i and min(width_i,height_i)<500:
@@ -127,25 +140,48 @@ def main():
                         if min(img.size)<400:
                             continue
                         img.thumbnail((1024,1024))
-                        candidate_id=f"{cls['canon_id']}-OV-{len(selected)+1:02d}"
-                        relative=Path("thumbnails")/cls["canon_id"]/f"{candidate_id}.jpg"
-                        destination=args.output/relative
-                        destination.parent.mkdir(parents=True,exist_ok=True)
-                        img.save(destination,quality=90,optimize=True)
+                        cid=f"{cls['canon_id']}-OV-{len(selected)+1:02d}"
+                        rel=Path("thumbnails")/cls["canon_id"]/f"{cid}.jpg"
+                        dest=args.output/rel
+                        dest.parent.mkdir(parents=True,exist_ok=True)
+                        img.save(dest,quality=90,optimize=True)
                 except Exception as exc:
-                    failures.append({"canon_id":cls["canon_id"],"food_name_en":cls["food_name_en"],"query":query,"stage":"thumbnail_download","error":repr(exc)})
+                    failures.append({
+                        "canon_id":cls["canon_id"],"food_name_en":cls["food_name_en"],
+                        "query":query,"stage":"thumbnail_download","error":repr(exc)
+                    })
                     continue
                 row={
-                    "candidate_id":candidate_id,"canon_id":cls["canon_id"],"food_name_fa":cls["food_name_fa"],"food_name_en":cls["food_name_en"],
-                    "query":query,"query_index":q_index,"query_rank":len(selected)+1,"openverse_id":oid,
-                    "title":norm(result.get("title")),"creator":norm(result.get("creator")),"creator_url":result.get("creator_url") or "",
-                    "license":license_code,"license_version":result.get("license_version") or "","license_url":result.get("license_url") or "",
-                    "license_bucket":LICENSE_BUCKET[license_code],"source":result.get("source") or "","provider":result.get("provider") or "",
-                    "foreign_landing_url":landing,"original_url":original or "","thumbnail_url":thumb,
-                    "width":width_i,"height":height_i,"local_relative_path":str(relative).replace("\\","/"),
-                    "local_sha256":hashlib.sha256(destination.read_bytes()).hexdigest(),"attribution":norm(result.get("attribution")),
-                    "category":result.get("category") or "","filetype":result.get("filetype") or "",
-                    "visual_review_status":"pending","selected_for_dataset":"no","nutrition_gold_allowed":"no"
+                    "candidate_id":cid,
+                    "canon_id":cls["canon_id"],
+                    "food_name_fa":cls["food_name_fa"],
+                    "food_name_en":cls["food_name_en"],
+                    "query":query,
+                    "query_index":q_index,
+                    "query_rank":len(selected)+1,
+                    "openverse_id":oid,
+                    "title":norm(result.get("title")),
+                    "creator":norm(result.get("creator")),
+                    "creator_url":result.get("creator_url") or "",
+                    "license":license_code,
+                    "license_version":result.get("license_version") or "",
+                    "license_url":result.get("license_url") or "",
+                    "license_bucket":LICENSE_BUCKET[license_code],
+                    "source":result.get("source") or "",
+                    "provider":result.get("provider") or "",
+                    "foreign_landing_url":landing,
+                    "original_url":original or "",
+                    "thumbnail_url":thumb,
+                    "width":width_i,
+                    "height":height_i,
+                    "local_relative_path":str(rel).replace("\\","/"),
+                    "local_sha256":hashlib.sha256(dest.read_bytes()).hexdigest(),
+                    "attribution":norm(result.get("attribution")),
+                    "category":result.get("category") or "",
+                    "filetype":result.get("filetype") or "",
+                    "visual_review_status":"pending",
+                    "selected_for_dataset":"no",
+                    "nutrition_gold_allowed":"no",
                 }
                 selected.append(row)
                 rows.append(row)
@@ -155,24 +191,36 @@ def main():
             if len(selected)>=args.max_per_class:
                 break
             time.sleep(2.5)
-        summaries.append({"canon_id":cls["canon_id"],"food_name_fa":cls["food_name_fa"],"food_name_en":cls["food_name_en"],"candidate_count":len(selected),"query_count":len(query_list),"status":"candidates_found" if selected else "no_candidate_or_failure"})
+        summaries.append({
+            "canon_id":cls["canon_id"],"food_name_fa":cls["food_name_fa"],
+            "food_name_en":cls["food_name_en"],"candidate_count":len(selected),
+            "query_count":len(query_list),
+            "status":"candidates_found" if selected else "no_candidate_or_failure",
+        })
         make_contact_sheet(selected,args.output/"class_contact_sheets"/f"{cls['canon_id']}.jpg",f"{cls['food_name_en']} | {cls['food_name_fa']}")
         time.sleep(3.0)
 
-    fields=list(rows[0].keys()) if rows else ["candidate_id","canon_id","food_name_fa","food_name_en","query","openverse_id"]
-    with (args.output/"candidate_manifest.csv").open("w",encoding="utf-8",newline="") as handle:
-        writer=csv.DictWriter(handle,fieldnames=fields);writer.writeheader();writer.writerows(rows)
-    with (args.output/"class_summary.csv").open("w",encoding="utf-8",newline="") as handle:
-        writer=csv.DictWriter(handle,fieldnames=list(summaries[0].keys()));writer.writeheader();writer.writerows(summaries)
+    fields=list(rows[0].keys()) if rows else [
+        "candidate_id","canon_id","food_name_fa","food_name_en","query","openverse_id"
+    ]
+    with (args.output/"candidate_manifest.csv").open("w",encoding="utf-8",newline="") as f:
+        w=csv.DictWriter(f,fieldnames=fields);w.writeheader();w.writerows(rows)
+    with (args.output/"class_summary.csv").open("w",encoding="utf-8",newline="") as f:
+        w=csv.DictWriter(f,fieldnames=list(summaries[0].keys()));w.writeheader();w.writerows(summaries)
     failure_fields=["canon_id","food_name_en","query","stage","error"]
-    with (args.output/"query_failures.csv").open("w",encoding="utf-8",newline="") as handle:
-        writer=csv.DictWriter(handle,fieldnames=failure_fields);writer.writeheader();writer.writerows(failures)
+    with (args.output/"query_failures.csv").open("w",encoding="utf-8",newline="") as f:
+        w=csv.DictWriter(f,fieldnames=failure_fields);w.writeheader();w.writerows(failures)
     manifest={
-        "format":"ifkb-openverse-candidate-discovery","classes":len(classes),"candidateImages":len(rows),
-        "classesWithCandidates":sum(summary["candidate_count"]>0 for summary in summaries),"failures":len(failures),
-        "policy":{"api":"Openverse API only; no catalog scraping","licenses":["cc0","pdm","by","by-sa"],
-                  "licenseVerification":"Openverse metadata is provisional; landing-page verification required before acceptance",
-                  "nutritionGold":False}
+        "format":"ifkb-openverse-candidate-discovery",
+        "classes":len(classes),"candidateImages":len(rows),
+        "classesWithCandidates":sum(s["candidate_count"]>0 for s in summaries),
+        "failures":len(failures),
+        "policy":{
+            "api":"Openverse API only; no catalog scraping",
+            "licenses":["cc0","pdm","by","by-sa"],
+            "licenseVerification":"Openverse metadata is provisional; landing-page verification required before acceptance",
+            "nutritionGold":False,
+        }
     }
     (args.output/"dataset_manifest.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
 
