@@ -1,0 +1,53 @@
+name: IFKB P0 Wave 3 Refined Candidate Discovery
+
+on:
+  pull_request:
+    branches:
+      - agent/mobile-local-first-expo
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'ifkb/images/p0_wave3_refined_queries.csv'
+      - 'ifkb/images/discover_commons_candidates.py'
+      - '.github/workflows/ifkb-p0-wave3-candidate-discovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover-refined-candidates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install image dependency
+        run: python -m pip install --disable-pip-version-check pillow==11.3.0
+
+      - name: Discover refined Wikimedia candidates
+        run: |
+          python ifkb/images/discover_commons_candidates.py \
+            --queries ifkb/images/p0_wave3_refined_queries.csv \
+            --output build/ifkb-p0-wave3-candidates-v0.11.2
+
+      - name: Verify candidate output
+        run: |
+          test -s build/ifkb-p0-wave3-candidates-v0.11.2/candidate_manifest.csv
+          test -s build/ifkb-p0-wave3-candidates-v0.11.2/class_summary.csv
+          test -s build/ifkb-p0-wave3-candidates-v0.11.2/dataset_manifest.json
+          test -s build/ifkb-p0-wave3-candidates-v0.11.2/ATTRIBUTION.md
+
+      - name: Upload refined candidate-review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-p0-wave3-candidates-v0.11.2
+          path: build/ifkb-p0-wave3-candidates-v0.11.2
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 30
