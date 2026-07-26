@@ -1,0 +1,28 @@
+variant_id,fdc_id,description,basis,calories,protein_g,carbs_g,fat_g,fiber_g,sodium_mg,potassium_mg,calcium_mg,iron_mg,evidence_grade,review_status,distribution_status
+IFKB-ING-0001,2512381,"Rice, white, long grain, unenriched, raw",per_100g_edible_food,369.637321,7.03885,80.31315,1.033,2.771,0.4625,82.26,4.46,0.1405,C-candidate,in_review,research_only
+IFKB-ING-0008,2710820,"Bulgur, dry, raw",per_100g_edible_food,349.3017225,11.75625,75.88175,2.421,11.72,2.18,358.3,34.11,2.625,B-candidate,in_review,research_only
+IFKB-ING-0015,2644283,"Lentils, dry",per_100g_edible_food,350.9328,23.56875,62.17125,1.925,,0.0,948.9,61.85,7.158,C-candidate,in_review,research_only
+IFKB-ING-0018,2644282,"Chickpeas, (garbanzo beans, bengal gram), dry",per_100g_edible_food,371.99469,21.275,60.358,6.274,,8.779,1074.0,111.1,5.094,B-candidate,in_review,research_only
+IFKB-ING-0026,2644284,"Blackeye pea, dry",per_100g_edible_food,345.5703,21.225,61.836,2.419,,3.458,1243.0,71.4,5.93,B-candidate,in_review,research_only
+IFKB-ING-0030,2514743,"Beef, ground, 90% lean meat / 10% fat, raw",per_100g_edible_food,190.134819,18.15625,0.0,12.85,,61.64,281.4,7.135,2.128,C-candidate,in_review,research_only
+IFKB-ING-0029,2727570,"Lamb, ground, raw",per_100g_edible_food,241.727079,17.4625,0.0,18.64,,53.45,272.1,6.575,1.643,B-candidate,in_review,research_only
+IFKB-ING-0032,2646170,"Chicken, breast, boneless, skinless, raw",per_100g_edible_food,112.20227,22.525,0.0,1.934,,65.75,330.1,3.939,0.3543,B-candidate,in_review,research_only
+IFKB-ING-0033,2646171,"Chicken, thigh, boneless, skinless, raw",per_100g_edible_food,149.306475,18.6125,0.0,7.916,,62.33,271.8,5.65,0.6018,B-candidate,in_review,research_only
+IFKB-ING-0058,2685577,"Eggplant, raw",per_100g_edible_food,22.35856525,0.851875,5.399325,0.12,2.448,0.4425,222.1,11.06,0.0,B-candidate,in_review,research_only
+IFKB-ING-0059,2685568,"Squash, summer, green, zucchini, includes skin, raw",per_100g_edible_food,16.0,0.984375,3.27,0.205,0.7525,0.0,225.8,20.85,0.1945,B-candidate,in_review,research_only
+IFKB-ING-0060,2346405,"Celery, raw",per_100g_edible_food,14.83215875,0.4921875,3.3165125,0.1625,,97.21,265.2,46.28,0.0,C-candidate,in_review,research_only
+IFKB-ING-0061,2346400,"Beans, snap, green, raw",per_100g_edible_food,33.5679465,1.96875,7.41245,0.275,3.011,0.0,290.4,40.05,0.6516,B-candidate,in_review,research_only
+IFKB-ING-0062-RUSSET,2346401,"Potatoes, russet, without skin, raw",per_100g_edible_food,80.9523625,2.27375,17.77125,0.36,14.93,2.743,450.1,7.801,0.3835,B-candidate,in_review,research_only
+IFKB-ING-0062-RED,2346402,"Potatoes, red, without skin, raw",per_100g_edible_food,73.373425,2.0625,16.27,0.2475,13.79,2.856,472.0,5.128,0.3911,B-candidate,in_review,research_only
+IFKB-ING-0062-GOLD,2346403,"Potatoes, gold, without skin, raw",per_100g_edible_food,71.575228,1.8125,15.9624,0.2638,13.83,2.238,445.8,5.943,0.3728,B-candidate,in_review,research_only
+IFKB-ING-0063-BABY,1999632,"Spinach, baby",per_100g_edible_food,20.72851125,2.851875,2.406325,0.6188,1.558,111.4,581.8,68.35,1.261,B-candidate,in_review,research_only
+IFKB-ING-0063-MATURE,1999633,"Spinach, mature",per_100g_edible_food,21.5796975,2.90625,2.64135,0.6044,1.588,106.6,459.7,66.64,1.054,B-candidate,in_review,research_only
+IFKB-ING-0065,2346407,"Cabbage, green, raw",per_100g_edible_food,27.8695,0.96125,6.38375,0.2275,,16.1,207.1,41.84,0.06625,C-candidate,in_review,research_only
+IFKB-ING-0066,2258586,"Carrots, mature, raw",per_100g_edible_food,44.978589,0.94125,10.26755,0.3506,3.095,86.65,279.6,30.48,0.1504,C-candidate,in_review,research_only
+IFKB-ING-0053,1104962,"Onions, white, raw",per_100g_edible_food,33.0,0.89,7.68,0.13,1.2,2.0,141.0,21.0,0.15,B-candidate,in_review,research_only
+IFKB-ING-0055,1104647,"Garlic, raw",per_100g_edible_food,130.0,6.62,28.2,0.38,2.7,,,,,B-candidate,in_review,research_only
+IFKB-ING-0056,1999634,"Tomato, roma",per_100g_edible_food,18.95436075,0.695625,3.837475,0.425,0.9706,0.0,192.8,9.963,0.1031,C-candidate,in_review,research_only
+IFKB-ING-0077,2346394,"Nuts, walnuts, English, halves, raw",per_100g_edible_food,678.66434,14.5644,10.9096,69.74,5.21,0.0,423.5,88.26,2.235,C-candidate,in_review,research_only
+IFKB-ING-0043,2259793,"Yogurt, plain, whole milk",per_100g_edible_food,77.3185458,3.824172,5.574928,4.484,,41.78,164.1,126.8,0.0,B-candidate,in_review,research_only
+IFKB-ING-0046,2259796,"Cheese, feta, whole milk, crumbled",per_100g_edible_food,273.472498,19.70782,5.58318,19.08,,1034.0,105.3,371.1,0.0675,C-candidate,in_review,research_only
+IFKB-ING-0048,2346386,"Cream, heavy",per_100g_edible_food,335.8933226,2.017994,3.799506,35.56,,20.61,96.94,61.21,0.0,B-candidate,in_review,research_only
