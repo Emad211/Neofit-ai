@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IFKB Synthetic Image Record",
+  "type": "object",
+  "required": ["synthetic_image_id", "parent_image_id", "canon_id", "prompt", "split_group_id", "dataset_split"],
+  "properties": {
+    "synthetic_image_id": {"type": "string"},
+    "parent_image_id": {"type": "string"},
+    "canon_id": {"type": "string"},
+    "prompt": {"type": "string"},
+    "negative_prompt": {"type": ["string", "null"]},
+    "split_group_id": {"type": "string"},
+    "dataset_split": {"const": "train"},
+    "nutrition_label_allowed": {"const": false},
+    "review_status": {"enum": ["pending", "accepted", "rejected"]}
+  }
+}
