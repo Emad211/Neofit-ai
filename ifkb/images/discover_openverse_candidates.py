@@ -35,7 +35,7 @@ def request_json(url: str, attempts: int = 6) -> dict:
 def request_bytes(url: str, attempts: int = 5) -> bytes:
     delay = 3.0
     for attempt in range(attempts):
-        req = Request(url, headers={"User-Agent": UA, "Accept": "image/*"})
+        req = Request(url, headers={"User-Agent": UA})
         try:
             with urlopen(req, timeout=90) as response:
                 data = response.read(12 * 1024 * 1024)
