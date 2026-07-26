@@ -1,0 +1,15 @@
+canon_id,food_name_fa,food_name_en,category,region,query_primary,query_secondary,negative_terms,candidate_limit
+IFKB-CANON-00045,کله‌پاچه,Kaleh pacheh,breakfast,Iran,kaleh pacheh,کله پاچه,raw animal head|khash only,6
+IFKB-CANON-00046,کوکو سبزی,Kuku sabzi,street_food,Iran,kuku sabzi,کوکو سبزی,raw herbs|potato kuku,6
+IFKB-CANON-00048,شامی,Shami patty,street_food,Iran,shami kabab Persian,شامی کباب,Syrian|Levantine,6
+IFKB-CANON-00050,دلمه برگ مو,Stuffed grape leaves,street_food,Iran,Persian dolmeh grape leaves,دلمه برگ مو,raw leaves|Greek only,6
+IFKB-CANON-00080,ماست,Yogurt,dairy_beverage,Iran,Persian yogurt bowl,ماست ایرانی,fruit yogurt|packaging only,6
+IFKB-CANON-00083,ماست چکیده,Strained yogurt,dairy_beverage,Iran,mast chekideh,ماست چکیده,Greek yogurt package,6
+IFKB-CANON-00108,دیزی سنگی,Stone-pot dizi,abgoosht,Iran,dizi sangi,دیزی سنگی,empty pot|restaurant sign,6
+IFKB-CANON-00112,اکبرجوجه,Akbar joojeh fried chicken,fried_main,Mazandaran,Akbar joojeh,اکبر جوجه,historical person|logo|restaurant sign,6
+IFKB-CANON-00119,قیمه نثار,Gheimeh nesar,rice,Qazvin,gheimeh nesar,قیمه نثار,gheimeh stew|plain rice,6
+IFKB-CANON-00120,کلم پلو شیرازی,Shirazi cabbage rice,rice,Fars,kalam polo Shirazi,کلم پلو شیرازی,raw cabbage|plain rice,6
+IFKB-CANON-00121,سبزی پلو با ماهی,Herb rice with fish,rice,Iran,sabzi polo ba mahi,سبزی پلو با ماهی,raw fish|herbs only,6
+IFKB-CANON-00122,رشته پلو,Reshteh polo noodle rice,rice,Iran,reshteh polo,رشته پلو,ash reshteh|noodle soup,6
+IFKB-CANON-00162,آش شله قلمکار,Ash sholeh ghalamkar,soup,Tehran,ash sholeh ghalamkar,آش شله قلمکار,sholeh zard,6
+IFKB-CANON-00175,شله مشهدی,Sholeh Mashhadi,soup,Razavi Khorasan,sholeh Mashhadi,شله مشهدی,sholeh zard|dessert,6
