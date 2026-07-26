@@ -2,7 +2,7 @@
 
 IFKB is the scientific master-data layer for NeoFit's Iranian food catalog. It is deliberately separate from the mobile `neofit-food-catalog` projection.
 
-## Current research release: 0.5.0
+## Current research release: 0.5.1
 
 The official USDA FoodData Central Foundation Foods archive dated 2026-04-30 has been validated and ingested.
 
@@ -15,8 +15,10 @@ The official USDA FoodData Central Foundation Foods archive dated 2026-04-30 has
 - 60 conversion-factor records
 - automated critical QA issues: 0
 - source-complete research candidates: 27
+- evidence candidates: 18 grade-B / 9 grade-C
 - incomplete Foundation profiles excluded from projection: 7
 - scientifically verified records: 0
+- automated tests: 5 passed / 0 failed
 
 All selected records remain `in_review`. Automation and exact source matching do not replace independent scientific review.
 
@@ -45,6 +47,15 @@ The source archive was read at byte level, hashed, schema-checked and matched ag
 A small source residual for lamb carbohydrate by difference (`-0.2508 g/100 g`) is retained in the raw observation layer. A normalized zero is used only in QA/projection calculations and is explicitly documented.
 
 Seven Foundation records lack complete aggregate macro/energy profiles in this archive. Their available observations are retained, but they are excluded from the core/mobile projection and are never filled with guesses or secondary mirror values.
+
+### 0.5.1 — corrective evidence projection
+
+The v0.5.0 projection incorrectly hardcoded `B-candidate` for all 27 complete records. v0.5.1 applies the evidence ceiling defined by the matching rubric:
+
+- match-quality `A` → `B-candidate` — 18 records
+- match-quality `C` → `C-candidate` — 9 records
+
+No FDC ID, source nutrient amount, laboratory result, food attribute, conversion factor or QA finding changed. v0.5.0 is retained and marked superseded for audit.
 
 ## Scientific principles
 
