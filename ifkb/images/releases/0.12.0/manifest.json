@@ -1,0 +1,31 @@
+{
+  "format": "ifkb-image-research-release",
+  "releaseId": "IFKB-0.12.0-source-verified-image-expansion",
+  "createdAt": "2026-07-26T17:07:33.944963+00:00",
+  "counts": {
+    "preparedFoodCanon": 261,
+    "p0Classes": 60,
+    "packagedImageAssets": 58,
+    "openverseCandidatesReviewed": 9,
+    "openverseCandidatesPromoted": 0,
+    "exactCommonsSourcesVerified": 5,
+    "highResolutionExactAssetsPending": 3,
+    "lowResolutionExactReferences": 2,
+    "fieldCaptureFallbackClasses": 17,
+    "nutritionGoldImages": 0
+  },
+  "workflow": {
+    "openverseSuccessfulRunId": 30211128960,
+    "openverseArtifactId": 8634510463,
+    "manualExactDiagnosticRunId": 30211624900,
+    "manualExactDiagnosticArtifactId": 8634618760,
+    "exactTitleOpenverseRunId": 30211740318,
+    "exactTitleOpenverseArtifactId": 8634655015
+  },
+  "scientificPolicy": {
+    "sourceVerificationIsNotAssetPossession": true,
+    "lowResolutionReferencesAreNotTrainEligible": true,
+    "openverseMetadataRequiresLandingVerification": true,
+    "nutritionGoldRequiresMeasuredServingAndLockedRecipe": true
+  }
+}
