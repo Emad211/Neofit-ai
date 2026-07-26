@@ -1,0 +1,44 @@
+{
+  "format": "ifkb-internet-image-seed-release",
+  "releaseId": "IFKB-0.11.3-reviewed-rate-limit-retry",
+  "version": "0.11.3",
+  "createdAt": "2026-07-26T16:15:00Z",
+  "counts": {
+    "totalIranianPreparedFoodConcepts": 261,
+    "p0Classes": 60,
+    "licensedImageAssets": 58,
+    "wave1Assets": 12,
+    "wave2Assets": 30,
+    "wave3Assets": 5,
+    "rateLimitRetryAssets": 11,
+    "p0ClassesWithAnyAcceptedRole": 43,
+    "p0ClassesWithServedOrProductRole": 38,
+    "p0ClassesWithAuxiliaryContextOrProcessOnly": 5,
+    "unresolvedP0Classes": 17,
+    "nutritionGoldImages": 0
+  },
+  "licenceBuckets": {
+    "cc0_pd": 3,
+    "cc_by": 9,
+    "cc_by_sa": 46
+  },
+  "assetPolicy": {
+    "wave1": "Wikimedia Commons originals or documented 1600px fallback",
+    "laterWaves": "visually reviewed 1024px Wikimedia Commons thumbnails with source-original URL retained",
+    "thumbnailReason": "Wikimedia HTTP 429 / robot policy blocked bulk original downloads",
+    "automaticIdentityApproval": false,
+    "nutritionGoldAllowed": false
+  },
+  "retry": {
+    "workflowRunId": 30209688363,
+    "artifactId": 8634119409,
+    "artifactDigest": "sha256:e8707801495ec76655d0fffe564aab5013610a7316de87ef4f7500d4beaa1a8f",
+    "classesRequested": 14,
+    "classesCompleted": 14,
+    "candidateImagesReviewed": 61,
+    "selectedImages": 11,
+    "newCoveredClasses": 7
+  },
+  "scientificStatus": "licensed identity-image seed; no measured nutrition provenance",
+  "distributionStatus": "licence-partitioned research only"
+}
