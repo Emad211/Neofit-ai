@@ -1,0 +1,24 @@
+{
+  "format": "ifkb-research-release",
+  "releaseId": "IFKB-0.9.1-measurement-ready-kit",
+  "version": "0.9.1",
+  "createdAt": "2026-07-26T12:10:29.740891+00:00",
+  "dependsOn": "IFKB-0.9.0-p0-recipe-grounding",
+  "counts": {
+    "p0Foods": 60,
+    "pilotFoods": 12,
+    "pilotIngredientSlots": 103,
+    "householdMeasures": 35,
+    "vesselCalibrationSlots": 30,
+    "foodMeasureCalibrationSlots": 120,
+    "recipeBatchSlots": 120,
+    "imageRecipeLinkSlots": 180,
+    "retentionFactorRows": 144,
+    "testsPassed": 4,
+    "testsFailed": 0,
+    "verifiedMeasurements": 0,
+    "lockedRecipeVersions": 0
+  },
+  "scientificStatus": "measurement_ready_templates_only",
+  "nextGate": "execute pilot batches and enter calibrated measurements"
+}
