@@ -37,11 +37,13 @@ jobs:
           test -s build/ifkb-fndds-2021-2023/fndds_2021_2023_app_layer.sqlite
           test -s build/ifkb-fndds-2021-2023/fndds_2021_2023_foods.csv
           test -s build/ifkb-fndds-2021-2023/manifest.json
+          test -s build/ifkb-fndds-2021-2023/nutrient_diagnostic.json
           python - <<'PY'
           import json, sqlite3
           from pathlib import Path
           root=Path('build/ifkb-fndds-2021-2023')
           manifest=json.loads((root/'manifest.json').read_text())
+          diagnostic=json.loads((root/'nutrient_diagnostic.json').read_text())
           db=sqlite3.connect(root/'fndds_2021_2023_app_layer.sqlite')
           count=db.execute('select count(*) from foods').fetchone()[0]
           portions=db.execute('select count(*) from portions').fetchone()[0]
@@ -54,13 +56,14 @@ jobs:
           salads=db.execute("select count(*) from foods where lower(name_en) like '%salad%'").fetchone()[0]
           db.close()
           assert count == manifest['foodCount'] and count > 5000, (count,manifest)
-          assert complete == manifest['completeMacroCount'] and complete >= int(count*0.95), (complete,count)
+          assert complete == manifest['completeMacroCount'] and complete >= int(count*0.95), diagnostic
           assert portions > count, portions
           assert egg_white > 0 and salads > 20, (egg_white,salads)
           print({'foods':count,'completeMacros':complete,'portions':portions,'eggWhiteRecords':egg_white,'salads':salads})
           PY
 
-      - name: Upload app layer
+      - name: Upload app layer and diagnostics
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ifkb-fndds-2021-2023-app-layer
@@ -69,6 +72,7 @@ jobs:
             build/ifkb-fndds-2021-2023/fndds_2021_2023_app_layer.sqlite
             build/ifkb-fndds-2021-2023/fndds_2021_2023_foods.csv
             build/ifkb-fndds-2021-2023/manifest.json
+            build/ifkb-fndds-2021-2023/nutrient_diagnostic.json
           if-no-files-found: error
           compression-level: 6
           retention-days: 30
