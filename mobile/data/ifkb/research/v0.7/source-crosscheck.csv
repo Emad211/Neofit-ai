@@ -1,0 +1,30 @@
+supplement_id,source_role,source_name,source_url,checked_fields,source_class
+IFKB-SRPROV-0001,official_identity,USDA FDC record,https://fdc.nal.usda.gov/fdc-app.html#/food/169736/full,FDC/NDB identity,official_record_ui
+IFKB-SRPROV-0001,mirror_1,WhatYouEat,https://whatyoueat.io/foods/169736-enriched-dry-pasta,macro/mineral values,secondary_rendering
+IFKB-SRPROV-0001,mirror_2,Batchbase,https://batchbase.com.au/usda-foods/169736,identity and core values,secondary_rendering
+IFKB-SRPROV-0002,official_identity,USDA FDC record,https://fdc.nal.usda.gov/fdc-app.html#/food/168448/full,FDC/NDB identity,official_record_ui
+IFKB-SRPROV-0002,mirror_1,Batchbase,https://batchbase.com.au/usda-foods/168448,core values,secondary_rendering
+IFKB-SRPROV-0002,mirror_2,MyFoodData,https://tools.myfooddata.com/nutrition-facts/168448/wt1/1,core/mineral cross-check,secondary_rendering
+IFKB-SRPROV-0003,official_identity,USDA FDC record,https://fdc.nal.usda.gov/fdc-app.html#/food/171017/full,FDC/NDB identity,official_record_ui
+IFKB-SRPROV-0003,mirror_1,Batchbase,https://batchbase.com.au/usda-foods/171017,core values,secondary_rendering
+IFKB-SRPROV-0003,mirror_2,MyFoodData,https://tools.myfooddata.com/nutrition-facts/171017/wt1/1,core/mineral cross-check,secondary_rendering
+IFKB-SRPROV-0004,official_identity,USDA FDC record,https://fdc.nal.usda.gov/fdc-app.html#/food/171025/full,FDC/NDB identity,official_record_ui
+IFKB-SRPROV-0004,mirror_1,WhatYouEat,https://whatyoueat.io/foods/171025-approx-65-linoleic-sunflower-oil,core and fatty-acid values,secondary_rendering
+IFKB-SRPROV-0004,mirror_2,NutritionDataHub,https://nutritiondatahub.com/food/oil-sunflower-linoleic-approx.-65--171025,fatty-acid cross-check,secondary_rendering
+IFKB-SRPROV-0004,mirror_3,DataYourEat,https://www.datayoureat.com/r/oHoBtX1Ejotb/Oil_Sunflower_linoleic_approx_65?locale=en,core values,secondary_rendering
+IFKB-SRPROV-0005,official_identity,USDA FDC record,https://fdc.nal.usda.gov/fdc-app.html#/food/172338/full,FDC/NDB identity,official_record_ui
+IFKB-SRPROV-0005,mirror_1,Batchbase,https://batchbase.com.au/usda-foods/172338,core values,secondary_rendering
+IFKB-SRPROV-0005,mirror_2,WhatYouEat,https://whatyoueat.io/foods/172338-high-oleic-sunflower-oil,core and fatty-acid values,secondary_rendering
+IFKB-SRPROV-0005,mirror_3,NutritionDataHub,https://nutritiondatahub.com/food/oil-sunflower-high-oleic-70-and-over--172338,fatty-acid cross-check,secondary_rendering
+IFKB-SRPROV-0006,official_identity,USDA FDC record,https://fdc.nal.usda.gov/fdc-app.html#/food/171413/full,FDC/NDB identity,official_record_ui
+IFKB-SRPROV-0006,mirror_1,Batchbase,https://batchbase.com.au/usda-foods/171413,core values,secondary_rendering
+IFKB-SRPROV-0006,mirror_2,MyFoodData,https://tools.myfooddata.com/nutrition-facts/171413/wt1/1,mineral/fat cross-check,secondary_rendering
+IFKB-SRPROV-0007,official_identity,USDA FDC record,https://fdc.nal.usda.gov/fdc-app.html#/food/168165/full,FDC/NDB identity,official_record_ui
+IFKB-SRPROV-0007,mirror_1,Batchbase,https://batchbase.com.au/usda-foods/168165,core values,secondary_rendering
+IFKB-SRPROV-0007,mirror_2,MyFoodData,https://tools.myfooddata.com/nutrition-facts/168165/wt1/1,mineral cross-check,secondary_rendering
+IFKB-SRPROV-0008,official_identity,USDA FDC record,https://fdc.nal.usda.gov/fdc-app.html#/food/168164/full,FDC/NDB identity,official_record_ui
+IFKB-SRPROV-0008,mirror_1,WhatYouEat,https://whatyoueat.io/foods/168164-golden-seedless-raisins,core/mineral values,secondary_rendering
+IFKB-SRPROV-0008,mirror_2,Batchbase,https://batchbase.com.au/usda-foods/168164,identity/core cross-check,secondary_rendering
+IFKB-SRPROV-0009,official_identity,USDA FDC record,https://fdc.nal.usda.gov/fdc-app.html#/food/168162/full,FDC/NDB identity,official_record_ui
+IFKB-SRPROV-0009,mirror_1,Batchbase,https://batchbase.com.au/usda-foods/168162,core values,secondary_rendering
+IFKB-SRPROV-0009,mirror_2,MyFoodData,https://tools.myfooddata.com/nutrition-facts/168162/wt1/1,mineral/core cross-check,secondary_rendering
