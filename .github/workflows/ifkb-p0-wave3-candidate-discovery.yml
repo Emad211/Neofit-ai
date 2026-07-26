@@ -1,18 +1,14 @@
 name: IFKB P0 Wave 3 Refined Candidate Discovery
 
 on:
-  pull_request:
-    branches:
-      - agent/mobile-local-first-expo
-    types: [opened, synchronize, reopened]
-    paths:
-      - 'ifkb/images/p0_wave3_refined_queries.csv'
-      - 'ifkb/images/discover_commons_candidates.py'
-      - '.github/workflows/ifkb-p0-wave3-candidate-discovery.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ifkb-wikimedia-commons
+  cancel-in-progress: false
 
 jobs:
   discover-refined-candidates:
