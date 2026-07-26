@@ -1,0 +1,35 @@
+coverage_id,variant_id,fdc_id,description,match_quality,chosen_energy_code,chosen_energy_kcal,best_screen_method,screen_energy_kcal,energy_delta_pct,proximate_sum_g,proximate_status,critical_issue_count,high_issue_count,automated_status
+COV-0001,IFKB-ING-0001,2512381,"Rice, white, long grain, unenriched, raw",C,ENERC_KCAL_ATWATER_SPECIFIC,369.637321,food_specific_factor:22978,369.63732099999993,1.5378160058899468e-16,99.99999999999999,preferred,0,0,in_review
+COV-0002,IFKB-ING-0010,2758998,"Pasta, dry, enriched, spaghetti",C,,,,,,,not_computable,0,4,in_review
+COV-0003,IFKB-ING-0008,2710820,"Bulgur, dry, raw",A,ENERC_KCAL_ATWATER_SPECIFIC,349.3017225,food_specific_factor:23127,349.3017225,0.0,100.0,preferred,0,0,in_review
+COV-0004,IFKB-ING-0015,2644283,"Lentils, dry",C,ENERC_KCAL_ATWATER_SPECIFIC,350.9328,food_specific_factor:23022,350.93280000000004,1.619780734682196e-16,100.0,preferred,0,0,in_review
+COV-0005,IFKB-ING-0018,2644282,"Chickpeas, (garbanzo beans, bengal gram), dry",A,ENERC_KCAL_ATWATER_SPECIFIC,371.99469,food_specific_factor:23021,371.99469,0.0,100.0,preferred,0,0,in_review
+COV-0006,IFKB-ING-0026,2644284,"Blackeye pea, dry",A,ENERC_KCAL_ATWATER_SPECIFIC,345.5703,food_specific_factor:23023,345.57030000000003,1.6449162112834354e-16,100.0,preferred,0,0,in_review
+COV-0007,IFKB-ING-0030,2514743,"Beef, ground, 90% lean meat / 10% fat, raw",C,ENERC_KCAL_ATWATER_SPECIFIC,190.134819,general_atwater_total_carbohydrate,188.27499999999998,0.009781580300660323,100.85255,preferred,0,0,in_review
+COV-0008,IFKB-ING-0029,2727570,"Lamb, ground, raw",A,ENERC_KCAL_ATWATER_SPECIFIC,241.727079,food_specific_factor:23184,242.697675,0.004015255568450403,100.2508,preferred,0,0,in_review
+COV-0009,IFKB-ING-0032,2646170,"Chicken, breast, boneless, skinless, raw",A,ENERC_KCAL_ATWATER_SPECIFIC,112.20227,food_specific_factor:23050,113.62642999999997,0.012692791331226829,100.36800000000001,preferred,0,0,in_review
+COV-0010,IFKB-ING-0033,2646171,"Chicken, thigh, boneless, skinless, raw",A,ENERC_KCAL_ATWATER_SPECIFIC,149.306475,food_specific_factor:23051,150.87769500000002,0.010523455195094593,100.40599999999999,preferred,0,0,in_review
+COV-0011,IFKB-ING-0058,2685577,"Eggplant, raw",A,ENERC_KCAL_ATWATER_SPECIFIC,22.35856525,food_specific_factor:23101,22.35856525,0.0,100.00000000000001,preferred,0,0,in_review
+COV-0012,IFKB-ING-0059,2685568,"Squash, summer, green, zucchini, includes skin, raw",A,ENERC_KCAL_ATWATER_SPECIFIC,16.0,food_specific_factor:23092,15.791625,0.013023437500000012,100.009375,preferred,0,0,in_review
+COV-0013,IFKB-ING-0060,2346405,"Celery, raw",C,ENERC_KCAL_ATWATER_SPECIFIC,14.83215875,food_specific_factor:22927,14.832158750000001,1.1976387721714822e-16,100.0,preferred,0,0,in_review
+COV-0014,IFKB-ING-0061,2346400,"Beans, snap, green, raw",A,ENERC_KCAL_ATWATER_SPECIFIC,33.5679465,food_specific_factor:22922,33.5679465,0.0,100.00000000000001,preferred,0,0,in_review
+COV-0015A,IFKB-ING-0062-RUSSET,2346401,"Potatoes, russet, without skin, raw",A,ENERC_KCAL_ATWATER_SPECIFIC,80.9523625,food_specific_factor:22923,80.9523625,0.0,100.0,preferred,0,0,in_review
+COV-0015B,IFKB-ING-0062-RED,2346402,"Potatoes, red, without skin, raw",A,ENERC_KCAL_ATWATER_SPECIFIC,73.373425,food_specific_factor:22924,73.373425,0.0,100.0,preferred,0,0,in_review
+COV-0015C,IFKB-ING-0062-GOLD,2346403,"Potatoes, gold, without skin, raw",A,ENERC_KCAL_ATWATER_SPECIFIC,71.575228,food_specific_factor:22925,71.57522800000001,1.985443164107281e-16,100.0,preferred,0,0,in_review
+COV-0016A,IFKB-ING-0063-BABY,1999632,"Spinach, baby",A,ENERC_KCAL_ATWATER_SPECIFIC,20.72851125,food_specific_factor:22802,20.728511249999997,1.7139261165224785e-16,99.99999999999999,preferred,0,0,in_review
+COV-0016B,IFKB-ING-0063-MATURE,1999633,"Spinach, mature",A,ENERC_KCAL_ATWATER_SPECIFIC,21.5796975,food_specific_factor:22803,21.5796975,0.0,100.00000000000001,preferred,0,0,in_review
+COV-0017,IFKB-ING-0065,2346407,"Cabbage, green, raw",C,ENERC_KCAL_ATWATER_SPECIFIC,27.8695,food_specific_factor:22929,27.869500000000002,1.274767641615566e-16,100.00000000000003,preferred,0,0,in_review
+COV-0018,IFKB-ING-0066,2258586,"Carrots, mature, raw",C,ENERC_KCAL_ATWATER_SPECIFIC,44.978589,food_specific_factor:22858,44.978589,0.0,100.0,preferred,0,0,in_review
+COV-0019,IFKB-ING-0067,2727578,"Squash, pie pumpkin, peeled, seeded, raw",C,,,,,,,not_computable,0,3,in_review
+COV-0020,IFKB-ING-0053,1104962,"Onions, white, raw",A,ENERC_KCAL_ATWATER_SPECIFIC,33.0,fiber_adjusted_screen,33.05,0.001515151515151429,100.0,preferred,0,0,in_review
+COV-0021,IFKB-ING-0055,1104647,"Garlic, raw",A,ENERC_KCAL_ATWATER_SPECIFIC,130.0,food_specific_factor:22740,129.8722,0.0009830769230769823,100.00999999999999,preferred,0,0,in_review
+COV-0022,IFKB-ING-0056,1999634,"Tomato, roma",C,ENERC_KCAL_ATWATER_SPECIFIC,18.95436075,food_specific_factor:22804,18.95436075,0.0,100.0,preferred,0,0,in_review
+COV-0023,IFKB-ING-0077,2346394,"Nuts, walnuts, English, halves, raw",C,ENERC_KCAL_ATWATER_SPECIFIC,678.66434,food_specific_factor:22916,678.6643399999998,3.3503112222344266e-16,100.0,preferred,0,0,in_review
+COV-0024,IFKB-ING-0043,2259793,"Yogurt, plain, whole milk",A,ENERC_KCAL_ATWATER_SPECIFIC,77.3185458,food_specific_factor:22871,77.31854579999998,1.837961975120593e-16,100.0,preferred,0,0,in_review
+COV-0025,IFKB-ING-0046,2259796,"Cheese, feta, whole milk, crumbled",C,ENERC_KCAL_ATWATER_SPECIFIC,273.472498,food_specific_factor:22874,273.472498,0.0,100.0,preferred,0,0,in_review
+COV-0026,IFKB-ING-0048,2346386,"Cream, heavy",A,ENERC_KCAL_ATWATER_SPECIFIC,335.8933226,food_specific_factor:22908,335.89332260000003,1.6923057124449075e-16,100.00000000000001,preferred,0,0,in_review
+COV-0027,IFKB-ING-0049,1750349,"Oil, sunflower",A,,,,,,,not_computable,0,4,in_review
+COV-0028,IFKB-ING-0051,1750351,"Oil, olive, extra light",C,,,,,,,not_computable,0,4,in_review
+COV-0029A,IFKB-ING-0080-DARK,2758980,"Raisins, dark, seedless",A,,,,,,,not_computable,0,4,in_review
+COV-0029B,IFKB-ING-0080-GOLDEN,2758979,"Raisins, golden, seedless",A,,,,,,,not_computable,0,4,in_review
+COV-0030,IFKB-ING-0083,2758978,"Plums, dried (prunes), uncooked",A,,,,,,,not_computable,0,4,in_review
