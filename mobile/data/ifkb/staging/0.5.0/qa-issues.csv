@@ -1,0 +1,30 @@
+severity,rule_code,entity_type,entity_id,message,action
+high,QA-PROV-002,archive,FoodData_Central_foundation_food_csv_2026-04-30.zip,"food_nutrient.derivation_id is present, but the derivation lookup table is absent from this Foundation-only archive.",block_evidence_promotion_until_lookup_resolved
+high,QA-COMP-001,food,2758998,"Required macro PROTEIN_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-001,food,2758998,"Required macro FAT_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-001,food,2758998,"Required macro CARB_BY_DIFF_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-002,food,2758998,No source kcal energy value is available.,block_mobile_projection
+medium,QA-RESIDUAL-001,food_nutrient,2727570:1005,Small negative carbohydrate-by-difference residual preserved as source value (-0.2508 g/100 g); 0 g is used only for QA/projection calculations.,manual_review
+high,QA-COMP-001,food,2727578,"Required macro FAT_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-001,food,2727578,"Required macro CARB_BY_DIFF_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-002,food,2727578,No source kcal energy value is available.,block_mobile_projection
+high,QA-COMP-001,food,1750349,"Required macro PROTEIN_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-001,food,1750349,"Required macro FAT_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-001,food,1750349,"Required macro CARB_BY_DIFF_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-002,food,1750349,No source kcal energy value is available.,block_mobile_projection
+high,QA-COMP-001,food,1750351,"Required macro PROTEIN_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-001,food,1750351,"Required macro FAT_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-001,food,1750351,"Required macro CARB_BY_DIFF_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-002,food,1750351,No source kcal energy value is available.,block_mobile_projection
+high,QA-COMP-001,food,2758980,"Required macro PROTEIN_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-001,food,2758980,"Required macro FAT_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-001,food,2758980,"Required macro CARB_BY_DIFF_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-002,food,2758980,No source kcal energy value is available.,block_mobile_projection
+high,QA-COMP-001,food,2758979,"Required macro PROTEIN_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-001,food,2758979,"Required macro FAT_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-001,food,2758979,"Required macro CARB_BY_DIFF_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-002,food,2758979,No source kcal energy value is available.,block_mobile_projection
+high,QA-COMP-001,food,2758978,"Required macro PROTEIN_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-001,food,2758978,"Required macro FAT_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-001,food,2758978,"Required macro CARB_BY_DIFF_G is absent; absence remains missing, not zero.",block_mobile_projection
+high,QA-COMP-002,food,2758978,No source kcal energy value is available.,block_mobile_projection
