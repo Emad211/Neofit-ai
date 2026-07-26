@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ifkb-open-media-acquisition
+  group: ifkb-manual-exact-v012
   cancel-in-progress: false
 
 jobs:
