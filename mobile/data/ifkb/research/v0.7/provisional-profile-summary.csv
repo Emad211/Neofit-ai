@@ -1,0 +1,10 @@
+supplement_id,parent_ingredient_id,variant_id,name_en,target_foundation_fdc_id,sr_legacy_fdc_id,ndb_number,match_type,energy_kcal,protein_g,fat_g,carbohydrate_g,fiber_g,saturated_fat_g,source_crosscheck_count,evidence_ceiling,review_status
+IFKB-SRPROV-0001,IFKB-ING-0010,IFKB-ING-0010-SR-GENERIC,"Pasta, dry, enriched",2758998,169736,20120,close_match,371.0,13.04,1.51,74.67,3.2,0.277,3,C,provisional_in_review
+IFKB-SRPROV-0002,IFKB-ING-0067,IFKB-ING-0067-SR-GENERIC,"Pumpkin, raw",2727578,168448,11422,close_match,26.0,1.0,0.1,6.5,0.5,0.052,3,C,provisional_in_review
+IFKB-SRPROV-0003,IFKB-ING-0049,IFKB-ING-0049-LINOLEIC-LT60,"Sunflower oil, linoleic, less than 60%",1750349,171017,4060,ontology_split,884.0,0.0,100.0,0.0,0.0,10.1,3,C,provisional_in_review
+IFKB-SRPROV-0004,IFKB-ING-0049,IFKB-ING-0049-LINOLEIC-65,"Sunflower oil, linoleic, approximately 65%",1750349,171025,4506,ontology_split,884.0,0.0,100.0,0.0,0.0,10.3,4,C,provisional_in_review
+IFKB-SRPROV-0005,IFKB-ING-0049,IFKB-ING-0049-HIGH-OLEIC-70,"Sunflower oil, high oleic, 70% and over",1750349,172338,4584,ontology_split,884.0,0.0,100.0,0.0,0.0,9.859,4,C,provisional_in_review
+IFKB-SRPROV-0006,IFKB-ING-0051,IFKB-ING-0051-SALAD-COOKING,"Olive oil, salad or cooking",1750351,171413,4053,close_match,884.0,0.0,100.0,0.0,0.0,13.8,3,C,provisional_in_review
+IFKB-SRPROV-0007,IFKB-ING-0080,IFKB-ING-0080-DARK-SR,"Raisins, dark, seedless",2758980,168165,9298,exact_named_variant,299.0,3.3,0.25,79.3,4.5,0.09,3,C,provisional_in_review
+IFKB-SRPROV-0008,IFKB-ING-0080,IFKB-ING-0080-GOLDEN-SR,"Raisins, golden, seedless",2758979,168164,9297,exact_named_variant,301.0,3.28,0.2,80.02,3.3,,3,C,provisional_in_review
+IFKB-SRPROV-0009,IFKB-ING-0083,IFKB-ING-0083-UNCOOKED-SR,"Plums, dried (prunes), uncooked",2758978,168162,9291,exact_named_variant,240.0,2.18,0.38,63.9,7.1,0.09,3,C,provisional_in_review
