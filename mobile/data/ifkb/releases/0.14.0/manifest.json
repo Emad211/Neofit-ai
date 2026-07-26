@@ -1,0 +1,26 @@
+{
+  "format": "ifkb-app-dataset-release",
+  "releaseId": "IFKB-0.14.0-app-dataset-candidate",
+  "version": "0.14.0-candidate",
+  "createdAt": "2026-07-26T18:37:37.009409+00:00",
+  "counts": {
+    "foods": 60,
+    "portions": 180,
+    "questions": 200,
+    "images": 58,
+    "imageFiles": 58,
+    "ds2": 3,
+    "ds1Legacy": 43,
+    "ds0Fallback": 14
+  },
+  "formats": [
+    "json",
+    "minified_json",
+    "csv",
+    "sqlite",
+    "typescript",
+    "xlsx"
+  ],
+  "physicalCollectionRequired": false,
+  "status": "candidate_ready_one_final_qa_step_remaining"
+}
