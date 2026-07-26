@@ -31,7 +31,7 @@ jobs:
           python ifkb/universal/import_fndds_app_layer.py \
             --output build/ifkb-fndds-2021-2023
 
-      - name: Verify outputs
+      - name: Verify outputs and nutrient coverage
         run: |
           test -s build/ifkb-fndds-2021-2023/fndds_2021_2023_app_layer.json
           test -s build/ifkb-fndds-2021-2023/fndds_2021_2023_app_layer.sqlite
@@ -45,10 +45,19 @@ jobs:
           db=sqlite3.connect(root/'fndds_2021_2023_app_layer.sqlite')
           count=db.execute('select count(*) from foods').fetchone()[0]
           portions=db.execute('select count(*) from portions').fetchone()[0]
+          complete=db.execute('''
+            select count(*) from foods
+            where calories_kcal is not null and protein_g is not null
+              and fat_g is not null and carbs_g is not null
+          ''').fetchone()[0]
+          egg_white=db.execute("select count(*) from foods where lower(name_en) like '%egg white%'").fetchone()[0]
+          salads=db.execute("select count(*) from foods where lower(name_en) like '%salad%'").fetchone()[0]
           db.close()
           assert count == manifest['foodCount'] and count > 5000, (count,manifest)
+          assert complete == manifest['completeMacroCount'] and complete >= int(count*0.95), (complete,count)
           assert portions > count, portions
-          print({'foods':count,'portions':portions})
+          assert egg_white > 0 and salads > 20, (egg_white,salads)
+          print({'foods':count,'completeMacros':complete,'portions':portions,'eggWhiteRecords':egg_white,'salads':salads})
           PY
 
       - name: Upload app layer
