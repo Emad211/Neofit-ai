@@ -1,17 +1,14 @@
-name: IFKB P0 Wave 2 Accepted Originals
+name: IFKB P0 Wave 2 Accepted Originals (Manual Only)
 
 on:
-  pull_request:
-    branches:
-      - agent/mobile-local-first-expo
-    types: [opened, synchronize, reopened]
-    paths:
-      - 'ifkb/images/p0_wave2_accepted_manifest.csv'
-      - '.github/workflows/ifkb-p0-wave2-originals.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ifkb-wikimedia-commons
+  cancel-in-progress: false
 
 jobs:
   download-reviewed-originals:
@@ -33,6 +30,8 @@ jobs:
         id: acquire
         continue-on-error: true
         run: |
+          echo 'This bulk workflow is retained for controlled diagnostics only.'
+          echo 'For release acquisition, use small rate-limited batches.'
           python ifkb/images/download_commons_images.py \
             --manifest ifkb/images/p0_wave2_accepted_manifest.csv \
             --output build/ifkb-p0-wave2-originals-v0.11.1
