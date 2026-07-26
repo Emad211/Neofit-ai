@@ -1,0 +1,51 @@
+name: IFKB P0 Wave 2 Accepted Originals
+
+on:
+  pull_request:
+    branches:
+      - agent/mobile-local-first-expo
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'ifkb/images/p0_wave2_accepted_manifest.csv'
+      - '.github/workflows/ifkb-p0-wave2-originals.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  download-reviewed-originals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install image dependency
+        run: python -m pip install --disable-pip-version-check pillow==11.3.0
+
+      - name: Download reviewed Wikimedia originals
+        run: |
+          python ifkb/images/download_commons_images.py \
+            --manifest ifkb/images/p0_wave2_accepted_manifest.csv \
+            --output build/ifkb-p0-wave2-originals-v0.11
+
+      - name: Verify resolved output
+        run: |
+          test -s build/ifkb-p0-wave2-originals-v0.11/resolved_manifest.csv
+          test -s build/ifkb-p0-wave2-originals-v0.11/ATTRIBUTION.md
+          test -s build/ifkb-p0-wave2-originals-v0.11/dataset_manifest.json
+
+      - name: Upload reviewed originals
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-p0-wave2-originals-v0.11
+          path: build/ifkb-p0-wave2-originals-v0.11
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 30
