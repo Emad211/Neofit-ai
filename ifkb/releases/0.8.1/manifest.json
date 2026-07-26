@@ -1,0 +1,20 @@
+{
+  "format": "ifkb-research-release",
+  "releaseId": "IFKB-0.8.1-multimodal-canon-qa-and-backlog",
+  "version": "0.8.1",
+  "createdAt": "2026-07-26T10:53:24.879383+00:00",
+  "supersedes": "IFKB-0.8.0-multimodal-food-canon-architecture",
+  "counts": {
+    "canonicalFoodConcepts": 261,
+    "duplicatePrimaryNames": 0,
+    "aliasCollisions": 0,
+    "P0Classes": 60,
+    "P1Classes": 115,
+    "P2Classes": 86,
+    "seedImageTarget": 17544,
+    "productionImageTarget": 61480,
+    "weighedGoldInstances": 3396,
+    "verifiedImageClasses": 0
+  },
+  "nextGate": "regional canon review and P0 licensed/consented image acquisition"
+}
