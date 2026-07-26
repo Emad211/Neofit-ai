@@ -14,18 +14,23 @@ from pathlib import Path
 from typing import Iterable
 
 FNDDS_URL = "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_csv_2024-10-31.zip"
-USER_AGENT = "IFKB-FNDDS-Importer/1.2 (+https://github.com/Emad211/Neofit-ai)"
+USER_AGENT = "IFKB-FNDDS-Importer/1.3 (+https://github.com/Emad211/Neofit-ai)"
 OUTPUT_FIELDS = (
     "calories_kcal", "protein_g", "fat_g", "carbs_g", "fiber_g",
     "sugars_g", "sodium_mg", "cholesterol_mg",
 )
 
-# Known stable nutrient IDs, with name-based fallback from nutrient.csv.
+# FNDDS 2021-2023 uses legacy nutrient identifiers in food_nutrient.csv,
+# while other FDC data types commonly use the newer 1000-series IDs.
 ID_MAP = {
+    "203": "protein_g", "204": "fat_g", "205": "carbs_g",
+    "291": "fiber_g", "269": "sugars_g", "307": "sodium_mg",
+    "601": "cholesterol_mg",
     "1003": "protein_g", "1004": "fat_g", "1005": "carbs_g",
     "1079": "fiber_g", "2000": "sugars_g", "1093": "sodium_mg",
     "1253": "cholesterol_mg",
 }
+ENERGY_ID_PRIORITY = {"208": 1, "1008": 2, "2047": 3, "2048": 4}
 NAME_MAP = {
     "protein": "protein_g",
     "total lipid (fat)": "fat_g",
@@ -35,10 +40,10 @@ NAME_MAP = {
     "sodium, na": "sodium_mg",
     "cholesterol": "cholesterol_mg",
 }
-ENERGY_PRIORITY = {
-    "energy": 1,
-    "energy (atwater general factors)": 2,
-    "energy (atwater specific factors)": 3,
+ENERGY_NAME_PRIORITY = {
+    "energy": 10,
+    "energy (atwater general factors)": 11,
+    "energy (atwater specific factors)": 12,
 }
 
 
@@ -133,14 +138,21 @@ def main() -> int:
             if amount is None:
                 continue
 
+            if nutrient_id in ENERGY_ID_PRIORITY:
+                priority = ENERGY_ID_PRIORITY[nutrient_id]
+                current = energy_choice.get(row["fdc_id"])
+                if current is None or priority < current[0]:
+                    energy_choice[row["fdc_id"]] = (priority, amount)
+                continue
+
             lower_name = name.lower()
             field = ID_MAP.get(nutrient_id) or NAME_MAP.get(lower_name)
             if field:
                 nutrient_values[row["fdc_id"]][field] = amount
                 continue
 
-            if unit == "kcal" and lower_name in ENERGY_PRIORITY:
-                priority = ENERGY_PRIORITY[lower_name]
+            if unit == "kcal" and lower_name in ENERGY_NAME_PRIORITY:
+                priority = ENERGY_NAME_PRIORITY[lower_name]
                 current = energy_choice.get(row["fdc_id"])
                 if current is None or priority < current[0]:
                     energy_choice[row["fdc_id"]] = (priority, amount)
