@@ -1,18 +1,14 @@
 name: IFKB P0 Candidate Discovery
 
 on:
-  pull_request:
-    branches:
-      - agent/mobile-local-first-expo
-    types: [opened, synchronize, reopened]
-    paths:
-      - 'ifkb/images/p0_candidate_queries.csv'
-      - 'ifkb/images/discover_commons_candidates.py'
-      - '.github/workflows/ifkb-p0-candidate-discovery.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ifkb-wikimedia-commons
+  cancel-in-progress: false
 
 jobs:
   discover-licensed-candidates:
