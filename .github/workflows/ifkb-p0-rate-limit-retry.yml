@@ -1,21 +1,13 @@
 name: IFKB P0 Rate-Limit Retry
 
 on:
-  pull_request:
-    branches:
-      - agent/mobile-local-first-expo
-    types: [opened, synchronize, reopened]
-    paths:
-      - 'ifkb/images/p0_wave3_rate_limit_retry_queries.csv'
-      - 'ifkb/images/run_rate_limited_candidate_discovery.py'
-      - '.github/workflows/ifkb-p0-rate-limit-retry.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ifkb-wikimedia-rate-limited-retry
+  group: ifkb-wikimedia-commons
   cancel-in-progress: false
 
 jobs:
