@@ -1,0 +1,19 @@
+rule_id,topic,protocol,requirement_level
+CAP-01,Minimum identity set,"Capture top view, 45-degree view and side view of the same physical serving.",required for curated seed
+CAP-02,Scale reference,Include a standard 5×5 cm reference card or a measured plate in at least one frame.,required for portion labels
+CAP-03,Measured weight,Weigh empty plate and plated edible food; record net grams.,required for nutrition gold
+CAP-04,Mixed meals,"Weigh rice, stew, kebab, bread and sides separately before combining when practical.",required for component gold
+CAP-05,Recipe provenance,Link every gold dish instance to a frozen recipe version and ingredient batch weights.,required for gold
+CAP-06,Natural diversity,"Collect home, restaurant, takeaway, tray and plain-background images.",required for robustness
+CAP-07,Lighting diversity,"Include daylight, warm indoor, cool indoor and low-light examples.",required for robustness
+CAP-08,Presentation diversity,"Collect different garnish levels, bowls, plates, serving sizes and regional styles.",required for robustness
+CAP-09,No destructive editing,"Do not alter ingredients, colour or geometry; record crop/rotation/brightness changes.",required
+CAP-10,Privacy,"Exclude faces, documents, addresses and identifying reflections unless consent covers them.",required
+CAP-11,User submissions,"Retain consent, deletion capability and a private/public-use flag.",required
+CAP-12,Restaurant leakage,All images from the same restaurant/day/menu item must stay in one dataset split.,required
+CAP-13,Burst selection,Near-duplicate frames belong to the same instance and only one may be used in strict test.,required
+CAP-14,Ambiguous dishes,"Record the name spoken or entered by the cook/user, then verify against ingredients/recipe.",recommended
+CAP-15,Oil and sauces,"Record added oil, butter, sauce and dressing separately because visual inference is unreliable.",required for calorie gold
+CAP-16,Cooking-process evidence,"For difficult mixed dishes, optionally capture ingredient-addition photos or a short cooking clip.",advanced
+CAP-17,Negative/OOD data,"Capture non-food scenes, foreign dishes, empty plates and unknown Iranian foods.",required for abstention
+CAP-18,Quality rejection,"Reject severe blur, extreme colour filters, inaccessible ground truth or uncertain licence.",required
