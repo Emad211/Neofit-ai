@@ -1,0 +1,35 @@
+coverage_id,ingredient_id,variant_id,parent_ingredient_id,fdc_id,description,data_type,food_category_id,publication_date,match_quality,variant_type,automated_qa_status,review_status,independent_review_status
+COV-0001,IFKB-ING-0001,IFKB-ING-0001,IFKB-ING-0001,2512381,"Rice, white, long grain, unenriched, raw",foundation_food,20,2023-04-20,C,direct_corrected,in_review,in_review,pending
+COV-0002,IFKB-ING-0010,IFKB-ING-0010,IFKB-ING-0010,2758998,"Pasta, dry, enriched, spaghetti",foundation_food,20,2026-04-30,C,direct,in_review,in_review,pending
+COV-0003,IFKB-ING-0008,IFKB-ING-0008,IFKB-ING-0008,2710820,"Bulgur, dry, raw",foundation_food,20,2024-10-31,A,direct,in_review,in_review,pending
+COV-0004,IFKB-ING-0015,IFKB-ING-0015,IFKB-ING-0015,2644283,"Lentils, dry",foundation_food,16,2023-10-26,C,direct,in_review,in_review,pending
+COV-0005,IFKB-ING-0018,IFKB-ING-0018,IFKB-ING-0018,2644282,"Chickpeas, (garbanzo beans, bengal gram), dry",foundation_food,16,2023-10-26,A,direct_corrected,in_review,in_review,pending
+COV-0006,IFKB-ING-0026,IFKB-ING-0026,IFKB-ING-0026,2644284,"Blackeye pea, dry",foundation_food,16,2023-10-26,A,direct,in_review,in_review,pending
+COV-0007,IFKB-ING-0030,IFKB-ING-0030,IFKB-ING-0030,2514743,"Beef, ground, 90% lean meat / 10% fat, raw",foundation_food,13,2023-04-20,C,direct,in_review,in_review,pending
+COV-0008,IFKB-ING-0029,IFKB-ING-0029,IFKB-ING-0029,2727570,"Lamb, ground, raw",foundation_food,17,2025-04-24,A,direct,in_review,in_review,pending
+COV-0009,IFKB-ING-0032,IFKB-ING-0032,IFKB-ING-0032,2646170,"Chicken, breast, boneless, skinless, raw",foundation_food,5,2023-10-26,A,direct,in_review,in_review,pending
+COV-0010,IFKB-ING-0033,IFKB-ING-0033,IFKB-ING-0033,2646171,"Chicken, thigh, boneless, skinless, raw",foundation_food,5,2023-10-26,A,direct,in_review,in_review,pending
+COV-0011,IFKB-ING-0058,IFKB-ING-0058,IFKB-ING-0058,2685577,"Eggplant, raw",foundation_food,11,2024-04-18,A,direct,in_review,in_review,pending
+COV-0012,IFKB-ING-0059,IFKB-ING-0059,IFKB-ING-0059,2685568,"Squash, summer, green, zucchini, includes skin, raw",foundation_food,11,2024-04-18,A,direct,in_review,in_review,pending
+COV-0013,IFKB-ING-0060,IFKB-ING-0060,IFKB-ING-0060,2346405,"Celery, raw",foundation_food,11,2022-10-28,C,direct,in_review,in_review,pending
+COV-0014,IFKB-ING-0061,IFKB-ING-0061,IFKB-ING-0061,2346400,"Beans, snap, green, raw",foundation_food,11,2022-10-28,A,direct,in_review,in_review,pending
+COV-0015A,IFKB-ING-0062,IFKB-ING-0062-RUSSET,IFKB-ING-0062,2346401,"Potatoes, russet, without skin, raw",foundation_food,11,2022-10-28,A,russet,in_review,in_review,pending
+COV-0015B,IFKB-ING-0062,IFKB-ING-0062-RED,IFKB-ING-0062,2346402,"Potatoes, red, without skin, raw",foundation_food,11,2022-10-28,A,red,in_review,in_review,pending
+COV-0015C,IFKB-ING-0062,IFKB-ING-0062-GOLD,IFKB-ING-0062,2346403,"Potatoes, gold, without skin, raw",foundation_food,11,2022-10-28,A,gold,in_review,in_review,pending
+COV-0016A,IFKB-ING-0063,IFKB-ING-0063-BABY,IFKB-ING-0063,1999632,"Spinach, baby",foundation_food,11,2021-10-28,A,baby,in_review,in_review,pending
+COV-0016B,IFKB-ING-0063,IFKB-ING-0063-MATURE,IFKB-ING-0063,1999633,"Spinach, mature",foundation_food,11,2021-10-28,A,mature,in_review,in_review,pending
+COV-0017,IFKB-ING-0065,IFKB-ING-0065,IFKB-ING-0065,2346407,"Cabbage, green, raw",foundation_food,11,2022-10-28,C,direct,in_review,in_review,pending
+COV-0018,IFKB-ING-0066,IFKB-ING-0066,IFKB-ING-0066,2258586,"Carrots, mature, raw",foundation_food,11,2022-04-28,C,direct,in_review,in_review,pending
+COV-0019,IFKB-ING-0067,IFKB-ING-0067,IFKB-ING-0067,2727578,"Squash, pie pumpkin, peeled, seeded, raw",foundation_food,11,2025-04-24,C,direct,in_review,in_review,pending
+COV-0020,IFKB-ING-0053,IFKB-ING-0053,IFKB-ING-0053,1104962,"Onions, white, raw",foundation_food,11,2020-10-30,A,direct,in_review,in_review,pending
+COV-0021,IFKB-ING-0055,IFKB-ING-0055,IFKB-ING-0055,1104647,"Garlic, raw",foundation_food,11,2020-10-30,A,direct,in_review,in_review,pending
+COV-0022,IFKB-ING-0056,IFKB-ING-0056,IFKB-ING-0056,1999634,"Tomato, roma",foundation_food,11,2021-10-28,C,direct,in_review,in_review,pending
+COV-0023,IFKB-ING-0077,IFKB-ING-0077,IFKB-ING-0077,2346394,"Nuts, walnuts, English, halves, raw",foundation_food,12,2022-10-28,C,direct,in_review,in_review,pending
+COV-0024,IFKB-ING-0043,IFKB-ING-0043,IFKB-ING-0043,2259793,"Yogurt, plain, whole milk",foundation_food,1,2022-04-28,A,direct,in_review,in_review,pending
+COV-0025,IFKB-ING-0046,IFKB-ING-0046,IFKB-ING-0046,2259796,"Cheese, feta, whole milk, crumbled",foundation_food,1,2022-04-28,C,direct,in_review,in_review,pending
+COV-0026,IFKB-ING-0048,IFKB-ING-0048,IFKB-ING-0048,2346386,"Cream, heavy",foundation_food,1,2022-10-28,A,direct,in_review,in_review,pending
+COV-0027,IFKB-ING-0049,IFKB-ING-0049,IFKB-ING-0049,1750349,"Oil, sunflower",foundation_food,4,2021-04-28,A,direct,in_review,in_review,pending
+COV-0028,IFKB-ING-0051,IFKB-ING-0051,IFKB-ING-0051,1750351,"Oil, olive, extra light",foundation_food,4,2021-04-28,C,direct,in_review,in_review,pending
+COV-0029A,IFKB-ING-0080,IFKB-ING-0080-DARK,IFKB-ING-0080,2758980,"Raisins, dark, seedless",foundation_food,9,2026-04-30,A,dark,in_review,in_review,pending
+COV-0029B,IFKB-ING-0080,IFKB-ING-0080-GOLDEN,IFKB-ING-0080,2758979,"Raisins, golden, seedless",foundation_food,9,2026-04-30,A,golden,in_review,in_review,pending
+COV-0030,IFKB-ING-0083,IFKB-ING-0083,IFKB-ING-0083,2758978,"Plums, dried (prunes), uncooked",foundation_food,9,2026-04-30,A,direct,in_review,in_review,pending
