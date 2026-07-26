@@ -1,0 +1,65 @@
+name: IFKB FNDDS Universal Food Layer
+
+on:
+  pull_request:
+    branches:
+      - agent/mobile-local-first-expo
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'ifkb/universal/import_fndds_app_layer.py'
+      - '.github/workflows/ifkb-fndds-universal-layer.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-fndds-layer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build universal FNDDS app layer
+        run: |
+          python ifkb/universal/import_fndds_app_layer.py \
+            --output build/ifkb-fndds-2021-2023
+
+      - name: Verify outputs
+        run: |
+          test -s build/ifkb-fndds-2021-2023/fndds_2021_2023_app_layer.json
+          test -s build/ifkb-fndds-2021-2023/fndds_2021_2023_app_layer.sqlite
+          test -s build/ifkb-fndds-2021-2023/fndds_2021_2023_foods.csv
+          test -s build/ifkb-fndds-2021-2023/manifest.json
+          python - <<'PY'
+          import json, sqlite3
+          from pathlib import Path
+          root=Path('build/ifkb-fndds-2021-2023')
+          manifest=json.loads((root/'manifest.json').read_text())
+          db=sqlite3.connect(root/'fndds_2021_2023_app_layer.sqlite')
+          count=db.execute('select count(*) from foods').fetchone()[0]
+          portions=db.execute('select count(*) from portions').fetchone()[0]
+          db.close()
+          assert count == manifest['foodCount'] and count > 5000, (count,manifest)
+          assert portions > count, portions
+          print({'foods':count,'portions':portions})
+          PY
+
+      - name: Upload app layer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-fndds-2021-2023-app-layer
+          path: |
+            build/ifkb-fndds-2021-2023/fndds_2021_2023_app_layer.json
+            build/ifkb-fndds-2021-2023/fndds_2021_2023_app_layer.sqlite
+            build/ifkb-fndds-2021-2023/fndds_2021_2023_foods.csv
+            build/ifkb-fndds-2021-2023/manifest.json
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 30
