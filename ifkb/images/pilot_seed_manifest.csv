@@ -1,0 +1,13 @@
+seed_image_id,canon_id,food_name_fa,food_name_en,commons_file_title,expected_license,image_role,identity_review,allowed_use
+IFKB-WM-SEED-0001,IFKB-CANON-00008,قورمه‌سبزی,Ghormeh sabzi,Ghormeh Sabzi.JPG,CC0 1.0,served_final,approved,identity_pretraining_and_retrieval
+IFKB-WM-SEED-0002,IFKB-CANON-00005,قیمه,Gheimeh,Gheymeh Stew.jpg,CC BY-SA 4.0,served_final,approved,identity_pretraining_and_retrieval
+IFKB-WM-SEED-0003,IFKB-CANON-00010,فسنجان,Fesenjan,Fesenjon Irani.JPG,CC0 1.0,served_final,approved,identity_pretraining_and_retrieval
+IFKB-WM-SEED-0004,IFKB-CANON-00007,خورش بادمجان,Khoresh bademjan,Khoresh bademjan.jpg,CC BY-SA 4.0,served_final,approved,identity_pretraining_and_retrieval
+IFKB-WM-SEED-0005,IFKB-CANON-00016,عدس پلو,Adas polo,Adas polo.JPG,CC BY-SA 4.0,served_final,approved,identity_pretraining_and_retrieval
+IFKB-WM-SEED-0006,IFKB-CANON-00018,لوبیا پلو,Loobia polo,Loobia Polo.jpg,CC BY-SA 4.0,served_final,approved,identity_pretraining_and_retrieval
+IFKB-WM-SEED-0007,IFKB-CANON-00028,کباب کوبیده,Kabab koobideh,Kebab koobideh persian.jpg,CC BY-SA 4.0,served_final,approved,identity_pretraining_and_retrieval
+IFKB-WM-SEED-0008,IFKB-CANON-00023,جوجه کباب,Joojeh kabab,Jujeh Kabob.JPG,CC BY-SA 4.0,served_final,approved,identity_pretraining_and_retrieval
+IFKB-WM-SEED-0009,IFKB-CANON-00035,آش رشته,Ash reshteh,Ash e reshte.jpg,CC BY-SA 4.0,served_final,approved,identity_pretraining_and_retrieval
+IFKB-WM-SEED-0010,IFKB-CANON-00036,حلیم,Persian haleem,Jewish Persian Haleem 01.jpg,CC BY 4.0,served_final,approved,identity_pretraining_and_retrieval
+IFKB-WM-SEED-0011,IFKB-CANON-00061,فلافل,Iranian falafel,Falafel Sandwich.JPG,CC BY-SA 3.0,served_final,approved,identity_pretraining_and_retrieval
+IFKB-WM-SEED-0012,IFKB-CANON-00054,میرزاقاسمی,Mirza ghasemi,Mirza-Qasemi dish.jpg,CC BY-SA 3.0,served_final,approved,identity_pretraining_and_retrieval
