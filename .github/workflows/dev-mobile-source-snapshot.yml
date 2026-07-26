@@ -6,6 +6,11 @@ on:
       - agent/iranian-food-kb-foundation
     paths:
       - '.github/workflows/dev-mobile-source-snapshot.yml'
+  pull_request:
+    branches:
+      - agent/mobile-local-first-expo
+    paths:
+      - '.github/workflows/dev-mobile-source-snapshot.yml'
   workflow_dispatch:
 
 permissions:
