@@ -1,0 +1,35 @@
+name: Run Nutrition Integration Payload
+
+on:
+  push:
+    branches:
+      - agent/iranian-food-kb-foundation
+    paths:
+      - '.github/workflows/dev-run-integration-payload.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/iranian-food-kb-foundation
+          fetch-depth: 0
+      - name: Extract and apply tested payload
+        shell: bash
+        run: |
+          sed -n "/^H4sI/,/^PAYLOAD$/p" .github/workflows/dev-mobile-source-snapshot.yml | sed '$d' > /tmp/neofit-integration.b64
+          test -s /tmp/neofit-integration.b64
+          base64 --decode /tmp/neofit-integration.b64 | tar -xzf -
+          rm .github/workflows/dev-mobile-source-snapshot.yml
+          rm .github/workflows/dev-run-integration-payload.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat(nutrition): integrate Vision API identity with local IFKB calculation'
+          git push origin HEAD:agent/iranian-food-kb-foundation
