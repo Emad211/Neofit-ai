@@ -1,17 +1,14 @@
 name: IFKB Pilot Image Acquisition
 
 on:
-  pull_request:
-    branches:
-      - agent/mobile-local-first-expo
-    types: [opened, synchronize, reopened]
-    paths:
-      - 'ifkb/images/**'
-      - '.github/workflows/ifkb-pilot-image-acquisition.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ifkb-wikimedia-commons
+  cancel-in-progress: false
 
 jobs:
   acquire-licensed-pilot-images:
