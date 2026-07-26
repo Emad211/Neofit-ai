@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IFKB Recipe Batch",
+  "type": "object",
+  "required": ["batch_id", "recipe_version_id", "canon_id", "kitchen_id", "cook_id", "scale_calibration_id", "total_edible_raw_g", "cooked_yield_g"],
+  "properties": {
+    "batch_id": {"type": "string"},
+    "recipe_version_id": {"type": "string"},
+    "canon_id": {"type": "string"},
+    "kitchen_id": {"type": "string"},
+    "cook_id": {"type": "string"},
+    "scale_calibration_id": {"type": "string"},
+    "total_edible_raw_g": {"type": "number", "exclusiveMinimum": 0},
+    "cooked_yield_g": {"type": "number", "exclusiveMinimum": 0},
+    "oil_input_g": {"type": ["number", "null"], "minimum": 0},
+    "oil_recovered_g": {"type": ["number", "null"], "minimum": 0},
+    "ingredient_completion_pct": {"type": "number", "minimum": 0, "maximum": 1},
+    "status": {"enum": ["draft", "in_review", "quarantined", "accepted"]}
+  }
+}
