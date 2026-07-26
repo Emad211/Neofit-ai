@@ -1,0 +1,14 @@
+{
+  "releaseId": "IFKB-0.13.1-first-ds2-consensus",
+  "createdAt": "2026-07-26T18:13:23.932314+00:00",
+  "profiles": [
+    "IFKB-CANON-00008",
+    "IFKB-CANON-00010",
+    "IFKB-CANON-00028"
+  ],
+  "sourceRecords": 13,
+  "ingredientRows": 51,
+  "quantityIntervals": 14,
+  "nutrientIntervalsReady": 0,
+  "physicalCollectionRequired": false
+}
