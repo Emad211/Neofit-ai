@@ -34,22 +34,26 @@ jobs:
         run: python -m pip install --disable-pip-version-check pillow==11.3.0
 
       - name: Download and audit exact Wikimedia Commons images
+        id: acquire
+        continue-on-error: true
         run: |
           python ifkb/images/download_commons_images.py \
             --manifest ifkb/images/manual_exact_commons_manifest_v0.12.csv \
             --output build/ifkb-manual-exact-v0.12
 
-      - name: Verify release outputs
-        run: |
-          test -s build/ifkb-manual-exact-v0.12/resolved_manifest.csv
-          test -s build/ifkb-manual-exact-v0.12/ATTRIBUTION.md
-          test -s build/ifkb-manual-exact-v0.12/dataset_manifest.json
-
-      - name: Upload exact image artifact
+      - name: Upload exact image diagnostic artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ifkb-manual-exact-v0.12
+          name: ifkb-manual-exact-v0.12-diagnostic
           path: build/ifkb-manual-exact-v0.12
           if-no-files-found: error
           compression-level: 6
           retention-days: 30
+
+      - name: Enforce complete acquisition
+        run: |
+          test "${{ steps.acquire.outcome }}" = "success"
+          test -s build/ifkb-manual-exact-v0.12/resolved_manifest.csv
+          test -s build/ifkb-manual-exact-v0.12/ATTRIBUTION.md
+          test -s build/ifkb-manual-exact-v0.12/dataset_manifest.json
