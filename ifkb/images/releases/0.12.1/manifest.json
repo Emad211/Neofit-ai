@@ -1,0 +1,20 @@
+{
+  "format": "ifkb-operational-capture-release",
+  "releaseId": "IFKB-0.12.1-operational-capture-kit",
+  "createdAt": "2026-07-26T17:18:11.713997+00:00",
+  "dependsOn": "IFKB-0.12.0-source-verified-image-expansion",
+  "counts": {
+    "p0ClassTargets": 60,
+    "captureAssignments": 130,
+    "consentSlots": 100,
+    "captureSessionSlots": 180,
+    "imageShotSlots": 540,
+    "componentWeightSlots": 360,
+    "validatorTestsPassed": 5,
+    "validatorTestsFailed": 0,
+    "capturedImagesAdded": 0,
+    "nutritionGoldRecordsAdded": 0
+  },
+  "scientificStatus": "operational_templates_only",
+  "nextGate": "execute consented capture assignments and populate measured records"
+}
