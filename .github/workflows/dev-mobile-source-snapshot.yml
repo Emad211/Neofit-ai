@@ -1,0 +1,33 @@
+name: Dev Mobile Source Snapshot
+
+on:
+  push:
+    branches:
+      - agent/iranian-food-kb-foundation
+    paths:
+      - '.github/workflows/dev-mobile-source-snapshot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build source snapshot
+        run: |
+          mkdir -p snapshot/mobile
+          cp -R mobile/app snapshot/mobile/app
+          cp -R mobile/src snapshot/mobile/src
+          cp -R mobile/tests snapshot/mobile/tests
+          cp mobile/package.json mobile/tsconfig.json snapshot/mobile/
+          find snapshot/mobile -type f | sort > snapshot/file-list.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: neofit-mobile-source-snapshot
+          path: snapshot
+          if-no-files-found: error
+          retention-days: 1
