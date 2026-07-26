@@ -1,0 +1,6 @@
+incident_id,stage,error,impact,correction,partial_release_published,status
+V012-INC-001,Openverse candidate contact-sheet generation,Incorrect relative path to downloaded thumbnails,First Openverse job stopped before artifact publication,Resolved paths relative to the output root and reran,no,closed
+V012-INC-002,Openverse thumbnail request,HTTP 406 caused by forced Accept:image/* header,Search metadata succeeded but no image candidates were packaged,Removed forced Accept header and allowed endpoint content negotiation,no,closed
+V012-INC-003,Openverse source verification,Several Flickr/Rawpixel landing pages unavailable to independent verifier,Relevant candidates remain audit-only,Set licence verification to pending and selected_for_dataset=no,no,open_source_verification
+V012-INC-004,Manual exact Commons download,Wikimedia CDN HTTP 429 / robot policy for originals and 1920px thumbnails,Three high-resolution exact sources verified but their bytes were not added,Retain source registry and eligibility; do not count assets until acquired,no,open_asset_acquisition
+V012-INC-005,Exact-title Openverse fallback,Exact Commons files were not returned and four thumbnail requests returned HTTP 424,No exact fallback asset was added,Do not substitute approximate results; retain source and field-capture route,no,closed_without_asset
