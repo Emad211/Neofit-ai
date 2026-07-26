@@ -1,0 +1,32 @@
+{
+  "format": "ifkb-research-release",
+  "releaseId": "IFKB-0.7.0-provisional-sr-gap-closure",
+  "version": "0.7.0",
+  "createdAt": "2026-07-26T10:25:38.064223+00:00",
+  "dependsOn": "IFKB-0.6.0-scientific-review-pass-1",
+  "status": "research-provisional",
+  "counts": {
+    "foundationParentGapsAddressed": 7,
+    "provisionalSrVariants": 9,
+    "sourceCrosscheckLinks": 29,
+    "sunflowerVariants": 3,
+    "iranianOntologyAdditions": 49,
+    "p0IranianAdditions": 37,
+    "verifiedRecordsAdded": 0
+  },
+  "sourcePolicy": {
+    "officialSrArchiveIngested": false,
+    "sourceClass": "secondary_mirror_crosschecked",
+    "evidenceCeiling": "C",
+    "promotionRequires": [
+      "official SR Legacy archive ingestion",
+      "automated QA",
+      "identity review",
+      "independent scientific review"
+    ]
+  },
+  "stage2": {
+    "status": "in_progress",
+    "completionPercent": 35
+  }
+}
