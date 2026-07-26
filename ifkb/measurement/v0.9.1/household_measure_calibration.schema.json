@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IFKB Household Measure Calibration",
+  "type": "object",
+  "required": ["calibration_id", "measure_id", "scale_id", "replicate_weights_g"],
+  "properties": {
+    "calibration_id": {"type": "string"},
+    "measure_id": {"type": "string"},
+    "canon_id": {"type": ["string", "null"]},
+    "recipe_version_id": {"type": ["string", "null"]},
+    "scale_id": {"type": "string"},
+    "replicate_weights_g": {"type": "array", "minItems": 5, "items": {"type": "number", "minimum": 0}},
+    "cv_limit": {"type": "number", "minimum": 0, "maximum": 1},
+    "review_status": {"enum": ["pending", "pass", "review", "rejected"]}
+  }
+}
