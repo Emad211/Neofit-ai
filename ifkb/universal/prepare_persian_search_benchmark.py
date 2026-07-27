@@ -8,6 +8,11 @@ import re
 import sqlite3
 from pathlib import Path
 
+GENERIC_TARGET_VOCABULARY = {
+    'sweet pepper': 'peppers, sweet',
+    'pistachios': 'pistachio nuts',
+}
+
 
 def read_csv(path: Path) -> list[dict[str, str]]:
     with path.open('r', encoding='utf-8-sig', newline='') as handle:
@@ -20,18 +25,19 @@ def sanitize_fts_query(value: str) -> str:
 
 
 def target_variants(target: str) -> set[str]:
-    values = {target.strip()}
-    lower = target.lower()
+    canonical = GENERIC_TARGET_VOCABULARY.get(target.strip().lower(), target.strip())
+    values = {canonical}
+    lower = canonical.lower()
     if 'egg' not in lower or 'white' not in lower:
         values.add('egg, white')
     if not re.search(r'\b(boiled|poached)\b', lower):
-        values.add(f'{target}, boiled')
+        values.add(f'{canonical}, boiled')
     if not re.search(r'\bfried\b', lower):
-        values.add(f'{target}, fried')
+        values.add(f'{canonical}, fried')
     if not re.search(r'\bgrilled\b', lower):
-        values.add(f'{target}, grilled')
+        values.add(f'{canonical}, grilled')
     if not re.search(r'(?:no|without) added fat', lower):
-        values.add(f'{target}, no added fat')
+        values.add(f'{canonical}, no added fat')
     return {value.strip() for value in values if value.strip()}
 
 
