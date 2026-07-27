@@ -1,26 +1,58 @@
-import { NUTRIENT_KEYS, type GoalProgressItem, type NutritionGoals, type NutritionVector } from './types';
+import { NUTRIENT_KEYS } from './types';
+import type {
+  GoalProgressItem,
+  NutrientKey,
+  NutritionGoalMode,
+  NutritionGoals,
+  NutritionVector,
+} from './types';
+
+const MAXIMUM_GOALS = new Set<NutrientKey>(['sugarsG', 'sodiumMg', 'cholesterolMg']);
+const MINIMUM_GOALS = new Set<NutrientKey>([
+  'fiberG',
+  'calciumMg',
+  'ironMg',
+  'potassiumMg',
+  'vitaminCMg',
+]);
+
+export function nutritionGoalMode(nutrient: NutrientKey): NutritionGoalMode {
+  if (MAXIMUM_GOALS.has(nutrient)) return 'maximum';
+  if (MINIMUM_GOALS.has(nutrient)) return 'minimum';
+  return 'target';
+}
 
 export function calculateGoalProgress(
   consumed: NutritionVector,
   goals: NutritionGoals,
 ): GoalProgressItem[] {
-  const progress: GoalProgressItem[] = [];
-  for (const nutrient of NUTRIENT_KEYS) {
+  return NUTRIENT_KEYS.flatMap((nutrient) => {
     const goal = goals.daily[nutrient];
-    if (goal === undefined) {
-      continue;
+    if (goal === undefined || !Number.isFinite(goal) || goal <= 0) {
+      return [];
     }
-    if (!Number.isFinite(goal) || goal <= 0) {
-      throw new RangeError(`Goal for ${nutrient} must be a finite positive number`);
+    const consumedValue = consumed[nutrient];
+    const mode = nutritionGoalMode(nutrient);
+    if (consumedValue === undefined || !Number.isFinite(consumedValue)) {
+      return [{
+        nutrient,
+        mode,
+        consumed: null,
+        goal,
+        ratio: null,
+        remaining: null,
+      }];
     }
-    const actual = consumed[nutrient];
-    progress.push({
+    const ratio = consumedValue / goal;
+    return [{
       nutrient,
-      consumed: actual ?? null,
+      mode,
+      consumed: consumedValue,
       goal,
-      ratio: actual === undefined ? null : actual / goal,
-      remaining: actual === undefined ? null : Math.max(0, goal - actual),
-    });
-  }
-  return progress;
+      ratio,
+      remaining: mode === 'minimum'
+        ? Math.max(0, goal - consumedValue)
+        : goal - consumedValue,
+    }];
+  });
 }
