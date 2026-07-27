@@ -1,1 +1,1 @@
-apply-runtime-v3-diagnostics
+apply-runtime-v3-portable-sqlite
