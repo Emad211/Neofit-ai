@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "NeoFit AI",
+    "slug": "neofit-ai",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "neofit",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "com.emad211.neofit",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
+    },
+    "ios": {
+      "bundleIdentifier": "com.emad211.neofit",
+      "buildNumber": "1",
+      "supportsTablet": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-localization",
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true,
+          "faceIDPermission": "Allow NeoFit AI to unlock your personal AvalAI key."
+        }
+      ],
+      [
+        "expo-sqlite",
+        {
+          "enableFTS": true,
+          "useSQLCipher": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "NeoFit AI uses the camera only when you choose to analyze a meal photo.",
+          "photosPermission": "NeoFit AI reads only the meal photo you select."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

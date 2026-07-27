@@ -1,0 +1,98 @@
+name: Android Preview APK
+
+on:
+  push:
+    branches:
+      - agent/mobile-local-first-expo
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-preview-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-preview-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      CI: '1'
+      EXPO_NO_TELEMETRY: '1'
+      NODE_OPTIONS: '--max-old-space-size=6144'
+
+    steps:
+      - name: Checkout current mobile branch
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run tests and strict checks
+        run: |
+          npm test
+          npx expo install --check
+          npm run doctor
+          npm run typecheck
+
+      - name: Generate Android native project
+        run: npx expo prebuild --platform android --clean --no-install
+
+      - name: Build signed debug APK
+        working-directory: mobile/android
+        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Prepare named APK
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk NeoFit-AI-0.1.0-preview.apk
+          sha256sum NeoFit-AI-0.1.0-preview.apk > NeoFit-AI-0.1.0-preview.apk.sha256
+
+      - name: Upload installable APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NeoFit-AI-0.1.0-preview-apk
+          path: |
+            mobile/NeoFit-AI-0.1.0-preview.apk
+            mobile/NeoFit-AI-0.1.0-preview.apk.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+      - name: Publish latest preview release
+        if: github.event_name == 'push'
+        working-directory: mobile
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete neofit-preview-latest --repo "${GITHUB_REPOSITORY}" --yes --cleanup-tag || true
+          gh release create neofit-preview-latest \
+            NeoFit-AI-0.1.0-preview.apk \
+            NeoFit-AI-0.1.0-preview.apk.sha256 \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${GITHUB_SHA}" \
+            --title "NeoFit AI 0.1.0 Preview APK" \
+            --notes "Installable debug APK generated from commit ${GITHUB_SHA}. This is an unfinished personal preview for device testing, not a production release." \
+            --prerelease
