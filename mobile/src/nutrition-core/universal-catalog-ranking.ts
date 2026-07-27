@@ -136,7 +136,7 @@ export function rankUniversalCatalogCandidates(
     .filter((row) => row.score > 0)
     .sort((left, right) =>
       right.score - left.score
-      || right.macroComplete.valueOf() - left.macroComplete.valueOf()
+      || Number(right.macroComplete) - Number(left.macroComplete)
       || left.nameEn.length - right.nameEn.length
       || left.id.localeCompare(right.id),
     )
