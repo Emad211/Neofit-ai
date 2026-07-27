@@ -113,10 +113,18 @@ export interface NutritionGoals {
   readonly daily: NutritionVector;
 }
 
+export type NutritionGoalMode = 'target' | 'minimum' | 'maximum';
+
 export interface GoalProgressItem {
   readonly nutrient: NutrientKey;
+  readonly mode: NutritionGoalMode;
   readonly consumed: number | null;
   readonly goal: number;
   readonly ratio: number | null;
+  /**
+   * Positive means the remaining distance to the configured boundary. A
+   * negative number means the target/maximum has been exceeded. For minimum
+   * goals it becomes zero after the minimum is reached.
+   */
   readonly remaining: number | null;
 }
