@@ -57,11 +57,24 @@ test('catalog adapter is the only source of displayed nutrition', () => {
   assert.equal(result.calorieRange.high, 360);
 });
 
-test('meal estimator uses identity-only Vision and never calls AI nutrition estimators', () => {
+test('meal estimator uses a consented prepared photo and never AI nutrition estimators', () => {
   const source = readFileSync(new URL('../app/meal-estimator.tsx', import.meta.url), 'utf8');
   assert.match(source, /recognizeFoodFromPhoto/);
   assert.match(source, /buildCatalogFoodEstimate/);
+  assert.match(source, /confirmVisionUpload/);
+  assert.match(source, /prepareVisionImage/);
+  assert.match(source, /base64:\s*false/);
+  assert.match(source, /imageDataUrl:\s*prepared\.imageDataUrl/);
+  assert.match(source, /prepared\.byteLength/);
+  assert.doesNotMatch(source, /asset\.base64/);
   assert.doesNotMatch(source, /estimateFoodFromText/);
   assert.doesNotMatch(source, /estimateFoodFromPhoto/);
   assert.match(source, /source:\s*'catalog'/);
+});
+
+test('billable AvalAI requests do not retry ambiguous timeouts or provider errors', () => {
+  const source = readFileSync(new URL('../src/services/avalai-client.ts', import.meta.url), 'utf8');
+  assert.match(source, /silently repeating it could create duplicate cost/);
+  assert.match(source, /return error\.status === 0 && error\.requestId === null/);
+  assert.match(source, /It was not automatically retried to avoid a duplicate charge/);
 });
