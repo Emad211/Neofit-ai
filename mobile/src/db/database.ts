@@ -4,9 +4,9 @@ import { migrations } from '@/db/migrations';
 
 export const DATABASE_NAME = 'neofit.db';
 const FOOD_SEED_SETTING = 'catalog.iranian-foods.seed-version';
-const FOOD_SEED_VERSION = '1';
+const FOOD_SEED_VERSION = '2';
 const NUTRITION_CORE_SEED_SETTING = 'nutrition.core.seed-version';
-const NUTRITION_CORE_SEED_VERSION = '1';
+const NUTRITION_CORE_SEED_VERSION = '2';
 const REQUIRED_V1_TABLES = [
   'app_settings',
   'profile',
