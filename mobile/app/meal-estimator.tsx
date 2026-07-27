@@ -5,6 +5,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { AppText, Card, ChoiceGrid, Field, InlineNotice, MetricCard, PrimaryButton, Screen } from '@/components/ui';
 import { logMeal } from '@/db/nutrition-meal-repository';
 import { FoodEstimate, Meal } from '@/domain/models';
+import {
+  decideVisionResolution,
+  type VisionResolutionReason,
+} from '@/nutrition-core';
 import { useApp } from '@/providers/app-provider';
 import { AvalAiError } from '@/services/avalai-client';
 import { buildCatalogFoodEstimate } from '@/services/food-catalog-core-adapter';
@@ -13,6 +17,28 @@ import { prepareVisionImage } from '@/services/vision-image-preparation';
 import { recognizeFoodFromPhoto, type VisionFoodCandidate } from '@/services/vision-food-recognition';
 
 type EstimatorMode = 'manual' | 'text' | 'photo';
+type LocalFoodMatch = NonNullable<Awaited<ReturnType<typeof findBestLocalFoodMatch>>>;
+
+interface VisionResolvedChoice {
+  readonly key: string;
+  readonly query: string;
+  readonly confidence: number;
+  readonly observation: VisionFoodCandidate | undefined;
+  readonly local: LocalFoodMatch;
+  readonly combinedScore: number;
+}
+
+interface VisionReviewContext {
+  readonly choices: readonly VisionResolvedChoice[];
+  readonly reasons: readonly VisionResolutionReason[];
+  readonly visibleComponents: readonly string[];
+  readonly warnings: readonly string[];
+  readonly prepared: {
+    readonly width: number;
+    readonly height: number;
+    readonly byteLength: number;
+  };
+}
 
 function initialMode(value: string | undefined): EstimatorMode {
   if (value === 'manual' || value === 'photo') return value;
@@ -48,6 +74,7 @@ export default function MealEstimatorScreen() {
   const [result, setResult] = React.useState<FoodEstimate | null>(null);
   const [identifiedByVision, setIdentifiedByVision] = React.useState(false);
   const [visionLabels, setVisionLabels] = React.useState<string[]>([]);
+  const [visionReview, setVisionReview] = React.useState<VisionReviewContext | null>(null);
   const [localRange, setLocalRange] = React.useState<{ low: number; high: number } | null>(null);
   const [manualCalories, setManualCalories] = React.useState('');
   const [manualProtein, setManualProtein] = React.useState('');
@@ -67,6 +94,7 @@ export default function MealEstimatorScreen() {
     setLocalRange(null);
     setIdentifiedByVision(false);
     setVisionLabels([]);
+    setVisionReview(null);
   };
 
   const handleError = (caught: unknown) => {
@@ -79,7 +107,7 @@ export default function MealEstimatorScreen() {
   };
 
   const applyLocalMatch = (input: {
-    local: NonNullable<Awaited<ReturnType<typeof findBestLocalFoodMatch>>>;
+    local: LocalFoodMatch;
     assumptions: readonly string[];
     fromVision: boolean;
   }) => {
@@ -92,6 +120,65 @@ export default function MealEstimatorScreen() {
     setResult(built.estimate);
     setLocalRange(built.calorieRange);
     setIdentifiedByVision(input.fromVision);
+  };
+
+  const buildVisionAssumptions = (
+    choice: VisionResolvedChoice,
+    context: Omit<VisionReviewContext, 'choices'>,
+    confirmed: boolean,
+  ): string[] => {
+    const assumptions = [
+      label(
+        `Vision API candidate: ${choice.query}. Nutrition was calculated locally, not by the API.`,
+        `کاندید API بینایی: ${choice.query}. مقدارهای تغذیه‌ای در گوشی محاسبه شدند، نه توسط API.`,
+      ),
+      label(
+        `Prepared JPEG: ${context.prepared.width}×${context.prepared.height} px, ${Math.round(context.prepared.byteLength / 1_000)} KB.`,
+        `JPEG آماده‌شده: ${context.prepared.width}×${context.prepared.height} پیکسل، ${Math.round(context.prepared.byteLength / 1_000)} کیلوبایت.`,
+      ),
+    ];
+    if (confirmed) {
+      assumptions.push(label(
+        'The user confirmed this identity before nutrition was shown.',
+        'کاربر پیش از نمایش مقدارهای تغذیه‌ای، این هویت را تأیید کرد.',
+      ));
+    }
+    if (context.visibleComponents.length > 1) {
+      assumptions.push(label(
+        `Mixed plate detected: ${context.visibleComponents.join(', ')}. Only the confirmed component is included; log the other components separately.`,
+        `بشقاب چندجزئی تشخیص داده شد: ${context.visibleComponents.join('، ')}. فقط جزء تأییدشده محاسبه شده است؛ اجزای دیگر را جداگانه ثبت کنید.`,
+      ));
+    } else if (choice.observation?.visibleComponents.length) {
+      assumptions.push(label(
+        `Visible components: ${choice.observation.visibleComponents.join(', ')}`,
+        `اجزای قابل‌مشاهده: ${choice.observation.visibleComponents.join('، ')}`,
+      ));
+    }
+    if (choice.observation?.preparationHints.length) {
+      assumptions.push(label(
+        `Visible preparation cues: ${choice.observation.preparationHints.join(', ')}`,
+        `نشانه‌های قابل‌مشاهدهٔ پخت: ${choice.observation.preparationHints.join('، ')}`,
+      ));
+    }
+    assumptions.push(...context.warnings);
+    return assumptions;
+  };
+
+  const confirmVisionChoice = (choice: VisionResolvedChoice) => {
+    if (!visionReview) return;
+    const context = {
+      reasons: visionReview.reasons,
+      visibleComponents: visionReview.visibleComponents,
+      warnings: visionReview.warnings,
+      prepared: visionReview.prepared,
+    };
+    applyLocalMatch({
+      local: choice.local,
+      assumptions: buildVisionAssumptions(choice, context, true),
+      fromVision: true,
+    });
+    setVisionReview(null);
+    setError(null);
   };
 
   const estimateText = async () => {
@@ -172,20 +259,42 @@ export default function MealEstimatorScreen() {
       const labels = observation.candidates.map((candidate) => candidate.label);
       setVisionLabels(labels);
 
-      const candidates: Array<{ query: string; confidence: number; observation?: VisionFoodCandidate }> = observation.candidates.map((candidate) => ({
+      const candidates: Array<{ query: string; confidence: number; observation: VisionFoodCandidate | undefined }> = observation.candidates.map((candidate) => ({
         query: candidate.label,
         confidence: candidate.confidence ?? 0.35,
         observation: candidate,
       }));
-      if (description.trim().length >= 2) candidates.unshift({ query: description.trim(), confidence: 1 });
+      if (description.trim().length >= 2) {
+        candidates.unshift({ query: description.trim(), confidence: 1, observation: undefined });
+      }
 
-      const resolved = (await Promise.all(candidates.map(async (candidate) => ({ candidate, local: await findBestLocalFoodMatch(candidate.query) }))))
-        .filter((item): item is typeof item & { local: NonNullable<typeof item.local> } => item.local !== null)
-        .map((item) => ({ ...item, combinedScore: item.local.score + item.candidate.confidence * 120 }))
+      const resolved: VisionResolvedChoice[] = (await Promise.all(candidates.map(async (candidate, index) => ({
+        candidate,
+        index,
+        local: await findBestLocalFoodMatch(candidate.query),
+      }))))
+        .filter((item): item is typeof item & { local: LocalFoodMatch } => item.local !== null)
+        .map((item) => ({
+          key: `${item.local.item.id}:${item.index}`,
+          query: item.candidate.query,
+          confidence: item.candidate.confidence,
+          observation: item.candidate.observation,
+          local: item.local,
+          combinedScore: item.local.score + item.candidate.confidence * 120,
+        }))
         .sort((left, right) => right.combinedScore - left.combinedScore);
 
-      const best = resolved[0];
-      if (!best || best.local.score < 220) {
+      const decision = decideVisionResolution({
+        candidates: resolved.map((item) => ({
+          localId: item.local.item.id,
+          label: item.query,
+          localScore: item.local.score,
+          confidence: item.confidence,
+          visibleComponents: item.observation?.visibleComponents ?? [],
+        })),
+        providerWarnings: observation.warnings,
+      });
+      if (decision.mode === 'no_match' || decision.bestIndex === null) {
         const names = labels.length > 0 ? labels.join('، ') : label('no reliable candidate', 'بدون کاندید قابل‌اعتماد');
         setError(label(
           `The Vision API suggested: ${names}. None maps reliably to the local catalog. Type the exact food name or use manual logging.`,
@@ -194,25 +303,32 @@ export default function MealEstimatorScreen() {
         return;
       }
 
-      const visual = best.candidate.observation;
-      const assumptions = [
-        label(
-          `Vision API candidate: ${best.candidate.query}. Nutrition was calculated locally, not by the API.`,
-          `کاندید API بینایی: ${best.candidate.query}. مقدارهای تغذیه‌ای در گوشی محاسبه شدند، نه توسط API.`,
-        ),
-        label(
-          `Prepared JPEG: ${prepared.width}×${prepared.height} px, ${Math.round(prepared.byteLength / 1_000)} KB.`,
-          `JPEG آماده‌شده: ${prepared.width}×${prepared.height} پیکسل، ${Math.round(prepared.byteLength / 1_000)} کیلوبایت.`,
-        ),
-        ...(visual?.visibleComponents.length
-          ? [label(`Visible components: ${visual.visibleComponents.join(', ')}`, `اجزای قابل‌مشاهده: ${visual.visibleComponents.join('، ')}`)]
-          : []),
-        ...(visual?.preparationHints.length
-          ? [label(`Visible preparation cues: ${visual.preparationHints.join(', ')}`, `نشانه‌های قابل‌مشاهدهٔ پخت: ${visual.preparationHints.join('، ')}`)]
-          : []),
-        ...observation.warnings,
-      ];
-      applyLocalMatch({ local: best.local, assumptions, fromVision: true });
+      const context = {
+        reasons: decision.reasons,
+        visibleComponents: decision.visibleComponents,
+        warnings: observation.warnings,
+        prepared: {
+          width: prepared.width,
+          height: prepared.height,
+          byteLength: prepared.byteLength,
+        },
+      };
+      const best = resolved[decision.bestIndex];
+      if (!best) throw new Error('Vision resolution selected an unavailable candidate.');
+
+      if (decision.mode === 'auto_select') {
+        applyLocalMatch({
+          local: best.local,
+          assumptions: buildVisionAssumptions(best, context, false),
+          fromVision: true,
+        });
+        return;
+      }
+
+      const choices = decision.choiceIndexes
+        .map((index) => resolved[index])
+        .filter((item): item is VisionResolvedChoice => item !== undefined);
+      setVisionReview({ ...context, choices });
     } catch (caught) {
       handleError(caught);
     } finally {
@@ -290,6 +406,14 @@ export default function MealEstimatorScreen() {
     </>
   );
 
+  const visionReasonSummary = visionReview?.reasons.map((reason) => ({
+    multiple_visible_components: label('multiple visible components', 'چند جزء قابل‌مشاهده'),
+    close_alternative: label('two or more close matches', 'چند تطبیق نزدیک'),
+    low_provider_confidence: label('low Vision confidence', 'اطمینان پایین بینایی'),
+    weak_local_match: label('a weak local catalog match', 'تطبیق ضعیف با کاتالوگ محلی'),
+    provider_warning: label('a provider ambiguity warning', 'هشدار ابهام از API'),
+  })[reason]).join('، ') ?? '';
+
   return (
     <Screen>
       {mode === 'manual' ? (
@@ -346,7 +470,42 @@ export default function MealEstimatorScreen() {
             )}
           </Card>
 
-          {visionLabels.length > 0 && !result ? <InlineNotice>{label(`Vision candidates: ${visionLabels.join(', ')}`, `کاندیدهای بینایی: ${visionLabels.join('، ')}`)}</InlineNotice> : null}
+          {visionReview ? (
+            <Card>
+              <AppText size={21} weight="800">{label('Confirm the food to log', 'غذای موردنظر برای ثبت را تأیید کنید')}</AppText>
+              <InlineNotice tone="warning">{label(
+                `NeoFit did not choose automatically because it found ${visionReasonSummary}. Choose one food below. On a mixed plate, only that component will be calculated.`,
+                `NeoFit به‌دلیل ${visionReasonSummary} نتیجه را خودکار انتخاب نکرد. یکی از غذاهای زیر را انتخاب کنید. در بشقاب چندجزئی فقط همان جزء محاسبه می‌شود.`,
+              )}</InlineNotice>
+              {visionReview.visibleComponents.length > 1 ? (
+                <AppText muted size={13}>{label(
+                  `Visible components: ${visionReview.visibleComponents.join(', ')}`,
+                  `اجزای قابل‌مشاهده: ${visionReview.visibleComponents.join('، ')}`,
+                )}</AppText>
+              ) : null}
+              {visionReview.choices.map((choice) => (
+                <View key={choice.key} style={{ gap: 7 }}>
+                  <AppText weight="700">{locale === 'fa' ? choice.local.item.nameFa : choice.local.item.nameEn}</AppText>
+                  <AppText muted size={12}>{label(
+                    `Vision label: ${choice.query} · local score ${Math.round(choice.local.score)} · confidence ${Math.round(choice.confidence * 100)}%`,
+                    `برچسب بینایی: ${choice.query} · امتیاز محلی ${Math.round(choice.local.score)} · اطمینان ${Math.round(choice.confidence * 100)}٪`,
+                  )}</AppText>
+                  <PrimaryButton
+                    title={label(`Use ${choice.local.item.nameEn}`, `انتخاب ${choice.local.item.nameFa}`)}
+                    variant="secondary"
+                    onPress={() => confirmVisionChoice(choice)}
+                  />
+                </View>
+              ))}
+              <PrimaryButton
+                title={label('None of these — enter the name manually', 'هیچ‌کدام — نام را دستی وارد می‌کنم')}
+                variant="ghost"
+                onPress={() => { setVisionReview(null); setMode('text'); setResult(null); }}
+              />
+            </Card>
+          ) : null}
+
+          {visionLabels.length > 0 && !result && !visionReview ? <InlineNotice>{label(`Vision candidates: ${visionLabels.join(', ')}`, `کاندیدهای بینایی: ${visionLabels.join('، ')}`)}</InlineNotice> : null}
           {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
 
           {result ? (
