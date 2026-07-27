@@ -1,13 +1,8 @@
 name: IFKB Manual Exact Commons v0.12
 
+# Image acquisition is intentionally manual and serialized. Re-running it for
+# every pull-request synchronize event creates unnecessary Wikimedia traffic.
 on:
-  pull_request:
-    branches:
-      - agent/mobile-local-first-expo
-    types: [opened, synchronize, reopened]
-    paths:
-      - 'ifkb/images/manual_exact_commons_manifest_v0.12.csv'
-      - '.github/workflows/ifkb-manual-exact-commons-v012.yml'
   workflow_dispatch:
 
 permissions:
