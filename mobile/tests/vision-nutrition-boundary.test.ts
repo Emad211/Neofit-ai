@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { VisionFoodObservationSchema } from '../src/services/vision-food-recognition';
+import { VisionFoodObservationSchema } from '../src/services/vision-food-contract';
 import { buildCatalogFoodEstimate } from '../src/services/food-catalog-core-adapter';
 import type { FoodCatalogItem } from '../src/domain/models';
 
