@@ -1,1 +1,1 @@
-standalone-retry
+verified-retry
