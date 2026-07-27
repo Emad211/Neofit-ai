@@ -25,12 +25,12 @@ import {
 } from '@/db/universal-catalog-repository';
 import { createId } from '@/lib/id';
 import {
+  calculateUniversalFoodEstimate,
   calculateVariantNutrition,
   type FoodConcept,
   type FoodVariant,
   type MealType,
   type NutritionEstimate,
-  type NutritionVector,
 } from '@/nutrition-core';
 import { useApp } from '@/providers/app-provider';
 import { useAppTheme } from '@/theme/theme';
@@ -82,29 +82,6 @@ function positiveNumber(value: string): number | null {
     .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
   const parsed = Number(normalized);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-}
-
-function scaleVector(vector: NutritionVector, multiplier: number): NutritionVector {
-  return Object.fromEntries(
-    Object.entries(vector).map(([key, value]) => [key, value === undefined ? undefined : value * multiplier]),
-  ) as NutritionVector;
-}
-
-function universalVector(details: UniversalFoodDetails): NutritionVector {
-  return {
-    ...(details.caloriesKcal === null ? {} : { energyKcal: details.caloriesKcal }),
-    ...(details.proteinG === null ? {} : { proteinG: details.proteinG }),
-    ...(details.carbsG === null ? {} : { carbsG: details.carbsG }),
-    ...(details.fatG === null ? {} : { fatG: details.fatG }),
-    ...(details.fiberG === null ? {} : { fiberG: details.fiberG }),
-    ...(details.sugarsG === null ? {} : { sugarsG: details.sugarsG }),
-    ...(details.sodiumMg === null ? {} : { sodiumMg: details.sodiumMg }),
-    ...(details.cholesterolMg === null ? {} : { cholesterolMg: details.cholesterolMg }),
-    ...(details.calciumMg === null ? {} : { calciumMg: details.calciumMg }),
-    ...(details.ironMg === null ? {} : { ironMg: details.ironMg }),
-    ...(details.potassiumMg === null ? {} : { potassiumMg: details.potassiumMg }),
-    ...(details.vitaminCMg === null ? {} : { vitaminCMg: details.vitaminCMg }),
-  };
 }
 
 function selectionName(selection: Selection, locale: 'fa' | 'en'): string {
@@ -272,10 +249,7 @@ export default function FoodSearchScreen() {
             return portion && quantity !== null ? portion.gramWeight * quantity : null;
           })();
       if (gramValue === null) return null;
-      return {
-        grams: gramValue,
-        center: scaleVector(universalVector(selection.details), gramValue / 100),
-      };
+      return calculateUniversalFoodEstimate(selection.details, gramValue);
     } catch {
       return null;
     }
@@ -504,6 +478,12 @@ export default function FoodSearchScreen() {
                 <MetricCard label={label('Carbs', 'کربوهیدرات')} value={(estimate.center.carbsG ?? 0).toFixed(1)} unit="g" />
                 <MetricCard label={label('Fat', 'چربی')} value={(estimate.center.fatG ?? 0).toFixed(1)} unit="g" />
               </View>
+              {estimate.range ? (
+                <InlineNotice tone="warning">{label(
+                  `Estimated range: ${Math.round(estimate.range.p10.energyKcal ?? 0)}–${Math.round(estimate.range.p90.energyKcal ?? 0)} kcal.`,
+                  `بازهٔ تخمینی: ${Math.round(estimate.range.p10.energyKcal ?? 0)} تا ${Math.round(estimate.range.p90.energyKcal ?? 0)} کیلوکالری.`,
+                )}</InlineNotice>
+              ) : null}
               <AppText muted size={13}>{amountDescription}{estimate.grams === null ? ` · ${label('weight unknown', 'وزن نامشخص')}` : ''}</AppText>
               <PrimaryButton title={label('Save to diary', 'ثبت در دفتر تغذیه')} onPress={save} loading={saving} />
             </>
