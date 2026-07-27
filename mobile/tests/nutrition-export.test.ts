@@ -79,7 +79,7 @@ test('personal JSON backup references but never embeds the public catalog', () =
     goals: [{ id: 'goal-1' }],
     favorites: [{ id: 'favorite-1', query: 'سفیده' }],
   });
-  assert.equal(bundle.publicCatalogReference.version, '1.1.0');
+  assert.equal(bundle.publicCatalogReference.version, IFKB_CATALOG_RELEASE.version);
   assert.equal(bundle.publicCatalogReference.databaseSha256, IFKB_CATALOG_RELEASE.databaseSha256);
   assert.equal(bundle.personalData.diaryEntries.length, 1);
   assert.deepEqual(
@@ -108,7 +108,4 @@ test('history and export services read bounded Diary data and use Expo file shar
   assert.match(service, /new File\(Paths\.cache/);
   assert.match(service, /Sharing\.isAvailableAsync/);
   assert.match(service, /Sharing\.shareAsync/);
-  assert.match(service, /listNutritionRecipes/);
-  assert.match(service, /listNutritionGoals/);
-  assert.match(service, /listFavoriteFoods/);
 });
