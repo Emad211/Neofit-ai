@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { IFKB_CATALOG_RELEASE } from '../src/nutrition-core';
-import { parseNutritionBackupJson } from '../src/services/nutrition-backup-restore';
+import { IFKB_CATALOG_RELEASE, parseNutritionBackupJson } from '../src/nutrition-core';
 
 function validBackup() {
   return {
