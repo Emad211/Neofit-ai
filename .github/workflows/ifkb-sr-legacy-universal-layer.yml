@@ -1,17 +1,16 @@
 name: IFKB SR Legacy Atomic Food Layer
 
+# This source rebuild is intentionally manual. Pull-request path filters are
+# insufficient here because every synchronize event sees the full PR diff.
 on:
-  pull_request:
-    branches:
-      - agent/mobile-local-first-expo
-    types: [opened, synchronize, reopened]
-    paths:
-      - 'ifkb/universal/import_sr_legacy_app_layer.py'
-      - '.github/workflows/ifkb-sr-legacy-universal-layer.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ifkb-sr-legacy-universal-layer
+  cancel-in-progress: false
 
 jobs:
   build-sr-layer:
