@@ -46,6 +46,26 @@ export function scaleNutritionVector(
 }
 
 /**
+ * Builds a symmetric relative interval around an observed center. The relative
+ * fraction must be between zero and one. This is an app-level uncertainty band,
+ * not a laboratory confidence interval.
+ */
+export function relativeNutritionRange(
+  center: NutritionVector,
+  relativeFraction: number,
+): NutritionRange {
+  validateNutritionVector(center);
+  if (!Number.isFinite(relativeFraction) || relativeFraction < 0 || relativeFraction > 1) {
+    throw new RangeError('relativeFraction must be between 0 and 1');
+  }
+  return {
+    p10: scaleNutritionVector(center, 1 - relativeFraction),
+    p50: { ...center },
+    p90: scaleNutritionVector(center, 1 + relativeFraction),
+  };
+}
+
+/**
  * Adds known nutrient observations while preserving a nutrient as missing only
  * when both inputs are missing. This is appropriate for meal aggregation.
  */
