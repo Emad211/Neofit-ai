@@ -16,20 +16,56 @@ permissions:
 jobs:
   apply:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           ref: agent/iranian-food-kb-foundation
           fetch-depth: 0
-      - name: Apply tested runtime payload
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Reassemble and verify tested runtime payload
         run: |
-          base64 -d ifkb/dev/nutrition-runtime-v3.tar.gz.b64 > /tmp/nutrition-runtime-v3.tar.gz
+          cat \
+            ifkb/dev/nutrition-runtime-v3-part-00a \
+            ifkb/dev/nutrition-runtime-v3-part-00b \
+            ifkb/dev/nutrition-runtime-v3-part-01a \
+            ifkb/dev/nutrition-runtime-v3-part-01b \
+            ifkb/dev/nutrition-runtime-v3-part-02a \
+            ifkb/dev/nutrition-runtime-v3-part-02b \
+            ifkb/dev/nutrition-runtime-v3-part-03a \
+            ifkb/dev/nutrition-runtime-v3-part-03b \
+            ifkb/dev/nutrition-runtime-v3-part-04 \
+            > /tmp/nutrition-runtime-v3.b64
+          test "$(wc -c < /tmp/nutrition-runtime-v3.b64)" = "29916"
+          echo 'c316168471301aa723594302381099c89f8c388916328273d09ce728c728277c  /tmp/nutrition-runtime-v3.b64' | sha256sum -c -
+          base64 -d /tmp/nutrition-runtime-v3.b64 > /tmp/nutrition-runtime-v3.tar.gz
+          gzip -t /tmp/nutrition-runtime-v3.tar.gz
           tar -xzf /tmp/nutrition-runtime-v3.tar.gz -C .
+
+      - name: Validate runtime before commit
+        working-directory: mobile
+        env:
+          CI: '1'
+          EXPO_NO_TELEMETRY: '1'
+        run: |
+          npm ci --no-audit --no-fund
+          npm test
+          npm run typecheck
+
+      - name: Remove temporary transport files
+        run: |
           rm -f ifkb/dev/nutrition-runtime-v3.tar.gz.b64
+          rm -f ifkb/dev/nutrition-runtime-v3-part-*
           rm -f ifkb/dev/nutrition-runtime-v3-trigger.txt
           rm -f .github/workflows/apply-nutrition-runtime-v3.yml
           rm -f .github/workflows/dev-mobile-source-snapshot-v2.yml
+
       - name: Commit runtime batch
         run: |
           git config user.name 'github-actions[bot]'
