@@ -11,6 +11,7 @@ export interface PersianAliasRecord {
 
 export interface PersianAliasIndex {
   readonly exact: ReadonlyMap<string, readonly PersianAliasRecord[]>;
+  readonly compactExact: ReadonlyMap<string, readonly PersianAliasRecord[]>;
   readonly longestFirst: readonly (readonly [string, readonly PersianAliasRecord[]])[];
 }
 
@@ -49,6 +50,10 @@ const UNCOMMON_PROCESS_TERMS = [
   'dried', 'dehydrated', 'frozen', 'pasteurized', 'powder', 'powdered', 'sugared',
   'canned with syrup', 'restaurant', 'fast food', 'school lunch',
 ];
+const GENERIC_TARGET_VOCABULARY: Readonly<Record<string, string>> = {
+  'sweet pepper': 'peppers, sweet',
+  pistachios: 'pistachio nuts',
+};
 
 export function sanitizeFtsQuery(value: string): string {
   const tokens = value
@@ -79,9 +84,14 @@ function tokenCoverage(query: readonly string[], candidate: readonly string[]): 
   return query.filter((token) => set.has(token)).length / query.length;
 }
 
+function compactAliasKey(value: string): string {
+  return normalizePersianText(value).replace(/\s+/g, '');
+}
+
 export function resolveGenericAliasTarget(target: string, originalQuery: string): string {
   const modifiers = new Set(parseFoodQuery(originalQuery).modifiers);
-  let resolved = target.trim();
+  const canonical = GENERIC_TARGET_VOCABULARY[target.trim().toLowerCase()] ?? target.trim();
+  let resolved = canonical;
   if (modifiers.has('egg_white') || modifiers.has('without_yolk')) {
     resolved = /\begg\b.*\bwhite\b/i.test(resolved) ? resolved : 'egg, white';
   }
@@ -192,16 +202,24 @@ export function containsNormalizedAlias(normalizedQuery: string, normalizedAlias
 
 export function buildPersianAliasIndex(rows: readonly PersianAliasRecord[]): PersianAliasIndex {
   const exact = new Map<string, PersianAliasRecord[]>();
+  const compactExact = new Map<string, PersianAliasRecord[]>();
   for (const row of rows) {
     const key = normalizedAliasKey(row.aliasFa);
     if (!key) continue;
     const values = exact.get(key) ?? [];
     values.push(row);
     exact.set(key, values);
+
+    const compactKey = compactAliasKey(row.aliasFa);
+    if (compactKey.length >= 4) {
+      const compactValues = compactExact.get(compactKey) ?? [];
+      compactValues.push(row);
+      compactExact.set(compactKey, compactValues);
+    }
   }
   const longestFirst = [...exact.entries()]
     .sort((left, right) => right[0].length - left[0].length || left[0].localeCompare(right[0]));
-  return { exact, longestFirst };
+  return { exact, compactExact, longestFirst };
 }
 
 export function matchPersianAliasRecords(
@@ -213,5 +231,7 @@ export function matchPersianAliasRecords(
   const exact = index.exact.get(normalizedQuery);
   if (exact?.length) return exact;
   const contained = index.longestFirst.find(([key]) => containsNormalizedAlias(normalizedQuery, key));
-  return contained?.[1] ?? [];
+  if (contained?.[1].length) return contained[1];
+  const compact = index.compactExact.get(compactAliasKey(query));
+  return compact ?? [];
 }
