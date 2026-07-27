@@ -183,7 +183,7 @@ export default function NutritionHistoryScreen() {
         <MetricCard
           label={label('Average calories', 'میانگین کالری')}
           value={averageCalories === null ? label('Unknown', 'نامشخص') : Math.round(averageCalories)}
-          unit={averageCalories === null ? undefined : 'kcal'}
+          {...(averageCalories === null ? {} : { unit: 'kcal' })}
         />
       </View>
 
@@ -231,7 +231,7 @@ export default function NutritionHistoryScreen() {
               value={day.summary.total.center.energyKcal === undefined
                 ? label('Unknown', 'نامشخص')
                 : Math.round(day.summary.total.center.energyKcal)}
-              unit={day.summary.total.center.energyKcal === undefined ? undefined : 'kcal'}
+              {...(day.summary.total.center.energyKcal === undefined ? {} : { unit: 'kcal' })}
             />
             <MetricCard label={label('Protein', 'پروتئین')} value={nutrientText(day.summary, 'proteinG', 'g', locale)} />
             <MetricCard label={label('Fiber', 'فیبر')} value={nutrientText(day.summary, 'fiberG', 'g', locale)} />
