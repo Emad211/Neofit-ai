@@ -1,0 +1,113 @@
+name: IFKB Universal Mobile Catalog v1
+
+on:
+  pull_request:
+    branches:
+      - agent/mobile-local-first-expo
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'ifkb/universal/build_mobile_catalog.py'
+      - 'ifkb/universal/iranian_canon_v1.csv'
+      - 'ifkb/universal/persian_search_aliases_v1.csv'
+      - '.github/workflows/ifkb-mobile-catalog-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-mobile-catalog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/iranian-food-kb-foundation
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Build official USDA source layers
+        run: |
+          python ifkb/universal/import_sr_legacy_app_layer.py \
+            --output build/ifkb-sr-legacy
+          python ifkb/universal/import_fndds_app_layer.py \
+            --output build/ifkb-fndds
+
+      - name: Build immutable mobile catalog
+        run: |
+          mkdir -p mobile/assets/ifkb
+          python ifkb/universal/build_mobile_catalog.py \
+            --sr-db build/ifkb-sr-legacy/sr_legacy_app_layer.sqlite \
+            --fndds-db build/ifkb-fndds-2021-2023/fndds_2021_2023_app_layer.sqlite \
+            --iranian-canon ifkb/universal/iranian_canon_v1.csv \
+            --persian-aliases ifkb/universal/persian_search_aliases_v1.csv \
+            --output mobile/assets/ifkb/ifkb-universal-v1.db \
+            --manifest mobile/assets/ifkb/ifkb-universal-v1.manifest.json \
+            --version 1.0.0
+
+      - name: Verify catalog counts, search and integrity
+        run: |
+          python - <<'PY'
+          import json, sqlite3
+          from pathlib import Path
+          root=Path('mobile/assets/ifkb')
+          manifest=json.loads((root/'ifkb-universal-v1.manifest.json').read_text())
+          db=sqlite3.connect(root/'ifkb-universal-v1.db')
+          integrity=db.execute('PRAGMA integrity_check').fetchone()[0]
+          foods=db.execute('SELECT COUNT(*) FROM generic_foods').fetchone()[0]
+          portions=db.execute('SELECT COUNT(*) FROM generic_portions').fetchone()[0]
+          canon=db.execute('SELECT COUNT(*) FROM iranian_canon').fetchone()[0]
+          aliases=db.execute('SELECT COUNT(*) FROM persian_search_aliases').fetchone()[0]
+          complete=db.execute('SELECT COUNT(*) FROM generic_foods WHERE macro_completeness=1').fetchone()[0]
+          white=db.execute("SELECT COUNT(*) FROM generic_food_search WHERE generic_food_search MATCH 'egg AND white'").fetchone()[0]
+          yolk=db.execute("SELECT COUNT(*) FROM generic_food_search WHERE generic_food_search MATCH 'egg AND yolk'").fetchone()[0]
+          tomato=db.execute("SELECT COUNT(*) FROM generic_food_search WHERE generic_food_search MATCH 'tomatoes AND raw'").fetchone()[0]
+          salad=db.execute("SELECT COUNT(*) FROM generic_food_search WHERE generic_food_search MATCH 'salad'").fetchone()[0]
+          pizza=db.execute("SELECT COUNT(*) FROM generic_food_search WHERE generic_food_search MATCH 'pizza'").fetchone()[0]
+          ghormeh=db.execute("SELECT COUNT(*) FROM iranian_food_search WHERE iranian_food_search MATCH 'قورمه سبزی'").fetchone()[0]
+          db.close()
+          assert integrity=='ok',integrity
+          assert foods==13225,(foods,manifest)
+          assert portions==36494,portions
+          assert canon==261,canon
+          assert aliases==218,aliases
+          assert complete>=13224,complete
+          assert all(value>0 for value in (white,yolk,tomato,salad,pizza,ghormeh)),(white,yolk,tomato,salad,pizza,ghormeh)
+          assert manifest['databaseBytes'] < 20*1024*1024,manifest['databaseBytes']
+          print({'foods':foods,'portions':portions,'canon':canon,'aliases':aliases,'completeMacros':complete,'bytes':manifest['databaseBytes']})
+          PY
+
+      - name: Add explicit Expo asset dependency
+        working-directory: mobile
+        run: npx expo install expo-asset
+
+      - name: Commit generated mobile catalog
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mobile/assets/ifkb mobile/package.json mobile/package-lock.json
+          if git diff --cached --quiet; then
+            echo 'Catalog already current.'
+            exit 0
+          fi
+          git diff --cached --check
+          git commit -m 'data(ifkb): bundle universal mobile catalog v1'
+          git push origin HEAD:agent/iranian-food-kb-foundation
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-universal-mobile-catalog-v1
+          path: |
+            mobile/assets/ifkb/ifkb-universal-v1.db
+            mobile/assets/ifkb/ifkb-universal-v1.manifest.json
+          if-no-files-found: error
+          retention-days: 30
