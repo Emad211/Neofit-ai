@@ -34,6 +34,10 @@ import {
 } from '@/nutrition-core';
 import { useApp } from '@/providers/app-provider';
 import { useAppTheme } from '@/theme/theme';
+import {
+  FoodSearchShortcuts,
+  type FavoriteCandidate,
+} from '@/components/food-search-shortcuts';
 
 type LocalResult = {
   readonly kind: 'local';
@@ -220,6 +224,24 @@ export default function FoodSearchScreen() {
       ? selection.variant.portions
       : [];
   const hasPortions = portions.length > 0;
+  const favoriteCandidate = React.useMemo<FavoriteCandidate | null>(() => {
+    if (!selection) return null;
+    if (selection.kind === 'local') {
+      return {
+        id: `local:${selection.variant.id}`,
+        labelFa: selection.concept.nameFa,
+        labelEn: selection.concept.nameEn,
+        query: selection.concept.nameFa || selection.concept.nameEn,
+      };
+    }
+    const queryValue = selection.hit.matchedAliasFa ?? selection.details.nameEn;
+    return {
+      id: `universal:${selection.details.id}`,
+      labelFa: selection.hit.matchedAliasFa ?? selection.details.nameEn,
+      labelEn: selection.details.nameEn,
+      query: queryValue,
+    };
+  }, [selection]);
 
   const estimate = React.useMemo<NutritionEstimate | null>(() => {
     if (!selection) return null;
@@ -339,6 +361,17 @@ export default function FoodSearchScreen() {
           })}
         </View>
       </Card>
+
+      <FoodSearchShortcuts
+        locale={locale}
+        current={favoriteCandidate}
+        onSearch={(value) => {
+          setQuery(value);
+          setSelection(null);
+          setNotice(null);
+          setError(null);
+        }}
+      />
 
       {searching ? <AppText muted>{label('Searching on device…', 'در حال جست‌وجو روی گوشی…')}</AppText> : null}
       {loadingSelection ? <AppText muted>{label('Loading portions…', 'در حال بارگذاری سهم‌ها…')}</AppText> : null}
