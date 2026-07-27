@@ -1,7 +1,6 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { IRANIAN_FOOD_SEED } from '../src/data/iranian-food-seed';
-import { normalizePersianText } from '../src/nutrition-core/search';
 import type { FoodCatalogItem } from '../src/domain/models';
 
 interface CanonRow {
@@ -27,6 +26,8 @@ interface CategoryPrior {
 
 const SOURCE_LABEL = 'IFKB DS0 broad-fallback category prior v1 — not recipe-specific';
 const UPDATED_AT = '2026-07-27T00:00:00.000Z';
+const EXISTING_CANON_STATUS = 'existing_legacy_concept';
+const FALLBACK_CANON_STATUS = 'candidate_canon';
 const CATEGORY_MAP: Readonly<Record<string, FoodCatalogItem['category']>> = {
   stew: 'stew',
   seafood_stew: 'stew',
@@ -182,17 +183,6 @@ function aliases(row: CanonRow): string[] {
   return row.aliases_fa.split('|').map((value) => value.trim()).filter(Boolean);
 }
 
-function existingNames(): Set<string> {
-  const values = new Set<string>();
-  for (const item of IRANIAN_FOOD_SEED) {
-    for (const name of [item.nameFa, ...item.aliasesFa]) {
-      const normalized = normalizePersianText(name);
-      if (normalized) values.add(normalized);
-    }
-  }
-  return values;
-}
-
 function mapCategory(source: string): FoodCatalogItem['category'] {
   return CATEGORY_MAP[source] ?? 'street_food';
 }
@@ -202,7 +192,24 @@ const outputPath = argument('--output');
 const manifestPath = argument('--manifest');
 const canon = readCanon(canonPath);
 if (canon.length !== 261) throw new Error(`Expected 261 Iranian canon rows, found ${canon.length}`);
-const names = existingNames();
+
+const unexpectedStatuses = [...new Set(canon
+  .map((row) => row.canon_status)
+  .filter((status) => status !== EXISTING_CANON_STATUS && status !== FALLBACK_CANON_STATUS))];
+if (unexpectedStatuses.length > 0) {
+  throw new Error(`Unexpected canon statuses: ${unexpectedStatuses.join(', ')}`);
+}
+const existingCanon = canon.filter((row) => row.canon_status === EXISTING_CANON_STATUS);
+const fallbackCanon = canon.filter((row) => row.canon_status === FALLBACK_CANON_STATUS);
+if (existingCanon.length !== IRANIAN_FOOD_SEED.length) {
+  throw new Error(
+    `Official existing canon count (${existingCanon.length}) does not match current seed count (${IRANIAN_FOOD_SEED.length}).`,
+  );
+}
+if (existingCanon.length + fallbackCanon.length !== canon.length) {
+  throw new Error('Canon status partition is incomplete.');
+}
+
 const priorCache = new Map<FoodCatalogItem['category'], CategoryPrior>();
 const prior = (category: FoodCatalogItem['category']) => {
   const existing = priorCache.get(category);
@@ -212,13 +219,11 @@ const prior = (category: FoodCatalogItem['category']) => {
   return created;
 };
 
-const fallback = canon.flatMap((row): FoodCatalogItem[] => {
-  const rowNames = [row.name_fa, ...aliases(row)].map(normalizePersianText).filter(Boolean);
-  if (rowNames.some((name) => names.has(name))) return [];
+const fallback = fallbackCanon.map((row): FoodCatalogItem => {
   const category = mapCategory(row.category);
   const values = prior(category);
   const [portionLabelFa, portionLabelEn] = PORTIONS[category];
-  return [{
+  return {
     id: `iranian-fallback-${row.canon_id.toLowerCase()}`,
     nameFa: row.name_fa,
     nameEn: row.name_en,
@@ -239,7 +244,7 @@ const fallback = canon.flatMap((row): FoodCatalogItem[] => {
     notesFa: `این مقدار فقط prior پهن دستهٔ «${category}» است؛ دستور، روغن و سهم واقعی باید تأیید شود و این رکورد منبع تأییدشده نیست.`,
     notesEn: `This is only a broad ${category} category prior. Recipe, oil and actual serving must be confirmed; this is not verified evidence.`,
     updatedAt: UPDATED_AT,
-  }];
+  };
 });
 
 const total = IRANIAN_FOOD_SEED.length + fallback.length;
@@ -259,13 +264,17 @@ const manifest = {
   version: '1.0.0',
   generatedAtUtc: new Date().toISOString(),
   existingSeedCount: IRANIAN_FOOD_SEED.length,
+  existingCanonCount: existingCanon.length,
   broadFallbackCount: fallback.length,
+  fallbackCanonCount: fallbackCanon.length,
   totalAppReadyCount: total,
   evidenceTier: 'broad_fallback',
   sourceLabel: SOURCE_LABEL,
   priorCategories: Object.fromEntries([...priorCache.entries()].sort().map(([key, value]) => [key, value])),
   categoryMapping: CATEGORY_MAP,
   rules: {
+    inclusion: `canon_status=${FALLBACK_CANON_STATUS}`,
+    exclusion: `canon_status=${EXISTING_CANON_STATUS}`,
     portionGrams: null,
     confidence: 'low',
     variabilityRangePct: [35, 60],
@@ -276,7 +285,9 @@ mkdirSync(dirname(manifestPath), { recursive: true });
 writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 console.log(JSON.stringify({
   existingSeedCount: IRANIAN_FOOD_SEED.length,
+  existingCanonCount: existingCanon.length,
   broadFallbackCount: fallback.length,
+  fallbackCanonCount: fallbackCanon.length,
   totalAppReadyCount: total,
   categories: [...priorCache.keys()].sort(),
 }));
