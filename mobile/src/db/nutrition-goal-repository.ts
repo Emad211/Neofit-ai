@@ -33,7 +33,8 @@ function parseGoals(value: string): NutritionGoals {
 
 export async function saveNutritionGoal(goal: PersistedNutritionGoal): Promise<void> {
   validateNutritionVector(goal.goals.daily);
-  if (Object.keys(goal.goals.daily).length === 0) throw new Error('Nutrition goal cannot be empty');
+  // An empty vector is a deliberate active state that disables older goals
+  // without deleting their historical records.
   const database = await getDatabase();
   await database.runAsync(
     `INSERT INTO nutrition_goals (
