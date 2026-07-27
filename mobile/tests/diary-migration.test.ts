@@ -68,11 +68,13 @@ test('migration 4 imports legacy meals exactly once with local date and nutritio
   }
 });
 
-test('new meal logging writes only to the canonical nutrition diary', () => {
-  const source = readFileSync(new URL('../src/db/log-repository.ts', import.meta.url), 'utf8');
-  const logMealBody = source.slice(source.indexOf('export async function logMeal'), source.indexOf('export async function logActivity'));
-  assert.match(logMealBody, /logNutritionEstimate/);
+test('runtime reconciliation promotes prefixed IDs and prevents duplicate meals', () => {
+  const source = readFileSync(new URL('../src/db/nutrition-meal-repository.ts', import.meta.url), 'utf8');
+  assert.match(source, /UPDATE OR IGNORE nutrition_diary_entries/);
+  assert.match(source, /id = substr\(id, 13\)/);
+  assert.match(source, /DELETE FROM nutrition_diary_entries[\s\S]*id LIKE 'legacy-meal:%'/);
+  assert.match(source, /if \(source === 'plan'\) return 'recipe'/);
+  const logMealBody = source.slice(source.indexOf('export async function logMeal'), source.indexOf('export async function getDailySummary'));
+  assert.match(logMealBody, /saveNutritionDiaryEntry/);
   assert.doesNotMatch(logMealBody, /INSERT INTO meal_logs/);
-  assert.match(source, /summarizeNutritionDiaryDate/);
-  assert.match(source, /deleteNutritionDiaryEntry/);
 });
