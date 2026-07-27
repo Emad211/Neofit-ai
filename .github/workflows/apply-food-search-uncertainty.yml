@@ -1,0 +1,61 @@
+name: Apply Food Search Uncertainty Patch
+
+on:
+  pull_request:
+    branches:
+      - agent/mobile-local-first-expo
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'mobile/scripts/patch-food-search-uncertainty.mjs'
+      - '.github/workflows/apply-food-search-uncertainty.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/iranian-food-kb-foundation
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install locked dependencies
+        working-directory: mobile
+        run: npm ci --no-audit --no-fund
+
+      - name: Apply focused patch
+        working-directory: mobile
+        run: node scripts/patch-food-search-uncertainty.mjs
+
+      - name: Verify behavior and TypeScript
+        working-directory: mobile
+        env:
+          CI: '1'
+          EXPO_NO_TELEMETRY: '1'
+        run: |
+          npm test
+          npm run typecheck
+
+      - name: Remove temporary patch transport
+        run: |
+          rm -f mobile/scripts/patch-food-search-uncertainty.mjs
+          rm -f .github/workflows/apply-food-search-uncertainty.yml
+
+      - name: Commit product change
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'fix(nutrition): show and persist source uncertainty in food search'
+          git push origin HEAD:agent/iranian-food-kb-foundation
