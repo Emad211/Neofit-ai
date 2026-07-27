@@ -26,68 +26,103 @@ This document supersedes every previous nutrition scope.
 
 ## Vision API rules
 
-- The user explicitly triggers every image request.
-- Images are resized/compressed before upload by the app integration layer.
-- Raw images are not stored in SQLite.
+- The user explicitly triggers every image request and confirms the prepared-image upload.
+- Images are resized/compressed on-device before upload.
+- Raw images are not stored in SQLite or in the Vision cache.
 - The API may return food candidates, visible components and preparation hints.
 - The API may not return trusted calories, macros or portion weights.
 - Candidate labels are resolved against IFKB locally.
+- Strong unambiguous matches may be selected automatically; mixed plates, close alternatives, weak matches, warnings and low confidence require explicit user confirmation.
+- A confirmed component from a mixed plate is calculated alone; other visible components must be logged separately.
 - Portion, added fat, sauce and serving uncertainty are resolved by deterministic questions and the nutrition engine.
-- Results may be cached by an image fingerprint; raw image bytes are not cached.
+- Results may be cached by a privacy-safe image fingerprint; raw image bytes are not cached.
 - Provider-specific networking stays behind a transport boundary.
 
-## Execution order
+## Historical baseline
 
-1. Freeze domain contracts.
-2. Implement nutrition arithmetic.
-3. Implement Persian normalization and deterministic ranking.
-4. Add concept/variant/portion SQL schema.
-5. Implement diary core.
-6. Implement recipe and custom-food arithmetic.
-7. Implement goals, daily totals and micronutrient progress.
-8. Implement Vision API contracts, sanitization and IFKB matching.
-9. Integrate the identity-only Vision path with the existing Expo meal-estimator.
-10. Add regression tests and activate Mobile CI for the active integration PR.
+The percentages below describe the first locked-scope implementation batch and are retained only as historical context. They must not be reported as the current project completion level:
 
-## First implementation batch — completed foundation
+- overall final-product completion: **42.67%**;
+- core completion excluding Vision: **41.60%**;
+- Vision pipeline completion: **55%**.
 
-- Pure TypeScript nutrition vectors, range arithmetic, portions and additive modifiers.
-- Unicode-safe Persian normalizer and deterministic query/modifier parser.
-- Food concept, nutrition variant, alias, portion, diary, recipe, goal and Vision-cache SQL schema.
-- Diary day aggregation and recipe total/per-serving/per-100g calculations.
-- Missing-aware nutrition goals; missing nutrients are not converted to source zero values.
-- Provider-agnostic Vision domain contract and an AvalAI identity-only transport.
-- Vision candidates are mapped to the local IFKB catalog before any nutrition is displayed.
-- The Expo meal estimator no longer uses AI-generated calorie or macro estimates.
-- Zod boundary tests strip provider-supplied calories, macros and serving weights.
-- Mobile CI now runs for the active Expo integration PR and passes domain tests, Expo package checks, Expo Doctor, strict TypeScript and Android export.
+A new percentage has not been assigned because the remaining data-verification and real-device QA work is not equivalent in effort to the completed code paths.
 
-## Current progress baseline
+## Current verified implementation state — 2026-07-27
 
-- Overall final-product completion: **42.67%**.
-- Core completion excluding the Vision API workstream: **41.60%**.
-- Vision API pipeline completion: **55%**.
-- Main completed assets: 13,225 generic nutrition records, 36,494 portions, 261 Iranian identities, 60 app-ready Iranian records, 218 Persian aliases, 58 licensed display images, deterministic Nutrition Core, Vision identity boundary and an integrated Expo photo-to-IFKB flow.
+### Catalog and deterministic engine
 
-## Remaining critical path
+- IFKB mobile catalog release: **1.2.0**.
+- Immutable read-only SQLite asset: **13,885,440 bytes**.
+- Generic USDA records: **13,225**.
+- Official portion records: **36,494**.
+- Complete calorie/macronutrient records: **13,224**.
+- Generic concepts: **9,279**.
+- Generic Concept/Variant mappings: **13,225 / 13,225 (100%)**.
+- Multi-variant concepts: **1,321**.
+- Multi-source concepts: **209**.
+- Iranian canonical identities: **261**.
+- Persian alias rows: **218**.
+- Runtime, backup metadata, manifest, database byte size and SHA-256 are protected by one shared release contract and a CI drift test.
+- Nutrition arithmetic, ranges, sums and serving weights are canonicalized to prevent binary floating-point noise from leaking into persisted or displayed values.
 
-1. Add the Nutrition Core schema as a real `neofit.db` migration and implement repositories.
-2. Package/import the 13,225 records and 36,494 portions into the app update path.
-3. Build the generic concept/variant mapper and reach at least 95% mapped or explicit-unmapped coverage.
-4. Produce app-ready profiles for the remaining 201 Iranian foods.
-5. Build and score a 500-query Persian benchmark corpus.
-6. Complete offline Diary persistence and UI.
-7. Complete Recipe/custom-food persistence and UI.
-8. Complete goals, micronutrients, history, favorites and export/import.
-9. Harden Vision API image resizing, consent, fingerprint cache, retry and multi-component handling.
-10. Run final cross-layer QA and freeze IDs/schema.
+### Iranian profile state
+
+- Existing prior app profiles: **83**.
+- Generated DS0 broad-fallback profiles: **178**.
+- Total identities visible through the app layer: **261**.
+- DS0 records are intentionally marked `broad_fallback`, `low` confidence and unknown serving weight.
+- DS0 records are category priors, not recipe-specific measurements and not verified nutrition records.
+- The DS0 release created **zero** verified records and must be progressively replaced by source-specific profiles.
+
+### Persian search
+
+- A reproducible 500-query controlled regression corpus is implemented against the real bundled SQLite FTS index and production TypeScript alias/ranker logic.
+- The IFKB 1.2.0 run achieved route accuracy 100%, Top-1 100%, Top-5 100% and zero failures.
+- This result measures the controlled alias registry and deterministic perturbations. It is not evidence of unrestricted Persian natural-language understanding and is not the final independent user-query benchmark.
+
+### Offline tracker and personal data
+
+- Nutrition Core schema is installed through real `neofit.db` migrations.
+- Local repositories and UI are active for Diary, Recipes, Goals, micronutrient progress, Favorites, Recents and History.
+- Legacy `meal_logs` migration is idempotent and new nutrition writes use Nutrition Diary as the source of truth.
+- CSV export preserves missing nutrients as blank.
+- JSON backup includes Diary, Recipes, Goals and Favorites while excluding the public catalog, API keys, Vision images, caches and provider responses.
+- JSON restore validates size, schema, finite/non-negative nutrition, duplicate identifiers and recipe cycles before writing.
+- Restore supports transactional Merge and destructive Replace with separate user confirmation.
+- Backup catalog version/SHA mismatch is disclosed while snapshot Diary nutrition remains preserved.
+
+### Vision production boundary
+
+- Camera/gallery images are resized to a maximum 1,024-pixel dimension and compressed before upload.
+- Prepared upload size is limited to 1.5 MB.
+- Explicit upload consent is required.
+- Identity results use a provider/model-aware fingerprint cache without retaining image bytes.
+- Provider nutrition fields are stripped and ignored.
+- Mixed plates and ambiguous candidates require explicit user selection before local nutrition is shown.
+
+### Validation and workflow governance
+
+- Mobile CI runs deterministic tests, Nutrition SQLite schema validation, Expo package checks, Expo Doctor, strict TypeScript and Android export.
+- Expensive catalog builds, media acquisition and source rebuilds are manual or path-scoped to relevant branch pushes.
+- Generic concept audit, fallback-profile generation and Persian benchmark no longer rerun for unrelated app changes in the long-lived PR.
+
+## Remaining release-critical path
+
+1. Replace the 178 DS0 broad fallbacks with recipe/source-specific profiles, defensible portion weights and stronger evidence tiers.
+2. Freeze an independently curated natural-user Persian corpus containing real spelling errors, colloquial and regional names, preparation/portion language, ambiguous foods, negative cases and required abstentions.
+3. Run real-device Android QA for camera/gallery permissions, image manipulation, provider failures, cache behaviour and mixed-plate confirmation.
+4. Run real-device and large-data QA for backup selection, validation, transactional Merge/Replace, rollback behaviour and post-restore UI refresh.
+5. Complete final cross-layer SQLite/TypeScript equivalence and migration testing across clean install, legacy upgrade and repeated upgrade paths.
+6. Review every mutable identifier and schema, then freeze release IDs, schema versions and migration policy.
+7. Perform final accessibility, RTL/LTR, performance, privacy and release-governance review before taking the PR out of Draft.
 
 ## Definition of done
 
-- All 261 Iranian foods have stable app profiles.
-- At least 95% of generic source records are mapped to a concept/variant or explicitly marked unmapped.
-- Persian search achieves Top-1 >= 90% and Top-5 >= 97% on a curated query corpus.
-- SQLite and TypeScript nutrition calculations produce equivalent results.
-- Diary, recipes, goals and totals work offline.
-- Vision API results are mapped to IFKB and cannot inject nutrition values.
-- IDs and schemas are frozen and all critical tests pass.
+- All 261 Iranian foods have stable profiles; broad category fallbacks are not counted as final verified profiles.
+- All 13,225 generic source records remain mapped to a stable Concept/Variant or an explicitly governed exception.
+- Persian search meets Top-1 >= 90% and Top-5 >= 97% on the frozen independent user-query corpus, not only the generated alias regression set.
+- SQLite and TypeScript nutrition calculations produce equivalent results across the release corpus.
+- Diary, recipes, goals, totals, history, export and restore work offline and pass real-device recovery tests.
+- Vision API results are locally resolved, cannot inject nutrition values and abstain or request confirmation when identity is unsafe.
+- IDs and schemas are frozen and every release-critical test passes.
