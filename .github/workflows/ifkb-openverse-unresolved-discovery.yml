@@ -1,14 +1,8 @@
 name: IFKB Openverse Unresolved Image Discovery
 
+# Discovery is intentionally manual and serialized. It should run only for a
+# deliberate unresolved-class research batch, not every PR synchronization.
 on:
-  pull_request:
-    branches:
-      - agent/mobile-local-first-expo
-    types: [opened, synchronize, reopened]
-    paths:
-      - 'ifkb/images/openverse_unresolved_queries.csv'
-      - 'ifkb/images/discover_openverse_candidates.py'
-      - '.github/workflows/ifkb-openverse-unresolved-discovery.yml'
   workflow_dispatch:
 
 permissions:
