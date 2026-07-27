@@ -46,3 +46,37 @@ test('the existing app matcher owns the universal fallback path', () => {
   assert.match(source, /مقدار پیش‌فرض ۱۰۰ گرم است و باید تأیید شود/);
   assert.match(source, /source:\s*'universal_catalog'/);
 });
+
+test('all meal entry surfaces write through Nutrition Diary', () => {
+  const paths = [
+    '../app/(tabs)/nutrition.tsx',
+    '../app/meal-estimator.tsx',
+    '../app/iranian-foods.tsx',
+  ];
+  for (const path of paths) {
+    const source = readFileSync(new URL(path, import.meta.url), 'utf8');
+    assert.match(source, /@\/db\/nutrition-meal-repository/);
+    assert.doesNotMatch(source, /import \{ logMeal \} from '@\/db\/log-repository'/);
+  }
+  const provider = readFileSync(new URL('../src/providers/app-provider.tsx', import.meta.url), 'utf8');
+  assert.match(provider, /getDailySummary \} from '@\/db\/nutrition-meal-repository'/);
+});
+
+test('legacy meals are migrated idempotently before Diary reads and writes', () => {
+  const source = readFileSync(new URL('../src/db/nutrition-meal-repository.ts', import.meta.url), 'utf8');
+  assert.match(source, /nutrition\.diary\.legacy-meal-migration/);
+  assert.match(source, /INSERT OR IGNORE INTO nutrition_diary_entries/);
+  assert.match(source, /await ensureLegacyMealMigration\(\)/);
+  assert.match(source, /saveNutritionDiaryEntry/);
+});
+
+test('complete food search combines local and universal data and blocks identity-only logging', () => {
+  const source = readFileSync(new URL('../app/food-search.tsx', import.meta.url), 'utf8');
+  assert.match(source, /searchNutritionFoods/);
+  assert.match(source, /searchUniversalCatalog/);
+  assert.match(source, /getUniversalFoodDetails/);
+  assert.match(source, /saveNutritionDiaryEntry/);
+  assert.match(source, /const disabled = result\.kind === 'identity'/);
+  assert.match(source, /Official portion/);
+  assert.match(source, /هویت غذای ایرانی موجود است؛ پروفایل تغذیه هنوز آمادهٔ اپ نیست/);
+});
