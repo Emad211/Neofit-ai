@@ -1,0 +1,99 @@
+name: IFKB Persian Search Benchmark
+
+on:
+  pull_request:
+    branches:
+      - agent/mobile-local-first-expo
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'ifkb/universal/persian_search_aliases_v1.csv'
+      - 'ifkb/universal/generate_persian_search_benchmark.py'
+      - 'ifkb/universal/prepare_persian_search_benchmark.py'
+      - 'mobile/scripts/evaluate-persian-search-benchmark.ts'
+      - 'mobile/src/nutrition-core/search.ts'
+      - 'mobile/src/nutrition-core/universal-catalog-ranking.ts'
+      - 'mobile/assets/ifkb/ifkb-universal-v1.db'
+      - '.github/workflows/ifkb-persian-search-benchmark.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install locked mobile dependencies
+        working-directory: mobile
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate balanced 500-query corpus
+        run: |
+          mkdir -p build/persian-search-benchmark
+          python ifkb/universal/generate_persian_search_benchmark.py \
+            --aliases ifkb/universal/persian_search_aliases_v1.csv \
+            --output build/persian-search-benchmark/queries.csv \
+            --count 500
+          python - <<'PY'
+          import csv
+          from collections import Counter
+          rows=list(csv.DictReader(open('build/persian-search-benchmark/queries.csv',encoding='utf-8')))
+          variants=Counter(row['variant_type'] for row in rows)
+          assert len(rows)==500,len(rows)
+          assert len(variants)>=6,variants
+          print({'rows':len(rows),'variants':dict(sorted(variants.items()))})
+          PY
+
+      - name: Query the real bundled SQLite FTS index
+        run: |
+          python ifkb/universal/prepare_persian_search_benchmark.py \
+            --database mobile/assets/ifkb/ifkb-universal-v1.db \
+            --aliases ifkb/universal/persian_search_aliases_v1.csv \
+            --benchmark build/persian-search-benchmark/queries.csv \
+            --output build/persian-search-benchmark/input.json
+
+      - name: Evaluate with production TypeScript alias and ranker logic
+        working-directory: mobile
+        run: |
+          npx tsx scripts/evaluate-persian-search-benchmark.ts \
+            --input ../build/persian-search-benchmark/input.json \
+            --output ../build/persian-search-benchmark/report.json \
+            --minimum-top1 0.90 \
+            --minimum-top5 0.97
+
+      - name: Upload complete report before enforcing thresholds
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-persian-search-benchmark
+          path: |
+            build/persian-search-benchmark/queries.csv
+            build/persian-search-benchmark/report.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce Scope thresholds
+        run: |
+          python - <<'PY'
+          import json
+          report=json.load(open('build/persian-search-benchmark/report.json',encoding='utf-8'))
+          top1=report['overall']['top1Accuracy']
+          top5=report['overall']['top5Accuracy']
+          route=report['overall']['routeAccuracy']
+          print({'route':route,'top1':top1,'top5':top5,'failures':report['failureCount']})
+          assert route >= 0.98, f'Alias route accuracy below 98%: {route}'
+          assert top1 >= 0.90, f'Top-1 below 90%: {top1}'
+          assert top5 >= 0.97, f'Top-5 below 97%: {top5}'
+          PY
