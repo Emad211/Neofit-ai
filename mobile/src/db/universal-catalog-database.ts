@@ -1,12 +1,9 @@
 import { Asset } from 'expo-asset';
 import { File } from 'expo-file-system';
 import * as SQLite from 'expo-sqlite';
+import { IFKB_CATALOG_RELEASE } from '@/nutrition-core/catalog-release';
 
 const CATALOG_ASSET_MODULE = require('../../assets/ifkb/ifkb-universal-v1.db') as number;
-const EXPECTED_CATALOG_VERSION = '1.2.0';
-const EXPECTED_GENERIC_FOODS = 13_225;
-const EXPECTED_GENERIC_VARIANT_MAPPINGS = 13_225;
-const EXPECTED_IRANIAN_CANON = 261;
 
 let catalogPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
@@ -16,7 +13,9 @@ async function openBundledCatalog(): Promise<SQLite.SQLiteDatabase> {
   const uri = asset.localUri ?? asset.uri;
   if (!uri) throw new Error('Bundled IFKB catalog asset is unavailable.');
   const bytes = await new File(uri).bytes();
-  if (bytes.byteLength < 1024 * 1024) throw new Error('Bundled IFKB catalog is unexpectedly small.');
+  if (bytes.byteLength !== IFKB_CATALOG_RELEASE.databaseBytes) {
+    throw new Error(`Bundled IFKB catalog size mismatch: ${bytes.byteLength} bytes.`);
+  }
   const database = await SQLite.deserializeDatabaseAsync(bytes);
   await database.execAsync('PRAGMA foreign_keys=ON; PRAGMA query_only=ON;');
   const rows = await database.getAllAsync<{ key: string; value: string }>(
@@ -25,16 +24,16 @@ async function openBundledCatalog(): Promise<SQLite.SQLiteDatabase> {
      );`,
   );
   const meta = new Map(rows.map((row) => [row.key, row.value]));
-  if (meta.get('version') !== EXPECTED_CATALOG_VERSION) {
+  if (meta.get('version') !== IFKB_CATALOG_RELEASE.version) {
     throw new Error(`Unsupported IFKB catalog version: ${meta.get('version') ?? 'missing'}`);
   }
-  if (Number(meta.get('genericFoodCount')) !== EXPECTED_GENERIC_FOODS) {
+  if (Number(meta.get('genericFoodCount')) !== IFKB_CATALOG_RELEASE.genericFoodCount) {
     throw new Error('Bundled IFKB generic-food count failed validation.');
   }
-  if (Number(meta.get('genericVariantMappingCount')) !== EXPECTED_GENERIC_VARIANT_MAPPINGS) {
+  if (Number(meta.get('genericVariantMappingCount')) !== IFKB_CATALOG_RELEASE.genericVariantMappingCount) {
     throw new Error('Bundled IFKB generic Concept/Variant mapping failed validation.');
   }
-  if (Number(meta.get('iranianCanonCount')) !== EXPECTED_IRANIAN_CANON) {
+  if (Number(meta.get('iranianCanonCount')) !== IFKB_CATALOG_RELEASE.iranianCanonCount) {
     throw new Error('Bundled IFKB Iranian-canon count failed validation.');
   }
   return database;
