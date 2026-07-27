@@ -5,6 +5,7 @@ export * from './recipe';
 export * from './diary';
 export * from './goals';
 export * from './vision';
+export * from './vision-image-policy';
 export * from './sql';
 export * from './legacy-catalog-adapter';
 export * from './universal-catalog-ranking';
