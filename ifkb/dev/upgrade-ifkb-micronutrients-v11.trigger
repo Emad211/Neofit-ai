@@ -1,1 +1,1 @@
-publish-clean-build
+publish-data-only
