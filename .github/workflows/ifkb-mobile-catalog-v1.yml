@@ -14,6 +14,9 @@ on:
       - '.github/workflows/ifkb-mobile-catalog-v1.yml'
   workflow_dispatch:
 
+env:
+  IFKB_CATALOG_VERSION: '1.2.0'
+
 permissions:
   contents: write
 
@@ -58,7 +61,7 @@ jobs:
             --persian-aliases ifkb/universal/persian_search_aliases_v1.csv \
             --output mobile/assets/ifkb/ifkb-universal-v1.db \
             --manifest mobile/assets/ifkb/ifkb-universal-v1.manifest.json \
-            --version 1.2.0
+            --version "$IFKB_CATALOG_VERSION"
 
       - name: Build conservative generic Concept and Variant mappings
         run: |
