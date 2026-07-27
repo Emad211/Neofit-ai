@@ -1,20 +1,6 @@
+import { IFKB_CATALOG_RELEASE } from './catalog-release';
 import { NUTRIENT_KEYS } from './types';
 import type { DiaryEntry, NutrientKey } from './types';
-
-export const IFKB_CATALOG_RELEASE = {
-  format: 'ifkb-mobile-catalog-release',
-  version: '1.1.0',
-  databaseSha256: 'e80e86b06566db840d30f486e19b3c17b7028eec11943de10e3b1543dd0f8e6b',
-  genericFoodCount: 13_225,
-  genericPortionCount: 36_494,
-  macroCompleteCount: 13_224,
-  calciumCoverageCount: 13_139,
-  ironCoverageCount: 13_144,
-  potassiumCoverageCount: 12_947,
-  vitaminCCoverageCount: 12_763,
-  iranianCanonCount: 261,
-  persianAliasCount: 218,
-} as const;
 
 export interface NutritionBackupInput {
   readonly exportedAt: string;
