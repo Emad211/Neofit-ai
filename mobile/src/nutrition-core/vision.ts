@@ -67,6 +67,41 @@ function stringArray(value: unknown, maxLength: number): string[] {
     .slice(0, maxLength);
 }
 
+function fnv1a32(value: string, seed: number): number {
+  let hash = seed >>> 0;
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    hash ^= code & 0xff;
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+    hash ^= code >>> 8;
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash >>> 0;
+}
+
+export function createVisionRequestFingerprint(input: {
+  readonly imageDataUrl: string;
+  readonly description: string | undefined;
+  readonly locale: 'fa' | 'en';
+}): string {
+  if (!input.imageDataUrl.startsWith('data:image/')) {
+    throw new Error('Vision image must be an image data URL.');
+  }
+  const description = input.description?.trim().normalize('NFKC') ?? '';
+  const material = [
+    'vision-request-v1',
+    input.locale,
+    String(input.imageDataUrl.length),
+    description,
+    input.imageDataUrl,
+  ].join('\u0000');
+  const seeds = [0x811c9dc5, 0x9e3779b1, 0x85ebca77, 0xc2b2ae3d] as const;
+  const digest = seeds
+    .map((seed) => fnv1a32(material, seed).toString(16).padStart(8, '0'))
+    .join('');
+  return `vision-fnv1a128-v1:${digest}`;
+}
+
 function parseCandidate(value: unknown): VisionCandidate | null {
   if (!isRecord(value) || typeof value.label !== 'string' || value.label.trim() === '') {
     return null;
