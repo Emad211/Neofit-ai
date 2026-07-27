@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createVisionRequestFingerprint } from '@/nutrition-core';
+import { createVisionRequestFingerprint } from '../src/nutrition-core';
 
 const firstImage = 'data:image/jpeg;base64,aGVsbG8=';
 const secondImage = 'data:image/jpeg;base64,d29ybGQ=';
