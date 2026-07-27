@@ -1,0 +1,43 @@
+name: Diagnose Mobile Typecheck
+
+on:
+  pull_request:
+    branches:
+      - agent/mobile-local-first-expo
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/diagnose-mobile-typecheck.yml'
+      - 'ifkb/dev/diagnose-mobile-typecheck.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/iranian-food-kb-foundation
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - name: Capture typecheck output
+        working-directory: mobile
+        run: |
+          npm ci --no-audit --no-fund >/dev/null 2>&1
+          mkdir -p /tmp/typecheck
+          status=0
+          npm run typecheck > /tmp/typecheck/typecheck.log 2>&1 || status=$?
+          printf '%s\n' "$status" > /tmp/typecheck/status.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mobile-typecheck-diagnostics
+          path: /tmp/typecheck
+          retention-days: 1
+      - name: Enforce result
+        run: test "$(cat /tmp/typecheck/status.txt)" = "0"
