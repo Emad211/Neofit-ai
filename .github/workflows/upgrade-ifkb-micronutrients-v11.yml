@@ -13,6 +13,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: upgrade-ifkb-micronutrients-v11
+  cancel-in-progress: true
+
 jobs:
   upgrade:
     runs-on: ubuntu-latest
@@ -75,6 +79,9 @@ jobs:
           assert values['vitaminC']>9000,values
           assert manifest['version']=='1.1.0',manifest
           assert manifest['databaseBytes'] < 24*1024*1024,manifest
+          Path('/tmp/ifkb-micro-upgrade').mkdir(parents=True,exist_ok=True)
+          Path('/tmp/ifkb-micro-upgrade/verified-catalog.json').write_text(
+            json.dumps({'manifest':manifest,'coverage':values},indent=2)+'\n',encoding='utf-8')
           print(json.dumps({'manifest':manifest,'coverage':values},indent=2))
           PY
 
@@ -94,11 +101,40 @@ jobs:
           rm -f ifkb/dev/upgrade_ifkb_micros_v11.py
           rm -f .github/workflows/upgrade-ifkb-micronutrients-v11.yml
 
-      - name: Commit verified micronutrient upgrade
+      - name: Commit, rebase, and push verified upgrade
+        id: publish
+        shell: bash
         run: |
+          set +e
+          mkdir -p /tmp/ifkb-micro-upgrade
+          status=0
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git diff --cached --check
-          git commit -m 'data(ifkb): add calcium iron potassium and vitamin C'
-          git push origin HEAD:agent/iranian-food-kb-foundation
+          git status --short > /tmp/ifkb-micro-upgrade/git-status-before-commit.txt
+          git diff --cached --check > /tmp/ifkb-micro-upgrade/diff-check.log 2>&1 || status=$?
+          if [ "$status" -eq 0 ]; then
+            git commit -m 'data(ifkb): add calcium iron potassium and vitamin C' > /tmp/ifkb-micro-upgrade/commit.log 2>&1 || status=$?
+          fi
+          if [ "$status" -eq 0 ]; then
+            git fetch origin agent/iranian-food-kb-foundation > /tmp/ifkb-micro-upgrade/fetch.log 2>&1 || status=$?
+          fi
+          if [ "$status" -eq 0 ]; then
+            git rebase origin/agent/iranian-food-kb-foundation > /tmp/ifkb-micro-upgrade/rebase.log 2>&1 || status=$?
+          fi
+          if [ "$status" -eq 0 ]; then
+            git push origin HEAD:agent/iranian-food-kb-foundation > /tmp/ifkb-micro-upgrade/push.log 2>&1 || status=$?
+          fi
+          printf '%s\n' "$status" > /tmp/ifkb-micro-upgrade/status.txt
+          exit 0
+
+      - name: Upload publication diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-micronutrient-v11-publication
+          path: /tmp/ifkb-micro-upgrade
+          if-no-files-found: error
+          retention-days: 2
+
+      - name: Enforce publication result
+        run: test "$(cat /tmp/ifkb-micro-upgrade/status.txt)" = "0"
