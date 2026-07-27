@@ -43,6 +43,15 @@ jobs:
       - name: Run deterministic domain tests
         run: npm test > /tmp/npm-test.log 2>&1 || { cat /tmp/npm-test.log; exit 1; }
 
+      - name: Upload deterministic test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-test-diagnostics
+          path: /tmp/npm-test.log
+          if-no-files-found: ignore
+          retention-days: 2
+
       - name: Check Expo package versions
         run: npx expo install --check > /tmp/expo-check.log 2>&1 || { cat /tmp/expo-check.log; exit 1; }
 
