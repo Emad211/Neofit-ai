@@ -6,6 +6,8 @@ on:
       - agent/iranian-food-kb-foundation
     paths:
       - 'ifkb/universal/build_mobile_catalog.py'
+      - 'ifkb/universal/import_sr_legacy_app_layer.py'
+      - 'ifkb/universal/import_fndds_app_layer.py'
       - 'ifkb/universal/iranian_canon_v1.csv'
       - 'ifkb/universal/persian_search_aliases_v1.csv'
       - '.github/workflows/ifkb-mobile-catalog-v1.yml'
@@ -13,6 +15,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: ifkb-universal-mobile-catalog-v1
+  cancel-in-progress: true
 
 jobs:
   build-mobile-catalog:
@@ -51,9 +57,9 @@ jobs:
             --persian-aliases ifkb/universal/persian_search_aliases_v1.csv \
             --output mobile/assets/ifkb/ifkb-universal-v1.db \
             --manifest mobile/assets/ifkb/ifkb-universal-v1.manifest.json \
-            --version 1.0.0
+            --version 1.1.0
 
-      - name: Verify catalog counts, search and integrity
+      - name: Verify catalog counts, search, micronutrients, and integrity
         run: |
           python - <<'PY'
           import json, sqlite3
@@ -67,6 +73,10 @@ jobs:
           canon=db.execute('SELECT COUNT(*) FROM iranian_canon').fetchone()[0]
           aliases=db.execute('SELECT COUNT(*) FROM persian_search_aliases').fetchone()[0]
           complete=db.execute('SELECT COUNT(*) FROM generic_foods WHERE macro_completeness=1').fetchone()[0]
+          calcium=db.execute('SELECT COUNT(*) FROM generic_foods WHERE calcium_mg IS NOT NULL').fetchone()[0]
+          iron=db.execute('SELECT COUNT(*) FROM generic_foods WHERE iron_mg IS NOT NULL').fetchone()[0]
+          potassium=db.execute('SELECT COUNT(*) FROM generic_foods WHERE potassium_mg IS NOT NULL').fetchone()[0]
+          vitamin_c=db.execute('SELECT COUNT(*) FROM generic_foods WHERE vitamin_c_mg IS NOT NULL').fetchone()[0]
           white=db.execute("SELECT COUNT(*) FROM generic_food_search WHERE generic_food_search MATCH 'egg AND white'").fetchone()[0]
           yolk=db.execute("SELECT COUNT(*) FROM generic_food_search WHERE generic_food_search MATCH 'egg AND yolk'").fetchone()[0]
           tomato=db.execute("SELECT COUNT(*) FROM generic_food_search WHERE generic_food_search MATCH 'tomatoes AND raw'").fetchone()[0]
@@ -75,40 +85,52 @@ jobs:
           ghormeh=db.execute("SELECT COUNT(*) FROM iranian_food_search WHERE iranian_food_search MATCH 'قورمه سبزی'").fetchone()[0]
           db.close()
           assert integrity=='ok',integrity
+          assert manifest['version']=='1.1.0',manifest
           assert foods==13225,(foods,manifest)
           assert portions==36494,portions
           assert canon==261,canon
           assert aliases==218,aliases
           assert complete>=13224,complete
+          assert calcium>10000,calcium
+          assert iron>10000,iron
+          assert potassium>10000,potassium
+          assert vitamin_c>9000,vitamin_c
           assert all(value>0 for value in (white,yolk,tomato,salad,pizza,ghormeh)),(white,yolk,tomato,salad,pizza,ghormeh)
-          assert manifest['databaseBytes'] < 20*1024*1024,manifest['databaseBytes']
-          print({'foods':foods,'portions':portions,'canon':canon,'aliases':aliases,'completeMacros':complete,'bytes':manifest['databaseBytes']})
+          assert manifest['databaseBytes'] < 24*1024*1024,manifest['databaseBytes']
+          print({
+            'foods':foods,'portions':portions,'canon':canon,'aliases':aliases,
+            'completeMacros':complete,'calcium':calcium,'iron':iron,
+            'potassium':potassium,'vitaminC':vitamin_c,
+            'bytes':manifest['databaseBytes']
+          })
           PY
 
       - name: Install locked mobile dependencies
         working-directory: mobile
         run: npm ci --no-audit --no-fund
 
-      - name: Add explicit Expo asset dependency
+      - name: Check Expo asset dependency
         working-directory: mobile
-        run: npx expo install expo-asset
+        run: npx expo install --check
 
       - name: Commit generated mobile catalog
         run: |
+          rm -rf build/ifkb-sr-legacy build/ifkb-fndds
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add mobile/assets/ifkb mobile/package.json mobile/package-lock.json
+          git add mobile/assets/ifkb
           if git diff --cached --quiet; then
             echo 'Catalog already current.'
             exit 0
           fi
           git diff --cached --check
-          git commit -m 'data(ifkb): bundle universal mobile catalog v1'
+          git commit -m 'data(ifkb): bundle micronutrient catalog v1.1'
+          git pull --rebase origin agent/iranian-food-kb-foundation
           git push origin HEAD:agent/iranian-food-kb-foundation
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ifkb-universal-mobile-catalog-v1
+          name: ifkb-universal-mobile-catalog-v1.1
           path: |
             mobile/assets/ifkb/ifkb-universal-v1.db
             mobile/assets/ifkb/ifkb-universal-v1.manifest.json
