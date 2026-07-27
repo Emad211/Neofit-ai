@@ -50,6 +50,10 @@ function mapDiaryRow(row: DiaryRow): DiaryEntry {
   };
 }
 
+function assertLocalDate(value: string, label: string): void {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error(`${label} must use YYYY-MM-DD`);
+}
+
 export async function saveNutritionDiaryEntry(entry: DiaryEntry): Promise<void> {
   const database = await getDatabase();
   await database.runAsync(
@@ -99,6 +103,7 @@ export async function listNutritionDiaryEntries(input: {
   const clauses: string[] = [];
   const parameters: (string | number)[] = [];
   if (input.localDate) {
+    assertLocalDate(input.localDate, 'localDate');
     clauses.push('local_date = ?');
     parameters.push(input.localDate);
   }
@@ -115,6 +120,40 @@ export async function listNutritionDiaryEntries(input: {
      ORDER BY local_date DESC, created_at DESC
      LIMIT ?;`,
     ...parameters,
+  );
+  return rows.map(mapDiaryRow);
+}
+
+export async function listNutritionDiaryEntriesInRange(input: {
+  readonly dateFrom: string;
+  readonly dateTo: string;
+  readonly limit?: number;
+}): Promise<DiaryEntry[]> {
+  assertLocalDate(input.dateFrom, 'dateFrom');
+  assertLocalDate(input.dateTo, 'dateTo');
+  if (input.dateFrom > input.dateTo) throw new Error('dateFrom must not be after dateTo');
+  const limit = Math.min(50_000, Math.max(1, Math.round(input.limit ?? 20_000)));
+  const database = await getDatabase();
+  const rows = await database.getAllAsync<DiaryRow>(
+    `SELECT * FROM nutrition_diary_entries
+     WHERE local_date >= ? AND local_date <= ?
+     ORDER BY local_date DESC, created_at DESC
+     LIMIT ?;`,
+    input.dateFrom,
+    input.dateTo,
+    limit,
+  );
+  return rows.map(mapDiaryRow);
+}
+
+export async function listAllNutritionDiaryEntries(limit = 50_000): Promise<DiaryEntry[]> {
+  const safeLimit = Math.min(50_000, Math.max(1, Math.round(limit)));
+  const database = await getDatabase();
+  const rows = await database.getAllAsync<DiaryRow>(
+    `SELECT * FROM nutrition_diary_entries
+     ORDER BY local_date DESC, created_at DESC
+     LIMIT ?;`,
+    safeLimit,
   );
   return rows.map(mapDiaryRow);
 }
