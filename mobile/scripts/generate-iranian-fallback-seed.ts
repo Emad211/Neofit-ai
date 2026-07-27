@@ -239,7 +239,7 @@ const fallback = fallbackCanon.map((row): FoodCatalogItem => {
     fatG: values.fatG,
     variabilityPct: values.variabilityPct,
     confidence: 'low',
-    sourceType: 'imported',
+    sourceType: 'seeded',
     sourceLabel: SOURCE_LABEL,
     notesFa: `این مقدار فقط prior پهن دستهٔ «${category}» است؛ دستور، روغن و سهم واقعی باید تأیید شود و این رکورد منبع تأییدشده نیست.`,
     notesEn: `This is only a broad ${category} category prior. Recipe, oil and actual serving must be confirmed; this is not verified evidence.`,
@@ -270,6 +270,7 @@ const manifest = {
   totalAppReadyCount: total,
   evidenceTier: 'broad_fallback',
   sourceLabel: SOURCE_LABEL,
+  sourceType: 'seeded',
   priorCategories: Object.fromEntries([...priorCache.entries()].sort().map(([key, value]) => [key, value])),
   categoryMapping: CATEGORY_MAP,
   rules: {
@@ -279,6 +280,7 @@ const manifest = {
     confidence: 'low',
     variabilityRangePct: [35, 60],
     verifiedRecordsCreated: 0,
+    replaceableByUserImport: false,
   },
 };
 mkdirSync(dirname(manifestPath), { recursive: true });
