@@ -97,6 +97,7 @@ jobs:
 
       - name: Remove temporary files
         run: |
+          rm -rf build/ifkb-sr-legacy build/ifkb-fndds
           rm -f ifkb/dev/upgrade-ifkb-micronutrients-v11.trigger
           rm -f ifkb/dev/upgrade_ifkb_micros_v11.py
           rm -f .github/workflows/upgrade-ifkb-micronutrients-v11.yml
