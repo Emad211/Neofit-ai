@@ -1,11 +1,14 @@
 {
   "format": "ifkb-persian-search-benchmark-release",
-  "version": "1.0.0",
-  "evaluatedAtUtc": "2026-07-27T15:54:32Z",
+  "version": "1.1.0",
+  "evaluatedAtUtc": "2026-07-27T16:38:59Z",
   "catalog": {
-    "version": "1.0.0",
-    "databaseSha256": "8457bd092a166e1cffc4c47cbbf848effc9a4297280187806fb423ffa560a098",
+    "version": "1.2.0",
+    "databaseSha256": "0164cb344c22eeec2556f9decdf13931e700078a9566bd884609edee78667247",
     "genericFoodCount": 13225,
+    "genericConceptCount": 9279,
+    "genericVariantMappingCount": 13225,
+    "genericVariantMappingCoverage": 1.0,
     "iranianCanonCount": 261,
     "persianAliasRowCount": 218
   },
@@ -33,21 +36,22 @@
     "minimumTop5Accuracy": 0.97
   },
   "result": {
-    "routeAccuracy": 1,
-    "top1Accuracy": 1,
-    "top5Accuracy": 1,
+    "routeAccuracy": 1.0,
+    "top1Accuracy": 1.0,
+    "top5Accuracy": 1.0,
     "failureCount": 0
   },
   "workflow": {
     "name": "IFKB Persian Search Benchmark",
-    "runId": 30282187789,
-    "artifactId": 8659282626,
-    "artifactDigest": "sha256:691abfc4edcc2716f8556be2e20c9c5032f0c2d653e77a19b77d7ae0607ea387",
-    "headSha": "bd23a72cc0e2f854b3be2e24b53385978033583f"
+    "runId": 30285619578,
+    "artifactId": 8660666147,
+    "artifactDigest": "sha256:d43931525ade2f1b685b18647d1554cc317f14bd8874ed66fe5c85370454fbde",
+    "headSha": "44eb360b858a5272128929746fcd7c8604eade16"
   },
   "limitations": [
     "This benchmark measures the controlled alias registry and bundled catalog, not unrestricted natural-language understanding.",
     "Generic success is semantic token coverage of the resolved USDA target within the production-ranked Top-K names.",
+    "The corpus is deterministically generated from controlled aliases and is not an independently collected sample of real user queries.",
     "New aliases, catalog versions, normalization rules, or ranking changes must rerun the workflow."
   ]
 }
