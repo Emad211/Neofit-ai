@@ -92,8 +92,11 @@ def build_cases(rows: list[dict[str, str]], count: int) -> list[dict[str, str]]:
             return False
         target_type = str(group['target_type'])
         targets = '|'.join(str(value) for value in group['targets'])
-        key = (normalize_persian(query), target_type, targets)
-        if not key[0] or key in seen:
+        # Raw input forms are intentionally distinct: punctuation, Arabic
+        # characters and half-spaces must survive into the benchmark so the
+        # product normalizer is actually exercised.
+        key = (unicodedata.normalize('NFKC', query), target_type, targets)
+        if not normalize_persian(query) or key in seen:
             return False
         seen.add(key)
         cases.append({
