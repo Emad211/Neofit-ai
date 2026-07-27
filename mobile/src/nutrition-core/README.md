@@ -12,6 +12,14 @@ Legacy catalog records are migrated as `per_serving` variants. When a serving we
 
 Aggregations are missing-aware: a missing nutrient is not converted to zero, and recipe or diary totals retain that uncertainty. The standalone schema validator tests the real SQLite constraints and uses a portable table substitute only when the host Node SQLite binary was compiled without FTS5. Expo SQLite continues to use the native FTS5 virtual table.
 
+## Bundled catalog v1.1
+
+The read-only universal catalog contains official USDA calories, macronutrients and household portions plus calcium, iron, potassium and vitamin C. Catalog nutrients remain nullable; a source that lacks a nutrient never becomes a zero-valued observation.
+
+## Goal semantics
+
+Daily energy and macronutrients use target semantics. Sugars, sodium and cholesterol use maximum semantics. Fiber, calcium, iron, potassium and vitamin C use minimum semantics. NeoFit stores user-entered boundaries only and does not create medical targets automatically.
+
 ## Safety boundary
 
 Vision results are observations only. `sanitizeVisionObservation` accepts only labels, confidence, visible components, preparation hints and warnings. Calories and nutrients returned by a provider are ignored because nutrition is resolved locally from IFKB.
