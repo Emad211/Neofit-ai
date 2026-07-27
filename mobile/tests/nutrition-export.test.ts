@@ -28,19 +28,47 @@ const entry: DiaryEntry = {
   updatedAt: '2026-07-27T12:00:00.000Z',
 };
 
+function parseCsvLine(line: string): string[] {
+  const values: string[] = [];
+  let value = '';
+  let quoted = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    if (character === '"') {
+      if (quoted && line[index + 1] === '"') {
+        value += '"';
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+      continue;
+    }
+    if (character === ',' && !quoted) {
+      values.push(value);
+      value = '';
+      continue;
+    }
+    value += character;
+  }
+  values.push(value);
+  return values;
+}
+
 test('Diary CSV keeps missing nutrients blank and escapes labels', () => {
   const csv = diaryEntriesToCsv([entry]);
   const lines = csv.trim().split('\r\n');
   assert.equal(lines.length, 2);
   assert.match(lines[0] ?? '', /calciumMg,ironMg,potassiumMg,vitaminCMg/);
   assert.match(lines[1] ?? '', /"غذای ""نمونه"", با توضیح"/);
-  const headers = (lines[0] ?? '').split(',');
-  const values = (lines[1] ?? '').match(/(?:"(?:[^"]|"")*"|[^,])+/g) ?? [];
+  const headers = parseCsvLine(lines[0] ?? '');
+  const values = parseCsvLine(lines[1] ?? '');
+  assert.equal(values.length, headers.length);
   const ironIndex = headers.indexOf('ironMg');
   const vitaminIndex = headers.indexOf('vitaminCMg');
   assert.ok(ironIndex >= 0 && vitaminIndex >= 0);
   assert.equal(values[ironIndex], '');
   assert.equal(values[vitaminIndex], '');
+  assert.equal(values[headers.indexOf('label')], entry.label);
 });
 
 test('personal JSON backup references but never embeds the public catalog', () => {
@@ -54,10 +82,15 @@ test('personal JSON backup references but never embeds the public catalog', () =
   assert.equal(bundle.publicCatalogReference.version, '1.1.0');
   assert.equal(bundle.publicCatalogReference.databaseSha256, IFKB_CATALOG_RELEASE.databaseSha256);
   assert.equal(bundle.personalData.diaryEntries.length, 1);
+  assert.deepEqual(
+    Object.keys(bundle.personalData).sort(),
+    ['diaryEntries', 'favorites', 'goals', 'recipes'],
+  );
   const json = JSON.stringify(bundle);
   assert.doesNotMatch(json, /ifkb-universal-v1\.db/);
-  assert.doesNotMatch(json, /api[_-]?key|vision image|provider response/i);
+  assert.doesNotMatch(json, /"(?:apiKey|api_key|visionImage|providerResponse|responseCache)"\s*:/i);
   assert.match(json, /public IFKB SQLite catalog is not duplicated/);
+  assert.match(json, /API keys, Vision images, cache files, and provider responses are not exported/);
 });
 
 test('history and export services read bounded Diary data and use Expo file sharing', () => {
