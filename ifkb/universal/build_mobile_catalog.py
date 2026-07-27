@@ -27,6 +27,10 @@ CREATE TABLE generic_foods(
   sugars_g REAL,
   sodium_mg REAL,
   cholesterol_mg REAL,
+  calcium_mg REAL,
+  iron_mg REAL,
+  potassium_mg REAL,
+  vitamin_c_mg REAL,
   macro_completeness INTEGER NOT NULL CHECK(macro_completeness IN (0,1)),
   portion_count INTEGER NOT NULL DEFAULT 0 CHECK(portion_count >= 0)
 );
@@ -98,7 +102,8 @@ def source_food_rows(db_path: Path, source_type: str) -> Iterable[tuple]:
         columns = {row[1] for row in db.execute('PRAGMA table_info(foods)')}
         food_code = 'food_code' if 'food_code' in columns else 'ndb_number' if 'ndb_number' in columns else 'NULL'
         query = f'''SELECT id,fdc_id,{food_code},name_en,calories_kcal,protein_g,fat_g,carbs_g,
-                          fiber_g,sugars_g,sodium_mg,cholesterol_mg
+                          fiber_g,sugars_g,sodium_mg,cholesterol_mg,calcium_mg,iron_mg,
+                          potassium_mg,vitamin_c_mg
                    FROM foods ORDER BY id'''
         for row in db.execute(query):
             complete = int(all(value is not None for value in row[4:8]))
@@ -132,8 +137,9 @@ def build(args: argparse.Namespace) -> dict:
             db.executemany(
                 '''INSERT INTO generic_foods(
                      id,source_type,source_numeric_id,source_food_code,name_en,calories_kcal,protein_g,
-                     fat_g,carbs_g,fiber_g,sugars_g,sodium_mg,cholesterol_mg,macro_completeness)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                     fat_g,carbs_g,fiber_g,sugars_g,sodium_mg,cholesterol_mg,calcium_mg,
+                     iron_mg,potassium_mg,vitamin_c_mg,macro_completeness)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
                 source_food_rows(path, source_type),
             )
             db.executemany(
@@ -180,6 +186,10 @@ def build(args: argparse.Namespace) -> dict:
             'genericFoodCount': db.execute('SELECT COUNT(*) FROM generic_foods').fetchone()[0],
             'genericPortionCount': db.execute('SELECT COUNT(*) FROM generic_portions').fetchone()[0],
             'macroCompleteCount': db.execute('SELECT COUNT(*) FROM generic_foods WHERE macro_completeness=1').fetchone()[0],
+            'calciumCoverageCount': db.execute('SELECT COUNT(*) FROM generic_foods WHERE calcium_mg IS NOT NULL').fetchone()[0],
+            'ironCoverageCount': db.execute('SELECT COUNT(*) FROM generic_foods WHERE iron_mg IS NOT NULL').fetchone()[0],
+            'potassiumCoverageCount': db.execute('SELECT COUNT(*) FROM generic_foods WHERE potassium_mg IS NOT NULL').fetchone()[0],
+            'vitaminCCoverageCount': db.execute('SELECT COUNT(*) FROM generic_foods WHERE vitamin_c_mg IS NOT NULL').fetchone()[0],
             'iranianCanonCount': db.execute('SELECT COUNT(*) FROM iranian_canon').fetchone()[0],
             'persianAliasCount': db.execute('SELECT COUNT(*) FROM persian_search_aliases').fetchone()[0],
         }
@@ -225,7 +235,7 @@ def main() -> int:
     parser.add_argument('--persian-aliases', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--manifest', type=Path, required=True)
-    parser.add_argument('--version', default='1.0.0')
+    parser.add_argument('--version', default='1.1.0')
     args = parser.parse_args()
     print(json.dumps(build(args), ensure_ascii=False, indent=2))
     return 0

@@ -3,7 +3,7 @@ import { File } from 'expo-file-system';
 import * as SQLite from 'expo-sqlite';
 
 const CATALOG_ASSET_MODULE = require('../../assets/ifkb/ifkb-universal-v1.db') as number;
-const EXPECTED_CATALOG_VERSION = '1.0.0';
+const EXPECTED_CATALOG_VERSION = '1.1.0';
 const EXPECTED_GENERIC_FOODS = 13_225;
 const EXPECTED_IRANIAN_CANON = 261;
 

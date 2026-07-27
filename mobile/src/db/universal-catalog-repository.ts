@@ -22,6 +22,10 @@ interface GenericFoodRow {
   sugars_g: number | null;
   sodium_mg: number | null;
   cholesterol_mg: number | null;
+  calcium_mg: number | null;
+  iron_mg: number | null;
+  potassium_mg: number | null;
+  vitamin_c_mg: number | null;
   macro_completeness: number;
   portion_count: number;
   bm25_score: number;
@@ -99,6 +103,10 @@ function candidateFromRow(row: GenericFoodRow): UniversalCatalogCandidate {
     sugarsG: row.sugars_g,
     sodiumMg: row.sodium_mg,
     cholesterolMg: row.cholesterol_mg,
+    calciumMg: row.calcium_mg,
+    ironMg: row.iron_mg,
+    potassiumMg: row.potassium_mg,
+    vitaminCMg: row.vitamin_c_mg,
     macroComplete: row.macro_completeness === 1,
     portionCount: row.portion_count,
     bm25: row.bm25_score,
@@ -192,7 +200,8 @@ async function searchGeneric(query: string, limit: number, matchedAliasFa?: stri
   const database = await getUniversalCatalogDatabase();
   const rows = await database.getAllAsync<GenericFoodRow>(
     `SELECT f.id,f.source_type,f.name_en,f.calories_kcal,f.protein_g,f.fat_g,f.carbs_g,
-            f.fiber_g,f.sugars_g,f.sodium_mg,f.cholesterol_mg,f.macro_completeness,
+            f.fiber_g,f.sugars_g,f.sodium_mg,f.cholesterol_mg,f.calcium_mg,f.iron_mg,
+            f.potassium_mg,f.vitamin_c_mg,f.macro_completeness,
             f.portion_count,bm25(generic_food_search) AS bm25_score
      FROM generic_food_search s
      JOIN generic_foods f ON f.id=s.id
@@ -233,7 +242,8 @@ export async function getUniversalFoodDetails(id: string): Promise<UniversalFood
   const database = await getUniversalCatalogDatabase();
   const row = await database.getFirstAsync<Omit<GenericFoodRow, 'bm25_score'>>(
     `SELECT id,source_type,name_en,calories_kcal,protein_g,fat_g,carbs_g,fiber_g,sugars_g,
-            sodium_mg,cholesterol_mg,macro_completeness,portion_count
+            sodium_mg,cholesterol_mg,calcium_mg,iron_mg,potassium_mg,vitamin_c_mg,
+            macro_completeness,portion_count
      FROM generic_foods WHERE id=?;`,
     id,
   );

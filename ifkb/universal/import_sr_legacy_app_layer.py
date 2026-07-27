@@ -17,13 +17,16 @@ SR_URL = "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_
 USER_AGENT = "IFKB-SR-Importer/1.0 (+https://github.com/Emad211/Neofit-ai)"
 OUTPUT_FIELDS = (
     "calories_kcal", "protein_g", "fat_g", "carbs_g", "fiber_g",
-    "sugars_g", "sodium_mg", "cholesterol_mg",
+    "sugars_g", "sodium_mg", "cholesterol_mg", "calcium_mg",
+    "iron_mg", "potassium_mg", "vitamin_c_mg",
 )
 ID_MAP = {
     "203": "protein_g", "204": "fat_g", "205": "carbs_g",
     "291": "fiber_g", "269": "sugars_g", "307": "sodium_mg", "601": "cholesterol_mg",
+    "301": "calcium_mg", "303": "iron_mg", "306": "potassium_mg", "401": "vitamin_c_mg",
     "1003": "protein_g", "1004": "fat_g", "1005": "carbs_g",
     "1079": "fiber_g", "2000": "sugars_g", "1093": "sodium_mg", "1253": "cholesterol_mg",
+    "1087": "calcium_mg", "1089": "iron_mg", "1092": "potassium_mg", "1162": "vitamin_c_mg",
 }
 ENERGY_IDS = {"208": 1, "1008": 2, "2047": 3, "2048": 4}
 
@@ -150,7 +153,8 @@ def main() -> int:
     db.executescript("""
       CREATE TABLE foods(id TEXT PRIMARY KEY,fdc_id INTEGER UNIQUE,ndb_number TEXT,name_en TEXT,
         calories_kcal REAL,protein_g REAL,fat_g REAL,carbs_g REAL,fiber_g REAL,sugars_g REAL,
-        sodium_mg REAL,cholesterol_mg REAL);
+        sodium_mg REAL,cholesterol_mg REAL,calcium_mg REAL,iron_mg REAL,
+        potassium_mg REAL,vitamin_c_mg REAL);
       CREATE TABLE portions(id INTEGER PRIMARY KEY AUTOINCREMENT,food_id TEXT,amount REAL,label TEXT,
         measure_unit TEXT,gram_weight REAL,FOREIGN KEY(food_id) REFERENCES foods(id));
       CREATE INDEX foods_name_idx ON foods(name_en);
@@ -158,7 +162,7 @@ def main() -> int:
     """)
     for food in foods:
         n=food["nutrientsPer100g"]
-        db.execute("INSERT INTO foods VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",(
+        db.execute(f"INSERT INTO foods VALUES ({','.join('?' for _ in range(4 + len(OUTPUT_FIELDS)))})",(
             food["id"],food["fdcId"],food["ndbNumber"],food["nameEn"],*(n[k] for k in OUTPUT_FIELDS)))
         db.executemany("INSERT INTO portions(food_id,amount,label,measure_unit,gram_weight) VALUES (?,?,?,?,?)",
             [(food["id"],p["amount"],p["label"],p["measureUnit"],p["gramWeight"]) for p in food["portions"]])

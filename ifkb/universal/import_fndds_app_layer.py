@@ -17,7 +17,8 @@ FNDDS_URL = "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_
 USER_AGENT = "IFKB-FNDDS-Importer/1.3 (+https://github.com/Emad211/Neofit-ai)"
 OUTPUT_FIELDS = (
     "calories_kcal", "protein_g", "fat_g", "carbs_g", "fiber_g",
-    "sugars_g", "sodium_mg", "cholesterol_mg",
+    "sugars_g", "sodium_mg", "cholesterol_mg", "calcium_mg",
+    "iron_mg", "potassium_mg", "vitamin_c_mg",
 )
 
 # FNDDS 2021-2023 uses legacy nutrient identifiers in food_nutrient.csv,
@@ -25,10 +26,12 @@ OUTPUT_FIELDS = (
 ID_MAP = {
     "203": "protein_g", "204": "fat_g", "205": "carbs_g",
     "291": "fiber_g", "269": "sugars_g", "307": "sodium_mg",
-    "601": "cholesterol_mg",
+    "601": "cholesterol_mg", "301": "calcium_mg", "303": "iron_mg",
+    "306": "potassium_mg", "401": "vitamin_c_mg",
     "1003": "protein_g", "1004": "fat_g", "1005": "carbs_g",
     "1079": "fiber_g", "2000": "sugars_g", "1093": "sodium_mg",
-    "1253": "cholesterol_mg",
+    "1253": "cholesterol_mg", "1087": "calcium_mg", "1089": "iron_mg",
+    "1092": "potassium_mg", "1162": "vitamin_c_mg",
 }
 ENERGY_ID_PRIORITY = {"208": 1, "1008": 2, "2047": 3, "2048": 4}
 NAME_MAP = {
@@ -39,6 +42,10 @@ NAME_MAP = {
     "sugars, total including nlea": "sugars_g",
     "sodium, na": "sodium_mg",
     "cholesterol": "cholesterol_mg",
+    "calcium, ca": "calcium_mg",
+    "iron, fe": "iron_mg",
+    "potassium, k": "potassium_mg",
+    "vitamin c, total ascorbic acid": "vitamin_c_mg",
 }
 ENERGY_NAME_PRIORITY = {
     "energy": 10,
@@ -241,7 +248,8 @@ def main() -> int:
       CREATE TABLE foods(
         id TEXT PRIMARY KEY, fdc_id INTEGER UNIQUE NOT NULL, food_code TEXT, name_en TEXT NOT NULL,
         calories_kcal REAL, protein_g REAL, fat_g REAL, carbs_g REAL, fiber_g REAL,
-        sugars_g REAL, sodium_mg REAL, cholesterol_mg REAL
+        sugars_g REAL, sodium_mg REAL, cholesterol_mg REAL, calcium_mg REAL,
+        iron_mg REAL, potassium_mg REAL, vitamin_c_mg REAL
       );
       CREATE TABLE portions(
         id INTEGER PRIMARY KEY AUTOINCREMENT, food_id TEXT NOT NULL, amount REAL NOT NULL,
@@ -254,7 +262,7 @@ def main() -> int:
     for food in foods:
         nutrients = food["nutrientsPer100g"]
         db.execute(
-            "INSERT INTO foods VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            f"INSERT INTO foods VALUES ({','.join('?' for _ in range(4 + len(OUTPUT_FIELDS)))})",
             (food["id"], food["fdcId"], food["foodCode"], food["nameEn"],
              *(nutrients[field] for field in OUTPUT_FIELDS)),
         )

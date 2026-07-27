@@ -14,6 +14,10 @@ export interface UniversalCatalogCandidate {
   readonly sugarsG: number | null;
   readonly sodiumMg: number | null;
   readonly cholesterolMg: number | null;
+  readonly calciumMg: number | null;
+  readonly ironMg: number | null;
+  readonly potassiumMg: number | null;
+  readonly vitaminCMg: number | null;
   readonly macroComplete: boolean;
   readonly portionCount: number;
   readonly bm25: number;

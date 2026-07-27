@@ -121,6 +121,10 @@ function universalVector(details: NonNullable<Awaited<ReturnType<typeof getUnive
     ...(details.sugarsG === null ? {} : { sugarsG: details.sugarsG }),
     ...(details.sodiumMg === null ? {} : { sodiumMg: details.sodiumMg }),
     ...(details.cholesterolMg === null ? {} : { cholesterolMg: details.cholesterolMg }),
+    ...(details.calciumMg === null ? {} : { calciumMg: details.calciumMg }),
+    ...(details.ironMg === null ? {} : { ironMg: details.ironMg }),
+    ...(details.potassiumMg === null ? {} : { potassiumMg: details.potassiumMg }),
+    ...(details.vitaminCMg === null ? {} : { vitaminCMg: details.vitaminCMg }),
   };
 }
 
