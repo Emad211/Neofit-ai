@@ -7,3 +7,4 @@ export * from './goals';
 export * from './vision';
 export * from './sql';
 export * from './legacy-catalog-adapter';
+export * from './universal-catalog-ranking';
