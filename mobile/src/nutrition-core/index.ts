@@ -7,6 +7,7 @@ export * from './goals';
 export * from './vision';
 export * from './vision-image-policy';
 export * from './vision-resolution-policy';
+export * from './catalog-release';
 export * from './sql';
 export * from './legacy-catalog-adapter';
 export * from './universal-catalog-ranking';
