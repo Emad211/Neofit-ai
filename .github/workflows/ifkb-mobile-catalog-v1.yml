@@ -47,7 +47,7 @@ jobs:
           mkdir -p mobile/assets/ifkb
           python ifkb/universal/build_mobile_catalog.py \
             --sr-db build/ifkb-sr-legacy/sr_legacy_app_layer.sqlite \
-            --fndds-db build/ifkb-fndds-2021-2023/fndds_2021_2023_app_layer.sqlite \
+            --fndds-db build/ifkb-fndds/fndds_2021_2023_app_layer.sqlite \
             --iranian-canon ifkb/universal/iranian_canon_v1.csv \
             --persian-aliases ifkb/universal/persian_search_aliases_v1.csv \
             --output mobile/assets/ifkb/ifkb-universal-v1.db \
