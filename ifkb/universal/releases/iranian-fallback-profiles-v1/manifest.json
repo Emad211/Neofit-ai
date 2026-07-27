@@ -1,7 +1,7 @@
 {
   "format": "ifkb-iranian-fallback-profile-release",
   "version": "1.0.0",
-  "generatedAtUtc": "2026-07-27T16:06:41.745Z",
+  "generatedAtUtc": "2026-07-27T16:09:40.345Z",
   "existingSeedCount": 83,
   "existingCanonCount": 83,
   "broadFallbackCount": 178,
@@ -9,6 +9,7 @@
   "totalAppReadyCount": 261,
   "evidenceTier": "broad_fallback",
   "sourceLabel": "IFKB DS0 broad-fallback category prior v1 — not recipe-specific",
+  "sourceType": "seeded",
   "priorCategories": {
     "bread": {
       "category": "bread",
@@ -133,6 +134,7 @@
       35,
       60
     ],
-    "verifiedRecordsCreated": 0
+    "verifiedRecordsCreated": 0,
+    "replaceableByUserImport": false
   }
 }
