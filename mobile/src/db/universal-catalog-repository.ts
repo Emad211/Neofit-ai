@@ -78,6 +78,7 @@ export interface IranianIdentityHit {
 
 export interface GenericFoodHit extends RankedUniversalCatalogCandidate {
   readonly kind: 'generic_food';
+  readonly matchedAliasFa?: string;
 }
 
 export type UniversalCatalogHit = IranianIdentityHit | GenericFoodHit;
@@ -185,7 +186,7 @@ async function searchIranianIdentity(query: string, directCanonId?: string): Pro
   }));
 }
 
-async function searchGeneric(query: string, limit: number): Promise<GenericFoodHit[]> {
+async function searchGeneric(query: string, limit: number, matchedAliasFa?: string): Promise<GenericFoodHit[]> {
   const ftsQuery = sanitizeFtsQuery(query);
   if (!ftsQuery) return [];
   const database = await getUniversalCatalogDatabase();
@@ -200,7 +201,9 @@ async function searchGeneric(query: string, limit: number): Promise<GenericFoodH
     ftsQuery,
   );
   return rankUniversalCatalogCandidates(query, rows.map(candidateFromRow), limit)
-    .map((row) => ({ kind: 'generic_food' as const, ...row }));
+    .map((row) => matchedAliasFa
+      ? ({ kind: 'generic_food' as const, matchedAliasFa, ...row })
+      : ({ kind: 'generic_food' as const, ...row }));
 }
 
 export async function searchUniversalCatalog(query: string, limit = 20): Promise<UniversalCatalogHit[]> {
@@ -210,7 +213,13 @@ export async function searchUniversalCatalog(query: string, limit = 20): Promise
   const iranianAlias = aliases.find((row) => row.target_type === 'iranian_canon');
   if (iranianAlias) return searchIranianIdentity('', iranianAlias.target);
   const genericAlias = aliases.find((row) => row.target_type === 'generic');
-  if (genericAlias) return searchGeneric(genericTargetWithModifiers(genericAlias.target, query), limit);
+  if (genericAlias) {
+    return searchGeneric(
+      genericTargetWithModifiers(genericAlias.target, query),
+      limit,
+      genericAlias.alias_fa,
+    );
+  }
 
   const isMostlyPersian = /[\u0600-\u06ff]/.test(normalized);
   if (isMostlyPersian) {
