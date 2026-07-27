@@ -1,10 +1,11 @@
 name: IFKB Iranian Fallback Profiles v1
 
+# Use push paths on the active data branch. Pull-request path filters inspect
+# the full long-lived PR diff and would regenerate profiles for every app edit.
 on:
-  pull_request:
+  push:
     branches:
-      - agent/mobile-local-first-expo
-    types: [opened, synchronize, reopened]
+      - agent/iranian-food-kb-foundation
     paths:
       - 'ifkb/universal/iranian_canon_v1.csv'
       - 'mobile/src/data/iranian-food-seed.ts'
@@ -14,6 +15,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: ifkb-iranian-fallback-profiles-v1
+  cancel-in-progress: false
 
 jobs:
   generate:
