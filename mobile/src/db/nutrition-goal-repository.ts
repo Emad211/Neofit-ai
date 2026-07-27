@@ -31,6 +31,16 @@ function parseGoals(value: string): NutritionGoals {
   return { daily };
 }
 
+function mapGoalRow(row: GoalRow): PersistedNutritionGoal {
+  return {
+    id: row.id,
+    activeFrom: row.active_from,
+    goals: parseGoals(row.daily_goals_json),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 export async function saveNutritionGoal(goal: PersistedNutritionGoal): Promise<void> {
   validateNutritionVector(goal.goals.daily);
   // An empty vector is a deliberate active state that disables older goals
@@ -61,11 +71,17 @@ export async function getActiveNutritionGoal(atDate: string): Promise<PersistedN
      LIMIT 1;`,
     atDate,
   );
-  return row ? {
-    id: row.id,
-    activeFrom: row.active_from,
-    goals: parseGoals(row.daily_goals_json),
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  } : null;
+  return row ? mapGoalRow(row) : null;
+}
+
+export async function listNutritionGoals(limit = 1_000): Promise<PersistedNutritionGoal[]> {
+  const safeLimit = Math.min(10_000, Math.max(1, Math.round(limit)));
+  const database = await getDatabase();
+  const rows = await database.getAllAsync<GoalRow>(
+    `SELECT * FROM nutrition_goals
+     ORDER BY active_from DESC, updated_at DESC
+     LIMIT ?;`,
+    safeLimit,
+  );
+  return rows.map(mapGoalRow);
 }
