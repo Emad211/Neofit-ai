@@ -1,5 +1,7 @@
 import * as React from 'react';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
+import { File } from 'expo-file-system';
 import { useFocusEffect } from 'expo-router';
 import {
   AppText,
@@ -13,6 +15,7 @@ import {
 import { listNutritionDiaryEntriesInRange } from '@/db/nutrition-diary-repository';
 import { localDateFromIso } from '@/db/nutrition-meal-repository';
 import {
+  IFKB_CATALOG_RELEASE,
   summarizeDiaryDay,
   type DiaryDaySummary,
   type DiaryEntry,
@@ -20,12 +23,24 @@ import {
 } from '@/nutrition-core';
 import { useApp } from '@/providers/app-provider';
 import {
+  parseNutritionBackupJson,
+  restoreNutritionBackup,
+  type ParsedNutritionBackup,
+  type NutritionBackupRestoreMode,
+} from '@/services/nutrition-backup-restore';
+import {
   shareNutritionBackupJson,
   shareNutritionDiaryCsv,
 } from '@/services/nutrition-export-service';
 import { useAppTheme } from '@/theme/theme';
 
 type RangeDays = '7' | '30' | '90';
+
+interface PendingBackup {
+  readonly name: string;
+  readonly data: ParsedNutritionBackup;
+  readonly catalogCompatible: boolean;
+}
 
 function shiftDate(localDate: string, days: number): string {
   const [year, month, day] = localDate.split('-').map(Number);
@@ -57,6 +72,20 @@ function nutrientText(
   return `${value.toFixed(value >= 100 ? 0 : 1)} ${unit}`;
 }
 
+function confirmReplacement(input: {
+  readonly title: string;
+  readonly message: string;
+  readonly cancel: string;
+  readonly replace: string;
+}): Promise<boolean> {
+  return new Promise((resolve) => {
+    Alert.alert(input.title, input.message, [
+      { text: input.cancel, style: 'cancel', onPress: () => resolve(false) },
+      { text: input.replace, style: 'destructive', onPress: () => resolve(true) },
+    ], { cancelable: true, onDismiss: () => resolve(false) });
+  });
+}
+
 interface HistoryDay {
   readonly localDate: string;
   readonly entries: readonly DiaryEntry[];
@@ -80,7 +109,7 @@ function groupHistory(entries: readonly DiaryEntry[]): HistoryDay[] {
 }
 
 export default function NutritionHistoryScreen() {
-  const { locale } = useApp();
+  const { locale, refreshDailySummary } = useApp();
   const theme = useAppTheme();
   const label = React.useCallback((en: string, fa: string) => locale === 'fa' ? fa : en, [locale]);
   const today = localDateFromIso(new Date().toISOString());
@@ -88,6 +117,9 @@ export default function NutritionHistoryScreen() {
   const [entries, setEntries] = React.useState<DiaryEntry[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [exporting, setExporting] = React.useState<'csv' | 'json' | null>(null);
+  const [selectingBackup, setSelectingBackup] = React.useState(false);
+  const [restoring, setRestoring] = React.useState<NutritionBackupRestoreMode | null>(null);
+  const [pendingBackup, setPendingBackup] = React.useState<PendingBackup | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -127,6 +159,7 @@ export default function NutritionHistoryScreen() {
     : (periodSummary.total.center.energyKcal ?? null) === null
       ? null
       : (periodSummary.total.center.energyKcal ?? 0) / activeDays;
+  const busy = exporting !== null || selectingBackup || restoring !== null;
 
   const exportCsv = async () => {
     setExporting('csv');
@@ -153,6 +186,73 @@ export default function NutritionHistoryScreen() {
       setError(caught instanceof Error ? caught.message : label('JSON backup failed.', 'پشتیبان JSON ساخته نشد.'));
     } finally {
       setExporting(null);
+    }
+  };
+
+  const selectBackup = async () => {
+    setSelectingBackup(true);
+    setError(null);
+    setNotice(null);
+    setPendingBackup(null);
+    try {
+      const picked = await DocumentPicker.getDocumentAsync({
+        type: ['application/json', 'text/json', 'text/plain'],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (picked.canceled) return;
+      const asset = picked.assets[0];
+      if (!asset?.uri) throw new Error(label('The selected backup could not be read.', 'پشتیبان انتخاب‌شده قابل خواندن نبود.'));
+      const file = new File(asset.uri);
+      if (!file.exists || file.size === null || file.size <= 0) {
+        throw new Error(label('The selected backup is empty or unavailable.', 'پشتیبان انتخاب‌شده خالی یا در دسترس نیست.'));
+      }
+      const data = parseNutritionBackupJson(await file.text());
+      const catalogCompatible = data.publicCatalogReference.version === IFKB_CATALOG_RELEASE.version
+        && data.publicCatalogReference.databaseSha256.toLowerCase() === IFKB_CATALOG_RELEASE.databaseSha256;
+      setPendingBackup({
+        name: asset.name || label('Nutrition backup', 'پشتیبان تغذیه'),
+        data,
+        catalogCompatible,
+      });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : label('Backup validation failed.', 'اعتبارسنجی پشتیبان انجام نشد.'));
+    } finally {
+      setSelectingBackup(false);
+    }
+  };
+
+  const runRestore = async (mode: NutritionBackupRestoreMode) => {
+    if (!pendingBackup) return;
+    if (mode === 'replace') {
+      const confirmed = await confirmReplacement({
+        title: label('Replace nutrition data?', 'جایگزینی داده‌های تغذیه؟'),
+        message: label(
+          'This deletes the current Nutrition Diary, Recipes, Goals and Favorites, then restores the selected backup. API keys and the public IFKB catalog are not changed.',
+          'این کار دفتر تغذیه، دستورها، هدف‌ها و علاقه‌مندی‌های فعلی را حذف و پشتیبان انتخاب‌شده را جایگزین می‌کند. کلیدهای API و کاتالوگ عمومی IFKB تغییر نمی‌کنند.',
+        ),
+        cancel: label('Cancel', 'انصراف'),
+        replace: label('Replace and restore', 'جایگزینی و بازیابی'),
+      });
+      if (!confirmed) return;
+    }
+
+    setRestoring(mode);
+    setError(null);
+    setNotice(null);
+    try {
+      const summary = await restoreNutritionBackup(pendingBackup.data, mode);
+      await Promise.all([load(), refreshDailySummary()]);
+      setPendingBackup(null);
+      const restored = label(
+        `Restored ${summary.diaryEntries} Diary entries, ${summary.recipes} Recipes, ${summary.goals} Goals and ${summary.favorites} Favorites.`,
+        `${summary.diaryEntries} رکورد دفتر، ${summary.recipes} دستور، ${summary.goals} هدف و ${summary.favorites} علاقه‌مندی بازیابی شد.`,
+      );
+      setNotice(summary.warnings.length === 0 ? restored : `${restored}\n${summary.warnings.join('\n')}`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : label('Backup restore failed.', 'بازیابی پشتیبان انجام نشد.'));
+    } finally {
+      setRestoring(null);
     }
   };
 
@@ -188,7 +288,7 @@ export default function NutritionHistoryScreen() {
       </View>
 
       <Card>
-        <AppText size={20} weight="800">{label('Personal exports', 'خروجی دادهٔ شخصی')}</AppText>
+        <AppText size={20} weight="800">{label('Personal backup and exports', 'پشتیبان و خروجی دادهٔ شخصی')}</AppText>
         <AppText muted size={13}>{label(
           'JSON includes Diary, Recipes, Goals and Favorites. The public IFKB database and API keys are excluded; only catalog version and SHA-256 are referenced.',
           'JSON شامل دفتر، دستورها، هدف‌ها و علاقه‌مندی‌هاست. دیتابیس عمومی IFKB و کلیدهای API حذف می‌شوند و فقط نسخه و SHA-256 کاتالوگ ارجاع داده می‌شود.',
@@ -197,16 +297,65 @@ export default function NutritionHistoryScreen() {
           title={label('Share selected range as CSV', 'اشتراک بازهٔ انتخابی به‌صورت CSV')}
           onPress={exportCsv}
           loading={exporting === 'csv'}
-          disabled={entries.length === 0 || exporting !== null}
+          disabled={entries.length === 0 || busy}
         />
         <PrimaryButton
           title={label('Share complete personal backup as JSON', 'اشتراک پشتیبان کامل شخصی به‌صورت JSON')}
           variant="secondary"
           onPress={exportJson}
           loading={exporting === 'json'}
-          disabled={exporting !== null}
+          disabled={busy}
+        />
+        <PrimaryButton
+          title={label('Select and validate a JSON backup', 'انتخاب و اعتبارسنجی پشتیبان JSON')}
+          variant="secondary"
+          onPress={selectBackup}
+          loading={selectingBackup}
+          disabled={busy}
         />
       </Card>
+
+      {pendingBackup ? (
+        <Card>
+          <AppText size={20} weight="800">{label('Validated backup', 'پشتیبان اعتبارسنجی‌شده')}</AppText>
+          <AppText weight="700">{pendingBackup.name}</AppText>
+          <AppText muted size={13}>{label(
+            `Exported ${new Date(pendingBackup.data.exportedAt).toLocaleString('en-US')} · IFKB ${pendingBackup.data.publicCatalogReference.version}`,
+            `تاریخ خروجی ${new Date(pendingBackup.data.exportedAt).toLocaleString('fa-IR')} · IFKB ${pendingBackup.data.publicCatalogReference.version}`,
+          )}</AppText>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+            <MetricCard label={label('Diary', 'دفتر')} value={pendingBackup.data.personalData.diaryEntries.length} />
+            <MetricCard label={label('Recipes', 'دستورها')} value={pendingBackup.data.personalData.recipes.length} />
+            <MetricCard label={label('Goals', 'هدف‌ها')} value={pendingBackup.data.personalData.goals.length} />
+            <MetricCard label={label('Favorites', 'علاقه‌مندی‌ها')} value={pendingBackup.data.personalData.favorites.length} />
+          </View>
+          {!pendingBackup.catalogCompatible ? (
+            <InlineNotice tone="warning">{label(
+              `This backup references IFKB ${pendingBackup.data.publicCatalogReference.version}, while the app uses ${IFKB_CATALOG_RELEASE.version}. Diary snapshots remain usable, but some old catalog source ids may not resolve.`,
+              `این پشتیبان به IFKB ${pendingBackup.data.publicCatalogReference.version} ارجاع می‌دهد، درحالی‌که اپ از ${IFKB_CATALOG_RELEASE.version} استفاده می‌کند. داده‌های ثبت‌شدهٔ دفتر قابل استفاده می‌مانند، اما ممکن است بعضی شناسه‌های قدیمی کاتالوگ پیدا نشوند.`,
+            )}</InlineNotice>
+          ) : null}
+          <PrimaryButton
+            title={label('Merge with current nutrition data', 'ادغام با داده‌های تغذیهٔ فعلی')}
+            onPress={() => runRestore('merge')}
+            loading={restoring === 'merge'}
+            disabled={busy}
+          />
+          <PrimaryButton
+            title={label('Replace current nutrition data', 'جایگزینی داده‌های تغذیهٔ فعلی')}
+            variant="danger"
+            onPress={() => runRestore('replace')}
+            loading={restoring === 'replace'}
+            disabled={busy}
+          />
+          <PrimaryButton
+            title={label('Cancel restore', 'لغو بازیابی')}
+            variant="ghost"
+            onPress={() => setPendingBackup(null)}
+            disabled={busy}
+          />
+        </Card>
+      ) : null}
 
       {loading ? <AppText muted>{label('Loading history…', 'در حال بارگذاری تاریخچه…')}</AppText> : null}
       {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
