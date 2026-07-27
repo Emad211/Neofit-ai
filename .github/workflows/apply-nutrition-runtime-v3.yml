@@ -49,15 +49,34 @@ jobs:
           tar -xzf /tmp/nutrition-runtime-v3.tar.gz -C .
 
       - name: Validate runtime before commit
+        id: validate
         working-directory: mobile
         env:
           CI: '1'
           EXPO_NO_TELEMETRY: '1'
         run: |
-          npm ci --no-audit --no-fund > /tmp/npm-ci.log 2>&1 || { cat /tmp/npm-ci.log; exit 1; }
-          npm test > /tmp/npm-test.log 2>&1 || { cat /tmp/npm-test.log; exit 1; }
-          npm run typecheck > /tmp/typecheck.log 2>&1 || { cat /tmp/typecheck.log; exit 1; }
-          echo 'nutrition runtime tests and typecheck passed'
+          mkdir -p /tmp/nutrition-runtime-diagnostics
+          status=0
+          npm ci --no-audit --no-fund > /tmp/nutrition-runtime-diagnostics/npm-ci.log 2>&1 || status=$?
+          if [ "$status" -eq 0 ]; then
+            npm test > /tmp/nutrition-runtime-diagnostics/npm-test.log 2>&1 || status=$?
+          fi
+          if [ "$status" -eq 0 ]; then
+            npm run typecheck > /tmp/nutrition-runtime-diagnostics/typecheck.log 2>&1 || status=$?
+          fi
+          printf '%s\n' "$status" > /tmp/nutrition-runtime-diagnostics/status.txt
+          exit 0
+
+      - name: Upload validation diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: nutrition-runtime-v3-diagnostics
+          path: /tmp/nutrition-runtime-diagnostics
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Enforce validation result
+        run: test "$(cat /tmp/nutrition-runtime-diagnostics/status.txt)" = "0"
 
       - name: Remove temporary transport files
         run: |
