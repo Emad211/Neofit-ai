@@ -1,0 +1,37 @@
+name: Apply Nutrition Runtime v3
+
+on:
+  push:
+    branches:
+      - agent/iranian-food-kb-foundation
+    paths:
+      - '.github/workflows/apply-nutrition-runtime-v3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/iranian-food-kb-foundation
+          fetch-depth: 0
+      - name: Apply tested runtime payload
+        run: |
+          base64 -d ifkb/dev/nutrition-runtime-v3.tar.gz.b64 > /tmp/nutrition-runtime-v3.tar.gz
+          tar -xzf /tmp/nutrition-runtime-v3.tar.gz -C .
+          rm -f ifkb/dev/nutrition-runtime-v3.tar.gz.b64
+          rm -f .github/workflows/apply-nutrition-runtime-v3.yml
+          rm -f .github/workflows/dev-mobile-source-snapshot-v2.yml
+      - name: Commit runtime batch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'feat(nutrition): activate SQLite nutrition core runtime'
+          git push origin HEAD:agent/iranian-food-kb-foundation
