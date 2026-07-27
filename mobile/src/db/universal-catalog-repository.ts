@@ -1,9 +1,11 @@
 import { getUniversalCatalogDatabase } from '@/db/universal-catalog-database';
 import {
-  containsNormalizedAlias,
-  normalizedAliasKey,
+  buildPersianAliasIndex,
+  matchPersianAliasRecords,
   rankUniversalCatalogCandidates,
   sanitizeFtsQuery,
+  type PersianAliasIndex,
+  type PersianAliasRecord,
   type RankedUniversalCatalogCandidate,
   type UniversalCatalogCandidate,
   type UniversalSourceType,
@@ -87,8 +89,7 @@ export interface GenericFoodHit extends RankedUniversalCatalogCandidate {
 
 export type UniversalCatalogHit = IranianIdentityHit | GenericFoodHit;
 
-let aliasesPromise: Promise<Map<string, AliasRow[]>> | null = null;
-let sortedAliasesPromise: Promise<readonly [string, readonly AliasRow[]][]> | null = null;
+let aliasIndexPromise: Promise<PersianAliasIndex> | null = null;
 
 function candidateFromRow(row: GenericFoodRow): UniversalCatalogCandidate {
   return {
@@ -113,43 +114,27 @@ function candidateFromRow(row: GenericFoodRow): UniversalCatalogCandidate {
   };
 }
 
-async function aliasMap(): Promise<Map<string, AliasRow[]>> {
-  if (!aliasesPromise) {
-    aliasesPromise = getUniversalCatalogDatabase().then(async (database) => {
+async function aliasIndex(): Promise<PersianAliasIndex> {
+  if (!aliasIndexPromise) {
+    aliasIndexPromise = getUniversalCatalogDatabase().then(async (database) => {
       const rows = await database.getAllAsync<AliasRow>(
         'SELECT alias_fa,target,target_type FROM persian_search_aliases;',
       );
-      const map = new Map<string, AliasRow[]>();
-      for (const row of rows) {
-        const key = normalizedAliasKey(row.alias_fa);
-        const values = map.get(key) ?? [];
-        values.push(row);
-        map.set(key, values);
-      }
-      return map;
+      return buildPersianAliasIndex(rows.map((row): PersianAliasRecord => ({
+        aliasFa: row.alias_fa,
+        target: row.target,
+        targetType: row.target_type,
+      })));
     }).catch((error) => {
-      aliasesPromise = null;
-      sortedAliasesPromise = null;
+      aliasIndexPromise = null;
       throw error;
     });
   }
-  return aliasesPromise;
+  return aliasIndexPromise;
 }
 
-async function sortedAliases(): Promise<readonly [string, readonly AliasRow[]][]> {
-  if (!sortedAliasesPromise) {
-    sortedAliasesPromise = aliasMap().then((map) =>
-      [...map.entries()].sort((left, right) => right[0].length - left[0].length),
-    );
-  }
-  return sortedAliasesPromise;
-}
-
-async function matchingAliases(normalizedQuery: string): Promise<readonly AliasRow[]> {
-  const exact = (await aliasMap()).get(normalizedQuery);
-  if (exact?.length) return exact;
-  const contained = (await sortedAliases()).find(([key]) => containsNormalizedAlias(normalizedQuery, key));
-  return contained?.[1] ?? [];
+async function matchingAliases(query: string): Promise<readonly PersianAliasRecord[]> {
+  return matchPersianAliasRecords(query, await aliasIndex());
 }
 
 function genericTargetWithModifiers(target: string, query: string): string {
@@ -216,24 +201,25 @@ async function searchGeneric(query: string, limit: number, matchedAliasFa?: stri
 }
 
 export async function searchUniversalCatalog(query: string, limit = 20): Promise<UniversalCatalogHit[]> {
-  const normalized = normalizedAliasKey(query);
-  if (normalized.length < 2) return [];
-  const aliases = await matchingAliases(normalized);
-  const iranianAlias = aliases.find((row) => row.target_type === 'iranian_canon');
+  if (query.trim().length < 2) return [];
+  const aliases = await matchingAliases(query);
+  const iranianAlias = aliases.find((row) => row.targetType === 'iranian_canon');
   if (iranianAlias) return searchIranianIdentity('', iranianAlias.target);
-  const genericAlias = aliases.find((row) => row.target_type === 'generic');
+  const genericAlias = aliases.find((row) => row.targetType === 'generic');
   if (genericAlias) {
     return searchGeneric(
       genericTargetWithModifiers(genericAlias.target, query),
       limit,
-      genericAlias.alias_fa,
+      genericAlias.aliasFa,
     );
   }
 
+  const normalized = query.normalize('NFKC');
   const isMostlyPersian = /[\u0600-\u06ff]/.test(normalized);
   if (isMostlyPersian) {
-    const queryFts = normalized.split(' ').map((token) => `"${token.replaceAll('"', '""')}"`).join(' AND ');
-    return searchIranianIdentity(queryFts);
+    const queryFts = normalized.split(/\s+/).filter(Boolean)
+      .map((token) => `"${token.replaceAll('"', '""')}"`).join(' AND ');
+    return queryFts ? searchIranianIdentity(queryFts) : [];
   }
   return searchGeneric(query, limit);
 }
