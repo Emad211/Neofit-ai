@@ -25,6 +25,7 @@ import {
   type NutritionGoalMode,
   type NutritionVector,
 } from '@/nutrition-core';
+import { useApp } from '@/providers/app-provider';
 import { useAppTheme } from '@/theme/theme';
 
 interface NutrientFieldDefinition {
@@ -116,12 +117,8 @@ function progressTone(item: GoalProgressItem): 'success' | 'warning' | 'danger' 
 
 export default function NutritionGoalsScreen() {
   const theme = useAppTheme();
-  const [locale] = React.useState<'fa' | 'en'>(() => 'fa');
-  // Locale is read from the app below; this initial value avoids rendering an
-  // untyped dictionary before AppProvider is ready.
-  const { locale: appLocale } = require('@/providers/app-provider').useApp() as { locale: 'fa' | 'en' };
-  const currentLocale = appLocale ?? locale;
-  const label = React.useCallback((en: string, fa: string) => currentLocale === 'fa' ? fa : en, [currentLocale]);
+  const { locale } = useApp();
+  const label = React.useCallback((en: string, fa: string) => locale === 'fa' ? fa : en, [locale]);
   const today = localDateFromIso(new Date().toISOString());
   const [active, setActive] = React.useState<PersistedNutritionGoal | null>(null);
   const [values, setValues] = React.useState<Record<NutrientKey, string>>(() =>
@@ -266,7 +263,7 @@ export default function NutritionGoalsScreen() {
         {FIELDS.map((field) => (
           <Field
             key={field.key}
-            label={`${currentLocale === 'fa' ? field.labelFa : field.labelEn} · ${modeLabel(nutritionGoalMode(field.key), currentLocale)} (${field.unit})`}
+            label={`${locale === 'fa' ? field.labelFa : field.labelEn} · ${modeLabel(nutritionGoalMode(field.key), locale)} (${field.unit})`}
             value={values[field.key]}
             onChangeText={(value) => setValues((current) => ({ ...current, [field.key]: value }))}
             keyboardType={field.keyboard}
@@ -290,7 +287,7 @@ export default function NutritionGoalsScreen() {
           return (
             <View key={field.key} style={{ gap: 7, borderTopWidth: 1, borderTopColor: theme.colors.border, paddingTop: 12 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-                <AppText weight="800">{currentLocale === 'fa' ? field.labelFa : field.labelEn}</AppText>
+                <AppText weight="800">{locale === 'fa' ? field.labelFa : field.labelEn}</AppText>
                 <AppText muted size={13}>{item.consumed === null
                   ? label('Unknown', 'نامشخص')
                   : `${formatValue(item.consumed, field.unit)} / ${formatValue(item.goal, field.unit)} ${field.unit}`}</AppText>
@@ -298,7 +295,7 @@ export default function NutritionGoalsScreen() {
               <View style={{ height: 9, borderRadius: 999, backgroundColor: theme.colors.border, overflow: 'hidden' }}>
                 <View style={{ height: '100%', width: `${ratio * 100}%`, backgroundColor: toneColor(tone), borderRadius: 999 }} />
               </View>
-              <AppText muted size={12}>{progressStatus(item, currentLocale, field.unit)}</AppText>
+              <AppText muted size={12}>{progressStatus(item, locale, field.unit)}</AppText>
             </View>
           );
         })}
