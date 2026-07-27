@@ -26,7 +26,7 @@ import {
 } from '@/db/nutrition-recipe-repository';
 import { searchUniversalCatalog } from '@/db/universal-catalog-repository';
 import { createId } from '@/lib/id';
-import type { FoodConcept, FoodVariant, RecipeCalculationResult } from '@/nutrition-core';
+import type { FoodConcept, FoodVariant, MealType, RecipeCalculationResult } from '@/nutrition-core';
 import { useApp } from '@/providers/app-provider';
 import {
   resolvePersistedRecipe,
@@ -116,6 +116,7 @@ export default function RecipesScreen() {
   const [name, setName] = React.useState('');
   const [servings, setServings] = React.useState('4');
   const [cookedYield, setCookedYield] = React.useState('');
+  const [recipeMealType, setRecipeMealType] = React.useState<MealType>('lunch');
   const [ingredients, setIngredients] = React.useState<DraftIngredient[]>([]);
   const [query, setQuery] = React.useState('');
   const [searchResults, setSearchResults] = React.useState<IngredientSearchResult[]>([]);
@@ -340,7 +341,7 @@ export default function RecipesScreen() {
       await saveNutritionDiaryEntry({
         id: createId('meal'),
         localDate: localDateFromIso(now),
-        mealType: 'lunch',
+        mealType: recipeMealType,
         label: `${preview.recipe.name} — ${label('one recipe serving', 'یک سهم دستور')}`,
         sourceType: 'recipe',
         sourceId: preview.recipe.id,
@@ -465,6 +466,18 @@ export default function RecipesScreen() {
         <Card>
           <AppText size={22} weight="800">{preview.recipe.name}</AppText>
           {calculationCards(preview.calculation, label)}
+          <AppText weight="700">{label('Meal type', 'نوع وعده')}</AppText>
+          <ChoiceGrid
+            value={recipeMealType}
+            onChange={setRecipeMealType}
+            columns={2}
+            options={[
+              { value: 'breakfast', label: label('Breakfast', 'صبحانه') },
+              { value: 'lunch', label: label('Lunch', 'ناهار') },
+              { value: 'dinner', label: label('Dinner', 'شام') },
+              { value: 'snack', label: label('Snack', 'میان‌وعده') },
+            ]}
+          />
           <PrimaryButton title={label('Log one serving to Diary', 'ثبت یک سهم در دفتر')} onPress={logServing} loading={logging} />
         </Card>
       ) : null}
