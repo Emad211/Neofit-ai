@@ -40,12 +40,35 @@ export function localDateFromIso(value: string): string {
 }
 
 function mealSourceType(source: MealLogInput['source']): DiaryEntry['sourceType'] {
-  return source === 'manual' ? 'custom' : 'food';
+  if (source === 'manual') return 'custom';
+  if (source === 'plan') return 'recipe';
+  return 'food';
+}
+
+async function reconcilePrefixedMigrationRows(): Promise<void> {
+  const database = await getDatabase();
+  await database.withExclusiveTransactionAsync(async (transaction) => {
+    // Migration 4 used a temporary prefix so it could never collide with the
+    // legacy table. Promote those IDs to the canonical legacy IDs. If a prior
+    // runtime migration already inserted the canonical row, UPDATE OR IGNORE
+    // leaves it untouched and the duplicate prefixed row is deleted below.
+    await transaction.execAsync(`
+      UPDATE OR IGNORE nutrition_diary_entries
+      SET
+        id = substr(id, 13),
+        source_id = 'legacy-meal-log:migrated'
+      WHERE id LIKE 'legacy-meal:%';
+
+      DELETE FROM nutrition_diary_entries
+      WHERE id LIKE 'legacy-meal:%';
+    `);
+  });
 }
 
 async function ensureLegacyMealMigration(): Promise<void> {
   if (!legacyMigrationPromise) {
     legacyMigrationPromise = (async () => {
+      await reconcilePrefixedMigrationRows();
       const database = await getDatabase();
       const setting = await database.getFirstAsync<{ value: string }>(
         'SELECT value FROM app_settings WHERE key = ?;',
@@ -60,9 +83,11 @@ async function ensureLegacyMealMigration(): Promise<void> {
       await database.withExclusiveTransactionAsync(async (transaction) => {
         for (const row of rows) {
           const eatenAt = new Date(row.eaten_at);
-          const localDate = Number.isFinite(eatenAt.getTime())
-            ? localDateFromDate(eatenAt)
-            : localDateFromDate(new Date(row.created_at));
+          const fallbackCreatedAt = new Date(row.created_at);
+          const effectiveInstant = Number.isFinite(eatenAt.getTime())
+            ? eatenAt
+            : fallbackCreatedAt;
+          const localDate = localDateFromDate(effectiveInstant);
           const center: NutritionVector = {
             energyKcal: Math.max(0, row.calories),
             proteinG: Math.max(0, row.protein_g),
@@ -81,8 +106,12 @@ async function ensureLegacyMealMigration(): Promise<void> {
             mealSourceType(row.source),
             `legacy-meal-log:${row.source}`,
             JSON.stringify(center),
-            row.created_at,
-            row.created_at,
+            effectiveInstant.toISOString(),
+            effectiveInstant.toISOString(),
+          );
+          await transaction.runAsync(
+            'DELETE FROM nutrition_diary_entries WHERE id = ?;',
+            `legacy-meal:${row.id}`,
           );
         }
         await transaction.runAsync(
@@ -106,7 +135,6 @@ async function ensureLegacyMealMigration(): Promise<void> {
 
 export async function logMeal(input: MealLogInput): Promise<string> {
   await ensureLegacyMealMigration();
-  const now = new Date();
   const eatenAt = new Date(input.eatenAt);
   if (!Number.isFinite(eatenAt.getTime())) throw new Error('Meal timestamp is invalid.');
   const id = createId('meal');
@@ -116,6 +144,7 @@ export async function logMeal(input: MealLogInput): Promise<string> {
     carbsG: Math.max(0, input.carbsG),
     fatG: Math.max(0, input.fatG),
   };
+  const timestamp = eatenAt.toISOString();
   await saveNutritionDiaryEntry({
     id,
     localDate: localDateFromDate(eatenAt),
@@ -124,8 +153,8 @@ export async function logMeal(input: MealLogInput): Promise<string> {
     sourceType: mealSourceType(input.source),
     sourceId: `meal-input:${input.source}`,
     estimate: { grams: null, center },
-    createdAt: now.toISOString(),
-    updatedAt: now.toISOString(),
+    createdAt: timestamp,
+    updatedAt: timestamp,
   });
   return id;
 }
