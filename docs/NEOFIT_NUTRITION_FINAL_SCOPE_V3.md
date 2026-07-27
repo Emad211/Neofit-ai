@@ -34,7 +34,7 @@ This document supersedes every previous nutrition scope.
 - Candidate labels are resolved against IFKB locally.
 - Portion, added fat, sauce and serving uncertainty are resolved by deterministic questions and the nutrition engine.
 - Results may be cached by an image fingerprint; raw image bytes are not cached.
-- Provider-specific networking stays behind a `VisionTransport` interface.
+- Provider-specific networking stays behind a transport boundary.
 
 ## Execution order
 
@@ -46,8 +46,41 @@ This document supersedes every previous nutrition scope.
 6. Implement recipe and custom-food arithmetic.
 7. Implement goals, daily totals and micronutrient progress.
 8. Implement Vision API contracts, sanitization and IFKB matching.
-9. Integrate all modules through one public TypeScript barrel.
-10. Add regression tests and then connect the module to the existing Expo repositories and screens.
+9. Integrate the identity-only Vision path with the existing Expo meal-estimator.
+10. Add regression tests and activate Mobile CI for the active integration PR.
+
+## First implementation batch — completed foundation
+
+- Pure TypeScript nutrition vectors, range arithmetic, portions and additive modifiers.
+- Unicode-safe Persian normalizer and deterministic query/modifier parser.
+- Food concept, nutrition variant, alias, portion, diary, recipe, goal and Vision-cache SQL schema.
+- Diary day aggregation and recipe total/per-serving/per-100g calculations.
+- Missing-aware nutrition goals; missing nutrients are not converted to source zero values.
+- Provider-agnostic Vision domain contract and an AvalAI identity-only transport.
+- Vision candidates are mapped to the local IFKB catalog before any nutrition is displayed.
+- The Expo meal estimator no longer uses AI-generated calorie or macro estimates.
+- Zod boundary tests strip provider-supplied calories, macros and serving weights.
+- Mobile CI now runs for the active Expo integration PR and passes domain tests, Expo package checks, Expo Doctor, strict TypeScript and Android export.
+
+## Current progress baseline
+
+- Overall final-product completion: **42.67%**.
+- Core completion excluding the Vision API workstream: **41.60%**.
+- Vision API pipeline completion: **55%**.
+- Main completed assets: 13,225 generic nutrition records, 36,494 portions, 261 Iranian identities, 60 app-ready Iranian records, 218 Persian aliases, 58 licensed display images, deterministic Nutrition Core, Vision identity boundary and an integrated Expo photo-to-IFKB flow.
+
+## Remaining critical path
+
+1. Add the Nutrition Core schema as a real `neofit.db` migration and implement repositories.
+2. Package/import the 13,225 records and 36,494 portions into the app update path.
+3. Build the generic concept/variant mapper and reach at least 95% mapped or explicit-unmapped coverage.
+4. Produce app-ready profiles for the remaining 201 Iranian foods.
+5. Build and score a 500-query Persian benchmark corpus.
+6. Complete offline Diary persistence and UI.
+7. Complete Recipe/custom-food persistence and UI.
+8. Complete goals, micronutrients, history, favorites and export/import.
+9. Harden Vision API image resizing, consent, fingerprint cache, retry and multi-component handling.
+10. Run final cross-layer QA and freeze IDs/schema.
 
 ## Definition of done
 
@@ -58,8 +91,3 @@ This document supersedes every previous nutrition scope.
 - Diary, recipes, goals and totals work offline.
 - Vision API results are mapped to IFKB and cannot inject nutrition values.
 - IDs and schemas are frozen and all critical tests pass.
-
-## Progress baseline before this implementation batch
-
-- Overall final scope: 31.1%.
-- Main completed assets: 13,225 generic nutrition records, 36,494 portions, 261 Iranian identities, 60 app-ready Iranian records, 218 Persian aliases, 58 licensed display images, SQLite candidate databases and provenance/QA infrastructure.
