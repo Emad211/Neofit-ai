@@ -96,6 +96,11 @@ export default function NutritionScreen() {
           onPress={() => router.push('/nutrition-diary')}
         />
         <PrimaryButton
+          title={label('Open nutrition goals', 'بازکردن هدف‌های تغذیه')}
+          variant="secondary"
+          onPress={() => router.push('/nutrition-goals')}
+        />
+        <PrimaryButton
           title={label('Open recipes', 'بازکردن دستورهای غذایی')}
           variant="secondary"
           onPress={() => router.push('/recipes')}
