@@ -1,6 +1,18 @@
 import { normalizePersianText, parseFoodQuery } from './search';
 
 export type UniversalSourceType = 'sr_legacy' | 'fndds';
+export type PersianAliasTargetType = 'generic' | 'iranian_canon';
+
+export interface PersianAliasRecord {
+  readonly aliasFa: string;
+  readonly target: string;
+  readonly targetType: PersianAliasTargetType;
+}
+
+export interface PersianAliasIndex {
+  readonly exact: ReadonlyMap<string, readonly PersianAliasRecord[]>;
+  readonly longestFirst: readonly (readonly [string, readonly PersianAliasRecord[]])[];
+}
 
 export interface UniversalCatalogCandidate {
   readonly id: string;
@@ -156,4 +168,30 @@ export function containsNormalizedAlias(normalizedQuery: string, normalizedAlias
   const query = ` ${normalizePersianText(normalizedQuery)} `;
   const alias = ` ${normalizePersianText(normalizedAlias)} `;
   return query.includes(alias);
+}
+
+export function buildPersianAliasIndex(rows: readonly PersianAliasRecord[]): PersianAliasIndex {
+  const exact = new Map<string, PersianAliasRecord[]>();
+  for (const row of rows) {
+    const key = normalizedAliasKey(row.aliasFa);
+    if (!key) continue;
+    const values = exact.get(key) ?? [];
+    values.push(row);
+    exact.set(key, values);
+  }
+  const longestFirst = [...exact.entries()]
+    .sort((left, right) => right[0].length - left[0].length || left[0].localeCompare(right[0]));
+  return { exact, longestFirst };
+}
+
+export function matchPersianAliasRecords(
+  query: string,
+  index: PersianAliasIndex,
+): readonly PersianAliasRecord[] {
+  const normalizedQuery = normalizedAliasKey(query);
+  if (!normalizedQuery) return [];
+  const exact = index.exact.get(normalizedQuery);
+  if (exact?.length) return exact;
+  const contained = index.longestFirst.find(([key]) => containsNormalizedAlias(normalizedQuery, key));
+  return contained?.[1] ?? [];
 }
