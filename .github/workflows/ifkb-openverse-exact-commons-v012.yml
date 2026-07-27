@@ -1,13 +1,8 @@
 name: IFKB Openverse Exact Commons v0.12
 
+# Discovery is intentionally manual and serialized. It should run only when
+# the source query set is deliberately being reviewed or rebuilt.
 on:
-  pull_request:
-    branches:
-      - agent/mobile-local-first-expo
-    types: [opened, synchronize, reopened]
-    paths:
-      - 'ifkb/images/openverse_exact_commons_queries_v0.12.csv'
-      - '.github/workflows/ifkb-openverse-exact-commons-v012.yml'
   workflow_dispatch:
 
 permissions:
