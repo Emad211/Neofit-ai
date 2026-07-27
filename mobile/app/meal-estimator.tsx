@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { AppText, Card, ChoiceGrid, Field, InlineNotice, MetricCard, PrimaryButton, Screen } from '@/components/ui';
@@ -9,6 +9,7 @@ import { useApp } from '@/providers/app-provider';
 import { AvalAiError } from '@/services/avalai-client';
 import { buildCatalogFoodEstimate } from '@/services/food-catalog-core-adapter';
 import { findBestLocalFoodMatch } from '@/services/local-food-matcher';
+import { prepareVisionImage } from '@/services/vision-image-preparation';
 import { recognizeFoodFromPhoto, type VisionFoodCandidate } from '@/services/vision-food-recognition';
 
 type EstimatorMode = 'manual' | 'text' | 'photo';
@@ -22,6 +23,20 @@ function parseNonNegative(value: string, label: string) {
   const number = Number(value);
   if (!Number.isFinite(number) || number < 0) throw new Error(`${label} is invalid.`);
   return number;
+}
+
+function confirmVisionUpload(input: {
+  readonly title: string;
+  readonly message: string;
+  readonly cancel: string;
+  readonly send: string;
+}): Promise<boolean> {
+  return new Promise((resolve) => {
+    Alert.alert(input.title, input.message, [
+      { text: input.cancel, style: 'cancel', onPress: () => resolve(false) },
+      { text: input.send, onPress: () => resolve(true) },
+    ], { cancelable: true, onDismiss: () => resolve(false) });
+  });
 }
 
 export default function MealEstimatorScreen() {
@@ -126,15 +141,31 @@ export default function MealEstimatorScreen() {
       }
 
       const pickerResult = source === 'camera'
-        ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], base64: true, quality: 0.5, allowsEditing: false })
-        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], base64: true, quality: 0.5, allowsEditing: false });
+        ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], base64: false, quality: 0.9, allowsEditing: false })
+        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], base64: false, quality: 0.9, allowsEditing: false });
 
       if (pickerResult.canceled) return;
       const asset = pickerResult.assets[0];
-      if (!asset?.base64) throw new Error(label('The selected image could not be read.', 'تصویر انتخاب‌شده قابل خواندن نبود.'));
-      const mime = asset.mimeType || 'image/jpeg';
+      if (!asset?.uri || !asset.width || !asset.height) {
+        throw new Error(label('The selected image could not be read.', 'تصویر انتخاب‌شده قابل خواندن نبود.'));
+      }
+      const consented = await confirmVisionUpload({
+        title: label('Send prepared photo?', 'ارسال نسخهٔ آماده‌شدهٔ تصویر؟'),
+        message: label(
+          'NeoFit will resize and compress this photo on your phone, then send only that JPEG to the configured Vision API for food identification. The API is not used to calculate nutrition.',
+          'NeoFit تصویر را روی گوشی کوچک و فشرده می‌کند و فقط همان JPEG را برای شناسایی غذا به API بینایی تنظیم‌شده می‌فرستد. محاسبهٔ تغذیه توسط API انجام نمی‌شود.',
+        ),
+        cancel: label('Cancel', 'انصراف'),
+        send: label('Prepare and send', 'آماده‌سازی و ارسال'),
+      });
+      if (!consented) return;
+      const prepared = await prepareVisionImage({
+        uri: asset.uri,
+        width: asset.width,
+        height: asset.height,
+      });
       const observation = await recognizeFoodFromPhoto({
-        imageDataUrl: `data:${mime};base64,${asset.base64}`,
+        imageDataUrl: prepared.imageDataUrl,
         description,
         locale,
       });
@@ -168,6 +199,10 @@ export default function MealEstimatorScreen() {
         label(
           `Vision API candidate: ${best.candidate.query}. Nutrition was calculated locally, not by the API.`,
           `کاندید API بینایی: ${best.candidate.query}. مقدارهای تغذیه‌ای در گوشی محاسبه شدند، نه توسط API.`,
+        ),
+        label(
+          `Prepared JPEG: ${prepared.width}×${prepared.height} px, ${Math.round(prepared.byteLength / 1_000)} KB.`,
+          `JPEG آماده‌شده: ${prepared.width}×${prepared.height} پیکسل، ${Math.round(prepared.byteLength / 1_000)} کیلوبایت.`,
         ),
         ...(visual?.visibleComponents.length
           ? [label(`Visible components: ${visual.visibleComponents.join(', ')}`, `اجزای قابل‌مشاهده: ${visual.visibleComponents.join('، ')}`)]
