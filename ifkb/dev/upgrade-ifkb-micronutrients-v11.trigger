@@ -1,1 +1,1 @@
-publish-with-rebase
+publish-clean-build
