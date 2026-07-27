@@ -6,6 +6,7 @@ on:
       - agent/iranian-food-kb-foundation
     paths:
       - 'ifkb/universal/build_mobile_catalog.py'
+      - 'ifkb/universal/augment_mobile_catalog_concepts.py'
       - 'ifkb/universal/import_sr_legacy_app_layer.py'
       - 'ifkb/universal/import_fndds_app_layer.py'
       - 'ifkb/universal/iranian_canon_v1.csv'
@@ -57,9 +58,15 @@ jobs:
             --persian-aliases ifkb/universal/persian_search_aliases_v1.csv \
             --output mobile/assets/ifkb/ifkb-universal-v1.db \
             --manifest mobile/assets/ifkb/ifkb-universal-v1.manifest.json \
-            --version 1.1.0
+            --version 1.2.0
 
-      - name: Verify catalog counts, search, micronutrients, and integrity
+      - name: Build conservative generic Concept and Variant mappings
+        run: |
+          python ifkb/universal/augment_mobile_catalog_concepts.py \
+            --database mobile/assets/ifkb/ifkb-universal-v1.db \
+            --manifest mobile/assets/ifkb/ifkb-universal-v1.manifest.json
+
+      - name: Verify catalog counts, search, concepts, micronutrients, and integrity
         run: |
           python - <<'PY'
           import json, sqlite3
@@ -70,6 +77,14 @@ jobs:
           integrity=db.execute('PRAGMA integrity_check').fetchone()[0]
           foods=db.execute('SELECT COUNT(*) FROM generic_foods').fetchone()[0]
           portions=db.execute('SELECT COUNT(*) FROM generic_portions').fetchone()[0]
+          concepts=db.execute('SELECT COUNT(*) FROM generic_concepts').fetchone()[0]
+          variants=db.execute('SELECT COUNT(*) FROM generic_variants').fetchone()[0]
+          clustered=db.execute('SELECT COUNT(*) FROM generic_concepts WHERE variant_count>1').fetchone()[0]
+          multi_source=db.execute('SELECT COUNT(*) FROM generic_concepts WHERE source_type_count>1').fetchone()[0]
+          orphan_foods=db.execute('''SELECT COUNT(*) FROM generic_foods f
+            LEFT JOIN generic_variants v ON v.food_id=f.id WHERE v.food_id IS NULL''').fetchone()[0]
+          orphan_variants=db.execute('''SELECT COUNT(*) FROM generic_variants v
+            LEFT JOIN generic_concepts c ON c.id=v.concept_id WHERE c.id IS NULL''').fetchone()[0]
           canon=db.execute('SELECT COUNT(*) FROM iranian_canon').fetchone()[0]
           aliases=db.execute('SELECT COUNT(*) FROM persian_search_aliases').fetchone()[0]
           complete=db.execute('SELECT COUNT(*) FROM generic_foods WHERE macro_completeness=1').fetchone()[0]
@@ -82,12 +97,20 @@ jobs:
           tomato=db.execute("SELECT COUNT(*) FROM generic_food_search WHERE generic_food_search MATCH 'tomatoes AND raw'").fetchone()[0]
           salad=db.execute("SELECT COUNT(*) FROM generic_food_search WHERE generic_food_search MATCH 'salad'").fetchone()[0]
           pizza=db.execute("SELECT COUNT(*) FROM generic_food_search WHERE generic_food_search MATCH 'pizza'").fetchone()[0]
+          concept_egg=db.execute("SELECT COUNT(*) FROM generic_concept_search WHERE generic_concept_search MATCH 'egg AND white'").fetchone()[0]
           ghormeh=db.execute("SELECT COUNT(*) FROM iranian_food_search WHERE iranian_food_search MATCH 'قورمه سبزی'").fetchone()[0]
           db.close()
           assert integrity=='ok',integrity
-          assert manifest['version']=='1.1.0',manifest
+          assert manifest['version']=='1.2.0',manifest
           assert foods==13225,(foods,manifest)
           assert portions==36494,portions
+          assert variants==foods,(variants,foods)
+          assert manifest['genericVariantMappingCoverage']==1,manifest
+          assert concepts < foods,(concepts,foods)
+          assert clustered>0,clustered
+          assert multi_source>0,multi_source
+          assert orphan_foods==0,orphan_foods
+          assert orphan_variants==0,orphan_variants
           assert canon==261,canon
           assert aliases==218,aliases
           assert complete>=13224,complete
@@ -95,12 +118,13 @@ jobs:
           assert iron>10000,iron
           assert potassium>10000,potassium
           assert vitamin_c>9000,vitamin_c
-          assert all(value>0 for value in (white,yolk,tomato,salad,pizza,ghormeh)),(white,yolk,tomato,salad,pizza,ghormeh)
-          assert manifest['databaseBytes'] < 24*1024*1024,manifest['databaseBytes']
+          assert all(value>0 for value in (white,yolk,tomato,salad,pizza,concept_egg,ghormeh)),(white,yolk,tomato,salad,pizza,concept_egg,ghormeh)
+          assert manifest['databaseBytes'] < 30*1024*1024,manifest['databaseBytes']
           print({
-            'foods':foods,'portions':portions,'canon':canon,'aliases':aliases,
-            'completeMacros':complete,'calcium':calcium,'iron':iron,
-            'potassium':potassium,'vitaminC':vitamin_c,
+            'foods':foods,'portions':portions,'concepts':concepts,'variants':variants,
+            'clusteredConcepts':clustered,'multiSourceConcepts':multi_source,
+            'canon':canon,'aliases':aliases,'completeMacros':complete,
+            'calcium':calcium,'iron':iron,'potassium':potassium,'vitaminC':vitamin_c,
             'bytes':manifest['databaseBytes']
           })
           PY
@@ -124,13 +148,13 @@ jobs:
             exit 0
           fi
           git diff --cached --check
-          git commit -m 'data(ifkb): bundle micronutrient catalog v1.1'
+          git commit -m 'data(ifkb): bundle generic concepts catalog v1.2'
           git pull --rebase origin agent/iranian-food-kb-foundation
           git push origin HEAD:agent/iranian-food-kb-foundation
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ifkb-universal-mobile-catalog-v1.1
+          name: ifkb-universal-mobile-catalog-v1.2
           path: |
             mobile/assets/ifkb/ifkb-universal-v1.db
             mobile/assets/ifkb/ifkb-universal-v1.manifest.json
