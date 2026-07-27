@@ -1,0 +1,138 @@
+{
+  "format": "ifkb-iranian-fallback-profile-release",
+  "version": "1.0.0",
+  "generatedAtUtc": "2026-07-27T16:05:21.844Z",
+  "existingSeedCount": 83,
+  "existingCanonCount": 83,
+  "broadFallbackCount": 178,
+  "fallbackCanonCount": 178,
+  "totalAppReadyCount": 261,
+  "evidenceTier": "broad_fallback",
+  "sourceLabel": "IFKB DS0 broad-fallback category prior v1 — not recipe-specific",
+  "priorCategories": {
+    "bread": {
+      "category": "bread",
+      "sampleCount": 4,
+      "calories": 145,
+      "proteinG": 4.5,
+      "carbsG": 29,
+      "fatG": 1,
+      "variabilityPct": 35
+    },
+    "breakfast": {
+      "category": "breakfast",
+      "sampleCount": 8,
+      "calories": 225,
+      "proteinG": 11,
+      "carbsG": 11,
+      "fatG": 13.5,
+      "variabilityPct": 50
+    },
+    "dairy_beverage": {
+      "category": "dairy_beverage",
+      "sampleCount": 8,
+      "calories": 95,
+      "proteinG": 6.5,
+      "carbsG": 8,
+      "fatG": 3.5,
+      "variabilityPct": 50
+    },
+    "dessert": {
+      "category": "dessert",
+      "sampleCount": 10,
+      "calories": 245,
+      "proteinG": 4,
+      "carbsG": 36,
+      "fatG": 8,
+      "variabilityPct": 60
+    },
+    "kebab": {
+      "category": "kebab",
+      "sampleCount": 9,
+      "calories": 380,
+      "proteinG": 40,
+      "carbsG": 4,
+      "fatG": 22,
+      "variabilityPct": 45
+    },
+    "rice": {
+      "category": "rice",
+      "sampleCount": 11,
+      "calories": 480,
+      "proteinG": 18,
+      "carbsG": 72,
+      "fatG": 14,
+      "variabilityPct": 45
+    },
+    "soup": {
+      "category": "soup",
+      "sampleCount": 7,
+      "calories": 220,
+      "proteinG": 8,
+      "carbsG": 36,
+      "fatG": 7,
+      "variabilityPct": 55
+    },
+    "stew": {
+      "category": "stew",
+      "sampleCount": 10,
+      "calories": 300,
+      "proteinG": 18,
+      "carbsG": 16,
+      "fatG": 15.5,
+      "variabilityPct": 50
+    },
+    "street_food": {
+      "category": "street_food",
+      "sampleCount": 16,
+      "calories": 310,
+      "proteinG": 12,
+      "carbsG": 29,
+      "fatG": 15,
+      "variabilityPct": 60
+    }
+  },
+  "categoryMapping": {
+    "stew": "stew",
+    "seafood_stew": "stew",
+    "abgoosht": "soup",
+    "egg_dish": "breakfast",
+    "fried_main": "street_food",
+    "stuffed_main": "street_food",
+    "roast": "street_food",
+    "meat_main": "street_food",
+    "vegetable_main": "street_food",
+    "offal_main": "street_food",
+    "dessert_main": "dessert",
+    "rice": "rice",
+    "grain_dish": "rice",
+    "kebab": "kebab",
+    "soup": "soup",
+    "cold_soup": "soup",
+    "porridge": "soup",
+    "kuku": "street_food",
+    "koofteh": "street_food",
+    "meatball": "street_food",
+    "dolmeh": "street_food",
+    "side": "street_food",
+    "salad": "street_food",
+    "pickle": "street_food",
+    "condiment": "street_food",
+    "fried_snack": "street_food",
+    "cold_dish": "street_food",
+    "bread": "bread",
+    "dessert": "dessert",
+    "beverage": "dairy_beverage"
+  },
+  "rules": {
+    "inclusion": "canon_status=candidate_canon",
+    "exclusion": "canon_status=existing_legacy_concept",
+    "portionGrams": null,
+    "confidence": "low",
+    "variabilityRangePct": [
+      35,
+      60
+    ],
+    "verifiedRecordsCreated": 0
+  }
+}
