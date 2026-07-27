@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/mobile-local-first-expo
+  pull_request:
+    branches:
+      - master
   workflow_dispatch:
 
 permissions:
