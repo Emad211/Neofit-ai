@@ -20,6 +20,10 @@ The read-only universal catalog contains official USDA calories, macronutrients 
 
 Daily energy and macronutrients use target semantics. Sugars, sodium and cholesterol use maximum semantics. Fiber, calcium, iron, potassium and vitamin C use minimum semantics. NeoFit stores user-entered boundaries only and does not create medical targets automatically.
 
+## Personal history and export
+
+History is read directly from Nutrition Diary over bounded date ranges. CSV exports leave missing nutrient cells blank. JSON backup contains personal Diary, Recipe, Goal and Favorite records, while the public IFKB SQLite file is excluded and referenced only by catalog version and SHA-256. API keys, Vision images, response caches and provider payloads are excluded.
+
 ## Safety boundary
 
 Vision results are observations only. `sanitizeVisionObservation` accepts only labels, confidence, visible components, preparation hints and warnings. Calories and nutrients returned by a provider are ignored because nutrition is resolved locally from IFKB.
