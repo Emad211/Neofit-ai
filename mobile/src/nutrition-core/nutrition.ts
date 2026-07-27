@@ -21,6 +21,19 @@ function assertFinitePositive(value: number, label: string): void {
   }
 }
 
+/**
+ * Removes binary floating-point noise without applying display-level rounding.
+ * Fifteen significant digits retain more precision than the source nutrition
+ * records while canonicalizing values such as 229.99999999999997 to 230.
+ */
+function canonicalNutritionNumber(value: number): number {
+  if (!Number.isFinite(value)) {
+    throw new RangeError('Nutrition arithmetic produced a non-finite number');
+  }
+  if (Object.is(value, -0)) return 0;
+  return Number(value.toPrecision(15));
+}
+
 export function validateNutritionVector(vector: NutritionVector): void {
   for (const nutrient of NUTRIENT_KEYS) {
     const value = vector[nutrient];
@@ -39,7 +52,7 @@ export function scaleNutritionVector(
   for (const nutrient of NUTRIENT_KEYS) {
     const value = vector[nutrient];
     if (value !== undefined) {
-      scaled[nutrient] = value * factor;
+      scaled[nutrient] = canonicalNutritionNumber(value * factor);
     }
   }
   return scaled;
@@ -78,7 +91,7 @@ export function addNutritionVectors(
     const leftValue = left[nutrient];
     const rightValue = right[nutrient];
     if (leftValue !== undefined || rightValue !== undefined) {
-      result[nutrient] = (leftValue ?? 0) + (rightValue ?? 0);
+      result[nutrient] = canonicalNutritionNumber((leftValue ?? 0) + (rightValue ?? 0));
     }
   }
   return result;
@@ -118,7 +131,7 @@ export function sumNutritionVectorsStrict(
   for (const nutrient of NUTRIENT_KEYS) {
     const values = vectors.map((vector) => vector[nutrient]);
     if (values.every((value): value is number => value !== undefined)) {
-      result[nutrient] = values.reduce((sum, value) => sum + value, 0);
+      result[nutrient] = canonicalNutritionNumber(values.reduce((sum, value) => sum + value, 0));
     }
   }
   return result;
@@ -159,14 +172,19 @@ export function resolveServing(
     if (variant.basisGrams === null) {
       throw new Error(`Variant ${variant.id} cannot be calculated by grams because its basis weight is unknown`);
     }
-    return { factor: serving.grams / variant.basisGrams, grams: serving.grams };
+    return {
+      factor: canonicalNutritionNumber(serving.grams / variant.basisGrams),
+      grams: serving.grams,
+    };
   }
 
   if (serving.kind === 'basis') {
     assertFiniteNonNegative(serving.multiplier, 'basis multiplier');
     return {
       factor: serving.multiplier,
-      grams: variant.basisGrams === null ? null : variant.basisGrams * serving.multiplier,
+      grams: variant.basisGrams === null
+        ? null
+        : canonicalNutritionNumber(variant.basisGrams * serving.multiplier),
     };
   }
 
@@ -180,10 +198,12 @@ export function resolveServing(
     assertFinitePositive(portion.gramWeight, 'portion gram weight');
   }
 
-  const factor = portion.basisMultiplier * serving.count;
+  const factor = canonicalNutritionNumber(portion.basisMultiplier * serving.count);
   return {
     factor,
-    grams: portion.gramWeight === null ? null : portion.gramWeight * serving.count,
+    grams: portion.gramWeight === null
+      ? null
+      : canonicalNutritionNumber(portion.gramWeight * serving.count),
   };
 }
 
