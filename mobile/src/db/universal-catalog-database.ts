@@ -3,8 +3,9 @@ import { File } from 'expo-file-system';
 import * as SQLite from 'expo-sqlite';
 
 const CATALOG_ASSET_MODULE = require('../../assets/ifkb/ifkb-universal-v1.db') as number;
-const EXPECTED_CATALOG_VERSION = '1.1.0';
+const EXPECTED_CATALOG_VERSION = '1.2.0';
 const EXPECTED_GENERIC_FOODS = 13_225;
+const EXPECTED_GENERIC_VARIANT_MAPPINGS = 13_225;
 const EXPECTED_IRANIAN_CANON = 261;
 
 let catalogPromise: Promise<SQLite.SQLiteDatabase> | null = null;
@@ -19,7 +20,9 @@ async function openBundledCatalog(): Promise<SQLite.SQLiteDatabase> {
   const database = await SQLite.deserializeDatabaseAsync(bytes);
   await database.execAsync('PRAGMA foreign_keys=ON; PRAGMA query_only=ON;');
   const rows = await database.getAllAsync<{ key: string; value: string }>(
-    `SELECT key,value FROM meta WHERE key IN ('version','genericFoodCount','iranianCanonCount');`,
+    `SELECT key,value FROM meta WHERE key IN (
+       'version','genericFoodCount','genericVariantMappingCount','iranianCanonCount'
+     );`,
   );
   const meta = new Map(rows.map((row) => [row.key, row.value]));
   if (meta.get('version') !== EXPECTED_CATALOG_VERSION) {
@@ -27,6 +30,9 @@ async function openBundledCatalog(): Promise<SQLite.SQLiteDatabase> {
   }
   if (Number(meta.get('genericFoodCount')) !== EXPECTED_GENERIC_FOODS) {
     throw new Error('Bundled IFKB generic-food count failed validation.');
+  }
+  if (Number(meta.get('genericVariantMappingCount')) !== EXPECTED_GENERIC_VARIANT_MAPPINGS) {
+    throw new Error('Bundled IFKB generic Concept/Variant mapping failed validation.');
   }
   if (Number(meta.get('iranianCanonCount')) !== EXPECTED_IRANIAN_CANON) {
     throw new Error('Bundled IFKB Iranian-canon count failed validation.');
