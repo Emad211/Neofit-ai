@@ -46,7 +46,12 @@ FAT_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ('with_margarine', re.compile(r'\bwith margarine\b', re.I)),
     ('added_fat_unspecified', re.compile(r'\b(with|fat) added\b', re.I)),
 )
-VARIANT_SEGMENT_PATTERNS = tuple(pattern for _, pattern in (*COOKING_PATTERNS, *FORM_PATTERNS, *FAT_PATTERNS))
+VARIANT_FORM_PATTERNS = tuple(
+    pattern for name, pattern in FORM_PATTERNS if name not in {'juice', 'concentrate'}
+)
+VARIANT_SEGMENT_PATTERNS = tuple(
+    pattern for _, pattern in (*COOKING_PATTERNS, *FAT_PATTERNS)
+) + VARIANT_FORM_PATTERNS
 
 
 def sha256(path: Path) -> str:
@@ -88,6 +93,11 @@ def parse_description(name: str) -> dict[str, object]:
 
     split_index: int | None = None
     for index, segment in enumerate(segments[1:], start=1):
+        # In USDA meat descriptions, a leading `fresh` is an identity family
+        # marker followed by the actual cut (for example pork backfat). Splitting
+        # at that segment would collapse hundreds of distinct cuts into `Pork`.
+        if index == 1 and normalized_key(segment) == 'fresh':
+            continue
         if segment_is_variant(segment):
             split_index = index
             break
