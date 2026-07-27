@@ -9,6 +9,7 @@ import {
   calculateRecipe,
   calculateVariantNutrition,
   pointRange,
+  relativeNutritionRange,
   scaleNutritionRange,
   scaleNutritionVector,
   type EvidenceTier,
@@ -185,6 +186,7 @@ async function resolveIngredient(
     if (!details) throw new Error(`USDA food not found: ${sourceId}`);
     const per100g = universalVector(details);
     const factor = ingredient.grams / 100;
+    const uncertainty = details.sourceType === 'fndds' ? 0.15 : 0.08;
     return {
       id: ingredient.id,
       sourceType: ingredient.sourceType,
@@ -194,7 +196,7 @@ async function resolveIngredient(
       estimate: {
         grams: ingredient.grams,
         center: scaleNutritionVector(per100g, factor),
-        range: scaleNutritionRange(pointRange(per100g), factor),
+        range: scaleNutritionRange(relativeNutritionRange(per100g, uncertainty), factor),
       },
       consumedFraction: ingredient.consumedFraction,
     };
