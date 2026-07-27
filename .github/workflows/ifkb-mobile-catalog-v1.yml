@@ -86,6 +86,10 @@ jobs:
           print({'foods':foods,'portions':portions,'canon':canon,'aliases':aliases,'completeMacros':complete,'bytes':manifest['databaseBytes']})
           PY
 
+      - name: Install locked mobile dependencies
+        working-directory: mobile
+        run: npm ci --no-audit --no-fund
+
       - name: Add explicit Expo asset dependency
         working-directory: mobile
         run: npx expo install expo-asset
