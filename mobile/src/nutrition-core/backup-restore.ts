@@ -114,6 +114,14 @@ export type NutritionBackupFavorite = z.infer<typeof NutritionBackupFavoriteSche
 export type NutritionBackupRecipe = z.infer<typeof RecipeSchema>;
 export type NutritionBackupRestoreMode = 'merge' | 'replace';
 
+export interface NutritionRecipeGraphNode {
+  readonly id: string;
+  readonly ingredients: readonly {
+    readonly sourceType: 'food' | 'custom' | 'recipe';
+    readonly sourceId: string;
+  }[];
+}
+
 function utf8ByteLength(value: string): number {
   let bytes = 0;
   for (const character of value) {
@@ -144,7 +152,7 @@ export function validateNutritionBackupCrossRecords(backup: ParsedNutritionBacku
 }
 
 export function assertNutritionRecipeGraphAcyclic(
-  recipes: readonly NutritionBackupRecipe[],
+  recipes: readonly NutritionRecipeGraphNode[],
 ): void {
   const byId = new Map(recipes.map((recipe) => [recipe.id, recipe]));
   const visiting = new Set<string>();
