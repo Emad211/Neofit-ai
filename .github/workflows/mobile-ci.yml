@@ -38,19 +38,19 @@ jobs:
           cache-dependency-path: mobile/package-lock.json
 
       - name: Install locked mobile dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund > /tmp/npm-ci.log 2>&1 || { cat /tmp/npm-ci.log; exit 1; }
 
       - name: Run deterministic domain tests
-        run: npm test
+        run: npm test > /tmp/npm-test.log 2>&1 || { cat /tmp/npm-test.log; exit 1; }
 
       - name: Check Expo package versions
-        run: npx expo install --check
+        run: npx expo install --check > /tmp/expo-check.log 2>&1 || { cat /tmp/expo-check.log; exit 1; }
 
       - name: Expo dependency doctor
-        run: npm run doctor
+        run: npm run doctor > /tmp/expo-doctor.log 2>&1 || { cat /tmp/expo-doctor.log; exit 1; }
 
       - name: Strict TypeScript
         run: npm run typecheck
 
       - name: Export Android bundle
-        run: npx expo export --platform android --output-dir dist
+        run: npx expo export --platform android --output-dir dist > /tmp/expo-export.log 2>&1 || { cat /tmp/expo-export.log; exit 1; }
