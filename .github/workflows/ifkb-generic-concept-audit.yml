@@ -1,10 +1,11 @@
 name: IFKB Generic Concept Audit
 
+# Use push paths on the active data branch. Pull-request path filters inspect
+# the entire long-lived PR diff and would re-run this audit on every mobile edit.
 on:
-  pull_request:
+  push:
     branches:
-      - agent/mobile-local-first-expo
-    types: [opened, synchronize, reopened]
+      - agent/iranian-food-kb-foundation
     paths:
       - 'ifkb/universal/audit_mobile_catalog_concepts.py'
       - 'ifkb/universal/augment_mobile_catalog_concepts.py'
@@ -15,6 +16,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ifkb-generic-concept-audit
+  cancel-in-progress: true
 
 jobs:
   audit:
