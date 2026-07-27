@@ -2,7 +2,7 @@ import * as React from 'react';
 import { View } from 'react-native';
 import { router } from 'expo-router';
 import { AppText, Card, InlineNotice, PageTitle, PrimaryButton, Screen } from '@/components/ui';
-import { logMeal } from '@/db/log-repository';
+import { logMeal } from '@/db/nutrition-meal-repository';
 import { saveNutritionPlan } from '@/db/plan-repository';
 import { Meal } from '@/domain/models';
 import { useApp } from '@/providers/app-provider';

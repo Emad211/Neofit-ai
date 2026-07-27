@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { AppText, Card, ChoiceGrid, Field, InlineNotice, MetricCard, PrimaryButton, Screen } from '@/components/ui';
-import { logMeal } from '@/db/log-repository';
+import { logMeal } from '@/db/nutrition-meal-repository';
 import { FoodEstimate, Meal } from '@/domain/models';
 import { useApp } from '@/providers/app-provider';
 import { AvalAiError } from '@/services/avalai-client';

@@ -19,7 +19,7 @@ import {
   scaleFood,
   searchFoodCatalog,
 } from '@/db/food-repository';
-import { logMeal } from '@/db/log-repository';
+import { logMeal } from '@/db/nutrition-meal-repository';
 import { FoodCatalogItem, Meal } from '@/domain/models';
 import { useApp } from '@/providers/app-provider';
 
