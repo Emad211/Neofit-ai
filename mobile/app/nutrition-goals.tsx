@@ -142,7 +142,7 @@ export default function NutritionGoalsScreen() {
       setConsumed(summary.total.center);
       setValues(Object.fromEntries(FIELDS.map((field) => [
         field.key,
-        goal?.dailyGoals[field.key] === undefined ? '' : String(goal.dailyGoals[field.key]),
+        goal?.goals.daily[field.key] === undefined ? '' : String(goal.goals.daily[field.key]),
       ])) as Record<NutrientKey, string>);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : label('Goals could not be loaded.', 'هدف‌ها بارگذاری نشدند.'));
@@ -193,7 +193,7 @@ export default function NutritionGoalsScreen() {
       const goal: PersistedNutritionGoal = {
         id: active?.id ?? createId('nutrition-goal'),
         activeFrom: today,
-        dailyGoals,
+        goals: { daily: dailyGoals },
         createdAt: active?.createdAt ?? now,
         updatedAt: now,
       };
@@ -216,7 +216,7 @@ export default function NutritionGoalsScreen() {
     const goal: PersistedNutritionGoal = {
       id: active?.id ?? createId('nutrition-goal'),
       activeFrom: today,
-      dailyGoals: {},
+      goals: { daily: {} },
       createdAt: active?.createdAt ?? now,
       updatedAt: now,
     };
