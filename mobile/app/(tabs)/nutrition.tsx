@@ -83,11 +83,16 @@ export default function NutritionScreen() {
       <Card>
         <AppText size={20} weight="800">{label('Accurate local logging', 'ثبت دقیق‌تر و محلی')}</AppText>
         <AppText muted size={13}>{label(
-          'Start with the offline Iranian-food catalog. It includes serving ranges, custom foods, and does not require AvalAI.',
-          'ابتدا از کاتالوگ آفلاین غذاهای ایرانی استفاده کنید. بازه سهم، غذای سفارشی و ثبت بدون AvalAI در آن وجود دارد.',
+          'Search Iranian foods and 13,225 official USDA records, choose a defensible serving, and save directly to the local diary.',
+          'در غذاهای ایرانی و ۱۳٬۲۲۵ رکورد رسمی USDA جست‌وجو کنید، سهم قابل‌دفاع را انتخاب کنید و مستقیم در دفتر محلی ثبت کنید.',
         )}</AppText>
         <PrimaryButton
-          title={label('Open Iranian food catalog', 'بازکردن کاتالوگ غذاهای ایرانی')}
+          title={label('Open complete food search', 'بازکردن جست‌وجوی جامع غذا')}
+          onPress={() => router.push('/food-search')}
+        />
+        <PrimaryButton
+          title={label('Browse Iranian foods only', 'نمای تخصصی غذاهای ایرانی')}
+          variant="secondary"
           onPress={() => router.push('/iranian-foods')}
         />
         <PrimaryButton
