@@ -1,1 +1,1 @@
-apply-runtime-v3-verified
+apply-runtime-v3-concise-validation
