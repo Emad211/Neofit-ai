@@ -1,10 +1,10 @@
 {
   "format": "ifkb-mobile-catalog-release",
   "version": "1.0.0",
-  "createdAt": "2026-07-27T09:10:18.410049+00:00",
+  "createdAt": "2026-07-27T09:12:38.740051+00:00",
   "databaseFile": "ifkb-universal-v1.db",
   "databaseBytes": 8241152,
-  "databaseSha256": "f0404033cd66d367235a0361e8b42bc639e1a178fd0a2333080703cd93704f08",
+  "databaseSha256": "a1ed21b800a98d8da13a3c4506232e005dd63ad4c870b2995caf1c29bc3152c3",
   "genericFoodCount": 13225,
   "genericPortionCount": 36494,
   "macroCompleteCount": 13224,
