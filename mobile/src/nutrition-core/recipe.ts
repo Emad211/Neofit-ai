@@ -1,9 +1,9 @@
 import {
-  addNutritionRanges,
-  addNutritionVectors,
   pointRange,
   scaleNutritionRange,
   scaleNutritionVector,
+  sumNutritionRangesStrict,
+  sumNutritionVectorsStrict,
 } from './nutrition';
 import type { NutritionEstimate, NutritionRange, NutritionVector } from './types';
 
@@ -44,37 +44,45 @@ export function calculateRecipe(
     throw new Error('A recipe requires at least one ingredient');
   }
 
-  let totalGrams = 0;
-  let totalCenter: NutritionVector = {};
-  let totalRange: NutritionRange = pointRange({});
+  let knownIngredientGrams = 0;
+  let hasUnknownIngredientWeight = false;
+  const ingredientCenters: NutritionVector[] = [];
+  const ingredientRanges: NutritionRange[] = [];
 
   for (const ingredient of recipe.ingredients) {
     const fraction = ingredient.consumedFraction ?? 1;
     if (!Number.isFinite(fraction) || fraction < 0 || fraction > 1) {
       throw new RangeError('consumedFraction must be between 0 and 1');
     }
-    totalGrams += ingredient.estimate.grams * fraction;
-    totalCenter = addNutritionVectors(
-      totalCenter,
-      scaleNutritionVector(ingredient.estimate.center, fraction),
-    );
-    totalRange = addNutritionRanges(
-      totalRange,
-      scaleNutritionRange(
-        ingredient.estimate.range ?? pointRange(ingredient.estimate.center),
-        fraction,
-      ),
-    );
+    if (ingredient.estimate.grams === null) {
+      hasUnknownIngredientWeight = true;
+    } else {
+      knownIngredientGrams += ingredient.estimate.grams * fraction;
+    }
+    ingredientCenters.push(scaleNutritionVector(ingredient.estimate.center, fraction));
+    ingredientRanges.push(scaleNutritionRange(
+      ingredient.estimate.range ?? pointRange(ingredient.estimate.center),
+      fraction,
+    ));
   }
 
+  const totalCenter = sumNutritionVectorsStrict(ingredientCenters);
+  const totalRange = sumNutritionRangesStrict(ingredientRanges);
+
+  if (recipe.cookedYieldGrams !== undefined) {
+    validatePositive(recipe.cookedYieldGrams, 'cookedYieldGrams');
+  }
+
+  const totalGrams = recipe.cookedYieldGrams
+    ?? (hasUnknownIngredientWeight ? null : knownIngredientGrams);
   const total: NutritionEstimate = {
-    grams: recipe.cookedYieldGrams ?? totalGrams,
+    grams: totalGrams,
     center: totalCenter,
     range: totalRange,
   };
   const perServingFactor = 1 / recipe.servingCount;
   const perServing: NutritionEstimate = {
-    grams: total.grams * perServingFactor,
+    grams: total.grams === null ? null : total.grams * perServingFactor,
     center: scaleNutritionVector(total.center, perServingFactor),
     range: scaleNutritionRange(total.range ?? pointRange(total.center), perServingFactor),
   };
@@ -87,7 +95,6 @@ export function calculateRecipe(
   };
 
   if (recipe.cookedYieldGrams !== undefined) {
-    validatePositive(recipe.cookedYieldGrams, 'cookedYieldGrams');
     const per100gFactor = 100 / recipe.cookedYieldGrams;
     return {
       ...result,

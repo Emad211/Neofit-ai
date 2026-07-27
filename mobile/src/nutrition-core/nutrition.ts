@@ -15,6 +15,12 @@ function assertFiniteNonNegative(value: number, label: string): void {
   }
 }
 
+function assertFinitePositive(value: number, label: string): void {
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new RangeError(`${label} must be a finite positive number`);
+  }
+}
+
 export function validateNutritionVector(vector: NutritionVector): void {
   for (const nutrient of NUTRIENT_KEYS) {
     const value = vector[nutrient];
@@ -39,6 +45,10 @@ export function scaleNutritionVector(
   return scaled;
 }
 
+/**
+ * Adds known nutrient observations while preserving a nutrient as missing only
+ * when both inputs are missing. This is appropriate for meal aggregation.
+ */
 export function addNutritionVectors(
   left: NutritionVector,
   right: NutritionVector,
@@ -76,17 +86,68 @@ export function addNutritionRanges(
   };
 }
 
+/**
+ * Strictly sums complete observations. If any vector omits a nutrient, the
+ * aggregate omits that nutrient too; an absent source value is not zero.
+ */
+export function sumNutritionVectorsStrict(
+  vectors: readonly NutritionVector[],
+): NutritionVector {
+  if (vectors.length === 0) return {};
+  const result: NutritionVector = {};
+  for (const nutrient of NUTRIENT_KEYS) {
+    const values = vectors.map((vector) => vector[nutrient]);
+    if (values.every((value): value is number => value !== undefined)) {
+      result[nutrient] = values.reduce((sum, value) => sum + value, 0);
+    }
+  }
+  return result;
+}
+
+export function sumNutritionRangesStrict(
+  ranges: readonly NutritionRange[],
+): NutritionRange {
+  return {
+    p10: sumNutritionVectorsStrict(ranges.map((range) => range.p10)),
+    p50: sumNutritionVectorsStrict(ranges.map((range) => range.p50)),
+    p90: sumNutritionVectorsStrict(ranges.map((range) => range.p90)),
+  };
+}
+
 export function pointRange(vector: NutritionVector): NutritionRange {
   return { p10: { ...vector }, p50: { ...vector }, p90: { ...vector } };
 }
 
-export function servingToGrams(
+export interface ResolvedServing {
+  readonly factor: number;
+  readonly grams: number | null;
+}
+
+export function resolveServing(
   variant: FoodVariant,
   serving: ServingInput,
-): number {
+): ResolvedServing {
+  if (variant.nutrientBasis === 'per_100g' && variant.basisGrams !== 100) {
+    throw new Error(`Variant ${variant.id} declares per_100g but basisGrams is not 100`);
+  }
+  if (variant.basisGrams !== null) {
+    assertFinitePositive(variant.basisGrams, 'basisGrams');
+  }
+
   if (serving.kind === 'grams') {
     assertFiniteNonNegative(serving.grams, 'grams');
-    return serving.grams;
+    if (variant.basisGrams === null) {
+      throw new Error(`Variant ${variant.id} cannot be calculated by grams because its basis weight is unknown`);
+    }
+    return { factor: serving.grams / variant.basisGrams, grams: serving.grams };
+  }
+
+  if (serving.kind === 'basis') {
+    assertFiniteNonNegative(serving.multiplier, 'basis multiplier');
+    return {
+      factor: serving.multiplier,
+      grams: variant.basisGrams === null ? null : variant.basisGrams * serving.multiplier,
+    };
   }
 
   assertFiniteNonNegative(serving.count, 'portion count');
@@ -94,8 +155,16 @@ export function servingToGrams(
   if (portion === undefined) {
     throw new Error(`Unknown portion ${serving.portionId} for variant ${variant.id}`);
   }
-  assertFiniteNonNegative(portion.gramWeight, 'portion gram weight');
-  return portion.gramWeight * serving.count;
+  assertFinitePositive(portion.basisMultiplier, 'portion basis multiplier');
+  if (portion.gramWeight !== null) {
+    assertFinitePositive(portion.gramWeight, 'portion gram weight');
+  }
+
+  const factor = portion.basisMultiplier * serving.count;
+  return {
+    factor,
+    grams: portion.gramWeight === null ? null : portion.gramWeight * serving.count,
+  };
 }
 
 export function calculateVariantNutrition(
@@ -103,14 +172,13 @@ export function calculateVariantNutrition(
   serving: ServingInput,
   modifiers: readonly NutritionModifier[] = [],
 ): NutritionEstimate {
-  validateNutritionVector(variant.nutrientsPer100g);
-  const grams = servingToGrams(variant, serving);
-  const factor = grams / 100;
+  validateNutritionVector(variant.nutrientsPerBasis);
+  const resolved = resolveServing(variant, serving);
 
-  let center = scaleNutritionVector(variant.nutrientsPer100g, factor);
-  let range = variant.nutrientRangePer100g === undefined
+  let center = scaleNutritionVector(variant.nutrientsPerBasis, resolved.factor);
+  let range = variant.nutrientRangePerBasis === undefined
     ? pointRange(center)
-    : scaleNutritionRange(variant.nutrientRangePer100g, factor);
+    : scaleNutritionRange(variant.nutrientRangePerBasis, resolved.factor);
 
   for (const modifier of modifiers) {
     validateNutritionVector(modifier.additiveNutrition);
@@ -121,7 +189,7 @@ export function calculateVariantNutrition(
     );
   }
 
-  return { grams, center, range };
+  return { grams: resolved.grams, center, range };
 }
 
 export function roundNutritionVector(

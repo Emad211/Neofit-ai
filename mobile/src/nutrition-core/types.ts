@@ -22,8 +22,12 @@ export interface NutritionRange {
   readonly p90: NutritionVector;
 }
 
+/**
+ * Grams are null when the source defines nutrition only for a named serving and
+ * no defensible serving weight exists. Missing weight must never become zero.
+ */
 export interface NutritionEstimate {
-  readonly grams: number;
+  readonly grams: number | null;
   readonly center: NutritionVector;
   readonly range?: NutritionRange;
 }
@@ -32,14 +36,19 @@ export interface PortionDefinition {
   readonly id: string;
   readonly labelFa: string;
   readonly labelEn: string;
-  readonly gramWeight: number;
+  readonly gramWeight: number | null;
+  /** Multiplier against the variant's declared nutrient basis. */
+  readonly basisMultiplier: number;
 }
 
 export type EvidenceTier =
   | 'verified_source'
   | 'digital_consensus'
   | 'legacy_estimate'
-  | 'broad_fallback';
+  | 'broad_fallback'
+  | 'user_entered';
+
+export type NutrientBasis = 'per_100g' | 'per_serving';
 
 export interface FoodConcept {
   readonly id: string;
@@ -58,15 +67,25 @@ export interface FoodVariant {
   readonly nameFa: string;
   readonly nameEn: string;
   readonly preparationTags: readonly string[];
-  readonly nutrientsPer100g: NutritionVector;
-  readonly nutrientRangePer100g?: NutritionRange;
+  readonly nutrientBasis: NutrientBasis;
+  /**
+   * Physical weight represented by one basis unit. It is 100 for per_100g.
+   * It may be null for a named serving whose weight is genuinely unknown.
+   */
+  readonly basisGrams: number | null;
+  readonly nutrientsPerBasis: NutritionVector;
+  readonly nutrientRangePerBasis?: NutritionRange;
   readonly portions: readonly PortionDefinition[];
   readonly evidenceTier: EvidenceTier;
+  readonly sourceRecordId?: string;
+  readonly sourceDataset?: string;
+  readonly sourceVersion?: string;
 }
 
 export type ServingInput =
   | { readonly kind: 'grams'; readonly grams: number }
-  | { readonly kind: 'portion'; readonly portionId: string; readonly count: number };
+  | { readonly kind: 'portion'; readonly portionId: string; readonly count: number }
+  | { readonly kind: 'basis'; readonly multiplier: number };
 
 export interface NutritionModifier {
   readonly id: string;

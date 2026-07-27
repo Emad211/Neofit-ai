@@ -1,3 +1,5 @@
+import { NUTRITION_CORE_MIGRATION_V1 } from '@/nutrition-core/sql';
+
 export type Migration = {
   version: number;
   name: string;
@@ -260,5 +262,11 @@ export const migrations: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_exercise_video_cache_expiry
       ON exercise_video_cache(expires_at);
     `,
+  },
+
+  {
+    version: 3,
+    name: 'nutrition-core-concepts-tracker-and-vision-cache',
+    sql: NUTRITION_CORE_MIGRATION_V1,
   },
 ];

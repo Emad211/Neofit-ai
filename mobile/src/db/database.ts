@@ -5,6 +5,8 @@ import { migrations } from '@/db/migrations';
 export const DATABASE_NAME = 'neofit.db';
 const FOOD_SEED_SETTING = 'catalog.iranian-foods.seed-version';
 const FOOD_SEED_VERSION = '1';
+const NUTRITION_CORE_SEED_SETTING = 'nutrition.core.seed-version';
+const NUTRITION_CORE_SEED_VERSION = '1';
 const REQUIRED_V1_TABLES = [
   'app_settings',
   'profile',
@@ -18,6 +20,17 @@ const REQUIRED_V1_TABLES = [
   'ai_cache',
 ] as const;
 const REQUIRED_V2_TABLES = ['food_catalog', 'exercise_video_cache'] as const;
+const REQUIRED_V3_TABLES = [
+  'nutrition_food_concepts',
+  'nutrition_food_variants',
+  'nutrition_food_aliases',
+  'nutrition_portions',
+  'nutrition_diary_entries',
+  'nutrition_recipes',
+  'nutrition_recipe_ingredients',
+  'nutrition_goals',
+  'nutrition_vision_cache',
+] as const;
 
 let databasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
@@ -41,25 +54,47 @@ async function runMigrations(database: SQLite.SQLiteDatabase) {
   }
 }
 
-async function seedLocalCatalogs(database: SQLite.SQLiteDatabase) {
-  const row = await database.getFirstAsync<{ value: string }>(
-    'SELECT value FROM app_settings WHERE key = ?;',
-    FOOD_SEED_SETTING,
-  );
-  if (row?.value === FOOD_SEED_VERSION) return;
-
-  const { seedIranianFoodCatalog } = await import('@/db/food-repository');
-  await seedIranianFoodCatalog(database);
+async function writeSeedVersion(
+  database: SQLite.SQLiteDatabase,
+  key: string,
+  version: string,
+): Promise<void> {
   await database.runAsync(
     `INSERT INTO app_settings (key, value, updated_at)
      VALUES (?, ?, ?)
      ON CONFLICT(key) DO UPDATE SET
        value = excluded.value,
        updated_at = excluded.updated_at;`,
-    FOOD_SEED_SETTING,
-    FOOD_SEED_VERSION,
+    key,
+    version,
     new Date().toISOString(),
   );
+}
+
+async function seedLocalCatalogs(database: SQLite.SQLiteDatabase) {
+  const foodSeed = await database.getFirstAsync<{ value: string }>(
+    'SELECT value FROM app_settings WHERE key = ?;',
+    FOOD_SEED_SETTING,
+  );
+  if (foodSeed?.value !== FOOD_SEED_VERSION) {
+    const { seedIranianFoodCatalog } = await import('@/db/food-repository');
+    await seedIranianFoodCatalog(database);
+    await writeSeedVersion(database, FOOD_SEED_SETTING, FOOD_SEED_VERSION);
+  }
+
+  const nutritionSeed = await database.getFirstAsync<{ value: string }>(
+    'SELECT value FROM app_settings WHERE key = ?;',
+    NUTRITION_CORE_SEED_SETTING,
+  );
+  if (nutritionSeed?.value !== NUTRITION_CORE_SEED_VERSION) {
+    const { seedNutritionCoreFromLegacyCatalog } = await import('@/db/nutrition-food-repository');
+    await seedNutritionCoreFromLegacyCatalog(database);
+    await writeSeedVersion(
+      database,
+      NUTRITION_CORE_SEED_SETTING,
+      NUTRITION_CORE_SEED_VERSION,
+    );
+  }
 }
 
 export async function getDatabase() {
@@ -107,9 +142,11 @@ async function validateBackupBytes(bytes: Uint8Array) {
        WHERE type = 'table' AND name NOT LIKE 'sqlite_%';`,
     );
     const tableNames = new Set(rows.map((row) => row.name));
-    const required = version >= 2
-      ? [...REQUIRED_V1_TABLES, ...REQUIRED_V2_TABLES]
-      : [...REQUIRED_V1_TABLES];
+    const required = version >= 3
+      ? [...REQUIRED_V1_TABLES, ...REQUIRED_V2_TABLES, ...REQUIRED_V3_TABLES]
+      : version >= 2
+        ? [...REQUIRED_V1_TABLES, ...REQUIRED_V2_TABLES]
+        : [...REQUIRED_V1_TABLES];
     const missing = required.filter((table) => !tableNames.has(table));
     if (missing.length > 0) {
       throw new Error(`Backup is missing required tables: ${missing.join(', ')}`);

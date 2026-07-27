@@ -10,10 +10,11 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "test": "node --import tsx --test tests/*.test.ts",
+    "test": "node --import tsx --test tests/*.test.ts && npm run test:nutrition-schema",
     "typecheck": "tsc --noEmit",
     "doctor": "expo-doctor",
-    "check": "npm run test && npm run typecheck && npm run doctor"
+    "check": "npm run test && npm run typecheck && npm run doctor",
+    "test:nutrition-schema": "node --no-warnings=ExperimentalWarning scripts/validate-nutrition-schema.mjs"
   },
   "dependencies": {
     "expo": "~57.0.8",

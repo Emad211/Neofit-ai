@@ -3,6 +3,11 @@ import { IRANIAN_FOOD_SEED } from '@/data/iranian-food-seed';
 import { FoodCatalogItem, FoodCatalogItemSchema } from '@/domain/models';
 import { getDatabase } from '@/db/database';
 import { createId } from '@/lib/id';
+import { legacyCatalogFoodToDocument } from '@/nutrition-core';
+import {
+  deleteNutritionFoodConcepts,
+  upsertNutritionFoodDocuments,
+} from '@/db/nutrition-food-repository';
 
 interface FoodRow {
   id: string;
@@ -59,6 +64,28 @@ function mapFood(row: FoodRow): FoodCatalogItem {
     notesEn: row.notes_en,
     updatedAt: row.updated_at,
   });
+}
+
+function nutritionDocumentFromCatalogItem(item: FoodCatalogItem) {
+  const legacy = legacyCatalogFoodToDocument({
+    id: item.id,
+    nameFa: item.nameFa,
+    nameEn: item.nameEn,
+    aliasesFa: item.aliasesFa,
+    aliasesEn: item.aliasesEn,
+    category: item.category,
+    portionLabelFa: item.portionLabelFa,
+    portionLabelEn: item.portionLabelEn,
+    portionGrams: item.portionGrams,
+    calories: item.calories,
+    proteinG: item.proteinG,
+    carbsG: item.carbsG,
+    fatG: item.fatG,
+    variabilityPct: item.variabilityPct,
+    sourceType: item.sourceType,
+    sourceLabel: item.sourceLabel,
+  });
+  return { concept: legacy.concept, variants: [legacy.variant] };
 }
 
 export function normalizeFoodSearch(value: string) {
@@ -244,6 +271,7 @@ export async function saveCustomFood(input: Omit<FoodCatalogItem, 'id' | 'source
   });
   const database = await getDatabase();
   await insertFood(database, item);
+  await upsertNutritionFoodDocuments([nutritionDocumentFromCatalogItem(item)], database);
   return item;
 }
 
@@ -271,6 +299,11 @@ export async function importFoodCatalogItems(input: {
   }
 
   const database = await getDatabase();
+  const previousImportedIds = input.replacePreviousImports === false
+    ? []
+    : (await database.getAllAsync<{ id: string }>(
+        "SELECT id FROM food_catalog WHERE source_type = 'imported';",
+      )).map((row) => row.id);
   await database.withExclusiveTransactionAsync(async (transaction) => {
     if (input.replacePreviousImports !== false) {
       await transaction.runAsync("DELETE FROM food_catalog WHERE source_type = 'imported';");
@@ -279,17 +312,38 @@ export async function importFoodCatalogItems(input: {
       await insertFood(transaction, item);
     }
   });
+
+  if (previousImportedIds.length > 0) {
+    await deleteNutritionFoodConcepts(previousImportedIds, database);
+  }
+  const importedRows = await database.getAllAsync<FoodRow>(
+    "SELECT * FROM food_catalog WHERE source_type = 'imported' ORDER BY id;",
+  );
+  await upsertNutritionFoodDocuments(
+    importedRows.map(mapFood).map(nutritionDocumentFromCatalogItem),
+    database,
+  );
   return parsed.length;
 }
 
 export async function deleteCustomFood(id: string) {
   const database = await getDatabase();
-  await database.runAsync("DELETE FROM food_catalog WHERE id = ? AND source_type = 'custom';", id);
+  const result = await database.runAsync(
+    "DELETE FROM food_catalog WHERE id = ? AND source_type = 'custom';",
+    id,
+  );
+  if (result.changes > 0) {
+    await deleteNutritionFoodConcepts([id], database);
+  }
 }
 
 export async function deleteImportedFoodCatalog() {
   const database = await getDatabase();
+  const ids = (await database.getAllAsync<{ id: string }>(
+    "SELECT id FROM food_catalog WHERE source_type = 'imported';",
+  )).map((row) => row.id);
   const result = await database.runAsync("DELETE FROM food_catalog WHERE source_type = 'imported';");
+  await deleteNutritionFoodConcepts(ids, database);
   return result.changes;
 }
 
