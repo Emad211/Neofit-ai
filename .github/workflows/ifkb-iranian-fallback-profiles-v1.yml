@@ -43,18 +43,37 @@ jobs:
             --output src/data/iranian-fallback-seed.generated.ts \
             --manifest ../ifkb/universal/releases/iranian-fallback-profiles-v1/manifest.json
 
+      - name: Normalize reproducible release metadata
+        run: |
+          python - <<'PY'
+          import json
+          path='ifkb/universal/releases/iranian-fallback-profiles-v1/manifest.json'
+          manifest=json.load(open(path,encoding='utf-8'))
+          manifest['generatedAtUtc']='2026-07-27T00:00:00.000Z'
+          with open(path,'w',encoding='utf-8') as handle:
+              json.dump(manifest,handle,ensure_ascii=False,indent=2)
+              handle.write('\n')
+          PY
+
       - name: Verify scientific state and counts
         run: |
           python - <<'PY'
           import json,re
           manifest=json.load(open('ifkb/universal/releases/iranian-fallback-profiles-v1/manifest.json',encoding='utf-8'))
           generated=open('mobile/src/data/iranian-fallback-seed.generated.ts',encoding='utf-8').read()
+          assert manifest['existingSeedCount']==83,manifest
+          assert manifest['existingCanonCount']==83,manifest
+          assert manifest['broadFallbackCount']==178,manifest
+          assert manifest['fallbackCanonCount']==178,manifest
           assert manifest['totalAppReadyCount']==261,manifest
-          assert manifest['broadFallbackCount']>0,manifest
           assert manifest['rules']['verifiedRecordsCreated']==0,manifest
+          assert manifest['rules']['replaceableByUserImport'] is False,manifest
           assert manifest['evidenceTier']=='broad_fallback',manifest
+          assert manifest['sourceType']=='seeded',manifest
+          assert manifest['generatedAtUtc']=='2026-07-27T00:00:00.000Z',manifest
           assert 'portionGrams": null' in generated
           assert 'confidence": "low"' in generated
+          assert 'sourceType": "seeded"' in generated
           assert 'IFKB DS0 broad-fallback' in generated
           assert not re.search(r'confidence": "(?:medium|high)"',generated)
           print({
