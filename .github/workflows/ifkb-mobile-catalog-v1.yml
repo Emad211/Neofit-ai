@@ -1,10 +1,9 @@
 name: IFKB Universal Mobile Catalog v1
 
 on:
-  pull_request:
+  push:
     branches:
-      - agent/mobile-local-first-expo
-    types: [opened, synchronize, reopened]
+      - agent/iranian-food-kb-foundation
     paths:
       - 'ifkb/universal/build_mobile_catalog.py'
       - 'ifkb/universal/iranian_canon_v1.csv'
