@@ -2,10 +2,24 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
+  buildPersianAliasIndex,
   containsNormalizedAlias,
+  matchPersianAliasRecords,
   rankUniversalCatalogCandidates,
+  resolveGenericAliasTarget,
   sanitizeFtsQuery,
+  type UniversalCatalogCandidate,
 } from '../src/nutrition-core/universal-catalog-ranking';
+
+function candidate(input: Pick<UniversalCatalogCandidate, 'id' | 'sourceType' | 'nameEn' | 'caloriesKcal' | 'proteinG' | 'fatG' | 'carbsG' | 'fiberG' | 'sugarsG' | 'sodiumMg' | 'cholesterolMg' | 'macroComplete' | 'portionCount' | 'bm25'>): UniversalCatalogCandidate {
+  return {
+    ...input,
+    calciumMg: null,
+    ironMg: null,
+    potassiumMg: null,
+    vitaminCMg: null,
+  };
+}
 
 test('universal catalog query helpers are deterministic and Persian-safe', () => {
   assert.equal(sanitizeFtsQuery('egg, white'), '"egg" AND "white"');
@@ -13,26 +27,42 @@ test('universal catalog query helpers are deterministic and Persian-safe', () =>
   assert.equal(containsNormalizedAlias('تخم مرغ کامل', 'زرده'), false);
 });
 
+test('Persian alias index prefers exact or longest contained aliases', () => {
+  const index = buildPersianAliasIndex([
+    { aliasFa: 'تخم مرغ', target: 'egg, whole', targetType: 'generic' },
+    { aliasFa: 'سفیده تخم مرغ', target: 'egg, white', targetType: 'generic' },
+    { aliasFa: 'دیزی', target: 'IFKB-CANON-00108', targetType: 'iranian_canon' },
+  ]);
+  assert.equal(matchPersianAliasRecords('50 گرم سفیده تخم مرغ', index)[0]?.target, 'egg, white');
+  assert.equal(matchPersianAliasRecords('دیزی', index)[0]?.target, 'IFKB-CANON-00108');
+});
+
+test('generic modifier resolution never duplicates an existing preparation state', () => {
+  assert.equal(resolveGenericAliasTarget('egg, whole, boiled', 'تخم مرغ آب پز'), 'egg, whole, boiled');
+  assert.equal(resolveGenericAliasTarget('egg, white', 'سفیده بدون روغن'), 'egg, white, no added fat');
+  assert.equal(resolveGenericAliasTarget('grilled chicken', 'مرغ گریل'), 'grilled chicken');
+});
+
 test('universal catalog ranking prefers common fresh forms over dried variants', () => {
   const rows = [
-    {
-      id: 'dried', sourceType: 'sr_legacy' as const, nameEn: 'Egg, white, dried',
+    candidate({
+      id: 'dried', sourceType: 'sr_legacy', nameEn: 'Egg, white, dried',
       caloriesKcal: 382, proteinG: 81.1, fatG: 0, carbsG: 7.8, fiberG: 0,
       sugarsG: 5.4, sodiumMg: 1280, cholesterolMg: 0, macroComplete: true,
       portionCount: 1, bm25: -9.2,
-    },
-    {
-      id: 'raw', sourceType: 'sr_legacy' as const, nameEn: 'Egg, white, raw, fresh',
+    }),
+    candidate({
+      id: 'raw', sourceType: 'sr_legacy', nameEn: 'Egg, white, raw, fresh',
       caloriesKcal: 52, proteinG: 10.9, fatG: 0.2, carbsG: 0.7, fiberG: 0,
       sugarsG: 0.7, sodiumMg: 166, cholesterolMg: 0, macroComplete: true,
       portionCount: 2, bm25: -8.5,
-    },
-    {
-      id: 'sandwich', sourceType: 'fndds' as const, nameEn: 'Egg white sandwich',
+    }),
+    candidate({
+      id: 'sandwich', sourceType: 'fndds', nameEn: 'Egg white sandwich',
       caloriesKcal: 166, proteinG: 10, fatG: 4, carbsG: 22, fiberG: 1,
       sugarsG: 2, sodiumMg: 450, cholesterolMg: 5, macroComplete: true,
       portionCount: 1, bm25: -9.2,
-    },
+    }),
   ];
   const ranked = rankUniversalCatalogCandidates('egg, white', rows, 3);
   assert.equal(ranked[0]?.id, 'raw');
@@ -60,6 +90,9 @@ test('all meal entry surfaces write through Nutrition Diary', () => {
   }
   const provider = readFileSync(new URL('../src/providers/app-provider.tsx', import.meta.url), 'utf8');
   assert.match(provider, /getDailySummary \} from '@\/db\/nutrition-meal-repository'/);
+  const compatibility = readFileSync(new URL('../src/db/log-repository.ts', import.meta.url), 'utf8');
+  assert.match(compatibility, /from '@\/db\/nutrition-meal-repository'/);
+  assert.doesNotMatch(compatibility, /INSERT INTO meal_logs/);
 });
 
 test('legacy meals are migrated idempotently before Diary reads and writes', () => {
