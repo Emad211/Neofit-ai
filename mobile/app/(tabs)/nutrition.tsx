@@ -96,6 +96,11 @@ export default function NutritionScreen() {
           onPress={() => router.push('/nutrition-diary')}
         />
         <PrimaryButton
+          title={label('Open history and exports', 'بازکردن تاریخچه و خروجی‌ها')}
+          variant="secondary"
+          onPress={() => router.push('/nutrition-history')}
+        />
+        <PrimaryButton
           title={label('Open nutrition goals', 'بازکردن هدف‌های تغذیه')}
           variant="secondary"
           onPress={() => router.push('/nutrition-goals')}
