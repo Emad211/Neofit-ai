@@ -3,6 +3,7 @@ import {
   buildPersianAliasIndex,
   matchPersianAliasRecords,
   rankUniversalCatalogCandidates,
+  resolveGenericAliasTarget,
   sanitizeFtsQuery,
   type PersianAliasIndex,
   type PersianAliasRecord,
@@ -10,7 +11,6 @@ import {
   type UniversalCatalogCandidate,
   type UniversalSourceType,
 } from '@/nutrition-core/universal-catalog-ranking';
-import { parseFoodQuery } from '@/nutrition-core/search';
 
 interface GenericFoodRow {
   id: string;
@@ -137,17 +137,6 @@ async function matchingAliases(query: string): Promise<readonly PersianAliasReco
   return matchPersianAliasRecords(query, await aliasIndex());
 }
 
-function genericTargetWithModifiers(target: string, query: string): string {
-  const modifiers = new Set(parseFoodQuery(query).modifiers);
-  let resolved = target;
-  if (modifiers.has('egg_white') || modifiers.has('without_yolk')) resolved = 'egg, white';
-  if (modifiers.has('boiled')) resolved += ', boiled';
-  else if (modifiers.has('fried')) resolved += ', fried';
-  else if (modifiers.has('grilled')) resolved += ', grilled';
-  if (modifiers.has('without_added_fat')) resolved += ', no added fat';
-  return resolved;
-}
-
 async function searchIranianIdentity(query: string, directCanonId?: string): Promise<IranianIdentityHit[]> {
   const database = await getUniversalCatalogDatabase();
   const rows = directCanonId
@@ -208,7 +197,7 @@ export async function searchUniversalCatalog(query: string, limit = 20): Promise
   const genericAlias = aliases.find((row) => row.targetType === 'generic');
   if (genericAlias) {
     return searchGeneric(
-      genericTargetWithModifiers(genericAlias.target, query),
+      resolveGenericAliasTarget(genericAlias.target, query),
       limit,
       genericAlias.aliasFa,
     );
