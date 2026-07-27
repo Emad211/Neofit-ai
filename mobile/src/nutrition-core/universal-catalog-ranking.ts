@@ -82,11 +82,20 @@ function tokenCoverage(query: readonly string[], candidate: readonly string[]): 
 export function resolveGenericAliasTarget(target: string, originalQuery: string): string {
   const modifiers = new Set(parseFoodQuery(originalQuery).modifiers);
   let resolved = target.trim();
-  if (modifiers.has('egg_white') || modifiers.has('without_yolk')) resolved = 'egg, white';
-  if (modifiers.has('boiled')) resolved += ', boiled';
-  else if (modifiers.has('fried')) resolved += ', fried';
-  else if (modifiers.has('grilled')) resolved += ', grilled';
-  if (modifiers.has('without_added_fat')) resolved += ', no added fat';
+  if (modifiers.has('egg_white') || modifiers.has('without_yolk')) {
+    resolved = /\begg\b.*\bwhite\b/i.test(resolved) ? resolved : 'egg, white';
+  }
+  const lower = () => resolved.toLowerCase();
+  if (modifiers.has('boiled') && !/\b(boiled|poached)\b/.test(lower())) {
+    resolved += ', boiled';
+  } else if (modifiers.has('fried') && !/\bfried\b/.test(lower())) {
+    resolved += ', fried';
+  } else if (modifiers.has('grilled') && !/\bgrilled\b/.test(lower())) {
+    resolved += ', grilled';
+  }
+  if (modifiers.has('without_added_fat') && !/(?:no|without) added fat/.test(lower())) {
+    resolved += ', no added fat';
+  }
   return resolved;
 }
 
