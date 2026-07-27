@@ -80,3 +80,39 @@ test('complete food search combines local and universal data and blocks identity
   assert.match(source, /Official portion/);
   assert.match(source, /هویت غذای ایرانی موجود است؛ پروفایل تغذیه هنوز آمادهٔ اپ نیست/);
 });
+
+test('favorites store only source identity and search text, not copied nutrition', () => {
+  const repository = readFileSync(new URL('../src/db/nutrition-favorite-repository.ts', import.meta.url), 'utf8');
+  assert.match(repository, /nutrition\.food-favorites\.v1/);
+  assert.match(repository, /labelFa/);
+  assert.match(repository, /labelEn/);
+  assert.match(repository, /query/);
+  assert.doesNotMatch(repository, /calories|proteinG|carbsG|fatG/);
+  const component = readFileSync(new URL('../src/components/food-search-shortcuts.tsx', import.meta.url), 'utf8');
+  assert.match(component, /getRecentMeals/);
+  assert.match(component, /listFavoriteFoods/);
+  assert.match(component, /queryFromDiaryLabel/);
+});
+
+test('today Diary supports grouped entries, deletion, and guarded yesterday copy', () => {
+  const source = readFileSync(new URL('../app/nutrition-diary.tsx', import.meta.url), 'utf8');
+  assert.match(source, /MEAL_ORDER/);
+  assert.match(source, /deleteNutritionDiaryEntry/);
+  assert.match(source, /cloneDiaryEntriesToDate/);
+  assert.match(source, /Alert\.alert/);
+  assert.match(source, /refreshDailySummary/);
+});
+
+test('recipe builder persists exact source ids and recalculates before logging', () => {
+  const page = readFileSync(new URL('../app/recipes.tsx', import.meta.url), 'utf8');
+  assert.match(page, /sourceId: `universal:\$\{hit\.id\}`/);
+  assert.match(page, /saveNutritionRecipe/);
+  assert.match(page, /resolvePersistedRecipe/);
+  assert.match(page, /saveNutritionDiaryEntry/);
+  assert.match(page, /recipeMealType/);
+  const resolver = readFileSync(new URL('../src/services/nutrition-recipe-resolver.ts', import.meta.url), 'utf8');
+  assert.match(resolver, /Nested recipe cycle detected/);
+  assert.match(resolver, /getUniversalFoodDetails/);
+  assert.match(resolver, /calculateVariantNutrition/);
+  assert.match(resolver, /calculateRecipe/);
+});
