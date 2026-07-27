@@ -87,14 +87,14 @@ def build_cases(rows: list[dict[str, str]], count: int) -> list[dict[str, str]]:
     cases: list[dict[str, str]] = []
     seen: set[tuple[str, str, str]] = set()
 
-    def add(query: str, group: dict[str, object], variant_type: str) -> None:
+    def add(query: str, group: dict[str, object], variant_type: str) -> bool:
         if len(cases) >= count:
-            return
+            return False
         target_type = str(group['target_type'])
         targets = '|'.join(str(value) for value in group['targets'])
         key = (normalize_persian(query), target_type, targets)
         if not key[0] or key in seen:
-            return
+            return False
         seen.add(key)
         cases.append({
             'query_id': f'PSQ-{len(cases) + 1:04d}',
@@ -104,13 +104,14 @@ def build_cases(rows: list[dict[str, str]], count: int) -> list[dict[str, str]]:
             'expected_targets': targets,
             'variant_type': variant_type,
         })
+        return True
 
     # Every unique normalized alias appears first as an exact query.
     for group in groups:
         add(str(group['alias']), group, 'exact_alias')
 
     # Every alias is then tested inside a realistic amount/serving phrase.
-    for index, group in enumerate(groups):
+    for group in groups:
         alias = str(group['alias'])
         query = f'یک پرس {alias}' if group['target_type'] == 'iranian_canon' else f'50 گرم {alias}'
         add(query, group, 'quantity_context')
@@ -124,22 +125,23 @@ def build_cases(rows: list[dict[str, str]], count: int) -> list[dict[str, str]]:
         ('joined_spacing', joined_variant),
         ('trailing_serving', lambda alias: f'{alias}، یک سهم'),
     ]
-    round_index = 0
+
+    # Add one perturbation at a time in round-robin order, so the tail of a
+    # 500-row corpus cannot be dominated by only the first transformation.
+    extra_index = 0
+    stagnant = 0
     while len(cases) < count:
-        before = len(cases)
-        variant_type, transform = transforms[round_index % len(transforms)]
-        offset = (round_index * 17) % len(groups)
-        for step in range(len(groups)):
-            group = groups[(offset + step) % len(groups)]
-            add(transform(str(group['alias'])), group, variant_type)
-            if len(cases) >= count:
-                break
-        if len(cases) == before:
-            # Guaranteed unique fallback for unusually small/duplicate registries.
-            group = groups[round_index % len(groups)]
-            add(f'نمونه {round_index + 1} {group["alias"]}', group, 'numbered_context')
-        round_index += 1
-        if round_index > count * 4:
+        variant_type, transform = transforms[extra_index % len(transforms)]
+        group_round = extra_index // len(transforms)
+        group = groups[(group_round * 17 + extra_index) % len(groups)]
+        added = add(transform(str(group['alias'])), group, variant_type)
+        stagnant = 0 if added else stagnant + 1
+        if stagnant > len(groups) * len(transforms) * 2:
+            fallback_group = groups[extra_index % len(groups)]
+            if add(f'نمونه {extra_index + 1} {fallback_group["alias"]}', fallback_group, 'numbered_context'):
+                stagnant = 0
+        extra_index += 1
+        if extra_index > count * 30:
             raise RuntimeError(f'Could not generate {count} unique benchmark rows.')
 
     return cases
