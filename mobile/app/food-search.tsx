@@ -160,13 +160,15 @@ export default function FoodSearchScreen() {
         item.concept.nameFa.toLowerCase(),
         item.concept.nameEn.toLowerCase(),
       ]));
-      const externalResults: SearchResult[] = universalHits.flatMap((hit) => {
+      const externalResults: SearchResult[] = [];
+      for (const hit of universalHits) {
         if (hit.kind === 'generic_food') {
-          return [{ kind: 'generic', key: `generic:${hit.id}`, hit } satisfies GenericResult];
+          externalResults.push({ kind: 'generic', key: `generic:${hit.id}`, hit });
+          continue;
         }
-        if (localNames.has(hit.nameFa.toLowerCase()) || localNames.has(hit.nameEn.toLowerCase())) return [];
-        return [{ kind: 'identity', key: `identity:${hit.canonId}`, hit } satisfies IdentityResult];
-      });
+        if (localNames.has(hit.nameFa.toLowerCase()) || localNames.has(hit.nameEn.toLowerCase())) continue;
+        externalResults.push({ kind: 'identity', key: `identity:${hit.canonId}`, hit });
+      }
       setResults([...localResults, ...externalResults]);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : label('Food search failed.', 'جست‌وجوی غذا انجام نشد.'));
@@ -425,15 +427,15 @@ export default function FoodSearchScreen() {
                 value={portionId}
                 onChange={setPortionId}
                 columns={1}
-                options={portions.slice(0, 12).map((portion) => selection.kind === 'generic'
-                  ? {
+                options={selection.kind === 'generic'
+                  ? selection.details.portions.slice(0, 12).map((portion) => ({
                       value: String(portion.id),
                       label: `${portion.label} · ${portion.gramWeight.toFixed(1)} g`,
-                    }
-                  : {
+                    }))
+                  : selection.variant.portions.slice(0, 12).map((portion) => ({
                       value: portion.id,
                       label: `${locale === 'fa' ? portion.labelFa : portion.labelEn}${portion.gramWeight === null ? '' : ` · ${portion.gramWeight.toFixed(1)} g`}`,
-                    })}
+                    }))}
               />
               <Field
                 label={label('Number of portions', 'تعداد سهم')}
