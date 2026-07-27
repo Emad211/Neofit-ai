@@ -1,0 +1,357 @@
+name: Upgrade IFKB Micronutrients v1.1
+
+on:
+  pull_request:
+    branches:
+      - agent/mobile-local-first-expo
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/upgrade-ifkb-micronutrients-v11.yml'
+      - 'ifkb/dev/upgrade-ifkb-micronutrients-v11.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/iranian-food-kb-foundation
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Patch official importers, catalog schema, and runtime
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path_str, old, new, label):
+              path = Path(path_str)
+              text = path.read_text(encoding='utf-8')
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected one match in {path}, found {count}')
+              path.write_text(text.replace(old, new), encoding='utf-8')
+
+          expanded_fields = '''OUTPUT_FIELDS = (
+              "calories_kcal", "protein_g", "fat_g", "carbs_g", "fiber_g",
+              "sugars_g", "sodium_mg", "cholesterol_mg", "calcium_mg",
+              "iron_mg", "potassium_mg", "vitamin_c_mg",
+          )'''
+          for path in ('ifkb/universal/import_fndds_app_layer.py', 'ifkb/universal/import_sr_legacy_app_layer.py'):
+              replace_once(
+                  path,
+                  '''OUTPUT_FIELDS = (
+              "calories_kcal", "protein_g", "fat_g", "carbs_g", "fiber_g",
+              "sugars_g", "sodium_mg", "cholesterol_mg",
+          )''',
+                  expanded_fields,
+                  'OUTPUT_FIELDS',
+              )
+
+          replace_once(
+              'ifkb/universal/import_fndds_app_layer.py',
+              '''    "291": "fiber_g", "269": "sugars_g", "307": "sodium_mg",
+              "601": "cholesterol_mg",
+              "1003": "protein_g", "1004": "fat_g", "1005": "carbs_g",
+              "1079": "fiber_g", "2000": "sugars_g", "1093": "sodium_mg",
+              "1253": "cholesterol_mg",''',
+              '''    "291": "fiber_g", "269": "sugars_g", "307": "sodium_mg",
+              "601": "cholesterol_mg", "301": "calcium_mg", "303": "iron_mg",
+              "306": "potassium_mg", "401": "vitamin_c_mg",
+              "1003": "protein_g", "1004": "fat_g", "1005": "carbs_g",
+              "1079": "fiber_g", "2000": "sugars_g", "1093": "sodium_mg",
+              "1253": "cholesterol_mg", "1087": "calcium_mg", "1089": "iron_mg",
+              "1092": "potassium_mg", "1162": "vitamin_c_mg",''',
+              'FNDDS nutrient IDs',
+          )
+          replace_once(
+              'ifkb/universal/import_fndds_app_layer.py',
+              '''    "sodium, na": "sodium_mg",
+              "cholesterol": "cholesterol_mg",''',
+              '''    "sodium, na": "sodium_mg",
+              "cholesterol": "cholesterol_mg",
+              "calcium, ca": "calcium_mg",
+              "iron, fe": "iron_mg",
+              "potassium, k": "potassium_mg",
+              "vitamin c, total ascorbic acid": "vitamin_c_mg",''',
+              'FNDDS nutrient names',
+          )
+          replace_once(
+              'ifkb/universal/import_fndds_app_layer.py',
+              '''        sugars_g REAL, sodium_mg REAL, cholesterol_mg REAL
+              );''',
+              '''        sugars_g REAL, sodium_mg REAL, cholesterol_mg REAL, calcium_mg REAL,
+              iron_mg REAL, potassium_mg REAL, vitamin_c_mg REAL
+              );''',
+              'FNDDS SQLite columns',
+          )
+          replace_once(
+              'ifkb/universal/import_fndds_app_layer.py',
+              '''            "INSERT INTO foods VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",''',
+              '''            f"INSERT INTO foods VALUES ({','.join('?' for _ in range(4 + len(OUTPUT_FIELDS)))})",''',
+              'FNDDS dynamic placeholders',
+          )
+
+          replace_once(
+              'ifkb/universal/import_sr_legacy_app_layer.py',
+              '''    "291": "fiber_g", "269": "sugars_g", "307": "sodium_mg", "601": "cholesterol_mg",
+              "1003": "protein_g", "1004": "fat_g", "1005": "carbs_g",
+              "1079": "fiber_g", "2000": "sugars_g", "1093": "sodium_mg", "1253": "cholesterol_mg",''',
+              '''    "291": "fiber_g", "269": "sugars_g", "307": "sodium_mg", "601": "cholesterol_mg",
+              "301": "calcium_mg", "303": "iron_mg", "306": "potassium_mg", "401": "vitamin_c_mg",
+              "1003": "protein_g", "1004": "fat_g", "1005": "carbs_g",
+              "1079": "fiber_g", "2000": "sugars_g", "1093": "sodium_mg", "1253": "cholesterol_mg",
+              "1087": "calcium_mg", "1089": "iron_mg", "1092": "potassium_mg", "1162": "vitamin_c_mg",''',
+              'SR nutrient IDs',
+          )
+          replace_once(
+              'ifkb/universal/import_sr_legacy_app_layer.py',
+              '''        sodium_mg REAL,cholesterol_mg REAL);''',
+              '''        sodium_mg REAL,cholesterol_mg REAL,calcium_mg REAL,iron_mg REAL,
+              potassium_mg REAL,vitamin_c_mg REAL);''',
+              'SR SQLite columns',
+          )
+          replace_once(
+              'ifkb/universal/import_sr_legacy_app_layer.py',
+              '''        db.execute("INSERT INTO foods VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",(''',
+              '''        db.execute(f"INSERT INTO foods VALUES ({','.join('?' for _ in range(4 + len(OUTPUT_FIELDS)))})",(''',
+              'SR dynamic placeholders',
+          )
+
+          builder = 'ifkb/universal/build_mobile_catalog.py'
+          replace_once(
+              builder,
+              '''  sodium_mg REAL,
+              cholesterol_mg REAL,
+              macro_completeness INTEGER''',
+              '''  sodium_mg REAL,
+              cholesterol_mg REAL,
+              calcium_mg REAL,
+              iron_mg REAL,
+              potassium_mg REAL,
+              vitamin_c_mg REAL,
+              macro_completeness INTEGER''',
+              'mobile catalog columns',
+          )
+          replace_once(
+              builder,
+              '''                          fiber_g,sugars_g,sodium_mg,cholesterol_mg
+                       FROM foods ORDER BY id''',
+              '''                          fiber_g,sugars_g,sodium_mg,cholesterol_mg,calcium_mg,iron_mg,
+                                      potassium_mg,vitamin_c_mg
+                       FROM foods ORDER BY id''',
+              'mobile catalog source query',
+          )
+          replace_once(
+              builder,
+              '''                     fat_g,carbs_g,fiber_g,sugars_g,sodium_mg,cholesterol_mg,macro_completeness)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+              '''                     fat_g,carbs_g,fiber_g,sugars_g,sodium_mg,cholesterol_mg,calcium_mg,
+                         iron_mg,potassium_mg,vitamin_c_mg,macro_completeness)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+              'mobile catalog insert',
+          )
+          replace_once(
+              builder,
+              '''            'macroCompleteCount': db.execute('SELECT COUNT(*) FROM generic_foods WHERE macro_completeness=1').fetchone()[0],
+                      'iranianCanonCount':''',
+              '''            'macroCompleteCount': db.execute('SELECT COUNT(*) FROM generic_foods WHERE macro_completeness=1').fetchone()[0],
+                      'calciumCoverageCount': db.execute('SELECT COUNT(*) FROM generic_foods WHERE calcium_mg IS NOT NULL').fetchone()[0],
+                      'ironCoverageCount': db.execute('SELECT COUNT(*) FROM generic_foods WHERE iron_mg IS NOT NULL').fetchone()[0],
+                      'potassiumCoverageCount': db.execute('SELECT COUNT(*) FROM generic_foods WHERE potassium_mg IS NOT NULL').fetchone()[0],
+                      'vitaminCCoverageCount': db.execute('SELECT COUNT(*) FROM generic_foods WHERE vitamin_c_mg IS NOT NULL').fetchone()[0],
+                      'iranianCanonCount':''',
+              'mobile catalog micronutrient counts',
+          )
+          replace_once(builder, "parser.add_argument('--version', default='1.0.0')", "parser.add_argument('--version', default='1.1.0')", 'catalog default version')
+
+          ranking = 'mobile/src/nutrition-core/universal-catalog-ranking.ts'
+          replace_once(
+              ranking,
+              '''  readonly cholesterolMg: number | null;
+              readonly macroComplete: boolean;''',
+              '''  readonly cholesterolMg: number | null;
+              readonly calciumMg: number | null;
+              readonly ironMg: number | null;
+              readonly potassiumMg: number | null;
+              readonly vitaminCMg: number | null;
+              readonly macroComplete: boolean;''',
+              'ranking micronutrients',
+          )
+
+          repo = 'mobile/src/db/universal-catalog-repository.ts'
+          replace_once(
+              repo,
+              '''  cholesterol_mg: number | null;
+              macro_completeness: number;''',
+              '''  cholesterol_mg: number | null;
+              calcium_mg: number | null;
+              iron_mg: number | null;
+              potassium_mg: number | null;
+              vitamin_c_mg: number | null;
+              macro_completeness: number;''',
+              'repository row micronutrients',
+          )
+          replace_once(
+              repo,
+              '''    cholesterolMg: row.cholesterol_mg,
+                  macroComplete:''',
+              '''    cholesterolMg: row.cholesterol_mg,
+                  calciumMg: row.calcium_mg,
+                  ironMg: row.iron_mg,
+                  potassiumMg: row.potassium_mg,
+                  vitaminCMg: row.vitamin_c_mg,
+                  macroComplete:''',
+              'repository mapping micronutrients',
+          )
+          replace_once(
+              repo,
+              '''            f.fiber_g,f.sugars_g,f.sodium_mg,f.cholesterol_mg,f.macro_completeness,''',
+              '''            f.fiber_g,f.sugars_g,f.sodium_mg,f.cholesterol_mg,f.calcium_mg,f.iron_mg,
+                          f.potassium_mg,f.vitamin_c_mg,f.macro_completeness,''',
+              'repository search SELECT',
+          )
+          replace_once(
+              repo,
+              '''    `SELECT id,source_type,name_en,calories_kcal,protein_g,fat_g,carbs_g,fiber_g,sugars_g,
+                      sodium_mg,cholesterol_mg,macro_completeness,portion_count''',
+              '''    `SELECT id,source_type,name_en,calories_kcal,protein_g,fat_g,carbs_g,fiber_g,sugars_g,
+                      sodium_mg,cholesterol_mg,calcium_mg,iron_mg,potassium_mg,vitamin_c_mg,
+                      macro_completeness,portion_count''',
+              'repository details SELECT',
+          )
+
+          for path in ('mobile/app/food-search.tsx', 'mobile/src/services/nutrition-recipe-resolver.ts'):
+              replace_once(
+                  path,
+                  '''    ...(details.cholesterolMg === null ? {} : { cholesterolMg: details.cholesterolMg }),
+                    };''',
+                  '''    ...(details.cholesterolMg === null ? {} : { cholesterolMg: details.cholesterolMg }),
+                      ...(details.calciumMg === null ? {} : { calciumMg: details.calciumMg }),
+                      ...(details.ironMg === null ? {} : { ironMg: details.ironMg }),
+                      ...(details.potassiumMg === null ? {} : { potassiumMg: details.potassiumMg }),
+                      ...(details.vitaminCMg === null ? {} : { vitaminCMg: details.vitaminCMg }),
+                    };''',
+                  f'{path} vector micronutrients',
+              )
+
+          replace_once(
+              'mobile/src/db/universal-catalog-database.ts',
+              "const EXPECTED_CATALOG_VERSION = '1.0.0';",
+              "const EXPECTED_CATALOG_VERSION = '1.1.0';",
+              'runtime catalog version',
+          )
+
+          workflow = '.github/workflows/ifkb-mobile-catalog-v1.yml'
+          replace_once(workflow, '--version 1.0.0', '--version 1.1.0', 'catalog workflow version')
+          replace_once(
+              workflow,
+              '''          complete=db.execute('SELECT COUNT(*) FROM generic_foods WHERE macro_completeness=1').fetchone()[0]
+                      white=''',
+              '''          complete=db.execute('SELECT COUNT(*) FROM generic_foods WHERE macro_completeness=1').fetchone()[0]
+                      calcium=db.execute('SELECT COUNT(*) FROM generic_foods WHERE calcium_mg IS NOT NULL').fetchone()[0]
+                      iron=db.execute('SELECT COUNT(*) FROM generic_foods WHERE iron_mg IS NOT NULL').fetchone()[0]
+                      potassium=db.execute('SELECT COUNT(*) FROM generic_foods WHERE potassium_mg IS NOT NULL').fetchone()[0]
+                      vitamin_c=db.execute('SELECT COUNT(*) FROM generic_foods WHERE vitamin_c_mg IS NOT NULL').fetchone()[0]
+                      white=''',
+              'catalog workflow micro counts',
+          )
+          replace_once(
+              workflow,
+              '''          assert complete>=13224,complete
+                      assert all(value>0''',
+              '''          assert complete>=13224,complete
+                      assert calcium>10000,calcium
+                      assert iron>10000,iron
+                      assert potassium>10000,potassium
+                      assert vitamin_c>9000,vitamin_c
+                      assert all(value>0''',
+              'catalog workflow micro assertions',
+          )
+          replace_once(
+              workflow,
+              "'completeMacros':complete,'bytes':manifest['databaseBytes']",
+              "'completeMacros':complete,'calcium':calcium,'iron':iron,'potassium':potassium,'vitaminC':vitamin_c,'bytes':manifest['databaseBytes']",
+              'catalog workflow micro report',
+          )
+          PY
+
+      - name: Build upgraded official USDA layers and mobile catalog
+        run: |
+          rm -rf build/ifkb-sr-legacy build/ifkb-fndds
+          python ifkb/universal/import_sr_legacy_app_layer.py --output build/ifkb-sr-legacy
+          python ifkb/universal/import_fndds_app_layer.py --output build/ifkb-fndds
+          python ifkb/universal/build_mobile_catalog.py \
+            --sr-db build/ifkb-sr-legacy/sr_legacy_app_layer.sqlite \
+            --fndds-db build/ifkb-fndds/fndds_2021_2023_app_layer.sqlite \
+            --iranian-canon ifkb/universal/iranian_canon_v1.csv \
+            --persian-aliases ifkb/universal/persian_search_aliases_v1.csv \
+            --output mobile/assets/ifkb/ifkb-universal-v1.db \
+            --manifest mobile/assets/ifkb/ifkb-universal-v1.manifest.json \
+            --version 1.1.0
+
+      - name: Verify upgraded catalog
+        run: |
+          python - <<'PY'
+          import json, sqlite3
+          from pathlib import Path
+          root=Path('mobile/assets/ifkb')
+          manifest=json.loads((root/'ifkb-universal-v1.manifest.json').read_text())
+          db=sqlite3.connect(root/'ifkb-universal-v1.db')
+          values={
+            'integrity':db.execute('PRAGMA integrity_check').fetchone()[0],
+            'foods':db.execute('SELECT COUNT(*) FROM generic_foods').fetchone()[0],
+            'portions':db.execute('SELECT COUNT(*) FROM generic_portions').fetchone()[0],
+            'calcium':db.execute('SELECT COUNT(*) FROM generic_foods WHERE calcium_mg IS NOT NULL').fetchone()[0],
+            'iron':db.execute('SELECT COUNT(*) FROM generic_foods WHERE iron_mg IS NOT NULL').fetchone()[0],
+            'potassium':db.execute('SELECT COUNT(*) FROM generic_foods WHERE potassium_mg IS NOT NULL').fetchone()[0],
+            'vitaminC':db.execute('SELECT COUNT(*) FROM generic_foods WHERE vitamin_c_mg IS NOT NULL').fetchone()[0],
+          }
+          db.close()
+          assert values['integrity']=='ok',values
+          assert values['foods']==13225,values
+          assert values['portions']==36494,values
+          assert values['calcium']>10000,values
+          assert values['iron']>10000,values
+          assert values['potassium']>10000,values
+          assert values['vitaminC']>9000,values
+          assert manifest['version']=='1.1.0',manifest
+          assert manifest['databaseBytes'] < 24*1024*1024,manifest
+          print(json.dumps({'manifest':manifest,'coverage':values},indent=2))
+          PY
+
+      - name: Validate mobile runtime
+        working-directory: mobile
+        env:
+          CI: '1'
+          EXPO_NO_TELEMETRY: '1'
+        run: |
+          npm ci --no-audit --no-fund > /tmp/npm-ci.log 2>&1 || { cat /tmp/npm-ci.log; exit 1; }
+          npm test > /tmp/npm-test.log 2>&1 || { cat /tmp/npm-test.log; exit 1; }
+          npm run typecheck
+
+      - name: Remove temporary files
+        run: |
+          rm -f ifkb/dev/upgrade-ifkb-micronutrients-v11.trigger
+          rm -f .github/workflows/upgrade-ifkb-micronutrients-v11.yml
+
+      - name: Commit verified micronutrient upgrade
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'data(ifkb): add calcium iron potassium and vitamin C'
+          git push origin HEAD:agent/iranian-food-kb-foundation
