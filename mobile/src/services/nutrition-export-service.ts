@@ -1,15 +1,13 @@
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import {
-  listAllNutritionDiaryEntries,
-  type DiaryEntry,
-} from '@/db/nutrition-diary-repository';
+import { listAllNutritionDiaryEntries } from '@/db/nutrition-diary-repository';
 import { listFavoriteFoods } from '@/db/nutrition-favorite-repository';
 import { listNutritionGoals } from '@/db/nutrition-goal-repository';
 import { listNutritionRecipes } from '@/db/nutrition-recipe-repository';
 import {
   diaryEntriesToCsv,
   stringifyNutritionBackup,
+  type DiaryEntry,
 } from '@/nutrition-core';
 
 function safeTimestamp(value: Date): string {
