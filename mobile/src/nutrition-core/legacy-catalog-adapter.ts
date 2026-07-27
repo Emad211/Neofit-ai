@@ -1,5 +1,5 @@
 import { pointRange, scaleNutritionVector } from './nutrition';
-import type { FoodConcept, FoodVariant, NutritionRange, NutritionVector } from './types';
+import type { EvidenceTier, FoodConcept, FoodVariant, NutritionRange, NutritionVector } from './types';
 
 export interface LegacyCatalogFood {
   readonly id: string;
@@ -32,6 +32,12 @@ function uncertaintyRange(center: NutritionVector, variabilityPct: number): Nutr
     p50: pointRange(center).p50,
     p90: scaleNutritionVector(center, 1 + fraction),
   };
+}
+
+function evidenceTier(item: LegacyCatalogFood): EvidenceTier {
+  if (item.sourceType === 'custom') return 'user_entered';
+  if (/\bDS0\b|broad[ -]?fallback/i.test(item.sourceLabel)) return 'broad_fallback';
+  return 'legacy_estimate';
 }
 
 /**
@@ -74,7 +80,7 @@ export function legacyCatalogFoodToDocument(item: LegacyCatalogFood): LegacyCata
         gramWeight: item.portionGrams,
         basisMultiplier: 1,
       }],
-      evidenceTier: item.sourceType === 'custom' ? 'user_entered' : 'legacy_estimate',
+      evidenceTier: evidenceTier(item),
       sourceRecordId: item.id,
       sourceDataset: item.sourceLabel || 'NeoFit legacy catalog',
     },
