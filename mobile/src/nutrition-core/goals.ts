@@ -26,33 +26,33 @@ export function calculateGoalProgress(
   consumed: NutritionVector,
   goals: NutritionGoals,
 ): GoalProgressItem[] {
-  return NUTRIENT_KEYS.flatMap((nutrient) => {
+  const progress: GoalProgressItem[] = [];
+  for (const nutrient of NUTRIENT_KEYS) {
     const goal = goals.daily[nutrient];
-    if (goal === undefined || !Number.isFinite(goal) || goal <= 0) {
-      return [];
-    }
+    if (goal === undefined || !Number.isFinite(goal) || goal <= 0) continue;
     const consumedValue = consumed[nutrient];
     const mode = nutritionGoalMode(nutrient);
     if (consumedValue === undefined || !Number.isFinite(consumedValue)) {
-      return [{
+      progress.push({
         nutrient,
         mode,
         consumed: null,
         goal,
         ratio: null,
         remaining: null,
-      }];
+      });
+      continue;
     }
-    const ratio = consumedValue / goal;
-    return [{
+    progress.push({
       nutrient,
       mode,
       consumed: consumedValue,
       goal,
-      ratio,
+      ratio: consumedValue / goal,
       remaining: mode === 'minimum'
         ? Math.max(0, goal - consumedValue)
         : goal - consumedValue,
-    }];
-  });
+    });
+  }
+  return progress;
 }
