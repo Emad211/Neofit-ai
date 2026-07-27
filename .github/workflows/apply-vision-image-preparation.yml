@@ -1,0 +1,66 @@
+name: Apply Vision Image Preparation
+
+on:
+  pull_request:
+    branches:
+      - agent/mobile-local-first-expo
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'mobile/scripts/patch-vision-image-preparation.mjs'
+      - '.github/workflows/apply-vision-image-preparation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/iranian-food-kb-foundation
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install locked dependencies
+        working-directory: mobile
+        run: npm ci --no-audit --no-fund
+
+      - name: Install Expo-compatible image manipulator
+        working-directory: mobile
+        run: npx expo install expo-image-manipulator
+
+      - name: Apply focused integration patch
+        working-directory: mobile
+        run: node scripts/patch-vision-image-preparation.mjs
+
+      - name: Verify tests, package compatibility and TypeScript
+        working-directory: mobile
+        env:
+          CI: '1'
+          EXPO_NO_TELEMETRY: '1'
+        run: |
+          npm test
+          npx expo install --check
+          npm run typecheck
+
+      - name: Remove temporary patch transport
+        run: |
+          rm -f mobile/scripts/patch-vision-image-preparation.mjs
+          rm -f .github/workflows/apply-vision-image-preparation.yml
+
+      - name: Commit product change
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'feat(vision): prepare and confirm photos before API upload'
+          git push origin HEAD:agent/iranian-food-kb-foundation
