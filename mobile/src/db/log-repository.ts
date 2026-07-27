@@ -5,31 +5,71 @@ import {
   WorkoutSetLogInput,
 } from '@/domain/models';
 import { getDatabase } from '@/db/database';
+import {
+  deleteNutritionDiaryEntry,
+  listNutritionDiaryEntries,
+  saveNutritionDiaryEntry,
+  summarizeNutritionDiaryDate,
+} from '@/db/nutrition-diary-repository';
 import { createId } from '@/lib/id';
+import type { DiaryEntry, NutritionEstimate } from '@/nutrition-core';
+
+function localDateFromInstant(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) throw new Error('Meal timestamp is invalid.');
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function sourceTypeFromLegacyInput(source: MealLogInput['source']): DiaryEntry['sourceType'] {
+  if (source === 'manual') return 'custom';
+  if (source === 'plan') return 'recipe';
+  return 'food';
+}
+
+export async function logNutritionEstimate(input: {
+  eatenAt: string;
+  mealType: DiaryEntry['mealType'];
+  label: string;
+  sourceType: DiaryEntry['sourceType'];
+  sourceId: string;
+  estimate: NutritionEstimate;
+}): Promise<string> {
+  const id = createId('diary');
+  const createdAt = new Date(input.eatenAt).toISOString();
+  await saveNutritionDiaryEntry({
+    id,
+    localDate: localDateFromInstant(createdAt),
+    mealType: input.mealType,
+    label: input.label.trim(),
+    sourceType: input.sourceType,
+    sourceId: input.sourceId.trim() || id,
+    estimate: input.estimate,
+    createdAt,
+    updatedAt: createdAt,
+  });
+  return id;
+}
 
 export async function logMeal(input: MealLogInput) {
-  const database = await getDatabase();
-  const id = createId('meal');
-  const createdAt = new Date().toISOString();
-
-  await database.runAsync(
-    `INSERT INTO meal_logs (
-      id, eaten_at, meal_type, description, calories,
-      protein_g, carbs_g, fat_g, source, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-    id,
-    input.eatenAt,
-    input.mealType,
-    input.description.trim(),
-    Math.max(0, Math.round(input.calories)),
-    Math.max(0, input.proteinG),
-    Math.max(0, input.carbsG),
-    Math.max(0, input.fatG),
-    input.source,
-    createdAt,
-  );
-
-  return id;
+  return logNutritionEstimate({
+    eatenAt: input.eatenAt,
+    mealType: input.mealType,
+    label: input.description,
+    sourceType: sourceTypeFromLegacyInput(input.source),
+    sourceId: `legacy-input:${input.source}`,
+    estimate: {
+      grams: null,
+      center: {
+        energyKcal: Math.max(0, Math.round(input.calories)),
+        proteinG: Math.max(0, input.proteinG),
+        carbsG: Math.max(0, input.carbsG),
+        fatG: Math.max(0, input.fatG),
+      },
+    },
+  });
 }
 
 export async function logActivity(input: ActivityLogInput) {
@@ -148,24 +188,9 @@ export async function logWorkoutSession(input: {
 
 export async function getDailySummary(startIso: string, endIso: string) {
   const database = await getDatabase();
-  const [meal, activity, workout] = await Promise.all([
-    database.getFirstAsync<{
-      calories: number | null;
-      protein_g: number | null;
-      carbs_g: number | null;
-      fat_g: number | null;
-      count: number;
-    }>(
-      `SELECT
-        SUM(calories) AS calories,
-        SUM(protein_g) AS protein_g,
-        SUM(carbs_g) AS carbs_g,
-        SUM(fat_g) AS fat_g,
-        COUNT(*) AS count
-       FROM meal_logs WHERE eaten_at >= ? AND eaten_at < ?;`,
-      startIso,
-      endIso,
-    ),
+  const localDate = localDateFromInstant(startIso);
+  const [nutrition, activity, workout] = await Promise.all([
+    summarizeNutritionDiaryDate(localDate),
     database.getFirstAsync<{
       duration_minutes: number | null;
       calories_burned: number | null;
@@ -196,11 +221,11 @@ export async function getDailySummary(startIso: string, endIso: string) {
 
   return {
     nutrition: {
-      calories: Number(meal?.calories || 0),
-      proteinG: Number(meal?.protein_g || 0),
-      carbsG: Number(meal?.carbs_g || 0),
-      fatG: Number(meal?.fat_g || 0),
-      count: Number(meal?.count || 0),
+      calories: Number(nutrition.total.center.energyKcal ?? 0),
+      proteinG: Number(nutrition.total.center.proteinG ?? 0),
+      carbsG: Number(nutrition.total.center.carbsG ?? 0),
+      fatG: Number(nutrition.total.center.fatG ?? 0),
+      count: nutrition.entryCount,
     },
     activity: {
       durationMinutes: Number(activity?.duration_minutes || 0),
@@ -230,26 +255,20 @@ export async function getWeightHistory(limit = 180) {
 }
 
 export async function getRecentMeals(limit = 50) {
-  const database = await getDatabase();
-  const safeLimit = Math.min(500, Math.max(1, Math.round(limit)));
-  return database.getAllAsync<{
-    id: string;
-    eatenAt: string;
-    mealType: string;
-    description: string;
-    calories: number;
-    proteinG: number;
-    carbsG: number;
-    fatG: number;
-    source: string;
-  }>(
-    `SELECT
-      id, eaten_at AS eatenAt, meal_type AS mealType, description,
-      calories, protein_g AS proteinG, carbs_g AS carbsG,
-      fat_g AS fatG, source
-     FROM meal_logs ORDER BY eaten_at DESC LIMIT ?;`,
-    safeLimit,
-  );
+  const entries = await listNutritionDiaryEntries({
+    limit: Math.min(500, Math.max(1, Math.round(limit))),
+  });
+  return entries.map((entry) => ({
+    id: entry.id,
+    eatenAt: entry.createdAt,
+    mealType: entry.mealType,
+    description: entry.label,
+    calories: Number(entry.estimate.center.energyKcal ?? 0),
+    proteinG: Number(entry.estimate.center.proteinG ?? 0),
+    carbsG: Number(entry.estimate.center.carbsG ?? 0),
+    fatG: Number(entry.estimate.center.fatG ?? 0),
+    source: entry.sourceType,
+  }));
 }
 
 export async function getRecentActivities(limit = 50) {
@@ -295,9 +314,12 @@ export async function getRecentWorkoutSessions(limit = 50) {
 }
 
 export async function deleteLog(kind: 'meal' | 'activity' | 'weight' | 'workout', id: string) {
+  if (kind === 'meal') {
+    await deleteNutritionDiaryEntry(id);
+    return;
+  }
   const database = await getDatabase();
   const table = {
-    meal: 'meal_logs',
     activity: 'activity_logs',
     weight: 'weight_logs',
     workout: 'workout_sessions',
