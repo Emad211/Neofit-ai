@@ -1,4 +1,5 @@
 import type * as SQLite from 'expo-sqlite';
+import { IRANIAN_FALLBACK_SEED } from '@/data/iranian-fallback-seed.generated';
 import { IRANIAN_FOOD_SEED } from '@/data/iranian-food-seed';
 import { FoodCatalogItem, FoodCatalogItemSchema } from '@/domain/models';
 import { getDatabase } from '@/db/database';
@@ -8,6 +9,17 @@ import {
   deleteNutritionFoodConcepts,
   upsertNutritionFoodDocuments,
 } from '@/db/nutrition-food-repository';
+
+const BUILT_IN_IRANIAN_FOOD_SEED: readonly FoodCatalogItem[] = [
+  ...IRANIAN_FOOD_SEED,
+  ...IRANIAN_FALLBACK_SEED,
+];
+if (BUILT_IN_IRANIAN_FOOD_SEED.length !== 261) {
+  throw new Error(`Built-in Iranian catalog must contain 261 records; found ${BUILT_IN_IRANIAN_FOOD_SEED.length}.`);
+}
+if (new Set(BUILT_IN_IRANIAN_FOOD_SEED.map((item) => item.id)).size !== BUILT_IN_IRANIAN_FOOD_SEED.length) {
+  throw new Error('Built-in Iranian catalog contains duplicate ids.');
+}
 
 interface FoodRow {
   id: string;
@@ -170,7 +182,7 @@ async function insertFood(database: SQLite.SQLiteDatabase, item: FoodCatalogItem
 export async function seedIranianFoodCatalog(database?: SQLite.SQLiteDatabase) {
   const db = database || await getDatabase();
   await db.withExclusiveTransactionAsync(async (transaction) => {
-    for (const item of IRANIAN_FOOD_SEED) {
+    for (const item of BUILT_IN_IRANIAN_FOOD_SEED) {
       await insertFood(transaction, item);
     }
   });
