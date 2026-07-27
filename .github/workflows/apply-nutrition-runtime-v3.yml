@@ -47,6 +47,7 @@ jobs:
           base64 -d /tmp/nutrition-runtime-v3.b64 > /tmp/nutrition-runtime-v3.tar.gz
           gzip -t /tmp/nutrition-runtime-v3.tar.gz
           tar -xzf /tmp/nutrition-runtime-v3.tar.gz -C .
+          cp ifkb/dev/validate-nutrition-schema-fixed.mjs mobile/scripts/validate-nutrition-schema.mjs
 
       - name: Validate runtime before commit
         id: validate
@@ -83,6 +84,7 @@ jobs:
           rm -f ifkb/dev/nutrition-runtime-v3.tar.gz.b64
           rm -f ifkb/dev/nutrition-runtime-v3-part-*
           rm -f ifkb/dev/nutrition-runtime-v3-trigger.txt
+          rm -f ifkb/dev/validate-nutrition-schema-fixed.mjs
           rm -f .github/workflows/apply-nutrition-runtime-v3.yml
           rm -f .github/workflows/dev-mobile-source-snapshot-v2.yml
 
