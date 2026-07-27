@@ -35,6 +35,7 @@ function RootNavigator() {
       <Stack.Screen name="ai-settings" options={{ title: direction === 'rtl' ? 'تنظیمات هوش مصنوعی و ویدئو' : 'AI and video settings' }} />
       <Stack.Screen name="meal-estimator" options={{ title: direction === 'rtl' ? 'تخمین غذا' : 'Food estimate', presentation: 'modal' }} />
       <Stack.Screen name="food-search" options={{ title: direction === 'rtl' ? 'جست‌وجوی جامع غذا' : 'Complete food search' }} />
+      <Stack.Screen name="nutrition-diary" options={{ title: direction === 'rtl' ? 'دفتر تغذیه' : 'Nutrition diary' }} />
       <Stack.Screen name="iranian-foods" options={{ title: direction === 'rtl' ? 'غذاهای ایرانی' : 'Iranian foods' }} />
       <Stack.Screen name="workout-player/[id]" options={{ headerShown: false, gestureEnabled: false }} />
     </Stack>
