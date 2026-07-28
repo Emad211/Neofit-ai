@@ -73,6 +73,22 @@ jobs:
           if-no-files-found: ignore
           retention-days: 2
 
+      - name: Generate schema and ID freeze candidate
+        run: |
+          npx tsx scripts/audit-schema-freeze-candidate.ts \
+            --output ../build/schema-freeze-candidate/manifest.json \
+            > /tmp/schema-freeze-candidate.log 2>&1 \
+            || { cat /tmp/schema-freeze-candidate.log; exit 1; }
+
+      - name: Upload schema and ID freeze candidate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-schema-id-freeze-candidate
+          path: build/schema-freeze-candidate/manifest.json
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Check Expo package versions
         run: npx expo install --check > /tmp/expo-check.log 2>&1 || { cat /tmp/expo-check.log; exit 1; }
 
