@@ -157,10 +157,8 @@ function buildPersonalSchemaAudit() {
       .map((object) => object.name)
       .sort()
       .map((table) => {
-        const columns = database.prepare(`PRAGMA table_xinfo(${quoteIdentifier(table)});`).all()
-          as unknown as TableColumnRow[];
-        const foreignKeys = database.prepare(`PRAGMA foreign_key_list(${quoteIdentifier(table)});`).all()
-          as unknown as ForeignKeyRow[];
+        const columns = database.prepare(`PRAGMA table_xinfo(${quoteIdentifier(table)});`).all() as unknown as TableColumnRow[];
+        const foreignKeys = database.prepare(`PRAGMA foreign_key_list(${quoteIdentifier(table)});`).all() as unknown as ForeignKeyRow[];
         return {
           name: table,
           columns: columns.map((column) => ({
