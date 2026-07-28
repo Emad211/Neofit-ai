@@ -35,6 +35,12 @@ interface ForeignKeyRow {
   match: string;
 }
 
+interface IranianCanonRow {
+  canon_id: string;
+  name_fa: string;
+  aliases_fa: string | null;
+}
+
 function sha256(value: string | Buffer): string {
   return createHash('sha256').update(value).digest('hex');
 }
@@ -45,6 +51,22 @@ function canonicalJson(value: unknown): string {
 
 function normalizeSql(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
+}
+
+function normalizePersian(value: string): string {
+  return value
+    .normalize('NFKC')
+    .toLocaleLowerCase('fa')
+    .replace(/[يى]/g, 'ی')
+    .replace(/ك/g, 'ک')
+    .replace(/[ۀة]/g, 'ه')
+    .replace(/[ؤ]/g, 'و')
+    .replace(/[إأ]/g, 'ا')
+    .replace(/[َُِّْٰـ]/g, '')
+    .replace(/[\u200c\u200f\u202a-\u202e]/g, ' ')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function supportsFts5(database: DatabaseSync): boolean {
@@ -202,6 +224,52 @@ function buildPersonalSchemaAudit() {
   }
 }
 
+function buildAppToCanonMapping(
+  canonRows: readonly IranianCanonRow[],
+): { mappings: string[]; unresolved: string[]; ambiguous: string[] } {
+  const canonIds = new Set(canonRows.map((row) => row.canon_id));
+  const names = new Map<string, Set<string>>();
+  for (const row of canonRows) {
+    for (const value of [row.name_fa, ...(row.aliases_fa ?? '').split('|')]) {
+      const normalized = normalizePersian(value);
+      if (!normalized) continue;
+      const set = names.get(normalized) ?? new Set<string>();
+      set.add(row.canon_id);
+      names.set(normalized, set);
+    }
+  }
+
+  const mappings: string[] = [];
+  const unresolved: string[] = [];
+  const ambiguous: string[] = [];
+  const allProfiles = [...IRANIAN_FOOD_SEED, ...IRANIAN_FALLBACK_SEED];
+
+  for (const profile of allProfiles) {
+    let candidates = new Set<string>();
+    const fallbackMatch = profile.id.match(/^iranian-fallback-ifkb-canon-(\d{5})$/);
+    if (fallbackMatch?.[1]) {
+      const canonId = `IFKB-CANON-${fallbackMatch[1]}`;
+      if (canonIds.has(canonId)) candidates.add(canonId);
+    }
+    if (candidates.size === 0) {
+      for (const value of [profile.nameFa, ...profile.aliasesFa]) {
+        const matches = names.get(normalizePersian(value));
+        if (!matches) continue;
+        for (const canonId of matches) candidates.add(canonId);
+      }
+    }
+    if (candidates.size === 1) {
+      mappings.push(`${profile.id}=>${[...candidates][0]}`);
+    } else if (candidates.size === 0) {
+      unresolved.push(profile.id);
+    } else {
+      ambiguous.push(`${profile.id}=>${[...candidates].sort().join('|')}`);
+    }
+  }
+
+  return { mappings: mappings.sort(), unresolved: unresolved.sort(), ambiguous: ambiguous.sort() };
+}
+
 function buildBundledCatalogAudit() {
   const databasePath = fileURLToPath(new URL('../assets/ifkb/ifkb-universal-v1.db', import.meta.url));
   const manifestPath = fileURLToPath(new URL('../assets/ifkb/ifkb-universal-v1.manifest.json', import.meta.url));
@@ -215,7 +283,10 @@ function buildBundledCatalogAudit() {
       database,
       "SELECT food_id || '=>' || concept_id FROM generic_variants ORDER BY food_id;",
     );
-    const iranianCanonIds = queryStrings(database, 'SELECT canon_id FROM iranian_canon ORDER BY canon_id;');
+    const canonRows = database.prepare(
+      'SELECT canon_id,name_fa,aliases_fa FROM iranian_canon ORDER BY canon_id;',
+    ).all() as unknown as IranianCanonRow[];
+    const iranianCanonIds = canonRows.map((row) => row.canon_id).sort();
     const aliasRows = queryStrings(
       database,
       "SELECT alias_fa || '=>' || target_type || ':' || target FROM persian_search_aliases ORDER BY alias_fa,target_type,target;",
@@ -239,6 +310,23 @@ function buildBundledCatalogAudit() {
     }
     if (new Set(builtInIds).size !== builtInIds.length) {
       throw new Error('Built-in Iranian app-profile ids are not unique.');
+    }
+
+    const appToCanon = buildAppToCanonMapping(canonRows);
+    if (appToCanon.unresolved.length > 0 || appToCanon.ambiguous.length > 0) {
+      throw new Error(
+        `App-to-canon mapping is incomplete. Unresolved=${appToCanon.unresolved.join(',')}; ambiguous=${appToCanon.ambiguous.join(',')}`,
+      );
+    }
+    if (appToCanon.mappings.length !== builtInIds.length) {
+      throw new Error(`Mapped ${appToCanon.mappings.length} app profiles; expected ${builtInIds.length}.`);
+    }
+    const mappedCanonIds = appToCanon.mappings.map((mapping) => mapping.split('=>')[1] ?? '');
+    if (new Set(mappedCanonIds).size !== iranianCanonIds.length) {
+      throw new Error('App-to-canon mapping is not one-to-one across all 261 identities.');
+    }
+    if (sortedStringHash(mappedCanonIds) !== sortedStringHash(iranianCanonIds)) {
+      throw new Error('App-to-canon mapping does not cover the complete canonical id set.');
     }
 
     const databaseSha256 = sha256(bytes);
@@ -268,7 +356,7 @@ function buildBundledCatalogAudit() {
       genericVariantMappingSha256: sortedStringHash(genericVariantMappings),
       iranianCanonIdCount: iranianCanonIds.length,
       iranianCanonIdSetSha256: sortedStringHash(iranianCanonIds),
-      appProfileIdPolicy: 'legacy starter ids and canonical fallback ids are separately frozen namespaces',
+      appProfileIdPolicy: 'legacy and fallback app-profile ids are stable namespaces mapped one-to-one to IFKB canonical ids',
       builtInIranianProfileIdCount: builtInIds.length,
       builtInIranianProfileIdSetSha256: sortedStringHash(builtInIds),
       builtInLegacyProfileIdCount: builtInLegacyIds.length,
@@ -277,6 +365,10 @@ function buildBundledCatalogAudit() {
       builtInFallbackProfileIdSetSha256: sortedStringHash(builtInFallbackIds),
       directCanonicalLegacyIdOverlap: directCanonicalLegacyCount,
       directCanonicalFallbackIdOverlap: directCanonicalFallbackCount,
+      appToCanonMappingCount: appToCanon.mappings.length,
+      appToCanonMappingSha256: sortedStringHash(appToCanon.mappings),
+      appToCanonUnresolvedCount: appToCanon.unresolved.length,
+      appToCanonAmbiguousCount: appToCanon.ambiguous.length,
       persianAliasRowCount: aliasRows.length,
       persianAliasMappingSha256: sortedStringHash(aliasRows),
     };
@@ -297,7 +389,7 @@ function main(): void {
   const bundledCatalog = buildBundledCatalogAudit();
   const manifest = {
     format: 'neofit-schema-id-freeze-candidate',
-    version: '1.0.0',
+    version: '1.1.0',
     status: 'candidate-not-final',
     nutritionNutrientKeys: [...NUTRIENT_KEYS],
     personalSchema,
@@ -313,6 +405,7 @@ function main(): void {
     genericFoodIdSetSha256: bundledCatalog.genericFoodIdSetSha256,
     iranianCanonIdSetSha256: bundledCatalog.iranianCanonIdSetSha256,
     appProfileIdSetSha256: bundledCatalog.builtInIranianProfileIdSetSha256,
+    appToCanonMappingSha256: bundledCatalog.appToCanonMappingSha256,
     status: manifest.status,
   }));
 }
