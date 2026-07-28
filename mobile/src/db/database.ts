@@ -1,5 +1,6 @@
 import { File } from 'expo-file-system';
 import * as SQLite from 'expo-sqlite';
+import { runDatabaseMigrations } from '@/db/migration-runner';
 import { migrations } from '@/db/migrations';
 
 export const DATABASE_NAME = 'neofit.db';
@@ -34,24 +35,10 @@ const REQUIRED_V3_TABLES = [
 
 let databasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
-async function runMigrations(database: SQLite.SQLiteDatabase) {
+async function configureDatabase(database: SQLite.SQLiteDatabase): Promise<void> {
   await database.execAsync('PRAGMA journal_mode = WAL;');
   await database.execAsync('PRAGMA foreign_keys = ON;');
   await database.execAsync('PRAGMA busy_timeout = 5000;');
-
-  const row = await database.getFirstAsync<{ user_version: number }>('PRAGMA user_version;');
-  let currentVersion = Number(row?.user_version || 0);
-
-  for (const migration of migrations) {
-    if (migration.version <= currentVersion) continue;
-
-    await database.withExclusiveTransactionAsync(async (transaction) => {
-      await transaction.execAsync(migration.sql);
-      await transaction.execAsync(`PRAGMA user_version = ${migration.version};`);
-    });
-
-    currentVersion = migration.version;
-  }
 }
 
 async function writeSeedVersion(
@@ -100,7 +87,8 @@ async function seedLocalCatalogs(database: SQLite.SQLiteDatabase) {
 export async function getDatabase() {
   if (!databasePromise) {
     databasePromise = SQLite.openDatabaseAsync(DATABASE_NAME).then(async (database) => {
-      await runMigrations(database);
+      await configureDatabase(database);
+      await runDatabaseMigrations(database, migrations);
       await seedLocalCatalogs(database);
       return database;
     }).catch((error) => {
