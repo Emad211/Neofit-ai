@@ -2,9 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import test from 'node:test';
-import {
-  canFoodCatalogSourceReplace,
-} from '../src/db/food-catalog-precedence';
+import { canFoodCatalogSourceReplace } from '../src/db/food-catalog-precedence';
 import { runDatabaseMigrations } from '../src/db/migration-runner';
 import { migrations } from '../src/db/migration-plan';
 import {
@@ -24,6 +22,17 @@ interface PromotionRow {
   source_record_id: string | null;
   source_version: string | null;
   calories: number;
+}
+
+function defaultEvidence(input: {
+  sourceType: 'seeded' | 'imported' | 'custom';
+  sourceLabel: string;
+}): string {
+  if (input.sourceType === 'custom') return 'user_entered';
+  if (input.sourceType === 'seeded' && /\bDS0\b|broad[ -]?fallback/i.test(input.sourceLabel)) {
+    return 'broad_fallback';
+  }
+  return 'legacy_estimate';
 }
 
 function insertCatalogRow(
@@ -70,8 +79,8 @@ function insertCatalogRow(
     input.calories,
     input.sourceType,
     input.sourceLabel,
-    input.evidenceTier ?? 'legacy_estimate',
-    input.sourceRecordId ?? null,
+    input.evidenceTier ?? defaultEvidence(input),
+    input.sourceRecordId === undefined ? input.id : input.sourceRecordId,
     input.sourceVersion ?? null,
   );
 }
@@ -145,7 +154,7 @@ test('SQLite promotion triggers preserve imported evidence against reseeding', a
   }
 });
 
-test('SQLite protects custom ids and normalizes invalid imported evidence', async () => {
+test('SQLite protects custom ids and rejects invalid imported evidence', async () => {
   const database = new DatabaseSync(':memory:');
   try {
     const production = nodeCompatibleProductionMigrations(database, migrations);
@@ -169,14 +178,16 @@ test('SQLite protects custom ids and normalizes invalid imported evidence', asyn
       ['custom', 'User entry', 'user_entered', 'custom-food', null, 200],
     );
 
-    insertCatalogRow(database, {
-      id: 'invalid-import-evidence',
-      sourceType: 'imported',
-      sourceLabel: 'External import',
-      calories: 350,
-      evidenceTier: 'broad_fallback',
-    });
-    assert.equal(row(database, 'invalid-import-evidence').evidence_tier, 'legacy_estimate');
+    assert.throws(
+      () => insertCatalogRow(database, {
+        id: 'invalid-import-evidence',
+        sourceType: 'imported',
+        sourceLabel: 'External import',
+        calories: 350,
+        evidenceTier: 'broad_fallback',
+      }),
+      /invalid food catalog provenance/,
+    );
   } finally {
     database.close();
   }
