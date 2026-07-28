@@ -80,8 +80,17 @@ jobs:
             > /tmp/schema-freeze-candidate.log 2>&1 \
             || { cat /tmp/schema-freeze-candidate.log; exit 1; }
 
+      - name: Upload schema freeze diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: schema-freeze-candidate-diagnostics
+          path: /tmp/schema-freeze-candidate.log
+          if-no-files-found: ignore
+          retention-days: 2
+
       - name: Upload schema and ID freeze candidate
-        if: always()
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: neofit-schema-id-freeze-candidate
