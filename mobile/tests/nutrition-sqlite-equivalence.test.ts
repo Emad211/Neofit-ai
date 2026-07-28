@@ -7,23 +7,7 @@ import {
   type FoodVariant,
   type NutritionVector,
 } from '../src/nutrition-core';
-
-function portableNutritionSchema(sql: string): string {
-  const replacement = `CREATE TABLE IF NOT EXISTS nutrition_search_fts (
-    concept_id TEXT,
-    variant_id TEXT,
-    name_fa TEXT,
-    name_en TEXT,
-    aliases TEXT,
-    preparation_tags TEXT
-  );`;
-  const portable = sql.replace(
-    /CREATE VIRTUAL TABLE IF NOT EXISTS nutrition_search_fts USING fts5\([\s\S]*?\);/,
-    replacement,
-  );
-  if (portable === sql) throw new Error('Could not replace Nutrition FTS for portable SQLite test.');
-  return portable;
-}
+import { portableNutritionSchema } from './sqlite-test-helpers';
 
 function closeTo(actual: number | null | undefined, expected: number | null | undefined): void {
   if (actual === null || actual === undefined || expected === null || expected === undefined) {
@@ -116,9 +100,18 @@ function calculatePortionInSql(
       json_extract(v.nutrients_per_basis_json, '$.carbsG') * p.basis_multiplier * ? AS carbsG,
       json_extract(v.nutrients_per_basis_json, '$.fatG') * p.basis_multiplier * ? AS fatG,
       json_extract(v.nutrients_per_basis_json, '$.calciumMg') * p.basis_multiplier * ? AS calciumMg,
-      json_extract(v.nutrient_range_per_basis_json, '$.p10.energyKcal') * p.basis_multiplier * ? AS p10EnergyKcal,
-      json_extract(v.nutrient_range_per_basis_json, '$.p50.energyKcal') * p.basis_multiplier * ? AS p50EnergyKcal,
-      json_extract(v.nutrient_range_per_basis_json, '$.p90.energyKcal') * p.basis_multiplier * ? AS p90EnergyKcal
+      COALESCE(
+        json_extract(v.nutrient_range_per_basis_json, '$.p10.energyKcal'),
+        json_extract(v.nutrients_per_basis_json, '$.energyKcal')
+      ) * p.basis_multiplier * ? AS p10EnergyKcal,
+      COALESCE(
+        json_extract(v.nutrient_range_per_basis_json, '$.p50.energyKcal'),
+        json_extract(v.nutrients_per_basis_json, '$.energyKcal')
+      ) * p.basis_multiplier * ? AS p50EnergyKcal,
+      COALESCE(
+        json_extract(v.nutrient_range_per_basis_json, '$.p90.energyKcal'),
+        json_extract(v.nutrients_per_basis_json, '$.energyKcal')
+      ) * p.basis_multiplier * ? AS p90EnergyKcal
     FROM nutrition_food_variants v
     JOIN nutrition_portions p ON p.variant_id=v.id
     WHERE v.id=? AND p.id=?;
@@ -156,10 +149,7 @@ function calculateGramsInSql(
   >;
 }
 
-function compareVector(
-  sql: SqlNutritionResult,
-  vector: NutritionVector,
-): void {
+function compareVector(sql: SqlNutritionResult, vector: NutritionVector): void {
   closeTo(sql.energyKcal, vector.energyKcal);
   closeTo(sql.proteinG, vector.proteinG);
   closeTo(sql.carbsG, vector.carbsG);
@@ -185,7 +175,6 @@ test('SQLite basis and portion arithmetic matches TypeScript Nutrition Core', ()
         carbsG: 31.2,
         fatG: 6.4,
         sodiumMg: 90,
-        // calcium is intentionally missing and must remain unknown.
       },
       nutrientRangePerBasis: {
         p10: { energyKcal: 213.66, proteinG: 11.475 },
@@ -212,12 +201,7 @@ test('SQLite basis and portion arithmetic matches TypeScript Nutrition Core', ()
         portionId: 'portion-bowl',
         count,
       });
-      const sqlite = calculatePortionInSql(
-        database,
-        per100.id,
-        'portion-bowl',
-        count,
-      );
+      const sqlite = calculatePortionInSql(database, per100.id, 'portion-bowl', count);
       closeTo(sqlite.grams, typescript.grams);
       compareVector(sqlite, typescript.center);
       closeTo(sqlite.p10EnergyKcal, typescript.range?.p10.energyKcal);
@@ -241,7 +225,7 @@ test('SQLite basis and portion arithmetic matches TypeScript Nutrition Core', ()
   }
 });
 
-test('SQLite and TypeScript both preserve unknown serving weight', () => {
+test('SQLite and TypeScript preserve unknown serving weight and point ranges', () => {
   const database = new DatabaseSync(':memory:');
   try {
     database.exec(portableNutritionSchema(NUTRITION_CORE_MIGRATION_V1));
@@ -276,17 +260,16 @@ test('SQLite and TypeScript both preserve unknown serving weight', () => {
       portionId: 'portion-serving',
       count: 2,
     });
-    const sqlite = calculatePortionInSql(
-      database,
-      serving.id,
-      'portion-serving',
-      2,
-    );
+    const sqlite = calculatePortionInSql(database, serving.id, 'portion-serving', 2);
     assert.equal(typescript.grams, null);
     assert.equal(sqlite.grams, null);
     compareVector(sqlite, typescript.center);
-    assert.equal(sqlite.p10EnergyKcal, null);
-    assert.equal(typescript.range, undefined);
+    closeTo(sqlite.p10EnergyKcal, typescript.range?.p10.energyKcal);
+    closeTo(sqlite.p50EnergyKcal, typescript.range?.p50.energyKcal);
+    closeTo(sqlite.p90EnergyKcal, typescript.range?.p90.energyKcal);
+    closeTo(typescript.range?.p10.energyKcal, typescript.center.energyKcal);
+    closeTo(typescript.range?.p50.energyKcal, typescript.center.energyKcal);
+    closeTo(typescript.range?.p90.energyKcal, typescript.center.energyKcal);
   } finally {
     database.close();
   }
