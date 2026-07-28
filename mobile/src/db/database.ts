@@ -1,13 +1,13 @@
 import { File } from 'expo-file-system';
 import * as SQLite from 'expo-sqlite';
 import { runDatabaseMigrations } from '@/db/migration-runner';
-import { migrations } from '@/db/migrations';
+import { migrations } from '@/db/migration-plan';
 
 export const DATABASE_NAME = 'neofit.db';
 const FOOD_SEED_SETTING = 'catalog.iranian-foods.seed-version';
-const FOOD_SEED_VERSION = '2';
+const FOOD_SEED_VERSION = '3';
 const NUTRITION_CORE_SEED_SETTING = 'nutrition.core.seed-version';
-const NUTRITION_CORE_SEED_VERSION = '2';
+const NUTRITION_CORE_SEED_VERSION = '3';
 const REQUIRED_V1_TABLES = [
   'app_settings',
   'profile',
