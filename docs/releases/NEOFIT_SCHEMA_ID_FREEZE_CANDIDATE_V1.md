@@ -12,11 +12,11 @@ Final freeze remains blocked by the source-reviewed replacement of DS0 profiles,
 
 - repository: `Emad211/Neofit-ai`
 - pull request: `#3`
-- head commit: `39bb3b00384354a7d8f20a22a91e88fdf6ebfd77`
-- Mobile CI run: `30359903362` (`#463`)
+- head commit: `05e2874e966cc4ebb66eec9a2e58cd7816e5b6c7`
+- Mobile CI run: `30360277151` (`#465`)
 - artifact: `neofit-schema-id-freeze-candidate`
-- artifact id: `8688350258`
-- artifact digest: `sha256:6e0ba52f79952a51679a967a58464e64af64e6d0be8d168ee898583deb9862a3`
+- artifact id: `8688499299`
+- artifact digest: `sha256:4af5f20634a565f92f9a3eca89015e000b84b24a4eda5a43dddbb1088b79dae4`
 - candidate format: `neofit-schema-id-freeze-candidate`
 - candidate version: `1.1.0`
 - candidate status: `candidate-not-final`
