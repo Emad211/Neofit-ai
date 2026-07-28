@@ -48,7 +48,7 @@ The percentages below describe the first locked-scope implementation batch and a
 
 A new percentage has not been assigned because the remaining data-verification and real-device QA work is not equivalent in effort to the completed code paths.
 
-## Current verified implementation state — 2026-07-27
+## Current verified implementation state — 2026-07-28
 
 ### Catalog and deterministic engine
 
@@ -65,8 +65,9 @@ A new percentage has not been assigned because the remaining data-verification a
 - Persian alias rows: **218**.
 - Runtime, backup metadata, manifest, database byte size and SHA-256 are protected by one shared release contract and a CI drift test.
 - Nutrition arithmetic, ranges, sums and serving weights are canonicalized to prevent binary floating-point noise from leaking into persisted or displayed values.
+- SQLite and TypeScript calculations are now compared directly for per-100g, named portions, fractional quantities, uncertainty ranges, missing nutrients and unknown serving weights.
 
-### Iranian profile state
+### Iranian profile state and controlled promotion
 
 - Existing prior app profiles: **83**.
 - Generated DS0 broad-fallback profiles: **178**.
@@ -74,6 +75,14 @@ A new percentage has not been assigned because the remaining data-verification a
 - DS0 records are intentionally marked `broad_fallback`, `low` confidence and unknown serving weight.
 - DS0 records are category priors, not recipe-specific measurements and not verified nutrition records.
 - The DS0 release created **zero** verified records and must be progressively replaced by source-specific profiles.
+- Migration 5 adds `evidence_tier`, `source_record_id` and `source_version` to the mutable food catalog and backfills existing DS0/custom records.
+- SQLite source precedence is locked as `imported > seeded`, while custom identities are protected from both seeded and imported replacement.
+- A later built-in reseed cannot downgrade a promoted imported profile.
+- Removing or replacing an imported overlay restores the bundled profile for the same stable id when one exists and rebuilds the affected canonical concepts.
+- Canonical FoodVariant records preserve the explicit evidence tier, source dataset, source-record id and source version.
+- A versioned strong-profile Promotion Bundle contract requires a non-null serving weight, medium/high confidence, record-level provenance and either `verified_source` or `digital_consensus`.
+- Promotion is an internal governance path, not a consumer control that can self-assign verified evidence.
+- Passing the Promotion Bundle schema proves structural completeness and provenance linkage; it does not independently prove scientific adequacy of the cited source.
 
 ### Persian search
 
@@ -92,6 +101,15 @@ A new percentage has not been assigned because the remaining data-verification a
 - Restore supports transactional Merge and destructive Replace with separate user confirmation.
 - Backup catalog version/SHA mismatch is disclosed while snapshot Diary nutrition remains preserved.
 
+### Migration and recovery gates
+
+- The migration runner validates contiguous positive versions and rejects a database newer than the application.
+- A real SQLite upgrade test now executes v1 → v5 with legacy Profile and `meal_logs` data present.
+- The v1 → v5 test verifies Profile preservation, one-time legacy Diary import, FTS synchronization, provenance backfill and idempotent repeated startup.
+- Failed migration SQL is rolled back together with its `user_version`; partially created tables do not survive.
+- Node CI uses a portable table substitute only when its SQLite build lacks FTS5. Expo/Android still exports against the actual Expo SQLite runtime and FTS schema.
+- Binary database restore retains its rollback copy and validates SQLite integrity before accepting the restored database.
+
 ### Vision production boundary
 
 - Camera/gallery images are resized to a maximum 1,024-pixel dimension and compressed before upload.
@@ -104,22 +122,23 @@ A new percentage has not been assigned because the remaining data-verification a
 ### Validation and workflow governance
 
 - Mobile CI runs deterministic tests, Nutrition SQLite schema validation, Expo package checks, Expo Doctor, strict TypeScript and Android export.
+- Deterministic tests now include v1 → v5 upgrade, migration rollback, future-version rejection, SQLite ↔ TypeScript equivalence, catalog precedence, provenance validation and Promotion Bundle validation.
 - Expensive catalog builds, media acquisition and source rebuilds are manual or path-scoped to relevant branch pushes.
 - Generic concept audit, fallback-profile generation and Persian benchmark no longer rerun for unrelated app changes in the long-lived PR.
 
 ## Remaining release-critical path
 
-1. Replace the 178 DS0 broad fallbacks with recipe/source-specific profiles, defensible portion weights and stronger evidence tiers.
+1. Produce and independently review source-specific Promotion Bundles that replace the 178 DS0 broad fallbacks with defensible recipe profiles and serving weights.
 2. Freeze an independently curated natural-user Persian corpus containing real spelling errors, colloquial and regional names, preparation/portion language, ambiguous foods, negative cases and required abstentions.
 3. Run real-device Android QA for camera/gallery permissions, image manipulation, provider failures, cache behaviour and mixed-plate confirmation.
 4. Run real-device and large-data QA for backup selection, validation, transactional Merge/Replace, rollback behaviour and post-restore UI refresh.
-5. Complete final cross-layer SQLite/TypeScript equivalence and migration testing across clean install, legacy upgrade and repeated upgrade paths.
-6. Review every mutable identifier and schema, then freeze release IDs, schema versions and migration policy.
-7. Perform final accessibility, RTL/LTR, performance, privacy and release-governance review before taking the PR out of Draft.
+5. Review every mutable identifier and schema, then freeze release IDs, schema versions and migration policy.
+6. Perform final accessibility, RTL/LTR, performance, privacy and release-governance review before taking the PR out of Draft.
 
 ## Definition of done
 
 - All 261 Iranian foods have stable profiles; broad category fallbacks are not counted as final verified profiles.
+- Every promoted profile retains reviewable source/version/record provenance and a defensible serving basis.
 - All 13,225 generic source records remain mapped to a stable Concept/Variant or an explicitly governed exception.
 - Persian search meets Top-1 >= 90% and Top-5 >= 97% on the frozen independent user-query corpus, not only the generated alias regression set.
 - SQLite and TypeScript nutrition calculations produce equivalent results across the release corpus.
