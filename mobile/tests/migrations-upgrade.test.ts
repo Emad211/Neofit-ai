@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import test from 'node:test';
 import { runDatabaseMigrations } from '../src/db/migration-runner';
-import { migrations, type Migration } from '../src/db/migrations';
+import { migrations, type Migration } from '../src/db/migration-plan';
 import {
   nodeCompatibleProductionMigrations,
   nodeDatabaseAdapter,
@@ -45,6 +45,36 @@ function insertLegacyMeal(
   );
 }
 
+function insertPreV5Food(
+  database: DatabaseSync,
+  input: {
+    id: string;
+    sourceType: 'seeded' | 'custom' | 'imported';
+    sourceLabel: string;
+  },
+): void {
+  database.prepare(`
+    INSERT INTO food_catalog (
+      id, name_fa, name_en, aliases_fa_json, aliases_en_json, aliases_search,
+      category, portion_label_fa, portion_label_en, portion_grams,
+      calories, protein_g, carbs_g, fat_g, variability_pct, confidence,
+      source_type, source_label, notes_fa, notes_en, updated_at
+    ) VALUES (
+      ?, ?, ?, '[]', '[]', ?,
+      'custom', 'یک سهم', 'one serving', NULL,
+      100, 5, 10, 4, 20, 'medium',
+      ?, ?, '', '', '2026-07-27T00:00:00.000Z'
+    );
+  `).run(
+    input.id,
+    `غذای ${input.id}`,
+    `Food ${input.id}`,
+    input.id,
+    input.sourceType,
+    input.sourceLabel,
+  );
+}
+
 function verifyFoodCatalogSearchTriggers(database: DatabaseSync): void {
   database.prepare(`
     INSERT INTO food_catalog (
@@ -54,7 +84,7 @@ function verifyFoodCatalogSearchTriggers(database: DatabaseSync): void {
       source_type, source_label, notes_fa, notes_en, updated_at
     ) VALUES (
       'migration-test-food', 'غذای تست', 'Migration test food', '[]', '[]', 'غذای تست',
-      'test', 'یک سهم', 'one serving', NULL,
+      'custom', 'یک سهم', 'one serving', NULL,
       100, 5, 10, 4, 20, 'medium',
       'custom', 'migration test', '', '', '2026-07-27T00:00:00.000Z'
     );
@@ -81,7 +111,7 @@ function verifyFoodCatalogSearchTriggers(database: DatabaseSync): void {
   );
 }
 
-test('production migrations upgrade v1 data through v4 exactly once', async () => {
+test('production migrations upgrade v1 data through v5 exactly once', async () => {
   const database = new DatabaseSync(':memory:');
   try {
     database.exec('PRAGMA foreign_keys=ON;');
@@ -95,15 +125,58 @@ test('production migrations upgrade v1 data through v4 exactly once', async () =
     insertLegacyMeal(database, { id: 'plan-1', source: 'plan', calories: 520 });
     insertLegacyMeal(database, { id: 'photo-1', source: 'ai_photo', calories: 630 });
 
-    const upgraded = await runDatabaseMigrations(adapter, production.list);
-    assert.equal(upgraded.fromVersion, 1);
-    assert.equal(upgraded.toVersion, 4);
-    assert.deepEqual(upgraded.appliedVersions, [2, 3, 4]);
-    assert.equal(scalarNumber(database, 'PRAGMA user_version;'), 4);
+    const throughV4 = await runDatabaseMigrations(adapter, production.list.slice(0, 4));
+    assert.equal(throughV4.fromVersion, 1);
+    assert.equal(throughV4.toVersion, 4);
+    assert.deepEqual(throughV4.appliedVersions, [2, 3, 4]);
     assert.equal(scalarNumber(database, 'SELECT COUNT(*) FROM meal_logs;'), 3);
     assert.equal(scalarNumber(database, 'SELECT COUNT(*) FROM nutrition_diary_entries;'), 3);
     assert.equal(tableExists(database, 'food_catalog_fts'), true);
     assert.equal(tableExists(database, 'nutrition_search_fts'), true);
+
+    insertPreV5Food(database, {
+      id: 'fallback-existing',
+      sourceType: 'seeded',
+      sourceLabel: 'IFKB DS0 broad-fallback category prior',
+    });
+    insertPreV5Food(database, {
+      id: 'custom-existing',
+      sourceType: 'custom',
+      sourceLabel: 'User food',
+    });
+    insertPreV5Food(database, {
+      id: 'seed-existing',
+      sourceType: 'seeded',
+      sourceLabel: 'Legacy built-in estimate',
+    });
+
+    const provenanceUpgrade = await runDatabaseMigrations(adapter, production.list);
+    assert.deepEqual(provenanceUpgrade, {
+      fromVersion: 4,
+      toVersion: 5,
+      appliedVersions: [5],
+    });
+    assert.equal(scalarNumber(database, 'PRAGMA user_version;'), 5);
+
+    const provenanceRows = database.prepare(`
+      SELECT id, evidence_tier, source_record_id, source_version
+      FROM food_catalog
+      WHERE id IN ('fallback-existing','custom-existing','seed-existing')
+      ORDER BY id;
+    `).all() as Array<{
+      id: string;
+      evidence_tier: string;
+      source_record_id: string | null;
+      source_version: string | null;
+    }>;
+    assert.deepEqual(
+      provenanceRows.map((row) => [row.id, row.evidence_tier, row.source_record_id, row.source_version]),
+      [
+        ['custom-existing', 'user_entered', 'custom-existing', null],
+        ['fallback-existing', 'broad_fallback', 'fallback-existing', null],
+        ['seed-existing', 'legacy_estimate', 'seed-existing', null],
+      ],
+    );
     verifyFoodCatalogSearchTriggers(database);
 
     const profile = database.prepare(
@@ -143,16 +216,17 @@ test('production migrations upgrade v1 data through v4 exactly once', async () =
     }
 
     const repeated = await runDatabaseMigrations(adapter, production.list);
-    assert.deepEqual(repeated, { fromVersion: 4, toVersion: 4, appliedVersions: [] });
+    assert.deepEqual(repeated, { fromVersion: 5, toVersion: 5, appliedVersions: [] });
     assert.equal(scalarNumber(database, 'SELECT COUNT(*) FROM nutrition_diary_entries;'), 3);
     assert.equal(
       scalarNumber(database, "SELECT COUNT(*) FROM nutrition_diary_entries WHERE id LIKE 'legacy-meal:%';"),
       3,
     );
     console.log(JSON.stringify({
-      migrationUpgrade: 'v1-to-v4',
+      migrationUpgrade: 'v1-to-v5',
       nativeFts5: production.nativeFts5,
       importedLegacyMeals: 3,
+      provenanceRows: provenanceRows.length,
       repeatedAppliedVersions: repeated.appliedVersions,
     }));
   } finally {
