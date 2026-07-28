@@ -37,6 +37,11 @@ jobs:
           cache: npm
           cache-dependency-path: mobile/package-lock.json
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Install locked mobile dependencies
         run: npm ci --no-audit --no-fund > /tmp/npm-ci.log 2>&1 || { cat /tmp/npm-ci.log; exit 1; }
 
@@ -49,6 +54,22 @@ jobs:
         with:
           name: mobile-test-diagnostics
           path: /tmp/npm-test.log
+          if-no-files-found: ignore
+          retention-days: 2
+
+      - name: Run IFKB Python contract tests
+        working-directory: ifkb/universal
+        run: |
+          python -m unittest -v test_natural_query_corpus.py \
+            > /tmp/ifkb-python-tests.log 2>&1 \
+            || { cat /tmp/ifkb-python-tests.log; exit 1; }
+
+      - name: Upload IFKB Python diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-python-test-diagnostics
+          path: /tmp/ifkb-python-tests.log
           if-no-files-found: ignore
           retention-days: 2
 
