@@ -1,0 +1,1 @@
+case_id,query_text,expected_route,expected_target,acceptable_top5_targets,phenomena,ambiguity,source_kind,source_batch_id,collection_basis,privacy_reviewed,annotator_a,annotator_b,adjudicator,annotation_status
