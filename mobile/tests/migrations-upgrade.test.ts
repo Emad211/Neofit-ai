@@ -81,12 +81,14 @@ function verifyFoodCatalogSearchTriggers(database: DatabaseSync): void {
       id, name_fa, name_en, aliases_fa_json, aliases_en_json, aliases_search,
       category, portion_label_fa, portion_label_en, portion_grams,
       calories, protein_g, carbs_g, fat_g, variability_pct, confidence,
-      source_type, source_label, notes_fa, notes_en, updated_at
+      source_type, source_label, evidence_tier, source_record_id, source_version,
+      notes_fa, notes_en, updated_at
     ) VALUES (
       'migration-test-food', 'غذای تست', 'Migration test food', '[]', '[]', 'غذای تست',
       'custom', 'یک سهم', 'one serving', NULL,
       100, 5, 10, 4, 20, 'medium',
-      'custom', 'migration test', '', '', '2026-07-27T00:00:00.000Z'
+      'custom', 'migration test', 'user_entered', 'migration-test-food', NULL,
+      '', '', '2026-07-27T00:00:00.000Z'
     );
   `).run();
   assert.equal(
