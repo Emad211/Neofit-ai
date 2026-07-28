@@ -224,18 +224,24 @@ function buildPersonalSchemaAudit() {
   }
 }
 
+function addNameMapping(map: Map<string, Set<string>>, value: string, canonId: string): void {
+  const normalized = normalizePersian(value);
+  if (!normalized) return;
+  const set = map.get(normalized) ?? new Set<string>();
+  set.add(canonId);
+  map.set(normalized, set);
+}
+
 function buildAppToCanonMapping(
   canonRows: readonly IranianCanonRow[],
 ): { mappings: string[]; unresolved: string[]; ambiguous: string[] } {
   const canonIds = new Set(canonRows.map((row) => row.canon_id));
-  const names = new Map<string, Set<string>>();
+  const primaryNames = new Map<string, Set<string>>();
+  const aliasNames = new Map<string, Set<string>>();
   for (const row of canonRows) {
-    for (const value of [row.name_fa, ...(row.aliases_fa ?? '').split('|')]) {
-      const normalized = normalizePersian(value);
-      if (!normalized) continue;
-      const set = names.get(normalized) ?? new Set<string>();
-      set.add(row.canon_id);
-      names.set(normalized, set);
+    addNameMapping(primaryNames, row.name_fa, row.canon_id);
+    for (const alias of (row.aliases_fa ?? '').split('|')) {
+      addNameMapping(aliasNames, alias, row.canon_id);
     }
   }
 
@@ -251,13 +257,20 @@ function buildAppToCanonMapping(
       const canonId = `IFKB-CANON-${fallbackMatch[1]}`;
       if (canonIds.has(canonId)) candidates.add(canonId);
     }
+
     if (candidates.size === 0) {
-      for (const value of [profile.nameFa, ...profile.aliasesFa]) {
-        const matches = names.get(normalizePersian(value));
+      const primaryMatches = primaryNames.get(normalizePersian(profile.nameFa));
+      if (primaryMatches) candidates = new Set(primaryMatches);
+    }
+
+    if (candidates.size === 0) {
+      for (const alias of profile.aliasesFa) {
+        const matches = aliasNames.get(normalizePersian(alias));
         if (!matches) continue;
         for (const canonId of matches) candidates.add(canonId);
       }
     }
+
     if (candidates.size === 1) {
       mappings.push(`${profile.id}=>${[...candidates][0]}`);
     } else if (candidates.size === 0) {
