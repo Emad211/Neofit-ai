@@ -6,10 +6,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { IRANIAN_FALLBACK_SEED } from '../src/data/iranian-fallback-seed.generated';
 import { IRANIAN_FOOD_SEED } from '../src/data/iranian-food-seed';
 import { migrations } from '../src/db/migration-plan';
-import {
-  IFKB_CATALOG_RELEASE,
-  NUTRIENT_KEYS,
-} from '../src/nutrition-core';
+import { IFKB_CATALOG_RELEASE, NUTRIENT_KEYS } from '../src/nutrition-core';
 
 interface SqliteObjectRow {
   type: string;
@@ -19,7 +16,6 @@ interface SqliteObjectRow {
 }
 
 interface TableColumnRow {
-  cid: number;
   name: string;
   type: string;
   notnull: number;
@@ -44,7 +40,7 @@ function sha256(value: string | Buffer): string {
 }
 
 function canonicalJson(value: unknown): string {
-  return JSON.stringify(value, null, 2) + '\n';
+  return `${JSON.stringify(value, null, 2)}\n`;
 }
 
 function normalizeSql(value: string): string {
@@ -61,15 +57,10 @@ function supportsFts5(database: DatabaseSync): boolean {
   }
 }
 
-function replaceRequired(
-  sql: string,
-  pattern: RegExp,
-  replacement: string,
-  label: string,
-): string {
-  const next = sql.replace(pattern, replacement);
-  if (next === sql) throw new Error(`Could not create portable substitute for ${label}.`);
-  return next;
+function replaceRequired(sql: string, pattern: RegExp, replacement: string, label: string): string {
+  const result = sql.replace(pattern, replacement);
+  if (result === sql) throw new Error(`Could not create portable substitute for ${label}.`);
+  return result;
 }
 
 function portableMigrationSql(version: number, sql: string): string {
@@ -114,10 +105,10 @@ function quoteIdentifier(value: string): string {
 }
 
 function sortedStringHash(values: readonly string[]): string {
-  return sha256(values.slice().sort().join('\n') + '\n');
+  return sha256(`${values.slice().sort().join('\n')}\n`);
 }
 
-function queryStringColumn(database: DatabaseSync, sql: string): string[] {
+function queryStrings(database: DatabaseSync, sql: string): string[] {
   return (database.prepare(sql).all() as Array<Record<string, unknown>>)
     .map((row) => String(Object.values(row)[0] ?? ''))
     .filter(Boolean)
@@ -141,17 +132,16 @@ function buildPersonalSchemaAudit() {
       throw error;
     }
 
+    const latest = migrations.at(-1)?.version ?? 0;
     const version = Number(
       (database.prepare('PRAGMA user_version;').get() as { user_version: number }).user_version,
     );
-    const latest = migrations.at(-1)?.version ?? 0;
-    if (version !== latest) throw new Error(`Schema audit ended at version ${version}, expected ${latest}.`);
+    if (version !== latest) throw new Error(`Schema audit ended at version ${version}; expected ${latest}.`);
 
     const objects = (database.prepare(`
       SELECT type,name,tbl_name,sql
       FROM sqlite_master
-      WHERE sql IS NOT NULL
-        AND name NOT LIKE 'sqlite_%'
+      WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%'
       ORDER BY type,name;
     `).all() as unknown as SqliteObjectRow[])
       .filter((row) => !/_(?:data|idx|content|docsize|config)$/.test(row.name))
@@ -162,37 +152,37 @@ function buildPersonalSchemaAudit() {
         sqlSha256: sha256(normalizeSql(row.sql)),
       }));
 
-    const tableNames = objects
+    const tables = objects
       .filter((object) => object.type === 'table')
       .map((object) => object.name)
-      .sort();
-    const tables = tableNames.map((table) => {
-      const columns = database.prepare(`PRAGMA table_xinfo(${quoteIdentifier(table)});`).all()
-        as unknown as TableColumnRow[];
-      const foreignKeys = database.prepare(`PRAGMA foreign_key_list(${quoteIdentifier(table)});`).all()
-        as unknown as ForeignKeyRow[];
-      return {
-        name: table,
-        columns: columns.map((column) => ({
-          name: column.name,
-          type: column.type,
-          notNull: column.notnull === 1,
-          defaultValue: column.dflt_value === null ? null : String(column.dflt_value),
-          primaryKeyPosition: column.pk,
-          hidden: column.hidden,
-        })),
-        foreignKeys: foreignKeys.map((foreignKey) => ({
-          id: foreignKey.id,
-          sequence: foreignKey.seq,
-          table: foreignKey.table,
-          from: foreignKey.from,
-          to: foreignKey.to,
-          onUpdate: foreignKey.on_update,
-          onDelete: foreignKey.on_delete,
-          match: foreignKey.match,
-        })),
-      };
-    });
+      .sort()
+      .map((table) => {
+        const columns = database.prepare(`PRAGMA table_xinfo(${quoteIdentifier(table)});`).all()
+          as unknown as TableColumnRow[];
+        const foreignKeys = database.prepare(`PRAGMA foreign_key_list(${quoteIdentifier(table)});`).all()
+          as unknown as ForeignKeyRow[];
+        return {
+          name: table,
+          columns: columns.map((column) => ({
+            name: column.name,
+            type: column.type,
+            notNull: column.notnull === 1,
+            defaultValue: column.dflt_value === null ? null : String(column.dflt_value),
+            primaryKeyPosition: column.pk,
+            hidden: column.hidden,
+          })),
+          foreignKeys: foreignKeys.map((foreignKey) => ({
+            id: foreignKey.id,
+            sequence: foreignKey.seq,
+            table: foreignKey.table,
+            from: foreignKey.from,
+            to: foreignKey.to,
+            onUpdate: foreignKey.on_update,
+            onDelete: foreignKey.on_delete,
+            match: foreignKey.match,
+          })),
+        };
+      });
 
     return {
       latestMigrationVersion: latest,
@@ -215,30 +205,26 @@ function buildPersonalSchemaAudit() {
 }
 
 function buildBundledCatalogAudit() {
-  const databasePath = fileURLToPath(
-    new URL('../assets/ifkb/ifkb-universal-v1.db', import.meta.url),
-  );
-  const manifestPath = fileURLToPath(
-    new URL('../assets/ifkb/ifkb-universal-v1.manifest.json', import.meta.url),
-  );
+  const databasePath = fileURLToPath(new URL('../assets/ifkb/ifkb-universal-v1.db', import.meta.url));
+  const manifestPath = fileURLToPath(new URL('../assets/ifkb/ifkb-universal-v1.manifest.json', import.meta.url));
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as Record<string, unknown>;
   const bytes = readFileSync(databasePath);
   const database = new DatabaseSync(databasePath, { readOnly: true });
   try {
-    const genericFoodIds = queryStringColumn(database, 'SELECT id FROM generic_foods ORDER BY id;');
-    const genericConceptIds = queryStringColumn(database, 'SELECT id FROM generic_concepts ORDER BY id;');
-    const genericVariantMappings = queryStringColumn(
+    const genericFoodIds = queryStrings(database, 'SELECT id FROM generic_foods ORDER BY id;');
+    const genericConceptIds = queryStrings(database, 'SELECT id FROM generic_concepts ORDER BY id;');
+    const genericVariantMappings = queryStrings(
       database,
       "SELECT food_id || '=>' || concept_id FROM generic_variants ORDER BY food_id;",
     );
-    const iranianCanonIds = queryStringColumn(database, 'SELECT canon_id FROM iranian_canon ORDER BY canon_id;');
-    const aliasRows = queryStringColumn(
+    const iranianCanonIds = queryStrings(database, 'SELECT canon_id FROM iranian_canon ORDER BY canon_id;');
+    const aliasRows = queryStrings(
       database,
       "SELECT alias_fa || '=>' || target_type || ':' || target FROM persian_search_aliases ORDER BY alias_fa,target_type,target;",
     );
-    const builtInIds = [...IRANIAN_FOOD_SEED, ...IRANIAN_FALLBACK_SEED]
-      .map((item) => item.id)
-      .sort();
+    const builtInLegacyIds = IRANIAN_FOOD_SEED.map((item) => item.id).sort();
+    const builtInFallbackIds = IRANIAN_FALLBACK_SEED.map((item) => item.id).sort();
+    const builtInIds = [...builtInLegacyIds, ...builtInFallbackIds].sort();
 
     const checks: Array<[string, number, number]> = [
       ['generic foods', genericFoodIds.length, IFKB_CATALOG_RELEASE.genericFoodCount],
@@ -247,16 +233,16 @@ function buildBundledCatalogAudit() {
       ['Iranian canon ids', iranianCanonIds.length, IFKB_CATALOG_RELEASE.iranianCanonCount],
       ['Persian alias rows', aliasRows.length, IFKB_CATALOG_RELEASE.persianAliasCount],
       ['built-in Iranian ids', builtInIds.length, IFKB_CATALOG_RELEASE.iranianCanonCount],
+      ['legacy Iranian profile ids', builtInLegacyIds.length, 83],
+      ['fallback Iranian profile ids', builtInFallbackIds.length, 178],
     ];
     for (const [label, actual, expected] of checks) {
       if (actual !== expected) throw new Error(`${label}: ${actual} does not match ${expected}.`);
     }
     if (new Set(builtInIds).size !== builtInIds.length) {
-      throw new Error('Built-in Iranian seed ids are not unique.');
+      throw new Error('Built-in Iranian app-profile ids are not unique.');
     }
-    if (sortedStringHash(builtInIds) !== sortedStringHash(iranianCanonIds)) {
-      throw new Error('Built-in Iranian ids do not exactly match the canonical IFKB id set.');
-    }
+
     const databaseSha256 = sha256(bytes);
     if (databaseSha256 !== IFKB_CATALOG_RELEASE.databaseSha256) {
       throw new Error('Bundled catalog SHA-256 differs from the runtime release contract.');
@@ -267,6 +253,10 @@ function buildBundledCatalogAudit() {
     if (manifest.databaseSha256 !== databaseSha256) {
       throw new Error('Bundled catalog manifest SHA-256 differs from the actual asset.');
     }
+
+    const canonicalSet = new Set(iranianCanonIds);
+    const directCanonicalFallbackCount = builtInFallbackIds.filter((id) => canonicalSet.has(id)).length;
+    const directCanonicalLegacyCount = builtInLegacyIds.filter((id) => canonicalSet.has(id)).length;
 
     return {
       catalogRelease: IFKB_CATALOG_RELEASE,
@@ -280,7 +270,15 @@ function buildBundledCatalogAudit() {
       genericVariantMappingSha256: sortedStringHash(genericVariantMappings),
       iranianCanonIdCount: iranianCanonIds.length,
       iranianCanonIdSetSha256: sortedStringHash(iranianCanonIds),
-      builtInIranianIdSetSha256: sortedStringHash(builtInIds),
+      appProfileIdPolicy: 'legacy starter ids and canonical fallback ids are separately frozen namespaces',
+      builtInIranianProfileIdCount: builtInIds.length,
+      builtInIranianProfileIdSetSha256: sortedStringHash(builtInIds),
+      builtInLegacyProfileIdCount: builtInLegacyIds.length,
+      builtInLegacyProfileIdSetSha256: sortedStringHash(builtInLegacyIds),
+      builtInFallbackProfileIdCount: builtInFallbackIds.length,
+      builtInFallbackProfileIdSetSha256: sortedStringHash(builtInFallbackIds),
+      directCanonicalLegacyIdOverlap: directCanonicalLegacyCount,
+      directCanonicalFallbackIdOverlap: directCanonicalFallbackCount,
       persianAliasRowCount: aliasRows.length,
       persianAliasMappingSha256: sortedStringHash(aliasRows),
     };
@@ -291,8 +289,9 @@ function buildBundledCatalogAudit() {
 
 function outputPath(): string {
   const index = process.argv.indexOf('--output');
-  const value = index >= 0 ? process.argv[index + 1] : undefined;
-  return resolve(value ?? 'build/schema-freeze-candidate/manifest.json');
+  return resolve(index >= 0 && process.argv[index + 1]
+    ? process.argv[index + 1]!
+    : 'build/schema-freeze-candidate/manifest.json');
 }
 
 function main(): void {
@@ -315,6 +314,7 @@ function main(): void {
     schemaFingerprintSha256: personalSchema.schemaFingerprintSha256,
     genericFoodIdSetSha256: bundledCatalog.genericFoodIdSetSha256,
     iranianCanonIdSetSha256: bundledCatalog.iranianCanonIdSetSha256,
+    appProfileIdSetSha256: bundledCatalog.builtInIranianProfileIdSetSha256,
     status: manifest.status,
   }));
 }
