@@ -74,8 +74,8 @@ async function seedLocalCatalogs(database: SQLite.SQLiteDatabase) {
     NUTRITION_CORE_SEED_SETTING,
   );
   if (nutritionSeed?.value !== NUTRITION_CORE_SEED_VERSION) {
-    const { seedNutritionCoreFromLegacyCatalog } = await import('@/db/nutrition-food-repository');
-    await seedNutritionCoreFromLegacyCatalog(database);
+    const { seedNutritionCoreFromFoodCatalog } = await import('@/db/nutrition-catalog-seed');
+    await seedNutritionCoreFromFoodCatalog(database);
     await writeSeedVersion(
       database,
       NUTRITION_CORE_SEED_SETTING,
