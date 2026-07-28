@@ -35,10 +35,15 @@ test('generated fallback profiles remain broad, built-in and non-verified', () =
   }
 });
 
-test('user-import replacement targets imported records only, never built-in DS0 profiles', () => {
-  const source = readFileSync(new URL('../src/db/food-repository.ts', import.meta.url), 'utf8');
-  assert.match(source, /BUILT_IN_IRANIAN_FOOD_SEED\.length !== 261/);
-  assert.match(source, /for \(const item of BUILT_IN_IRANIAN_FOOD_SEED\)/);
-  assert.match(source, /DELETE FROM food_catalog WHERE source_type = 'imported'/);
-  assert.doesNotMatch(source, /DELETE FROM food_catalog WHERE source_type = 'seeded'/);
+test('verified imports have precedence while built-in DS0 records remain recoverable', () => {
+  const facade = readFileSync(new URL('../src/db/food-repository.ts', import.meta.url), 'utf8');
+  const implementation = readFileSync(new URL('../src/db/food-repository-impl.ts', import.meta.url), 'utf8');
+  assert.match(facade, /food-repository-impl/);
+  assert.match(implementation, /BUILT_IN_IRANIAN_FOOD_SEED\.length !== 261/);
+  assert.match(implementation, /BUILT_IN_IRANIAN_FOOD_BY_ID/);
+  assert.match(implementation, /FOOD_CATALOG_UPSERT_PRECEDENCE_SQL/);
+  assert.match(implementation, /restoreBuiltInFoods/);
+  assert.match(implementation, /synchronizeCanonicalFoodIds/);
+  assert.match(implementation, /evidenceTier\?: EvidenceTier/);
+  assert.doesNotMatch(implementation, /DELETE FROM food_catalog WHERE source_type = 'seeded'/);
 });
