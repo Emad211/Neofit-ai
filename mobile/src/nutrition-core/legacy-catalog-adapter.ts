@@ -1,3 +1,4 @@
+import { resolveCatalogEvidenceTier } from './catalog-provenance';
 import { pointRange, scaleNutritionVector } from './nutrition';
 import type { EvidenceTier, FoodConcept, FoodVariant, NutritionRange, NutritionVector } from './types';
 
@@ -18,6 +19,9 @@ export interface LegacyCatalogFood {
   readonly variabilityPct: number;
   readonly sourceType: 'seeded' | 'custom' | 'imported';
   readonly sourceLabel: string;
+  readonly evidenceTier?: EvidenceTier;
+  readonly sourceRecordId?: string | null;
+  readonly sourceVersion?: string | null;
 }
 
 export interface LegacyCatalogDocument {
@@ -34,17 +38,6 @@ function uncertaintyRange(center: NutritionVector, variabilityPct: number): Nutr
   };
 }
 
-function evidenceTier(item: LegacyCatalogFood): EvidenceTier {
-  if (item.sourceType === 'custom') return 'user_entered';
-  if (/\bDS0\b|broad[ -]?fallback/i.test(item.sourceLabel)) return 'broad_fallback';
-  return 'legacy_estimate';
-}
-
-/**
- * Converts the existing serving-based catalog without pretending that an
- * unknown serving weight is 100 g. The new canonical layer can therefore
- * coexist with old records while preserving scientific meaning.
- */
 export function legacyCatalogFoodToDocument(item: LegacyCatalogFood): LegacyCatalogDocument {
   const variantId = `${item.id}:default`;
   const center: NutritionVector = {
@@ -53,6 +46,8 @@ export function legacyCatalogFoodToDocument(item: LegacyCatalogFood): LegacyCata
     carbsG: item.carbsG,
     fatG: item.fatG,
   };
+  const sourceRecordId = item.sourceRecordId?.trim() || item.id;
+  const sourceVersion = item.sourceVersion?.trim() || null;
   return {
     concept: {
       id: item.id,
@@ -80,9 +75,10 @@ export function legacyCatalogFoodToDocument(item: LegacyCatalogFood): LegacyCata
         gramWeight: item.portionGrams,
         basisMultiplier: 1,
       }],
-      evidenceTier: evidenceTier(item),
-      sourceRecordId: item.id,
+      evidenceTier: resolveCatalogEvidenceTier(item),
+      sourceRecordId,
       sourceDataset: item.sourceLabel || 'NeoFit legacy catalog',
+      ...(sourceVersion === null ? {} : { sourceVersion }),
     },
   };
 }
