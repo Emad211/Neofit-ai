@@ -65,7 +65,7 @@ A new percentage has not been assigned because the remaining data-verification a
 - Persian alias rows: **218**.
 - Runtime, backup metadata, manifest, database byte size and SHA-256 are protected by one shared release contract and a CI drift test.
 - Nutrition arithmetic, ranges, sums and serving weights are canonicalized to prevent binary floating-point noise from leaking into persisted or displayed values.
-- SQLite and TypeScript calculations are now compared directly for per-100g, named portions, fractional quantities, uncertainty ranges, missing nutrients and unknown serving weights.
+- SQLite and TypeScript calculations are compared directly for per-100g, named portions, fractional quantities, uncertainty ranges, missing nutrients and unknown serving weights.
 
 ### Iranian profile state and controlled promotion
 
@@ -89,6 +89,8 @@ A new percentage has not been assigned because the remaining data-verification a
 - A reproducible 500-query controlled regression corpus is implemented against the real bundled SQLite FTS index and production TypeScript alias/ranker logic.
 - The IFKB 1.2.0 run achieved route accuracy 100%, Top-1 100%, Top-5 100% and zero failures.
 - This result measures the controlled alias registry and deterministic perturbations. It is not evidence of unrestricted Persian natural-language understanding and is not the final independent user-query benchmark.
+- The independent natural-query collection/freeze contract is implemented, including privacy review, two annotators, adjudication, source-kind restrictions, coverage gates and deterministic fingerprinting.
+- The real independent 500-query corpus is not yet published; only a header-only collection template is committed.
 
 ### Offline tracker and personal data
 
@@ -104,7 +106,7 @@ A new percentage has not been assigned because the remaining data-verification a
 ### Migration and recovery gates
 
 - The migration runner validates contiguous positive versions and rejects a database newer than the application.
-- A real SQLite upgrade test now executes v1 → v5 with legacy Profile and `meal_logs` data present.
+- A real SQLite upgrade test executes v1 → v5 with legacy Profile and `meal_logs` data present.
 - The v1 → v5 test verifies Profile preservation, one-time legacy Diary import, FTS synchronization, provenance backfill and idempotent repeated startup.
 - Failed migration SQL is rolled back together with its `user_version`; partially created tables do not survive.
 - Node CI uses a portable table substitute only when its SQLite build lacks FTS5. Expo/Android still exports against the actual Expo SQLite runtime and FTS schema.
@@ -119,20 +121,33 @@ A new percentage has not been assigned because the remaining data-verification a
 - Provider nutrition fields are stripped and ignored.
 - Mixed plates and ambiguous candidates require explicit user selection before local nutrition is shown.
 
+### Schema and identifier freeze readiness
+
+- Mobile CI generates a deterministic `neofit-schema-id-freeze-candidate` artifact with status `candidate-not-final`.
+- Candidate v1.1 records hashes for all five migrations, the personal SQLite schema, 13,225 generic ids, 9,279 generic concept ids, 13,225 source-to-concept mappings, 261 IFKB canonical ids, 261 app-profile ids and 218 Persian alias mappings.
+- The current personal schema candidate contains **23 application tables** and **43 audited SQLite objects**.
+- Schema fingerprint SHA-256: `73e67213c7b8300723ddf91195d1c07384b2b3a0198d622a7d451af90c48bcbf`.
+- The 83 legacy app ids, 178 generated fallback ids and 261 IFKB canonical ids are explicitly treated as related but distinct namespaces.
+- An exact app-profile → canonical mapping is now audited for **261 / 261** profiles with **0 unresolved** and **0 ambiguous** mappings.
+- App-profile → canonical mapping SHA-256: `ea66d4b2b532bff1ec2f637c136adb90fa110f00cc67ca51209bc816d08ffe71`.
+- Candidate details and all set hashes are recorded in `docs/releases/NEOFIT_SCHEMA_ID_FREEZE_CANDIDATE_V1.md`.
+- This is an auditable compatibility baseline, not the final public schema/ID freeze.
+
 ### Validation and workflow governance
 
-- Mobile CI runs deterministic tests, Nutrition SQLite schema validation, Expo package checks, Expo Doctor, strict TypeScript and Android export.
-- Deterministic tests now include v1 → v5 upgrade, migration rollback, future-version rejection, SQLite ↔ TypeScript equivalence, catalog precedence, provenance validation and Promotion Bundle validation.
+- Mobile CI runs deterministic tests, IFKB Python contract tests, freeze-candidate generation, Nutrition SQLite schema validation, Expo package checks, Expo Doctor, strict TypeScript and Android export.
+- Deterministic tests include v1 → v5 upgrade, migration rollback, future-version rejection, SQLite ↔ TypeScript equivalence, catalog precedence, provenance validation and Promotion Bundle validation.
+- Freeze-candidate generation fails on catalog hash/count drift, duplicate app-profile ids, incomplete generic mapping or unresolved/ambiguous Iranian app-profile mapping.
 - Expensive catalog builds, media acquisition and source rebuilds are manual or path-scoped to relevant branch pushes.
 - Generic concept audit, fallback-profile generation and Persian benchmark no longer rerun for unrelated app changes in the long-lived PR.
 
 ## Remaining release-critical path
 
 1. Produce and independently review source-specific Promotion Bundles that replace the 178 DS0 broad fallbacks with defensible recipe profiles and serving weights.
-2. Freeze an independently curated natural-user Persian corpus containing real spelling errors, colloquial and regional names, preparation/portion language, ambiguous foods, negative cases and required abstentions.
+2. Collect, sanitize, annotate, adjudicate and freeze the independently sourced 500-query Persian corpus, then evaluate it against the exact catalog/app commit.
 3. Run real-device Android QA for camera/gallery permissions, image manipulation, provider failures, cache behaviour and mixed-plate confirmation.
 4. Run real-device and large-data QA for backup selection, validation, transactional Merge/Replace, rollback behaviour and post-restore UI refresh.
-5. Review every mutable identifier and schema, then freeze release IDs, schema versions and migration policy.
+5. Review changes made after freeze candidate v1.1, generate a final candidate, obtain release-governance approval and promote it to the final schema/ID freeze.
 6. Perform final accessibility, RTL/LTR, performance, privacy and release-governance review before taking the PR out of Draft.
 
 ## Definition of done
@@ -144,4 +159,4 @@ A new percentage has not been assigned because the remaining data-verification a
 - SQLite and TypeScript nutrition calculations produce equivalent results across the release corpus.
 - Diary, recipes, goals, totals, history, export and restore work offline and pass real-device recovery tests.
 - Vision API results are locally resolved, cannot inject nutrition values and abstain or request confirmation when identity is unsafe.
-- IDs and schemas are frozen and every release-critical test passes.
+- The approved final freeze supersedes the candidate baseline and every release-critical test passes.
