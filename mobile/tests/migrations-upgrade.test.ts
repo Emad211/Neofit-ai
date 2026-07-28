@@ -45,8 +45,77 @@ function tableExists(database: DatabaseSync, table: string): boolean {
   return row?.present === 1;
 }
 
-function assertFts5Available(database: DatabaseSync): void {
-  database.exec('CREATE VIRTUAL TABLE __fts5_probe USING fts5(value); DROP TABLE __fts5_probe;');
+function supportsFts5(database: DatabaseSync): boolean {
+  try {
+    database.exec('CREATE VIRTUAL TABLE __fts5_probe USING fts5(value); DROP TABLE __fts5_probe;');
+    return true;
+  } catch (error) {
+    if (String(error).includes('no such module: fts5')) return false;
+    throw error;
+  }
+}
+
+function replaceRequired(
+  sql: string,
+  pattern: RegExp,
+  replacement: string,
+  label: string,
+): string {
+  const next = sql.replace(pattern, replacement);
+  if (next === sql) throw new Error(`Could not create portable SQLite substitute for ${label}.`);
+  return next;
+}
+
+function nodeCompatibleProductionMigrations(database: DatabaseSync): {
+  readonly list: readonly Migration[];
+  readonly nativeFts5: boolean;
+} {
+  const nativeFts5 = supportsFts5(database);
+  if (nativeFts5) return { list: migrations, nativeFts5 };
+
+  const list = migrations.map((migration): Migration => {
+    let sql = migration.sql;
+    if (migration.version === 2) {
+      sql = replaceRequired(
+        sql,
+        /CREATE VIRTUAL TABLE IF NOT EXISTS food_catalog_fts USING fts5\([\s\S]*?\);/,
+        `CREATE TABLE IF NOT EXISTS food_catalog_fts (
+           rowid INTEGER PRIMARY KEY,
+           name_fa TEXT NOT NULL,
+           name_en TEXT NOT NULL,
+           aliases_search TEXT NOT NULL
+         );`,
+        'food_catalog_fts',
+      );
+      const ftsDelete = /INSERT INTO food_catalog_fts\(food_catalog_fts,\s*rowid,\s*name_fa,\s*name_en,\s*aliases_search\)\s*VALUES\s*\('delete',\s*old\.rowid,\s*old\.name_fa,\s*old\.name_en,\s*old\.aliases_search\);/g;
+      const deleteCount = sql.match(ftsDelete)?.length ?? 0;
+      if (deleteCount !== 2) {
+        throw new Error(`Expected two FTS delete commands, found ${deleteCount}.`);
+      }
+      sql = sql.replace(ftsDelete, 'DELETE FROM food_catalog_fts WHERE rowid = old.rowid;');
+    }
+    if (migration.version === 3) {
+      sql = replaceRequired(
+        sql,
+        /CREATE VIRTUAL TABLE IF NOT EXISTS nutrition_search_fts USING fts5\([\s\S]*?\);/,
+        `CREATE TABLE IF NOT EXISTS nutrition_search_fts (
+           concept_id TEXT,
+           variant_id TEXT,
+           name_fa TEXT,
+           name_en TEXT,
+           aliases TEXT,
+           preparation_tags TEXT
+         );`,
+        'nutrition_search_fts',
+      );
+    }
+    return {
+      ...migration,
+      name: `${migration.name}-node-portable-fts`,
+      sql,
+    };
+  });
+  return { list, nativeFts5 };
 }
 
 function insertLegacyProfile(database: DatabaseSync): void {
@@ -88,27 +157,66 @@ function insertLegacyMeal(
   );
 }
 
+function verifyFoodCatalogSearchTriggers(database: DatabaseSync): void {
+  database.prepare(`
+    INSERT INTO food_catalog (
+      id, name_fa, name_en, aliases_fa_json, aliases_en_json, aliases_search,
+      category, portion_label_fa, portion_label_en, portion_grams,
+      calories, protein_g, carbs_g, fat_g, variability_pct, confidence,
+      source_type, source_label, notes_fa, notes_en, updated_at
+    ) VALUES (
+      'migration-test-food', 'غذای تست', 'Migration test food', '[]', '[]', 'غذای تست',
+      'test', 'یک سهم', 'one serving', NULL,
+      100, 5, 10, 4, 20, 'medium',
+      'custom', 'migration test', '', '', '2026-07-27T00:00:00.000Z'
+    );
+  `).run();
+  assert.equal(
+    scalarNumber(database, "SELECT COUNT(*) FROM food_catalog_fts WHERE name_en='Migration test food';"),
+    1,
+  );
+  database.prepare(
+    "UPDATE food_catalog SET name_en='Updated migration food' WHERE id='migration-test-food';",
+  ).run();
+  assert.equal(
+    scalarNumber(database, "SELECT COUNT(*) FROM food_catalog_fts WHERE name_en='Migration test food';"),
+    0,
+  );
+  assert.equal(
+    scalarNumber(database, "SELECT COUNT(*) FROM food_catalog_fts WHERE name_en='Updated migration food';"),
+    1,
+  );
+  database.prepare("DELETE FROM food_catalog WHERE id='migration-test-food';").run();
+  assert.equal(
+    scalarNumber(database, "SELECT COUNT(*) FROM food_catalog_fts WHERE name_en='Updated migration food';"),
+    0,
+  );
+}
+
 test('production migrations upgrade v1 data through v4 exactly once', async () => {
   const database = new DatabaseSync(':memory:');
   try {
     database.exec('PRAGMA foreign_keys=ON;');
-    assertFts5Available(database);
+    const production = nodeCompatibleProductionMigrations(database);
     const adapter = nodeDatabaseAdapter(database);
 
-    const initial = await runDatabaseMigrations(adapter, migrations.slice(0, 1));
+    const initial = await runDatabaseMigrations(adapter, production.list.slice(0, 1));
     assert.deepEqual(initial.appliedVersions, [1]);
     insertLegacyProfile(database);
     insertLegacyMeal(database, { id: 'manual-1', source: 'manual', calories: 410 });
     insertLegacyMeal(database, { id: 'plan-1', source: 'plan', calories: 520 });
     insertLegacyMeal(database, { id: 'photo-1', source: 'ai_photo', calories: 630 });
 
-    const upgraded = await runDatabaseMigrations(adapter, migrations);
+    const upgraded = await runDatabaseMigrations(adapter, production.list);
     assert.equal(upgraded.fromVersion, 1);
     assert.equal(upgraded.toVersion, 4);
     assert.deepEqual(upgraded.appliedVersions, [2, 3, 4]);
     assert.equal(scalarNumber(database, 'PRAGMA user_version;'), 4);
     assert.equal(scalarNumber(database, 'SELECT COUNT(*) FROM meal_logs;'), 3);
     assert.equal(scalarNumber(database, 'SELECT COUNT(*) FROM nutrition_diary_entries;'), 3);
+    assert.equal(tableExists(database, 'food_catalog_fts'), true);
+    assert.equal(tableExists(database, 'nutrition_search_fts'), true);
+    verifyFoodCatalogSearchTriggers(database);
 
     const profile = database.prepare(
       'SELECT name, extended_profile_json FROM profile WHERE id=1;',
@@ -145,7 +253,7 @@ test('production migrations upgrade v1 data through v4 exactly once', async () =
       assert.ok([410, 520, 630].includes(nutrition.energyKcal ?? -1));
     }
 
-    const repeated = await runDatabaseMigrations(adapter, migrations);
+    const repeated = await runDatabaseMigrations(adapter, production.list);
     assert.deepEqual(repeated, {
       fromVersion: 4,
       toVersion: 4,
@@ -156,6 +264,12 @@ test('production migrations upgrade v1 data through v4 exactly once', async () =
       scalarNumber(database, "SELECT COUNT(*) FROM nutrition_diary_entries WHERE id LIKE 'legacy-meal:%';"),
       3,
     );
+    console.log(JSON.stringify({
+      migrationUpgrade: 'v1-to-v4',
+      nativeFts5: production.nativeFts5,
+      importedLegacyMeals: 3,
+      repeatedAppliedVersions: repeated.appliedVersions,
+    }));
   } finally {
     database.close();
   }
