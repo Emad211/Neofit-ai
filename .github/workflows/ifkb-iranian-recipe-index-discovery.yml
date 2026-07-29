@@ -9,6 +9,8 @@ on:
       - 'ifkb/universal/test_discover_recipe_index_matches.py'
       - 'ifkb/universal/initialize_source_fact_queue.py'
       - 'ifkb/universal/test_initialize_source_fact_queue.py'
+      - 'ifkb/universal/extract_recipe_jsonld_facts.py'
+      - 'ifkb/universal/test_extract_recipe_jsonld_facts.py'
       - 'ifkb/universal/iranian_canon_v1.csv'
       - '.github/workflows/ifkb-iranian-recipe-index-discovery.yml'
   workflow_dispatch:
@@ -24,7 +26,7 @@ concurrency:
 jobs:
   discover:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -32,11 +34,12 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Run offline parser, matcher and queue tests
+      - name: Run offline discovery and extraction tests
         run: |
           python -m unittest -v \
             ifkb/universal/test_discover_recipe_index_matches.py \
-            ifkb/universal/test_initialize_source_fact_queue.py
+            ifkb/universal/test_initialize_source_fact_queue.py \
+            ifkb/universal/test_extract_recipe_jsonld_facts.py
 
       - name: Discover Persian Mama recipe-index candidates for all canonical foods
         id: discovery
@@ -55,6 +58,16 @@ jobs:
           python ifkb/universal/initialize_source_fact_queue.py \
             --candidates build/iranian-recipe-index-discovery/candidate-matches.csv \
             --output-dir build/iranian-recipe-index-discovery/source-fact-queue \
+            >> /tmp/iranian-recipe-index-discovery.log 2>&1
+
+      - name: Extract structured Recipe JSON-LD facts in bulk
+        if: steps.discovery.outcome == 'success'
+        run: |
+          python ifkb/universal/extract_recipe_jsonld_facts.py \
+            --records build/iranian-recipe-index-discovery/source-fact-queue/source-fact-records.json \
+            --output-dir build/iranian-recipe-index-discovery/structured-facts \
+            --max-records 200 \
+            --workers 2 \
             >> /tmp/iranian-recipe-index-discovery.log 2>&1
 
       - uses: actions/upload-artifact@v4
@@ -82,6 +95,7 @@ jobs:
           print(f"- discovery outcome: **{os.environ['DISCOVERY_OUTCOME']}**")
           summary = Path('build/iranian-recipe-index-discovery/summary.json')
           queue_summary = Path('build/iranian-recipe-index-discovery/source-fact-queue/summary.json')
+          extraction_summary = Path('build/iranian-recipe-index-discovery/structured-facts/summary.json')
           if summary.exists():
               value = json.loads(summary.read_text())
               print(f"- canonical foods evaluated: **{value['canonicalFoodCount']}**")
@@ -92,11 +106,17 @@ jobs:
               if queue_summary.exists():
                   queue = json.loads(queue_summary.read_text())
                   print(f"- source-fact records initialized: **{queue['sourceFactRecordCount']}**")
+              if extraction_summary.exists():
+                  extracted = json.loads(extraction_summary.read_text())
+                  print(f"- pages attempted for structured facts: **{extracted['attemptedRecordCount']}**")
+                  print(f"- records with Recipe JSON-LD facts: **{extracted['structuredFactsExtractedCount']}**")
+                  print(f"- canonical foods with structured facts: **{extracted['foodsWithStructuredFacts']}**")
+                  print(f"- ingredient labels extracted: **{extracted['ingredientLabelCount']}**")
+                  print(f"- page failures/no Recipe schema: **{extracted['failureCount']}**")
               print('- approved exact matches: **0**')
-              print('- structured facts extracted: **0**')
               print('- approved nutrition use: **0**')
               print()
-              print('Only candidate titles and URLs were retained. Recipe prose, images, quantities and nutrition were not copied or approved.')
+              print('Only candidate titles/URLs and Recipe JSON-LD name, yield and ingredient labels were retained. Instructions, images and nutrition were not copied or approved.')
           else:
               log = Path('/tmp/iranian-recipe-index-discovery.log')
               tail = log.read_text(errors='replace').splitlines()[-20:] if log.exists() else ['No discovery log was produced.']
