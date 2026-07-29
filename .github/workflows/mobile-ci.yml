@@ -162,6 +162,37 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Generate full 261-class image acquisition plan
+        working-directory: .
+        run: |
+          python -m unittest -v \
+            ifkb/images/test_full_image_acquisition_plan.py \
+            ifkb/images/test_discover_full_image_metadata.py \
+            > /tmp/full-image-acquisition-plan.log 2>&1 \
+            || { cat /tmp/full-image-acquisition-plan.log; exit 1; }
+          python ifkb/images/build_full_image_acquisition_plan.py \
+            --output-dir build/full-image-acquisition-plan \
+            >> /tmp/full-image-acquisition-plan.log 2>&1 \
+            || { cat /tmp/full-image-acquisition-plan.log; exit 1; }
+
+      - name: Upload full image-plan diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-image-acquisition-plan-diagnostics
+          path: /tmp/full-image-acquisition-plan.log
+          if-no-files-found: ignore
+          retention-days: 2
+
+      - name: Upload full image acquisition plan
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-full-image-acquisition-plan
+          path: build/full-image-acquisition-plan
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Generate schema and ID freeze candidate
         run: |
           npx tsx scripts/audit-schema-freeze-candidate.ts \
