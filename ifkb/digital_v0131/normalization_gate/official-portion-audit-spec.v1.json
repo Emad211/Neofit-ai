@@ -1,0 +1,210 @@
+{
+  "format": "ifkb-ds2-official-portion-audit-spec",
+  "version": "1.0.0",
+  "policy": {
+    "auditOnly": true,
+    "automaticApprovalForbidden": true,
+    "candidateGramWeightsMustRemainRawOfficialPortions": true,
+    "sourceSpecificFormReviewRequired": true
+  },
+  "families": [
+    {
+      "quantityFamily": "baking_soda_total_tsp",
+      "mode": "search",
+      "foodQueries": ["leavening agents, baking soda", "baking soda"],
+      "measureTokens": ["tsp", "teaspoon"],
+      "targetAmount": 1,
+      "formReviewNote": "Use only a baking-soda record; do not substitute baking powder."
+    },
+    {
+      "quantityFamily": "beans_cooked_total_cup",
+      "mode": "search",
+      "foodQueries": ["beans, kidney", "beans, pinto"],
+      "measureTokens": ["cup"],
+      "targetAmount": 1,
+      "requiredStateTokensAny": ["cooked", "canned"],
+      "formReviewNote": "Recipe bean variety and drained/cooked state must be adjudicated per source."
+    },
+    {
+      "quantityFamily": "beans_dry_total_cup",
+      "mode": "search",
+      "foodQueries": ["beans, kidney", "beans, pinto"],
+      "measureTokens": ["cup"],
+      "targetAmount": 1,
+      "requiredStateTokensAny": ["mature seeds, raw", "dry"],
+      "formReviewNote": "Use a dry mature-seed record only; cooked/canned portions are not interchangeable."
+    },
+    {
+      "quantityFamily": "butter_total_tbsp",
+      "mode": "search",
+      "foodQueries": ["butter, salted", "butter, without salt", "butter"],
+      "measureTokens": ["tbsp", "tablespoon"],
+      "targetAmount": 1,
+      "formReviewNote": "Salted versus unsalted form must follow the recipe source when stated."
+    },
+    {
+      "quantityFamily": "chicken_thigh_count",
+      "mode": "search",
+      "foodQueries": ["chicken, broilers or fryers, thigh", "chicken thigh"],
+      "measureTokens": ["thigh", "piece", "unit"],
+      "targetAmount": 1,
+      "formReviewNote": "Bone, skin and edible-yield state must be handled separately; count is not automatically edible grams."
+    },
+    {
+      "quantityFamily": "chives_cup",
+      "mode": "search",
+      "foodQueries": ["chives, raw", "chives"],
+      "measureTokens": ["cup"],
+      "targetAmount": 1,
+      "formReviewNote": "Fresh chopped form must match the source."
+    },
+    {
+      "quantityFamily": "cilantro_cup",
+      "mode": "search",
+      "foodQueries": ["coriander (cilantro) leaves, raw", "cilantro, raw", "coriander leaves"],
+      "measureTokens": ["cup"],
+      "targetAmount": 1,
+      "formReviewNote": "Leaf form only; seed records are invalid substitutes."
+    },
+    {
+      "quantityFamily": "coriander_cup",
+      "mode": "search",
+      "foodQueries": ["coriander (cilantro) leaves, raw", "cilantro, raw", "coriander leaves"],
+      "measureTokens": ["cup"],
+      "targetAmount": 1,
+      "formReviewNote": "Leaf form only; seed records are invalid substitutes."
+    },
+    {
+      "quantityFamily": "dried_fenugreek_tbsp",
+      "mode": "unsupported",
+      "reason": "The catalog candidate must represent dried fenugreek leaves, not seed or fresh leaf; no automatic cross-form substitution is permitted."
+    },
+    {
+      "quantityFamily": "dried_lime_count",
+      "mode": "unsupported",
+      "reason": "Whole dried Persian lime requires a food-specific mass distribution and edible-fraction protocol."
+    },
+    {
+      "quantityFamily": "dried_lime_total_cup",
+      "mode": "unsupported",
+      "reason": "Cup volume of dried Persian lime is form-specific and cannot be replaced by fresh lime portions."
+    },
+    {
+      "quantityFamily": "egg_count",
+      "mode": "search",
+      "foodQueries": ["egg, whole, raw, fresh", "egg, whole, raw"],
+      "measureTokens": ["large", "egg", "unit"],
+      "targetAmount": 1,
+      "formReviewNote": "Egg size must be resolved from the source or represented as an interval."
+    },
+    {
+      "quantityFamily": "fenugreek_cup",
+      "mode": "search",
+      "foodQueries": ["fenugreek leaves, raw", "fenugreek, raw"],
+      "measureTokens": ["cup"],
+      "targetAmount": 1,
+      "formReviewNote": "Fresh leaf record only; dried leaf and seed forms remain separate."
+    },
+    {
+      "quantityFamily": "oil_total_tbsp",
+      "mode": "search",
+      "foodQueries": ["oil, olive, salad or cooking", "oil, canola", "oil, corn", "oil, soybean"],
+      "measureTokens": ["tbsp", "tablespoon"],
+      "targetAmount": 1,
+      "formReviewNote": "Unspecified recipe oil requires a governed oil-type prior or source-specific clarification; candidates are not interchangeable by default."
+    },
+    {
+      "quantityFamily": "onion_count",
+      "mode": "search",
+      "foodQueries": ["onions, raw", "onion, raw"],
+      "measureTokens": ["medium", "small", "large", "onion", "unit"],
+      "targetAmount": 1,
+      "formReviewNote": "Count requires size class or interval; edible fraction must be applied separately."
+    },
+    {
+      "quantityFamily": "parsley_cup",
+      "mode": "search",
+      "foodQueries": ["parsley, fresh", "parsley, raw"],
+      "measureTokens": ["cup"],
+      "targetAmount": 1,
+      "formReviewNote": "Chopped versus sprig/packed form must be reviewed."
+    },
+    {
+      "quantityFamily": "pomegranate_molasses_total_tbsp",
+      "mode": "search",
+      "foodQueries": ["pomegranate molasses", "pomegranate syrup"],
+      "measureTokens": ["tbsp", "tablespoon"],
+      "targetAmount": 1,
+      "formReviewNote": "Product concentration and added sugar vary; a generic syrup record is not automatically acceptable."
+    },
+    {
+      "quantityFamily": "scallion_cup",
+      "mode": "search",
+      "foodQueries": ["onions, spring or scallions", "scallions, raw", "green onions, raw"],
+      "measureTokens": ["cup"],
+      "targetAmount": 1,
+      "formReviewNote": "Bulb-and-top versus top-only form must match the source."
+    },
+    {
+      "quantityFamily": "scallion_or_leek_cup",
+      "mode": "search",
+      "foodQueries": ["onions, spring or scallions", "leeks, raw"],
+      "measureTokens": ["cup"],
+      "targetAmount": 1,
+      "formReviewNote": "Scallion and leek are separate ingredients; source-specific identity must be selected before conversion."
+    },
+    {
+      "quantityFamily": "skewer_count",
+      "mode": "unsupported",
+      "reason": "A skewer is a recipe-output unit, not a standardized ingredient household measure; derive it from normalized batch yield."
+    },
+    {
+      "quantityFamily": "spinach_cup",
+      "mode": "search",
+      "foodQueries": ["spinach, raw"],
+      "measureTokens": ["cup"],
+      "targetAmount": 1,
+      "formReviewNote": "Raw chopped/leaf volume must not be replaced by cooked spinach portions."
+    },
+    {
+      "quantityFamily": "spring_onion_cup",
+      "mode": "search",
+      "foodQueries": ["onions, spring or scallions", "spring onions, raw"],
+      "measureTokens": ["cup"],
+      "targetAmount": 1,
+      "formReviewNote": "Bulb-and-top versus top-only form must match the source."
+    },
+    {
+      "quantityFamily": "sugar_total_tbsp",
+      "mode": "search",
+      "foodQueries": ["sugars, granulated", "sugar, granulated"],
+      "measureTokens": ["tbsp", "tablespoon"],
+      "targetAmount": 1,
+      "formReviewNote": "Granulated sugar record only unless the source explicitly specifies another sugar."
+    },
+    {
+      "quantityFamily": "tomato_paste_tbsp",
+      "mode": "search",
+      "foodQueries": ["tomato products, canned, paste", "tomato paste"],
+      "measureTokens": ["tbsp", "tablespoon"],
+      "targetAmount": 1,
+      "formReviewNote": "Use paste, not sauce or puree."
+    },
+    {
+      "quantityFamily": "tomato_paste_total_tbsp",
+      "mode": "search",
+      "foodQueries": ["tomato products, canned, paste", "tomato paste"],
+      "measureTokens": ["tbsp", "tablespoon"],
+      "targetAmount": 1,
+      "formReviewNote": "Use paste, not sauce or puree."
+    },
+    {
+      "quantityFamily": "walnuts_total_cup",
+      "mode": "search",
+      "foodQueries": ["nuts, walnuts, english", "walnuts"],
+      "measureTokens": ["cup"],
+      "targetAmount": 1,
+      "formReviewNote": "Halves, pieces, chopped and ground forms have different cup weights; source form must be selected."
+    }
+  ]
+}

@@ -10,6 +10,9 @@ on:
       - 'ifkb/digital_v0131/normalization_gate/**'
       - 'ifkb/digital_v0131/ds2_consensus_profiles.csv'
       - 'ifkb/digital_v0131/test_normalization_gate.py'
+      - 'ifkb/digital_v0131/test_official_portion_audit.py'
+      - 'mobile/assets/ifkb/ifkb-universal-v1.db'
+      - 'mobile/assets/ifkb/ifkb-universal-v1.manifest.json'
       - '.github/workflows/ifkb-ds2-normalization-gate.yml'
   workflow_dispatch:
     inputs:
@@ -38,7 +41,10 @@ jobs:
           python-version: '3.12'
 
       - name: Run normalization-gate tests
-        run: python -m unittest -v ifkb/digital_v0131/test_normalization_gate.py
+        run: |
+          python -m unittest -v \
+            ifkb/digital_v0131/test_normalization_gate.py \
+            ifkb/digital_v0131/test_official_portion_audit.py
 
       - name: Cross-check fail-closed status against the DS2 consensus release
         run: |
@@ -54,6 +60,15 @@ jobs:
             --queue ifkb/digital_v0131/normalization_gate/source-record-normalization-work-queue.v1.json \
             --gate-status ifkb/digital_v0131/normalization_gate/current-status.v1.json \
             --report build/ds2-normalization/source-work-queue-report.json
+
+      - name: Audit official USDA portion candidates without approving conversions
+        run: |
+          python ifkb/digital_v0131/normalization_gate/audit_official_portion_candidates.py \
+            --database mobile/assets/ifkb/ifkb-universal-v1.db \
+            --manifest mobile/assets/ifkb/ifkb-universal-v1.manifest.json \
+            --queue ifkb/digital_v0131/normalization_gate/unit-conversion-work-queue.v1.json \
+            --spec ifkb/digital_v0131/normalization_gate/official-portion-audit-spec.v1.json \
+            --report build/ds2-normalization/official-portion-candidates.json
 
       - name: Validate current DS2 status without promotion claims
         run: |

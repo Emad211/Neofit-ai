@@ -77,7 +77,9 @@ jobs:
         working-directory: .
         run: |
           mkdir -p build/ds2-normalization
-          python -m unittest -v ifkb/digital_v0131/test_normalization_gate.py \
+          python -m unittest -v \
+            ifkb/digital_v0131/test_normalization_gate.py \
+            ifkb/digital_v0131/test_official_portion_audit.py \
             > /tmp/ifkb-ds2-normalization.log 2>&1 \
             || { cat /tmp/ifkb-ds2-normalization.log; exit 1; }
           python ifkb/digital_v0131/normalization_gate/verify_consensus_alignment.py \
@@ -90,6 +92,14 @@ jobs:
             --queue ifkb/digital_v0131/normalization_gate/source-record-normalization-work-queue.v1.json \
             --gate-status ifkb/digital_v0131/normalization_gate/current-status.v1.json \
             --report build/ds2-normalization/source-work-queue-report.json \
+            >> /tmp/ifkb-ds2-normalization.log 2>&1 \
+            || { cat /tmp/ifkb-ds2-normalization.log; exit 1; }
+          python ifkb/digital_v0131/normalization_gate/audit_official_portion_candidates.py \
+            --database mobile/assets/ifkb/ifkb-universal-v1.db \
+            --manifest mobile/assets/ifkb/ifkb-universal-v1.manifest.json \
+            --queue ifkb/digital_v0131/normalization_gate/unit-conversion-work-queue.v1.json \
+            --spec ifkb/digital_v0131/normalization_gate/official-portion-audit-spec.v1.json \
+            --report build/ds2-normalization/official-portion-candidates.json \
             >> /tmp/ifkb-ds2-normalization.log 2>&1 \
             || { cat /tmp/ifkb-ds2-normalization.log; exit 1; }
           python ifkb/digital_v0131/normalization_gate/validate_normalization_gate.py \
