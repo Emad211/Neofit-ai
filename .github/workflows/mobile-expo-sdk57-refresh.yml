@@ -1,0 +1,52 @@
+name: Mobile Expo SDK 57 Lock Refresh
+
+on:
+  pull_request:
+    branches:
+      - agent/mobile-local-first-expo
+    paths:
+      - '.github/workflows/mobile-expo-sdk57-refresh.yml'
+      - 'mobile/package.json'
+      - 'mobile/package-lock.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-expo-sdk57-refresh-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  refresh-lock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install current locked dependencies
+        working-directory: mobile
+        run: npm ci --no-audit --no-fund
+
+      - name: Refresh Expo-compatible patch versions and lockfile
+        working-directory: mobile
+        run: npx expo install --fix
+
+      - name: Verify refreshed compatibility
+        working-directory: mobile
+        run: npx expo install --check
+
+      - name: Upload refreshed package files
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-expo-sdk57-refreshed-lock
+          path: |
+            mobile/package.json
+            mobile/package-lock.json
+          if-no-files-found: error
+          retention-days: 2
