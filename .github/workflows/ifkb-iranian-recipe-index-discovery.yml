@@ -1,0 +1,48 @@
+name: IFKB Iranian Recipe Index Discovery
+
+on:
+  push:
+    branches:
+      - agent/iranian-food-kb-foundation
+    paths:
+      - 'ifkb/universal/discover_recipe_index_matches.py'
+      - 'ifkb/universal/test_discover_recipe_index_matches.py'
+      - 'ifkb/universal/iranian_canon_v1.csv'
+      - '.github/workflows/ifkb-iranian-recipe-index-discovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ifkb-iranian-recipe-index-discovery
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run offline parser and matcher tests
+        run: python -m unittest -v ifkb/universal/test_discover_recipe_index_matches.py
+
+      - name: Discover Persian Mama recipe-index candidates for all canonical foods
+        run: |
+          python ifkb/universal/discover_recipe_index_matches.py \
+            --canon ifkb/universal/iranian_canon_v1.csv \
+            --index-url https://persianmama.com/recipe-index/ \
+            --source-collection-id SRC-COLLECTION-PERSIAN-MAMA-INDEX \
+            --output-dir build/iranian-recipe-index-discovery
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-iranian-recipe-index-discovery
+          path: build/iranian-recipe-index-discovery
+          if-no-files-found: error
+          retention-days: 30
