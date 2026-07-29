@@ -1,0 +1,215 @@
+{
+  "format": "ifkb-ds2-unit-conversion-work-queue",
+  "version": "1.0.0",
+  "policy": "No gram factor may be entered without a reviewable source, scope/facet definition and reviewer.",
+  "requirements": [
+    {
+      "quantityFamily": "baking_soda_total_tsp",
+      "affectedSourceRecordIds": ["DS2-KB-02"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "beans_cooked_total_cup",
+      "affectedSourceRecordIds": ["DS2-GS-02", "DS2-GS-04"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "beans_dry_total_cup",
+      "affectedSourceRecordIds": ["DS2-GS-01", "DS2-GS-03"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "butter_total_tbsp",
+      "affectedSourceRecordIds": ["DS2-KB-01", "DS2-KB-02"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "chicken_thigh_count",
+      "affectedSourceRecordIds": ["DS2-FS-01"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "chives_cup",
+      "affectedSourceRecordIds": ["DS2-GS-03"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "cilantro_cup",
+      "affectedSourceRecordIds": ["DS2-GS-01", "DS2-GS-02"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "coriander_cup",
+      "affectedSourceRecordIds": ["DS2-GS-03"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "dried_fenugreek_tbsp",
+      "affectedSourceRecordIds": ["DS2-GS-01"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "dried_lime_count",
+      "affectedSourceRecordIds": ["DS2-GS-01", "DS2-GS-02", "DS2-GS-04"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "dried_lime_total_cup",
+      "affectedSourceRecordIds": ["DS2-GS-03"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "egg_count",
+      "affectedSourceRecordIds": ["DS2-KB-01"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "fenugreek_cup",
+      "affectedSourceRecordIds": ["DS2-GS-03"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "oil_total_tbsp",
+      "affectedSourceRecordIds": ["DS2-FS-01", "DS2-FS-03", "DS2-FS-04", "DS2-GS-01", "DS2-GS-02", "DS2-GS-03", "DS2-GS-04"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "onion_count",
+      "affectedSourceRecordIds": ["DS2-KB-01", "DS2-KB-02", "DS2-KB-04", "DS2-KB-05"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "parsley_cup",
+      "affectedSourceRecordIds": ["DS2-GS-01", "DS2-GS-02", "DS2-GS-03"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "pomegranate_molasses_total_tbsp",
+      "affectedSourceRecordIds": ["DS2-FS-01", "DS2-FS-02", "DS2-FS-03", "DS2-FS-04"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "scallion_cup",
+      "affectedSourceRecordIds": ["DS2-GS-02"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "scallion_or_leek_cup",
+      "affectedSourceRecordIds": ["DS2-GS-01"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "skewer_count",
+      "affectedSourceRecordIds": ["DS2-KB-01", "DS2-KB-02", "DS2-KB-05"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "spinach_cup",
+      "affectedSourceRecordIds": ["DS2-GS-01", "DS2-GS-03"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "spring_onion_cup",
+      "affectedSourceRecordIds": ["DS2-GS-03"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "sugar_total_tbsp",
+      "affectedSourceRecordIds": ["DS2-FS-01", "DS2-FS-02", "DS2-FS-03", "DS2-FS-04"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "tomato_paste_tbsp",
+      "affectedSourceRecordIds": ["DS2-GS-02"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "tomato_paste_total_tbsp",
+      "affectedSourceRecordIds": ["DS2-FS-03"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    },
+    {
+      "quantityFamily": "walnuts_total_cup",
+      "affectedSourceRecordIds": ["DS2-FS-01", "DS2-FS-04"],
+      "conversionFactorToGrams": null,
+      "conversionScope": null,
+      "sourceReference": null,
+      "reviewStatus": "unresolved"
+    }
+  ]
+}

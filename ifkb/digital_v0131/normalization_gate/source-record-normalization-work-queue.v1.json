@@ -1,0 +1,497 @@
+{
+  "format": "ifkb-ds2-source-normalization-work-queue",
+  "version": "1.0.0",
+  "sourceRelease": "IFKB-0.13.1-first-ds2-consensus",
+  "interpretation": "Source facts are structurally normalized; complete gram, cooked-yield, serving and nutrient normalization remains blocked.",
+  "records": [
+    {
+      "recipeSourceId": "DS2-GS-01",
+      "canonId": "IFKB-CANON-00008",
+      "foodNameFa": "قورمه‌سبزی",
+      "variantLabel": "beef_or_lamb_herb_stew",
+      "sourceDomain": "thecaspianchef.com",
+      "independenceGroup": "caspian_chef",
+      "sourceUrl": "https://thecaspianchef.com/2019/12/persian-beef-and-fresh-herb-stew/",
+      "servingsMin": 4.0,
+      "servingsMax": 4.0,
+      "rawQuantityFacts": {
+        "meat_total_g": 680.388555,
+        "oil_total_tbsp": 8,
+        "beans_dry_total_cup": 0.6666666666666666,
+        "dried_lime_count": 4,
+        "parsley_cup": 2,
+        "cilantro_cup": 1,
+        "scallion_or_leek_cup": 1,
+        "spinach_cup": 0.25,
+        "dried_fenugreek_tbsp": 2
+      },
+      "sourceWeight": 1.0,
+      "massAnchoredKeys": [
+        "meat_total_g"
+      ],
+      "unresolvedConversionKeys": [
+        "beans_dry_total_cup",
+        "cilantro_cup",
+        "dried_fenugreek_tbsp",
+        "dried_lime_count",
+        "oil_total_tbsp",
+        "parsley_cup",
+        "scallion_or_leek_cup",
+        "spinach_cup"
+      ],
+      "rightsStatus": "derived_structured_facts_only",
+      "identityReviewStatus": "accepted",
+      "sourceNormalizationStatus": "normalized",
+      "fullGramNormalizationStatus": "incomplete",
+      "yieldStatus": "missing",
+      "servingWeightStatus": "missing",
+      "gateStatus": "blocked"
+    },
+    {
+      "recipeSourceId": "DS2-GS-02",
+      "canonId": "IFKB-CANON-00008",
+      "foodNameFa": "قورمه‌سبزی",
+      "variantLabel": "azeri_persian_beef_pinto",
+      "sourceDomain": "persianmama.com",
+      "independenceGroup": "persian_mama",
+      "sourceUrl": "https://persianmama.com/persian-herb-stew-ghormeh-sabzi-sabzi-ghorma/",
+      "servingsMin": 5.0,
+      "servingsMax": 6.0,
+      "rawQuantityFacts": {
+        "meat_total_g": 453.59237,
+        "oil_total_tbsp_low": 5,
+        "oil_total_tbsp_high": 6,
+        "beans_cooked_total_cup": 1,
+        "dried_lime_count": 8,
+        "scallion_cup": 3,
+        "parsley_cup": 3,
+        "cilantro_cup": 2,
+        "tomato_paste_tbsp": 2
+      },
+      "sourceWeight": 1.0,
+      "massAnchoredKeys": [
+        "meat_total_g"
+      ],
+      "unresolvedConversionKeys": [
+        "beans_cooked_total_cup",
+        "cilantro_cup",
+        "dried_lime_count",
+        "oil_total_tbsp_high",
+        "oil_total_tbsp_low",
+        "parsley_cup",
+        "scallion_cup",
+        "tomato_paste_tbsp"
+      ],
+      "rightsStatus": "derived_structured_facts_only",
+      "identityReviewStatus": "accepted",
+      "sourceNormalizationStatus": "normalized",
+      "fullGramNormalizationStatus": "incomplete",
+      "yieldStatus": "missing",
+      "servingWeightStatus": "missing",
+      "gateStatus": "blocked"
+    },
+    {
+      "recipeSourceId": "DS2-GS-03",
+      "canonId": "IFKB-CANON-00008",
+      "foodNameFa": "قورمه‌سبزی",
+      "variantLabel": "lamb_or_beef_classic",
+      "sourceDomain": "anvari.org",
+      "independenceGroup": "anvari_mokhtarian",
+      "sourceUrl": "https://www.anvari.org/iran/Persian_Food_Recipes/ghormeh_sabzi.html",
+      "servingsMin": 6.0,
+      "servingsMax": 6.0,
+      "rawQuantityFacts": {
+        "meat_total_g": 750,
+        "oil_total_tbsp": 5.333333333333333,
+        "beans_dry_total_cup": 0.75,
+        "dried_lime_total_cup": 0.5,
+        "spring_onion_cup": 1,
+        "spinach_cup": 1.5,
+        "parsley_cup": 0.5,
+        "coriander_cup": 0.25,
+        "chives_cup": 0.25,
+        "fenugreek_cup": 0.25
+      },
+      "sourceWeight": 1.0,
+      "massAnchoredKeys": [
+        "meat_total_g"
+      ],
+      "unresolvedConversionKeys": [
+        "beans_dry_total_cup",
+        "chives_cup",
+        "coriander_cup",
+        "dried_lime_total_cup",
+        "fenugreek_cup",
+        "oil_total_tbsp",
+        "parsley_cup",
+        "spinach_cup",
+        "spring_onion_cup"
+      ],
+      "rightsStatus": "derived_structured_facts_only",
+      "identityReviewStatus": "accepted",
+      "sourceNormalizationStatus": "normalized",
+      "fullGramNormalizationStatus": "incomplete",
+      "yieldStatus": "missing",
+      "servingWeightStatus": "missing",
+      "gateStatus": "blocked"
+    },
+    {
+      "recipeSourceId": "DS2-GS-04",
+      "canonId": "IFKB-CANON-00008",
+      "foodNameFa": "قورمه‌سبزی",
+      "variantLabel": "restaurant_beef_or_lamb",
+      "sourceDomain": "foodnetwork.com",
+      "independenceGroup": "food_network_tasty_kabob",
+      "sourceUrl": "https://www.foodnetwork.com/recipes/ghormeh-sabzi-7216793",
+      "servingsMin": 4.0,
+      "servingsMax": 6.0,
+      "rawQuantityFacts": {
+        "meat_total_g": 453.59237,
+        "oil_total_tbsp": 8,
+        "beans_cooked_total_cup": 2,
+        "dried_lime_count": 6,
+        "fresh_herbs_total_g": 907.18474
+      },
+      "sourceWeight": 1.0,
+      "massAnchoredKeys": [
+        "fresh_herbs_total_g",
+        "meat_total_g"
+      ],
+      "unresolvedConversionKeys": [
+        "beans_cooked_total_cup",
+        "dried_lime_count",
+        "oil_total_tbsp"
+      ],
+      "rightsStatus": "derived_structured_facts_only",
+      "identityReviewStatus": "accepted",
+      "sourceNormalizationStatus": "normalized",
+      "fullGramNormalizationStatus": "incomplete",
+      "yieldStatus": "missing",
+      "servingWeightStatus": "missing",
+      "gateStatus": "blocked"
+    },
+    {
+      "recipeSourceId": "DS2-FS-01",
+      "canonId": "IFKB-CANON-00010",
+      "foodNameFa": "فسنجان",
+      "variantLabel": "chicken_walnut_pomegranate",
+      "sourceDomain": "thecaspianchef.com",
+      "independenceGroup": "omid_roustaei",
+      "sourceUrl": "https://thecaspianchef.com/2020/03/khoresh-fesenjoon-chicken-in-pomegranate-and-walnut-sauce/",
+      "servingsMin": 4.0,
+      "servingsMax": 4.0,
+      "rawQuantityFacts": {
+        "chicken_thigh_count": 4,
+        "oil_total_tbsp": 4,
+        "walnuts_total_cup": 2,
+        "pomegranate_molasses_total_tbsp_low": 8,
+        "pomegranate_molasses_total_tbsp_high": 16,
+        "sugar_total_tbsp_low": 1,
+        "sugar_total_tbsp_high": 4
+      },
+      "sourceWeight": 1.0,
+      "massAnchoredKeys": [],
+      "unresolvedConversionKeys": [
+        "chicken_thigh_count",
+        "oil_total_tbsp",
+        "pomegranate_molasses_total_tbsp_high",
+        "pomegranate_molasses_total_tbsp_low",
+        "sugar_total_tbsp_high",
+        "sugar_total_tbsp_low",
+        "walnuts_total_cup"
+      ],
+      "rightsStatus": "derived_structured_facts_only",
+      "identityReviewStatus": "accepted",
+      "sourceNormalizationStatus": "normalized",
+      "fullGramNormalizationStatus": "incomplete",
+      "yieldStatus": "missing",
+      "servingWeightStatus": "missing",
+      "gateStatus": "blocked"
+    },
+    {
+      "recipeSourceId": "DS2-FS-02",
+      "canonId": "IFKB-CANON-00010",
+      "foodNameFa": "فسنجان",
+      "variantLabel": "boneless_chicken_sweet_sour",
+      "sourceDomain": "bbcgoodfood.com",
+      "independenceGroup": "bbc_good_food",
+      "sourceUrl": "https://www.bbcgoodfood.com/recipes/fesenjan",
+      "servingsMin": 6.0,
+      "servingsMax": 8.0,
+      "rawQuantityFacts": {
+        "chicken_total_g": 1000,
+        "walnuts_total_g": 500,
+        "pomegranate_molasses_total_tbsp": 6,
+        "sugar_total_tbsp": 1.5
+      },
+      "sourceWeight": 1.0,
+      "massAnchoredKeys": [
+        "chicken_total_g",
+        "walnuts_total_g"
+      ],
+      "unresolvedConversionKeys": [
+        "pomegranate_molasses_total_tbsp",
+        "sugar_total_tbsp"
+      ],
+      "rightsStatus": "derived_structured_facts_only",
+      "identityReviewStatus": "accepted",
+      "sourceNormalizationStatus": "normalized",
+      "fullGramNormalizationStatus": "incomplete",
+      "yieldStatus": "missing",
+      "servingWeightStatus": "missing",
+      "gateStatus": "blocked"
+    },
+    {
+      "recipeSourceId": "DS2-FS-03",
+      "canonId": "IFKB-CANON-00010",
+      "foodNameFa": "فسنجان",
+      "variantLabel": "chicken_drumstick_tomato_paste",
+      "sourceDomain": "washingtonpost.com",
+      "independenceGroup": "washington_post",
+      "sourceUrl": "https://www.washingtonpost.com/recipes/fesenjan/",
+      "servingsMin": 4.0,
+      "servingsMax": 4.0,
+      "rawQuantityFacts": {
+        "chicken_total_g": 907.18474,
+        "walnuts_total_g": 141.747615625,
+        "oil_total_tbsp": 2,
+        "onion_total_g": 226.796185,
+        "pomegranate_molasses_total_tbsp": 16,
+        "tomato_paste_total_tbsp": 3,
+        "sugar_total_tbsp": 1
+      },
+      "sourceWeight": 1.0,
+      "massAnchoredKeys": [
+        "chicken_total_g",
+        "onion_total_g",
+        "walnuts_total_g"
+      ],
+      "unresolvedConversionKeys": [
+        "oil_total_tbsp",
+        "pomegranate_molasses_total_tbsp",
+        "sugar_total_tbsp",
+        "tomato_paste_total_tbsp"
+      ],
+      "rightsStatus": "derived_structured_facts_only",
+      "identityReviewStatus": "accepted",
+      "sourceNormalizationStatus": "normalized",
+      "fullGramNormalizationStatus": "incomplete",
+      "yieldStatus": "missing",
+      "servingWeightStatus": "missing",
+      "gateStatus": "blocked"
+    },
+    {
+      "recipeSourceId": "DS2-FS-04",
+      "canonId": "IFKB-CANON-00010",
+      "foodNameFa": "فسنجان",
+      "variantLabel": "cookbook_chicken_walnut",
+      "sourceDomain": "apnews.com",
+      "independenceGroup": "omid_roustaei",
+      "sourceUrl": "https://apnews.com/article/7704cc6ece2b395343e30f7316b53efc",
+      "servingsMin": null,
+      "servingsMax": null,
+      "rawQuantityFacts": {
+        "chicken_total_g": 680.388555,
+        "walnuts_total_cup": 2,
+        "oil_total_tbsp": 2,
+        "pomegranate_molasses_total_tbsp": 8,
+        "sugar_total_tbsp_low": 2,
+        "sugar_total_tbsp_high": 4
+      },
+      "sourceWeight": 1.0,
+      "massAnchoredKeys": [
+        "chicken_total_g"
+      ],
+      "unresolvedConversionKeys": [
+        "oil_total_tbsp",
+        "pomegranate_molasses_total_tbsp",
+        "sugar_total_tbsp_high",
+        "sugar_total_tbsp_low",
+        "walnuts_total_cup"
+      ],
+      "rightsStatus": "derived_structured_facts_only",
+      "identityReviewStatus": "accepted",
+      "sourceNormalizationStatus": "normalized",
+      "fullGramNormalizationStatus": "incomplete",
+      "yieldStatus": "missing",
+      "servingWeightStatus": "missing",
+      "gateStatus": "blocked"
+    },
+    {
+      "recipeSourceId": "DS2-KB-01",
+      "canonId": "IFKB-CANON-00028",
+      "foodNameFa": "کباب کوبیده",
+      "variantLabel": "mixed_beef_lamb_with_egg",
+      "sourceDomain": "persianmama.com",
+      "independenceGroup": "persian_mama",
+      "sourceUrl": "https://persianmama.com/kabob-koobideh-grilled-minced-meat-kabobs/",
+      "servingsMin": 4.0,
+      "servingsMax": 4.0,
+      "rawQuantityFacts": {
+        "meat_total_g": 1133.980925,
+        "beef_total_g": 680.388555,
+        "lamb_total_g": 453.59237,
+        "onion_count": 1.5,
+        "egg_count": 1,
+        "butter_total_tbsp": 4,
+        "skewer_count": 10
+      },
+      "sourceWeight": 1.0,
+      "massAnchoredKeys": [
+        "beef_total_g",
+        "lamb_total_g",
+        "meat_total_g"
+      ],
+      "unresolvedConversionKeys": [
+        "butter_total_tbsp",
+        "egg_count",
+        "onion_count",
+        "skewer_count"
+      ],
+      "rightsStatus": "derived_structured_facts_only",
+      "identityReviewStatus": "accepted",
+      "sourceNormalizationStatus": "normalized",
+      "fullGramNormalizationStatus": "incomplete",
+      "yieldStatus": "missing",
+      "servingWeightStatus": "missing",
+      "gateStatus": "blocked"
+    },
+    {
+      "recipeSourceId": "DS2-KB-02",
+      "canonId": "IFKB-CANON-00028",
+      "foodNameFa": "کباب کوبیده",
+      "variantLabel": "single_meat_saffron_baking_soda",
+      "sourceDomain": "hamisharafi.com",
+      "independenceGroup": "hamisharafi",
+      "sourceUrl": "https://www.hamisharafi.com/free-recipes/kabab-koobideh",
+      "servingsMin": 5.0,
+      "servingsMax": 5.0,
+      "rawQuantityFacts": {
+        "meat_total_g": 1000,
+        "onion_count": 3,
+        "butter_total_tbsp": 4,
+        "baking_soda_total_tsp": 1,
+        "skewer_count": 10
+      },
+      "sourceWeight": 1.0,
+      "massAnchoredKeys": [
+        "meat_total_g"
+      ],
+      "unresolvedConversionKeys": [
+        "baking_soda_total_tsp",
+        "butter_total_tbsp",
+        "onion_count",
+        "skewer_count"
+      ],
+      "rightsStatus": "derived_structured_facts_only",
+      "identityReviewStatus": "accepted",
+      "sourceNormalizationStatus": "normalized",
+      "fullGramNormalizationStatus": "incomplete",
+      "yieldStatus": "missing",
+      "servingWeightStatus": "missing",
+      "gateStatus": "blocked"
+    },
+    {
+      "recipeSourceId": "DS2-KB-03",
+      "canonId": "IFKB-CANON-00028",
+      "foodNameFa": "کباب کوبیده",
+      "variantLabel": "mixed_beef_lamb_fat_controlled",
+      "sourceDomain": "zaffaron.com",
+      "independenceGroup": "zaffaron",
+      "sourceUrl": "https://zaffaron.com/recipe/kabab-koobideh-kebab",
+      "servingsMin": 6.0,
+      "servingsMax": 6.0,
+      "rawQuantityFacts": {
+        "meat_total_g": 1000,
+        "lamb_total_g": 500,
+        "beef_total_g": 500,
+        "onion_total_g": 300,
+        "salt_total_g": 18,
+        "black_pepper_total_g": 2,
+        "sumac_total_g": 6,
+        "baking_soda_total_g": 2
+      },
+      "sourceWeight": 1.0,
+      "massAnchoredKeys": [
+        "baking_soda_total_g",
+        "beef_total_g",
+        "black_pepper_total_g",
+        "lamb_total_g",
+        "meat_total_g",
+        "onion_total_g",
+        "salt_total_g",
+        "sumac_total_g"
+      ],
+      "unresolvedConversionKeys": [],
+      "rightsStatus": "derived_structured_facts_only",
+      "identityReviewStatus": "accepted",
+      "sourceNormalizationStatus": "normalized",
+      "fullGramNormalizationStatus": "incomplete",
+      "yieldStatus": "missing",
+      "servingWeightStatus": "missing",
+      "gateStatus": "blocked"
+    },
+    {
+      "recipeSourceId": "DS2-KB-04",
+      "canonId": "IFKB-CANON-00028",
+      "foodNameFa": "کباب کوبیده",
+      "variantLabel": "simple_ground_meat",
+      "sourceDomain": "food52.com",
+      "independenceGroup": "food52",
+      "sourceUrl": "https://food52.com/recipes/91516-kabab-koobideh",
+      "servingsMin": 4.0,
+      "servingsMax": 4.0,
+      "rawQuantityFacts": {
+        "meat_total_g": 500,
+        "onion_count": 1
+      },
+      "sourceWeight": 1.0,
+      "massAnchoredKeys": [
+        "meat_total_g"
+      ],
+      "unresolvedConversionKeys": [
+        "onion_count"
+      ],
+      "rightsStatus": "derived_structured_facts_only",
+      "identityReviewStatus": "accepted",
+      "sourceNormalizationStatus": "normalized",
+      "fullGramNormalizationStatus": "incomplete",
+      "yieldStatus": "missing",
+      "servingWeightStatus": "missing",
+      "gateStatus": "blocked"
+    },
+    {
+      "recipeSourceId": "DS2-KB-05",
+      "canonId": "IFKB-CANON-00028",
+      "foodNameFa": "کباب کوبیده",
+      "variantLabel": "herb_spice_variant",
+      "sourceDomain": "iranopedia.com",
+      "independenceGroup": "iranopedia",
+      "sourceUrl": "https://www.iranopedia.com/persian-kabobs/koobideh-kabob",
+      "servingsMin": 4.0,
+      "servingsMax": 6.0,
+      "sourceWeight": 0.8,
+      "rawQuantityFacts": {
+        "meat_total_g": 453.59237,
+        "onion_count": 1,
+        "skewer_count_low": 8,
+        "skewer_count_high": 10
+      },
+      "massAnchoredKeys": [
+        "meat_total_g"
+      ],
+      "unresolvedConversionKeys": [
+        "onion_count",
+        "skewer_count_high",
+        "skewer_count_low"
+      ],
+      "rightsStatus": "derived_structured_facts_only",
+      "identityReviewStatus": "accepted",
+      "sourceNormalizationStatus": "normalized",
+      "fullGramNormalizationStatus": "incomplete",
+      "yieldStatus": "missing",
+      "servingWeightStatus": "missing",
+      "gateStatus": "blocked"
+    }
+  ]
+}

@@ -1,0 +1,152 @@
+{
+  "format": "ifkb-ds2-normalization-gate",
+  "version": "1.0.0",
+  "sourceRelease": "IFKB-0.13.1-first-ds2-consensus",
+  "status": "blocked-pending-normalization",
+  "scientificPolicy": {
+    "identityConsensusIsNotNutrientReadiness": true,
+    "legacyNutritionCenterMayNotBeRelabelledAsNormalizedRecipeCalculation": true,
+    "promotionRequiresIndependentReview": true
+  },
+  "profiles": [
+    {
+      "canonId": "IFKB-CANON-00008",
+      "consensusId": "CONS-IFKB-CANON-00008-V1",
+      "foodNameFa": "قورمه‌سبزی",
+      "sourceRecords": 4,
+      "independentSourceGroups": 4,
+      "identityStatus": "multi_source_consensus",
+      "evidenceTier": "DS2",
+      "sourceRecordIds": [
+        "DS2-GS-01",
+        "DS2-GS-02",
+        "DS2-GS-03",
+        "DS2-GS-04"
+      ],
+      "normalization": {
+        "ingredientMapping": "incomplete",
+        "quantityNormalization": "incomplete",
+        "yieldNormalization": "incomplete",
+        "retentionFactors": "not_assessed",
+        "edibleFractions": "not_assessed",
+        "servingBasis": "prior_only"
+      },
+      "servingWeightG": null,
+      "nutrientIntervals": "blocked",
+      "nutritionCenterBasis": "legacy_estimate",
+      "calculationArtifactSha256": null,
+      "ingredientMappingArtifactSha256": null,
+      "review": {
+        "reviewer1": null,
+        "reviewer2": null,
+        "adjudicator": null,
+        "status": "not_ready"
+      },
+      "promotionEligible": false,
+      "blockingReasons": [
+        "Complete ingredient-to-IFKB/USDA mapping is not frozen.",
+        "All source quantities are not yet normalized to defensible gram intervals.",
+        "Cooked yield and serving weight are not complete.",
+        "Recipe-derived nutrient intervals are not ready."
+      ],
+      "sourceStatus": {
+        "nutrientIntervalStatusRaw": "blocked_pending_complete_quantity_and_yield_normalization",
+        "portionPriorStatusRaw": "digital_source_distribution_available",
+        "userGroundingRequiredForDS3": true
+      }
+    },
+    {
+      "canonId": "IFKB-CANON-00010",
+      "consensusId": "CONS-IFKB-CANON-00010-V1",
+      "foodNameFa": "فسنجان",
+      "sourceRecords": 4,
+      "independentSourceGroups": 3,
+      "identityStatus": "multi_source_consensus",
+      "evidenceTier": "DS2",
+      "sourceRecordIds": [
+        "DS2-FS-01",
+        "DS2-FS-02",
+        "DS2-FS-03",
+        "DS2-FS-04"
+      ],
+      "normalization": {
+        "ingredientMapping": "incomplete",
+        "quantityNormalization": "incomplete",
+        "yieldNormalization": "incomplete",
+        "retentionFactors": "not_assessed",
+        "edibleFractions": "not_assessed",
+        "servingBasis": "prior_only"
+      },
+      "servingWeightG": null,
+      "nutrientIntervals": "blocked",
+      "nutritionCenterBasis": "legacy_estimate",
+      "calculationArtifactSha256": null,
+      "ingredientMappingArtifactSha256": null,
+      "review": {
+        "reviewer1": null,
+        "reviewer2": null,
+        "adjudicator": null,
+        "status": "not_ready"
+      },
+      "promotionEligible": false,
+      "blockingReasons": [
+        "Complete ingredient-to-IFKB/USDA mapping is not frozen.",
+        "All source quantities are not yet normalized to defensible gram intervals.",
+        "Cooked yield and serving weight are not complete.",
+        "Recipe-derived nutrient intervals are not ready."
+      ],
+      "sourceStatus": {
+        "nutrientIntervalStatusRaw": "blocked_pending_complete_quantity_and_yield_normalization",
+        "portionPriorStatusRaw": "digital_source_distribution_available",
+        "userGroundingRequiredForDS3": true
+      }
+    },
+    {
+      "canonId": "IFKB-CANON-00028",
+      "consensusId": "CONS-IFKB-CANON-00028-V1",
+      "foodNameFa": "کباب کوبیده",
+      "sourceRecords": 5,
+      "independentSourceGroups": 5,
+      "identityStatus": "multi_source_consensus",
+      "evidenceTier": "DS2",
+      "sourceRecordIds": [
+        "DS2-KB-01",
+        "DS2-KB-02",
+        "DS2-KB-03",
+        "DS2-KB-04",
+        "DS2-KB-05"
+      ],
+      "normalization": {
+        "ingredientMapping": "incomplete",
+        "quantityNormalization": "incomplete",
+        "yieldNormalization": "incomplete",
+        "retentionFactors": "not_assessed",
+        "edibleFractions": "not_assessed",
+        "servingBasis": "prior_only"
+      },
+      "servingWeightG": null,
+      "nutrientIntervals": "blocked",
+      "nutritionCenterBasis": "legacy_estimate",
+      "calculationArtifactSha256": null,
+      "ingredientMappingArtifactSha256": null,
+      "review": {
+        "reviewer1": null,
+        "reviewer2": null,
+        "adjudicator": null,
+        "status": "not_ready"
+      },
+      "promotionEligible": false,
+      "blockingReasons": [
+        "Complete ingredient-to-IFKB/USDA mapping is not frozen.",
+        "All source quantities are not yet normalized to defensible gram intervals.",
+        "Cooked yield and serving weight are not complete.",
+        "Recipe-derived nutrient intervals are not ready."
+      ],
+      "sourceStatus": {
+        "nutrientIntervalStatusRaw": "blocked_pending_complete_quantity_and_yield_normalization",
+        "portionPriorStatusRaw": "digital_source_distribution_available",
+        "userGroundingRequiredForDS3": true
+      }
+    }
+  ]
+}

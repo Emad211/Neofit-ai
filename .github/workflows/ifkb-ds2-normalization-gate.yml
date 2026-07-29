@@ -1,0 +1,80 @@
+name: IFKB DS2 Normalization Gate
+
+# This long-lived PR uses push path filters. pull_request path filters would
+# inspect the full PR diff and rerun the gate for unrelated mobile edits.
+on:
+  push:
+    branches:
+      - agent/iranian-food-kb-foundation
+    paths:
+      - 'ifkb/digital_v0131/normalization_gate/**'
+      - 'ifkb/digital_v0131/ds2_consensus_profiles.csv'
+      - 'ifkb/digital_v0131/test_normalization_gate.py'
+      - '.github/workflows/ifkb-ds2-normalization-gate.yml'
+  workflow_dispatch:
+    inputs:
+      enforce_release:
+        description: 'Require every DS2 profile to be promotion-ready'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ifkb-ds2-normalization-gate
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run normalization-gate tests
+        run: python -m unittest -v ifkb/digital_v0131/test_normalization_gate.py
+
+      - name: Cross-check fail-closed status against the DS2 consensus release
+        run: |
+          mkdir -p build/ds2-normalization
+          python ifkb/digital_v0131/normalization_gate/verify_consensus_alignment.py \
+            --consensus-csv ifkb/digital_v0131/ds2_consensus_profiles.csv \
+            --status-json ifkb/digital_v0131/normalization_gate/current-status.v1.json \
+            --report build/ds2-normalization/consensus-alignment-report.json
+
+      - name: Validate all 13 source-normalization records
+        run: |
+          python ifkb/digital_v0131/normalization_gate/validate_source_work_queue.py \
+            --queue ifkb/digital_v0131/normalization_gate/source-record-normalization-work-queue.v1.json \
+            --gate-status ifkb/digital_v0131/normalization_gate/current-status.v1.json \
+            --report build/ds2-normalization/source-work-queue-report.json
+
+      - name: Validate current DS2 status without promotion claims
+        run: |
+          python ifkb/digital_v0131/normalization_gate/validate_normalization_gate.py \
+            --input ifkb/digital_v0131/normalization_gate/current-status.v1.json \
+            --report build/ds2-normalization/draft-report.json \
+            --mode draft \
+            --require-v0131-profile-set
+
+      - name: Enforce full release readiness when explicitly requested
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.enforce_release }}
+        run: |
+          python ifkb/digital_v0131/normalization_gate/validate_normalization_gate.py \
+            --input ifkb/digital_v0131/normalization_gate/current-status.v1.json \
+            --report build/ds2-normalization/release-report.json \
+            --mode release \
+            --require-v0131-profile-set
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-ds2-normalization-gate-report
+          path: build/ds2-normalization
+          if-no-files-found: error
+          retention-days: 30
