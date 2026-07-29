@@ -73,48 +73,12 @@ jobs:
           if-no-files-found: ignore
           retention-days: 2
 
-      - name: Run fail-closed DS2 normalization gate
+      - name: Run complete fail-closed DS2 normalization gate
         working-directory: .
         run: |
-          mkdir -p build/ds2-normalization
-          python -m unittest -v \
-            ifkb/digital_v0131/test_normalization_gate.py \
-            ifkb/digital_v0131/test_official_portion_audit.py \
-            ifkb/digital_v0131/test_official_portion_review_queue.py \
+          python ifkb/digital_v0131/normalization_gate/run_normalization_gate.py \
+            --output-dir build/ds2-normalization \
             > /tmp/ifkb-ds2-normalization.log 2>&1 \
-            || { cat /tmp/ifkb-ds2-normalization.log; exit 1; }
-          python ifkb/digital_v0131/normalization_gate/verify_consensus_alignment.py \
-            --consensus-csv ifkb/digital_v0131/ds2_consensus_profiles.csv \
-            --status-json ifkb/digital_v0131/normalization_gate/current-status.v1.json \
-            --report build/ds2-normalization/consensus-alignment-report.json \
-            >> /tmp/ifkb-ds2-normalization.log 2>&1 \
-            || { cat /tmp/ifkb-ds2-normalization.log; exit 1; }
-          python ifkb/digital_v0131/normalization_gate/validate_source_work_queue.py \
-            --queue ifkb/digital_v0131/normalization_gate/source-record-normalization-work-queue.v1.json \
-            --gate-status ifkb/digital_v0131/normalization_gate/current-status.v1.json \
-            --report build/ds2-normalization/source-work-queue-report.json \
-            >> /tmp/ifkb-ds2-normalization.log 2>&1 \
-            || { cat /tmp/ifkb-ds2-normalization.log; exit 1; }
-          python ifkb/digital_v0131/normalization_gate/audit_official_portion_candidates.py \
-            --database mobile/assets/ifkb/ifkb-universal-v1.db \
-            --manifest mobile/assets/ifkb/ifkb-universal-v1.manifest.json \
-            --queue ifkb/digital_v0131/normalization_gate/unit-conversion-work-queue.v1.json \
-            --spec ifkb/digital_v0131/normalization_gate/official-portion-audit-spec.v1.json \
-            --report build/ds2-normalization/official-portion-candidates.json \
-            >> /tmp/ifkb-ds2-normalization.log 2>&1 \
-            || { cat /tmp/ifkb-ds2-normalization.log; exit 1; }
-          python ifkb/digital_v0131/normalization_gate/build_official_portion_review_queue.py \
-            --audit-report build/ds2-normalization/official-portion-candidates.json \
-            --unit-queue ifkb/digital_v0131/normalization_gate/unit-conversion-work-queue.v1.json \
-            --output build/ds2-normalization/official-portion-review-queue.json \
-            >> /tmp/ifkb-ds2-normalization.log 2>&1 \
-            || { cat /tmp/ifkb-ds2-normalization.log; exit 1; }
-          python ifkb/digital_v0131/normalization_gate/validate_normalization_gate.py \
-            --input ifkb/digital_v0131/normalization_gate/current-status.v1.json \
-            --report build/ds2-normalization/draft-report.json \
-            --mode draft \
-            --require-v0131-profile-set \
-            >> /tmp/ifkb-ds2-normalization.log 2>&1 \
             || { cat /tmp/ifkb-ds2-normalization.log; exit 1; }
 
       - name: Upload DS2 normalization diagnostics

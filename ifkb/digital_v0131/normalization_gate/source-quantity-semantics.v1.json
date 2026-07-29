@@ -1,0 +1,119 @@
+{
+  "format": "ifkb-ds2-source-quantity-semantics",
+  "version": "1.0.0",
+  "policy": {
+    "everyRawQuantityKeyMustHaveExactlyOneRole": true,
+    "derivedAggregatesMustNotBeAddedToComponents": true,
+    "intervalBoundsMustNotBeAddedAsIndependentIngredients": true,
+    "recipeOutputsMustNotBeAddedAsIngredients": true
+  },
+  "records": [
+    {
+      "recipeSourceId": "DS2-GS-01",
+      "independentIngredientKeys": ["meat_total_g", "oil_total_tbsp", "beans_dry_total_cup", "dried_lime_count", "parsley_cup", "cilantro_cup", "scallion_or_leek_cup", "spinach_cup", "dried_fenugreek_tbsp"],
+      "derivedAggregateKeys": [],
+      "ingredientIntervalPairs": [],
+      "recipeOutputKeys": [],
+      "recipeOutputIntervalPairs": []
+    },
+    {
+      "recipeSourceId": "DS2-GS-02",
+      "independentIngredientKeys": ["meat_total_g", "beans_cooked_total_cup", "dried_lime_count", "scallion_cup", "parsley_cup", "cilantro_cup", "tomato_paste_tbsp"],
+      "derivedAggregateKeys": [],
+      "ingredientIntervalPairs": [{"lowKey": "oil_total_tbsp_low", "highKey": "oil_total_tbsp_high", "canonicalKey": "oil_total_tbsp"}],
+      "recipeOutputKeys": [],
+      "recipeOutputIntervalPairs": []
+    },
+    {
+      "recipeSourceId": "DS2-GS-03",
+      "independentIngredientKeys": ["meat_total_g", "oil_total_tbsp", "beans_dry_total_cup", "dried_lime_total_cup", "spring_onion_cup", "spinach_cup", "parsley_cup", "coriander_cup", "chives_cup", "fenugreek_cup"],
+      "derivedAggregateKeys": [],
+      "ingredientIntervalPairs": [],
+      "recipeOutputKeys": [],
+      "recipeOutputIntervalPairs": []
+    },
+    {
+      "recipeSourceId": "DS2-GS-04",
+      "independentIngredientKeys": ["meat_total_g", "oil_total_tbsp", "beans_cooked_total_cup", "dried_lime_count", "fresh_herbs_total_g"],
+      "derivedAggregateKeys": [],
+      "ingredientIntervalPairs": [],
+      "recipeOutputKeys": [],
+      "recipeOutputIntervalPairs": []
+    },
+    {
+      "recipeSourceId": "DS2-FS-01",
+      "independentIngredientKeys": ["chicken_thigh_count", "oil_total_tbsp", "walnuts_total_cup"],
+      "derivedAggregateKeys": [],
+      "ingredientIntervalPairs": [
+        {"lowKey": "pomegranate_molasses_total_tbsp_low", "highKey": "pomegranate_molasses_total_tbsp_high", "canonicalKey": "pomegranate_molasses_total_tbsp"},
+        {"lowKey": "sugar_total_tbsp_low", "highKey": "sugar_total_tbsp_high", "canonicalKey": "sugar_total_tbsp"}
+      ],
+      "recipeOutputKeys": [],
+      "recipeOutputIntervalPairs": []
+    },
+    {
+      "recipeSourceId": "DS2-FS-02",
+      "independentIngredientKeys": ["chicken_total_g", "walnuts_total_g", "pomegranate_molasses_total_tbsp", "sugar_total_tbsp"],
+      "derivedAggregateKeys": [],
+      "ingredientIntervalPairs": [],
+      "recipeOutputKeys": [],
+      "recipeOutputIntervalPairs": []
+    },
+    {
+      "recipeSourceId": "DS2-FS-03",
+      "independentIngredientKeys": ["chicken_total_g", "walnuts_total_g", "oil_total_tbsp", "onion_total_g", "pomegranate_molasses_total_tbsp", "tomato_paste_total_tbsp", "sugar_total_tbsp"],
+      "derivedAggregateKeys": [],
+      "ingredientIntervalPairs": [],
+      "recipeOutputKeys": [],
+      "recipeOutputIntervalPairs": []
+    },
+    {
+      "recipeSourceId": "DS2-FS-04",
+      "independentIngredientKeys": ["chicken_total_g", "walnuts_total_cup", "oil_total_tbsp", "pomegranate_molasses_total_tbsp"],
+      "derivedAggregateKeys": [],
+      "ingredientIntervalPairs": [{"lowKey": "sugar_total_tbsp_low", "highKey": "sugar_total_tbsp_high", "canonicalKey": "sugar_total_tbsp"}],
+      "recipeOutputKeys": [],
+      "recipeOutputIntervalPairs": []
+    },
+    {
+      "recipeSourceId": "DS2-KB-01",
+      "independentIngredientKeys": ["beef_total_g", "lamb_total_g", "onion_count", "egg_count", "butter_total_tbsp"],
+      "derivedAggregateKeys": [{"key": "meat_total_g", "componentKeys": ["beef_total_g", "lamb_total_g"], "relation": "sum"}],
+      "ingredientIntervalPairs": [],
+      "recipeOutputKeys": ["skewer_count"],
+      "recipeOutputIntervalPairs": []
+    },
+    {
+      "recipeSourceId": "DS2-KB-02",
+      "independentIngredientKeys": ["meat_total_g", "onion_count", "butter_total_tbsp", "baking_soda_total_tsp"],
+      "derivedAggregateKeys": [],
+      "ingredientIntervalPairs": [],
+      "recipeOutputKeys": ["skewer_count"],
+      "recipeOutputIntervalPairs": []
+    },
+    {
+      "recipeSourceId": "DS2-KB-03",
+      "independentIngredientKeys": ["lamb_total_g", "beef_total_g", "onion_total_g", "salt_total_g", "black_pepper_total_g", "sumac_total_g", "baking_soda_total_g"],
+      "derivedAggregateKeys": [{"key": "meat_total_g", "componentKeys": ["lamb_total_g", "beef_total_g"], "relation": "sum"}],
+      "ingredientIntervalPairs": [],
+      "recipeOutputKeys": [],
+      "recipeOutputIntervalPairs": []
+    },
+    {
+      "recipeSourceId": "DS2-KB-04",
+      "independentIngredientKeys": ["meat_total_g", "onion_count"],
+      "derivedAggregateKeys": [],
+      "ingredientIntervalPairs": [],
+      "recipeOutputKeys": [],
+      "recipeOutputIntervalPairs": []
+    },
+    {
+      "recipeSourceId": "DS2-KB-05",
+      "independentIngredientKeys": ["meat_total_g", "onion_count"],
+      "derivedAggregateKeys": [],
+      "ingredientIntervalPairs": [],
+      "recipeOutputKeys": [],
+      "recipeOutputIntervalPairs": [{"lowKey": "skewer_count_low", "highKey": "skewer_count_high", "canonicalKey": "skewer_count"}]
+    }
+  ]
+}

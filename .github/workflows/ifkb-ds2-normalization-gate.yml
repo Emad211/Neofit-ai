@@ -12,6 +12,7 @@ on:
       - 'ifkb/digital_v0131/test_normalization_gate.py'
       - 'ifkb/digital_v0131/test_official_portion_audit.py'
       - 'ifkb/digital_v0131/test_official_portion_review_queue.py'
+      - 'ifkb/digital_v0131/test_quantity_semantics.py'
       - 'mobile/assets/ifkb/ifkb-universal-v1.db'
       - 'mobile/assets/ifkb/ifkb-universal-v1.manifest.json'
       - '.github/workflows/ifkb-ds2-normalization-gate.yml'
@@ -41,59 +42,18 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Run normalization-gate tests
+      - name: Run complete DS2 normalization gate
         run: |
-          python -m unittest -v \
-            ifkb/digital_v0131/test_normalization_gate.py \
-            ifkb/digital_v0131/test_official_portion_audit.py \
-            ifkb/digital_v0131/test_official_portion_review_queue.py
-
-      - name: Cross-check fail-closed status against the DS2 consensus release
-        run: |
-          mkdir -p build/ds2-normalization
-          python ifkb/digital_v0131/normalization_gate/verify_consensus_alignment.py \
-            --consensus-csv ifkb/digital_v0131/ds2_consensus_profiles.csv \
-            --status-json ifkb/digital_v0131/normalization_gate/current-status.v1.json \
-            --report build/ds2-normalization/consensus-alignment-report.json
-
-      - name: Validate all 13 source-normalization records
-        run: |
-          python ifkb/digital_v0131/normalization_gate/validate_source_work_queue.py \
-            --queue ifkb/digital_v0131/normalization_gate/source-record-normalization-work-queue.v1.json \
-            --gate-status ifkb/digital_v0131/normalization_gate/current-status.v1.json \
-            --report build/ds2-normalization/source-work-queue-report.json
-
-      - name: Audit official USDA portion candidates without approving conversions
-        run: |
-          python ifkb/digital_v0131/normalization_gate/audit_official_portion_candidates.py \
-            --database mobile/assets/ifkb/ifkb-universal-v1.db \
-            --manifest mobile/assets/ifkb/ifkb-universal-v1.manifest.json \
-            --queue ifkb/digital_v0131/normalization_gate/unit-conversion-work-queue.v1.json \
-            --spec ifkb/digital_v0131/normalization_gate/official-portion-audit-spec.v1.json \
-            --report build/ds2-normalization/official-portion-candidates.json
-          python ifkb/digital_v0131/normalization_gate/build_official_portion_review_queue.py \
-            --audit-report build/ds2-normalization/official-portion-candidates.json \
-            --unit-queue ifkb/digital_v0131/normalization_gate/unit-conversion-work-queue.v1.json \
-            --output build/ds2-normalization/official-portion-review-queue.json
-
-      - name: Validate current DS2 status without promotion claims
-        run: |
-          python ifkb/digital_v0131/normalization_gate/validate_normalization_gate.py \
-            --input ifkb/digital_v0131/normalization_gate/current-status.v1.json \
-            --report build/ds2-normalization/draft-report.json \
-            --mode draft \
-            --require-v0131-profile-set
-
-      - name: Enforce full release readiness when explicitly requested
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.enforce_release }}
-        run: |
-          python ifkb/digital_v0131/normalization_gate/validate_normalization_gate.py \
-            --input ifkb/digital_v0131/normalization_gate/current-status.v1.json \
-            --report build/ds2-normalization/release-report.json \
-            --mode release \
-            --require-v0131-profile-set
+          ARGS=()
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.enforce_release }}" = "true" ]; then
+            ARGS+=(--enforce-release)
+          fi
+          python ifkb/digital_v0131/normalization_gate/run_normalization_gate.py \
+            --output-dir build/ds2-normalization \
+            "${ARGS[@]}"
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: ifkb-ds2-normalization-gate-report
           path: build/ds2-normalization
