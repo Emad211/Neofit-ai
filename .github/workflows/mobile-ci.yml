@@ -73,6 +73,51 @@ jobs:
           if-no-files-found: ignore
           retention-days: 2
 
+      - name: Run fail-closed DS2 normalization gate
+        working-directory: .
+        run: |
+          mkdir -p build/ds2-normalization
+          python -m unittest -v ifkb/digital_v0131/test_normalization_gate.py \
+            > /tmp/ifkb-ds2-normalization.log 2>&1 \
+            || { cat /tmp/ifkb-ds2-normalization.log; exit 1; }
+          python ifkb/digital_v0131/normalization_gate/verify_consensus_alignment.py \
+            --consensus-csv ifkb/digital_v0131/ds2_consensus_profiles.csv \
+            --status-json ifkb/digital_v0131/normalization_gate/current-status.v1.json \
+            --report build/ds2-normalization/consensus-alignment-report.json \
+            >> /tmp/ifkb-ds2-normalization.log 2>&1 \
+            || { cat /tmp/ifkb-ds2-normalization.log; exit 1; }
+          python ifkb/digital_v0131/normalization_gate/validate_source_work_queue.py \
+            --queue ifkb/digital_v0131/normalization_gate/source-record-normalization-work-queue.v1.json \
+            --gate-status ifkb/digital_v0131/normalization_gate/current-status.v1.json \
+            --report build/ds2-normalization/source-work-queue-report.json \
+            >> /tmp/ifkb-ds2-normalization.log 2>&1 \
+            || { cat /tmp/ifkb-ds2-normalization.log; exit 1; }
+          python ifkb/digital_v0131/normalization_gate/validate_normalization_gate.py \
+            --input ifkb/digital_v0131/normalization_gate/current-status.v1.json \
+            --report build/ds2-normalization/draft-report.json \
+            --mode draft \
+            --require-v0131-profile-set \
+            >> /tmp/ifkb-ds2-normalization.log 2>&1 \
+            || { cat /tmp/ifkb-ds2-normalization.log; exit 1; }
+
+      - name: Upload DS2 normalization diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-ds2-normalization-diagnostics
+          path: /tmp/ifkb-ds2-normalization.log
+          if-no-files-found: ignore
+          retention-days: 2
+
+      - name: Upload DS2 normalization reports
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-ds2-normalization-gate-report
+          path: build/ds2-normalization
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Generate schema and ID freeze candidate
         run: |
           npx tsx scripts/audit-schema-freeze-candidate.ts \
