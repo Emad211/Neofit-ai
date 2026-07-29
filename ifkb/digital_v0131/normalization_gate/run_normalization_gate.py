@@ -46,7 +46,7 @@ def main() -> int:
     output.mkdir(parents=True, exist_ok=True)
     report: dict[str, Any] = {
         "format": "ifkb-ds2-normalization-gate-run-report",
-        "version": "1.3.0",
+        "version": "1.4.0",
         "enforceRelease": args.enforce_release,
         "success": False,
         "steps": [],
@@ -60,6 +60,7 @@ def main() -> int:
         "ifkb/digital_v0131/test_source_normalization_priority.py",
         "ifkb/digital_v0131/test_kb03_ingredient_mapping_audit.py",
         "ifkb/digital_v0131/test_kb03_ingredient_mapping_review_queue.py",
+        "ifkb/digital_v0131/test_kb03_candidate_nutrient_comparison.py",
     ]
     commands: list[tuple[str, list[str]]] = [
         ("normalization gate tests", ["-m", "unittest", "-v", *tests]),
@@ -115,6 +116,13 @@ def main() -> int:
             str(GATE / "build_kb03_ingredient_mapping_review_queue.py"),
             "--audit-report", str(output / "kb03-ingredient-mapping-candidates.json"),
             "--output", str(output / "kb03-ingredient-mapping-review-queue.json"),
+        ]),
+        ("DS2-KB-03 candidate nutrient comparison", [
+            str(GATE / "build_kb03_candidate_nutrient_comparison.py"),
+            "--database", "mobile/assets/ifkb/ifkb-universal-v1.db",
+            "--manifest", "mobile/assets/ifkb/ifkb-universal-v1.manifest.json",
+            "--review-queue", str(output / "kb03-ingredient-mapping-review-queue.json"),
+            "--output", str(output / "kb03-candidate-nutrient-comparison.json"),
         ]),
         ("draft normalization gate", [
             str(GATE / "validate_normalization_gate.py"),
