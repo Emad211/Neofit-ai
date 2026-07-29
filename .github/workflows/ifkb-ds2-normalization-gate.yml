@@ -11,6 +11,7 @@ on:
       - 'ifkb/digital_v0131/ds2_consensus_profiles.csv'
       - 'ifkb/digital_v0131/test_normalization_gate.py'
       - 'ifkb/digital_v0131/test_official_portion_audit.py'
+      - 'ifkb/digital_v0131/test_official_portion_review_queue.py'
       - 'mobile/assets/ifkb/ifkb-universal-v1.db'
       - 'mobile/assets/ifkb/ifkb-universal-v1.manifest.json'
       - '.github/workflows/ifkb-ds2-normalization-gate.yml'
@@ -44,7 +45,8 @@ jobs:
         run: |
           python -m unittest -v \
             ifkb/digital_v0131/test_normalization_gate.py \
-            ifkb/digital_v0131/test_official_portion_audit.py
+            ifkb/digital_v0131/test_official_portion_audit.py \
+            ifkb/digital_v0131/test_official_portion_review_queue.py
 
       - name: Cross-check fail-closed status against the DS2 consensus release
         run: |
@@ -69,6 +71,10 @@ jobs:
             --queue ifkb/digital_v0131/normalization_gate/unit-conversion-work-queue.v1.json \
             --spec ifkb/digital_v0131/normalization_gate/official-portion-audit-spec.v1.json \
             --report build/ds2-normalization/official-portion-candidates.json
+          python ifkb/digital_v0131/normalization_gate/build_official_portion_review_queue.py \
+            --audit-report build/ds2-normalization/official-portion-candidates.json \
+            --unit-queue ifkb/digital_v0131/normalization_gate/unit-conversion-work-queue.v1.json \
+            --output build/ds2-normalization/official-portion-review-queue.json
 
       - name: Validate current DS2 status without promotion claims
         run: |

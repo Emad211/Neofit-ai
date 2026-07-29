@@ -80,6 +80,7 @@ jobs:
           python -m unittest -v \
             ifkb/digital_v0131/test_normalization_gate.py \
             ifkb/digital_v0131/test_official_portion_audit.py \
+            ifkb/digital_v0131/test_official_portion_review_queue.py \
             > /tmp/ifkb-ds2-normalization.log 2>&1 \
             || { cat /tmp/ifkb-ds2-normalization.log; exit 1; }
           python ifkb/digital_v0131/normalization_gate/verify_consensus_alignment.py \
@@ -100,6 +101,12 @@ jobs:
             --queue ifkb/digital_v0131/normalization_gate/unit-conversion-work-queue.v1.json \
             --spec ifkb/digital_v0131/normalization_gate/official-portion-audit-spec.v1.json \
             --report build/ds2-normalization/official-portion-candidates.json \
+            >> /tmp/ifkb-ds2-normalization.log 2>&1 \
+            || { cat /tmp/ifkb-ds2-normalization.log; exit 1; }
+          python ifkb/digital_v0131/normalization_gate/build_official_portion_review_queue.py \
+            --audit-report build/ds2-normalization/official-portion-candidates.json \
+            --unit-queue ifkb/digital_v0131/normalization_gate/unit-conversion-work-queue.v1.json \
+            --output build/ds2-normalization/official-portion-review-queue.json \
             >> /tmp/ifkb-ds2-normalization.log 2>&1 \
             || { cat /tmp/ifkb-ds2-normalization.log; exit 1; }
           python ifkb/digital_v0131/normalization_gate/validate_normalization_gate.py \
