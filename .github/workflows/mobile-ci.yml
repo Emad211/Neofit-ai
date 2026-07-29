@@ -124,6 +124,32 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Generate Iranian source-discovery packs
+        run: |
+          npx tsx scripts/generate-iranian-source-discovery-packs.ts \
+            --batch-plan ../build/full-nutrition-catalog-audit/iranian-batch-plan.json \
+            --output-dir ../build/iranian-source-discovery \
+            > /tmp/iranian-source-discovery.log 2>&1 \
+            || { cat /tmp/iranian-source-discovery.log; exit 1; }
+
+      - name: Upload Iranian discovery diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iranian-source-discovery-diagnostics
+          path: /tmp/iranian-source-discovery.log
+          if-no-files-found: ignore
+          retention-days: 2
+
+      - name: Upload Iranian source-discovery packs
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-iranian-source-discovery-packs
+          path: build/iranian-source-discovery
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Generate schema and ID freeze candidate
         run: |
           npx tsx scripts/audit-schema-freeze-candidate.ts \
