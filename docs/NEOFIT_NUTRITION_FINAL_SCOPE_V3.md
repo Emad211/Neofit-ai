@@ -48,7 +48,7 @@ The percentages below describe the first locked-scope implementation batch and a
 
 A new percentage has not been assigned because the remaining data-verification and real-device QA work is not equivalent in effort to the completed code paths.
 
-## Current verified implementation state — 2026-07-28
+## Current verified implementation state — 2026-07-30
 
 ### Catalog and deterministic engine
 
@@ -84,13 +84,34 @@ A new percentage has not been assigned because the remaining data-verification a
 - Promotion is an internal governance path, not a consumer control that can self-assign verified evidence.
 - Passing the Promotion Bundle schema proves structural completeness and provenance linkage; it does not independently prove scientific adequacy of the cited source.
 
+### DS2 recipe normalization gate
+
+- The first DS2 release contains three genuine multi-source identity/recipe-consensus profiles: Ghormeh Sabzi, Fesenjan and Koobideh.
+- Source coverage is **13 records** across **12 independent groups**: 4/4 for Ghormeh Sabzi, 4/3 for Fesenjan and 5/5 for Koobideh.
+- Current promotion state is **0 eligible / 3 blocked**. Identity consensus is not interpreted as nutrient readiness.
+- The fail-closed DS2 gate runs **45 tests** and is executed inside Mobile CI as well as its path-scoped workflow.
+- Every one of the **83 raw structured quantity keys** across all 13 sources has exactly one semantic role.
+- Quantity semantics contain 69 independent ingredient keys, two derived aggregates, four ingredient intervals, two recipe-output keys and one recipe-output interval.
+- Total-meat aggregates cannot be added again to their beef/lamb components; low/high interval bounds cannot be summed as separate ingredients; skewer counts cannot be treated as ingredient mass.
+- The official SR Legacy/FNDDS portion audit covers **26 unresolved unit families**. Eighteen families have exact-form/measure candidates, four have catalog/measure gaps and four require a non-catalog protocol. Approved conversion count remains zero.
+- Unit evidence is staged in an independent-review queue. No conversion factor, interval or source form is automatically approved.
+- Source work is ranked by normalization effort only—not evidence quality. `DS2-KB-03` is the first and only Tier-A source because its seven independent ingredient quantities are already mass-anchored and servings are known.
+- `DS2-KB-03` is still not nutrient-ready: ingredient source selection, cooked yield, edible fractions and retention factors remain unresolved.
+- The seven independent `DS2-KB-03` ingredient keys now have complete candidate IFKB identity-target coverage.
+- Four candidate extension identities are reserved for black pepper, sumac, baking soda and onion of unspecified variety.
+- The source does not specify onion colour/variety. CI forbids silently specializing it to white, red or yellow onion.
+- Nutrient-source approval remains **0 / 7** and the candidate extension is not yet part of the frozen core ingredient catalog.
+- The bundled Concept/Variant audit yields single candidates for lamb, salt, black pepper and baking soda; one-concept variant ambiguity for onion; multi-concept/fat-class ambiguity for beef; and a catalog gap for sumac.
+- Raw ground-beef candidate values span approximately 121–332 kcal and 3–30 g fat per 100 g. Blind averaging across fat classes is forbidden.
+- Candidate nutrient vectors are compared only per 100 g. They are not multiplied by recipe mass and no recipe nutrition is calculated before mapping approval.
+- The reproducible status and remaining path are recorded in `docs/releases/NEOFIT_DS2_NORMALIZATION_GATE_V1.md`.
+
 ### Persian search
 
 - A reproducible 500-query controlled regression corpus is implemented against the real bundled SQLite FTS index and production TypeScript alias/ranker logic.
 - The IFKB 1.2.0 run achieved route accuracy 100%, Top-1 100%, Top-5 100% and zero failures.
 - This result measures the controlled alias registry and deterministic perturbations. It is not evidence of unrestricted Persian natural-language understanding and is not the final independent user-query benchmark.
-- The independent natural-query collection/freeze contract is implemented, including privacy review, two annotators, adjudication, source-kind restrictions, coverage gates and deterministic fingerprinting.
-- The real independent 500-query corpus is not yet published; only a header-only collection template is committed.
+- The collection/freeze validator for the independent natural-query corpus is implemented, but the real sanitized/adjudicated 500-query release is not yet published.
 
 ### Offline tracker and personal data
 
@@ -121,42 +142,42 @@ A new percentage has not been assigned because the remaining data-verification a
 - Provider nutrition fields are stripped and ignored.
 - Mixed plates and ambiguous candidates require explicit user selection before local nutrition is shown.
 
-### Schema and identifier freeze readiness
+### Schema and ID freeze candidate
 
-- Mobile CI generates a deterministic `neofit-schema-id-freeze-candidate` artifact with status `candidate-not-final`.
-- Candidate v1.1 records hashes for all five migrations, the personal SQLite schema, 13,225 generic ids, 9,279 generic concept ids, 13,225 source-to-concept mappings, 261 IFKB canonical ids, 261 app-profile ids and 218 Persian alias mappings.
-- The current personal schema candidate contains **23 application tables** and **43 audited SQLite objects**.
-- Schema fingerprint SHA-256: `73e67213c7b8300723ddf91195d1c07384b2b3a0198d622a7d451af90c48bcbf`.
-- The 83 legacy app ids, 178 generated fallback ids and 261 IFKB canonical ids are explicitly treated as related but distinct namespaces.
-- An exact app-profile → canonical mapping is now audited for **261 / 261** profiles with **0 unresolved** and **0 ambiguous** mappings.
-- App-profile → canonical mapping SHA-256: `ea66d4b2b532bff1ec2f637c136adb90fa110f00cc67ca51209bc816d08ffe71`.
-- Candidate details and all set hashes are recorded in `docs/releases/NEOFIT_SCHEMA_ID_FREEZE_CANDIDATE_V1.md`.
-- This is an auditable compatibility baseline, not the final public schema/ID freeze.
+- Mobile CI generates a deterministic schema/ID freeze candidate, not a final compatibility promise.
+- Current personal-database candidate: migration version 5, 23 application tables and 43 audited SQLite objects.
+- All 13,225 generic source records map to 9,279 concepts.
+- The 83 legacy app ids and 178 fallback app ids map one-to-one to all 261 IFKB canonical ids with zero unresolved or ambiguous mappings.
+- Post-candidate DS2 normalization files remain mutable and require a new reviewed candidate before final freeze.
 
 ### Validation and workflow governance
 
-- Mobile CI runs deterministic tests, IFKB Python contract tests, freeze-candidate generation, Nutrition SQLite schema validation, Expo package checks, Expo Doctor, strict TypeScript and Android export.
+- Mobile CI runs deterministic tests, Nutrition SQLite schema validation, DS2 normalization governance, Expo package checks, Expo Doctor, strict TypeScript and Android export.
 - Deterministic tests include v1 → v5 upgrade, migration rollback, future-version rejection, SQLite ↔ TypeScript equivalence, catalog precedence, provenance validation and Promotion Bundle validation.
-- Freeze-candidate generation fails on catalog hash/count drift, duplicate app-profile ids, incomplete generic mapping or unresolved/ambiguous Iranian app-profile mapping.
+- The DS2 gate additionally covers consensus alignment, source queues, quantity semantics, official portion auditing, independent-review queues, work prioritization, ingredient identity targets, Concept/Variant candidate mapping and per-100-g candidate comparison.
 - Expensive catalog builds, media acquisition and source rebuilds are manual or path-scoped to relevant branch pushes.
 - Generic concept audit, fallback-profile generation and Persian benchmark no longer rerun for unrelated app changes in the long-lived PR.
 
 ## Remaining release-critical path
 
-1. Produce and independently review source-specific Promotion Bundles that replace the 178 DS0 broad fallbacks with defensible recipe profiles and serving weights.
-2. Collect, sanitize, annotate, adjudicate and freeze the independently sourced 500-query Persian corpus, then evaluate it against the exact catalog/app commit.
-3. Run real-device Android QA for camera/gallery permissions, image manipulation, provider failures, cache behaviour and mixed-plate confirmation.
-4. Run real-device and large-data QA for backup selection, validation, transactional Merge/Replace, rollback behaviour and post-restore UI refresh.
-5. Review changes made after freeze candidate v1.1, generate a final candidate, obtain release-governance approval and promote it to the final schema/ID freeze.
-6. Perform final accessibility, RTL/LTR, performance, privacy and release-governance review before taking the PR out of Draft.
+1. Complete independent nutrient-source review for `DS2-KB-03`, including beef fat-class governance and a defensible sumac source.
+2. Resolve `DS2-KB-03` edible fractions, cooked yield and nutrient-retention model; calculate and independently review p10/p50/p90 serving nutrition before creating a Promotion Bundle.
+3. Apply the same fail-closed normalization process to the remaining two DS2 profiles.
+4. Produce and independently review source-specific Promotion Bundles that replace the 178 DS0 broad fallbacks with defensible recipe profiles and serving weights.
+5. Freeze and evaluate the real independent 500-query Persian corpus.
+6. Run real-device Android QA for camera/gallery permissions, image manipulation, provider failures, cache behaviour and mixed-plate confirmation.
+7. Run real-device and large-data QA for backup selection, validation, transactional Merge/Replace, rollback behaviour and post-restore UI refresh.
+8. Generate and formally approve a new final schema/ID freeze after all accepted DS2/catalog changes.
+9. Perform final accessibility, RTL/LTR, performance, privacy and release-governance review before taking the PR out of Draft.
 
 ## Definition of done
 
 - All 261 Iranian foods have stable profiles; broad category fallbacks are not counted as final verified profiles.
 - Every promoted profile retains reviewable source/version/record provenance and a defensible serving basis.
+- Every recipe-derived DS2 profile has frozen ingredient identities, approved nutrient sources or governed intervals, cooked yield, edible fractions, retention factors and independent review.
 - All 13,225 generic source records remain mapped to a stable Concept/Variant or an explicitly governed exception.
 - Persian search meets Top-1 >= 90% and Top-5 >= 97% on the frozen independent user-query corpus, not only the generated alias regression set.
 - SQLite and TypeScript nutrition calculations produce equivalent results across the release corpus.
 - Diary, recipes, goals, totals, history, export and restore work offline and pass real-device recovery tests.
 - Vision API results are locally resolved, cannot inject nutrition values and abstain or request confirmation when identity is unsafe.
-- The approved final freeze supersedes the candidate baseline and every release-critical test passes.
+- IDs and schemas are frozen and every release-critical test passes.
