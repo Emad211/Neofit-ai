@@ -99,6 +99,31 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Generate full nutrition catalog bulk audit
+        run: |
+          npx tsx scripts/audit-full-nutrition-catalog.ts \
+            --output-dir ../build/full-nutrition-catalog-audit \
+            > /tmp/full-nutrition-catalog-audit.log 2>&1 \
+            || { cat /tmp/full-nutrition-catalog-audit.log; exit 1; }
+
+      - name: Upload full catalog audit diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-nutrition-catalog-audit-diagnostics
+          path: /tmp/full-nutrition-catalog-audit.log
+          if-no-files-found: ignore
+          retention-days: 2
+
+      - name: Upload full nutrition catalog bulk audit
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-full-nutrition-catalog-bulk-audit
+          path: build/full-nutrition-catalog-audit
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Generate schema and ID freeze candidate
         run: |
           npx tsx scripts/audit-schema-freeze-candidate.ts \
