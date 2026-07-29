@@ -34,41 +34,65 @@ jobs:
         run: python -m unittest -v ifkb/universal/test_discover_recipe_index_matches.py
 
       - name: Discover Persian Mama recipe-index candidates for all canonical foods
+        id: discovery
+        continue-on-error: true
         run: |
           python ifkb/universal/discover_recipe_index_matches.py \
             --canon ifkb/universal/iranian_canon_v1.csv \
             --index-url https://persianmama.com/recipe-index/ \
             --source-collection-id SRC-COLLECTION-PERSIAN-MAMA-INDEX \
-            --output-dir build/iranian-recipe-index-discovery
+            --output-dir build/iranian-recipe-index-discovery \
+            > /tmp/iranian-recipe-index-discovery.log 2>&1
 
       - uses: actions/upload-artifact@v4
+        if: steps.discovery.outcome == 'success'
         with:
           name: ifkb-iranian-recipe-index-discovery
           path: build/iranian-recipe-index-discovery
           if-no-files-found: error
           retention-days: 30
 
-      - name: Report candidate counts to Draft PR
-        if: success()
+      - name: Report result to Draft PR
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
+          DISCOVERY_OUTCOME: ${{ steps.discovery.outcome }}
         run: |
           python - <<'PY' > /tmp/recipe-index-comment.md
           import json
+          import os
           from pathlib import Path
-          value = json.loads(Path('build/iranian-recipe-index-discovery/summary.json').read_text())
           print('### Bulk Iranian recipe-index discovery')
           print()
-          print(f"- head: `{__import__('os').environ['GITHUB_SHA']}`")
-          print(f"- workflow run: `{__import__('os').environ['GITHUB_RUN_ID']}`")
-          print(f"- canonical foods evaluated: **{value['canonicalFoodCount']}**")
-          print(f"- recipe links indexed: **{value['recipeLinkCount']}**")
-          print(f"- foods with candidate URLs: **{value['foodsWithCandidates']}**")
-          print(f"- foods with strong candidate URLs: **{value['foodsWithStrongCandidates']}**")
-          print(f"- candidate links retained: **{value['candidateCount']}**")
-          print('- approved exact matches: **0**')
-          print('- approved nutrition use: **0**')
-          print()
-          print('Only candidate titles and URLs were retained. Recipe prose, images, quantities and nutrition were not copied or approved.')
+          print(f"- head: `{os.environ['GITHUB_SHA']}`")
+          print(f"- workflow run: `{os.environ['GITHUB_RUN_ID']}`")
+          print(f"- discovery outcome: **{os.environ['DISCOVERY_OUTCOME']}**")
+          summary = Path('build/iranian-recipe-index-discovery/summary.json')
+          if summary.exists():
+              value = json.loads(summary.read_text())
+              print(f"- canonical foods evaluated: **{value['canonicalFoodCount']}**")
+              print(f"- recipe links indexed: **{value['recipeLinkCount']}**")
+              print(f"- foods with candidate URLs: **{value['foodsWithCandidates']}**")
+              print(f"- foods with strong candidate URLs: **{value['foodsWithStrongCandidates']}**")
+              print(f"- candidate links retained: **{value['candidateCount']}**")
+              print('- approved exact matches: **0**')
+              print('- approved nutrition use: **0**')
+              print()
+              print('Only candidate titles and URLs were retained. Recipe prose, images, quantities and nutrition were not copied or approved.')
+          else:
+              log = Path('/tmp/iranian-recipe-index-discovery.log')
+              tail = log.read_text(errors='replace').splitlines()[-20:] if log.exists() else ['No discovery log was produced.']
+              print()
+              print('The external collection could not be indexed. The 12-batch catalog workflow remains unaffected.')
+              print()
+              print('```text')
+              print('\n'.join(tail))
+              print('```')
           PY
           gh issue comment 3 --repo "$GITHUB_REPOSITORY" --body-file /tmp/recipe-index-comment.md
+
+      - name: Fail workflow when external discovery failed
+        if: steps.discovery.outcome != 'success'
+        run: |
+          cat /tmp/iranian-recipe-index-discovery.log
+          exit 1
