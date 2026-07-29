@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: ifkb-iranian-recipe-index-discovery
@@ -46,3 +47,28 @@ jobs:
           path: build/iranian-recipe-index-discovery
           if-no-files-found: error
           retention-days: 30
+
+      - name: Report candidate counts to Draft PR
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY' > /tmp/recipe-index-comment.md
+          import json
+          from pathlib import Path
+          value = json.loads(Path('build/iranian-recipe-index-discovery/summary.json').read_text())
+          print('### Bulk Iranian recipe-index discovery')
+          print()
+          print(f"- head: `{__import__('os').environ['GITHUB_SHA']}`")
+          print(f"- workflow run: `{__import__('os').environ['GITHUB_RUN_ID']}`")
+          print(f"- canonical foods evaluated: **{value['canonicalFoodCount']}**")
+          print(f"- recipe links indexed: **{value['recipeLinkCount']}**")
+          print(f"- foods with candidate URLs: **{value['foodsWithCandidates']}**")
+          print(f"- foods with strong candidate URLs: **{value['foodsWithStrongCandidates']}**")
+          print(f"- candidate links retained: **{value['candidateCount']}**")
+          print('- approved exact matches: **0**')
+          print('- approved nutrition use: **0**')
+          print()
+          print('Only candidate titles and URLs were retained. Recipe prose, images, quantities and nutrition were not copied or approved.')
+          PY
+          gh issue comment 3 --repo "$GITHUB_REPOSITORY" --body-file /tmp/recipe-index-comment.md
