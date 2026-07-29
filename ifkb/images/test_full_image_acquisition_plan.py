@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "ifkb/images/build_full_image_acquisition_plan.py"
+SCRIPT = ROOT / "ifkb/images/run_full_image_acquisition_plan.py"
 
 
 class FullImageAcquisitionPlanTests(unittest.TestCase):
@@ -31,6 +31,7 @@ class FullImageAcquisitionPlanTests(unittest.TestCase):
             summary = json.loads((output / "summary.json").read_text(encoding="utf-8"))
             self.assertEqual(summary["canonicalClassCount"], 261)
             self.assertEqual(summary["batchCount"], 12)
+            self.assertEqual(summary["p0ReconstructedClassCount"], 60)
             self.assertEqual(summary["waveCounts"], {
                 "IMAGE-WAVE-A": 60,
                 "IMAGE-WAVE-B": 115,
