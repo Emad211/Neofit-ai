@@ -6,178 +6,295 @@ This document supersedes every previous nutrition scope.
 
 - Mobile stack: Expo / React Native / TypeScript.
 - Data core: IFKB + USDA SR Legacy + USDA FNDDS.
-- Tracker core: clean-room TypeScript implementation inspired by public tracker behaviour, without copying GPL source code.
-- Vision: remote Vision API only. No on-device vision model is planned.
-- Open Food Facts and barcode integration: excluded.
-- Nutrition calculations: deterministic TypeScript/SQLite only. A language or vision model must never invent calories or nutrients.
+- Nutrition calculations: deterministic TypeScript/SQLite only.
+- A language or vision model must never invent calories, nutrients, weights or portions.
+- Vision: remote identity recognition only; all nutrition is resolved locally.
 - Storage: local-first SQLite. Cloud backend remains optional.
-- Physical food capture or measurement: excluded.
+- Open Food Facts, barcode ingestion, Flutter migration, local ONNX vision and physical food measurement are outside the current release scope.
 
 ## Product architecture
 
 1. Source nutrition records and provenance.
-2. Canonical food concepts and nutrition variants.
-3. Persian search, aliases, typo handling and modifier parsing.
-4. Portion and deterministic nutrition calculation engine.
-5. Clean-room tracker core: diary, recipes, custom foods, goals, totals, history, weight and export.
-6. Expo repository layer, migrations and offline persistence.
-7. Vision API adapter: image recognition only, mapped back to IFKB concepts.
-8. QA, schema freeze, versioning and release governance.
-
-## Vision API rules
-
-- The user explicitly triggers every image request and confirms the prepared-image upload.
-- Images are resized/compressed on-device before upload.
-- Raw images are not stored in SQLite or in the Vision cache.
-- The API may return food candidates, visible components and preparation hints.
-- The API may not return trusted calories, macros or portion weights.
-- Candidate labels are resolved against IFKB locally.
-- Strong unambiguous matches may be selected automatically; mixed plates, close alternatives, weak matches, warnings and low confidence require explicit user confirmation.
-- A confirmed component from a mixed plate is calculated alone; other visible components must be logged separately.
-- Portion, added fat, sauce and serving uncertainty are resolved by deterministic questions and the nutrition engine.
-- Results may be cached by a privacy-safe image fingerprint; raw image bytes are not cached.
-- Provider-specific networking stays behind a transport boundary.
-
-## Historical baseline
-
-The percentages below describe the first locked-scope implementation batch and are retained only as historical context. They must not be reported as the current project completion level:
-
-- overall final-product completion: **42.67%**;
-- core completion excluding Vision: **41.60%**;
-- Vision pipeline completion: **55%**.
-
-A new percentage has not been assigned because the remaining data-verification and real-device QA work is not equivalent in effort to the completed code paths.
+2. Stable food concepts and nutrition variants.
+3. Persian search, aliases, typo handling and preparation modifiers.
+4. Portion and deterministic nutrition calculation.
+5. Diary, recipes, custom foods, goals, totals, history and export.
+6. Expo repositories, migrations and offline persistence.
+7. Vision identity adapter mapped back to IFKB.
+8. Bulk source acquisition, QA, schema/ID freeze and release governance.
 
 ## Current verified implementation state — 2026-07-30
 
-### Catalog and deterministic engine
+### Complete tracked catalog surface
 
-- IFKB mobile catalog release: **1.2.0**.
-- Immutable read-only SQLite asset: **13,885,440 bytes**.
-- Generic USDA records: **13,225**.
-- Official portion records: **36,494**.
-- Complete calorie/macronutrient records: **13,224**.
-- Generic concepts: **9,279**.
-- Generic Concept/Variant mappings: **13,225 / 13,225 (100%)**.
-- Multi-variant concepts: **1,321**.
-- Multi-source concepts: **209**.
-- Iranian canonical identities: **261**.
-- Persian alias rows: **218**.
-- Runtime, backup metadata, manifest, database byte size and SHA-256 are protected by one shared release contract and a CI drift test.
-- Nutrition arithmetic, ranges, sums and serving weights are canonicalized to prevent binary floating-point noise from leaking into persisted or displayed values.
-- SQLite and TypeScript calculations are compared directly for per-100g, named portions, fractional quantities, uncertainty ranges, missing nutrients and unknown serving weights.
+NeoFit now tracks the complete bundled nutrition surface record-by-record:
 
-### Iranian profile state and controlled promotion
+- total tracked records: **13,486**
+- generic USDA source records: **13,225**
+- Iranian canonical/app profiles: **261**
+- generic concepts: **9,279**
+- generic source-to-concept mappings: **13,225 / 13,225**
+- official household portions: **36,494**
+- Persian aliases: **218**
 
-- Existing prior app profiles: **83**.
-- Generated DS0 broad-fallback profiles: **178**.
-- Total identities visible through the app layer: **261**.
-- DS0 records are intentionally marked `broad_fallback`, `low` confidence and unknown serving weight.
-- DS0 records are category priors, not recipe-specific measurements and not verified nutrition records.
-- The DS0 release created **zero** verified records and must be progressively replaced by source-specific profiles.
-- Migration 5 adds `evidence_tier`, `source_record_id` and `source_version` to the mutable food catalog and backfills existing DS0/custom records.
-- SQLite source precedence is locked as `imported > seeded`, while custom identities are protected from both seeded and imported replacement.
-- A later built-in reseed cannot downgrade a promoted imported profile.
-- Removing or replacing an imported overlay restores the bundled profile for the same stable id when one exists and rebuilds the affected canonical concepts.
-- Canonical FoodVariant records preserve the explicit evidence tier, source dataset, source-record id and source version.
-- A versioned strong-profile Promotion Bundle contract requires a non-null serving weight, medium/high confidence, record-level provenance and either `verified_source` or `digital_consensus`.
-- Promotion is an internal governance path, not a consumer control that can self-assign verified evidence.
-- Passing the Promotion Bundle schema proves structural completeness and provenance linkage; it does not independently prove scientific adequacy of the cited source.
+The full audit produces one readiness row for every generic record and every Iranian profile. Progress is measured by catalog coverage and batch throughput, not by completion of one selected food.
 
-### DS2 recipe normalization gate
+### Generic catalog readiness
 
-- The first DS2 release contains three genuine multi-source identity/recipe-consensus profiles: Ghormeh Sabzi, Fesenjan and Koobideh.
-- Source coverage is **13 records** across **12 independent groups**: 4/4 for Ghormeh Sabzi, 4/3 for Fesenjan and 5/5 for Koobideh.
-- Current promotion state is **0 eligible / 3 blocked**. Identity consensus is not interpreted as nutrient readiness.
-- The fail-closed DS2 gate runs **45 tests** and is executed inside Mobile CI as well as its path-scoped workflow.
-- Every one of the **83 raw structured quantity keys** across all 13 sources has exactly one semantic role.
-- Quantity semantics contain 69 independent ingredient keys, two derived aggregates, four ingredient intervals, two recipe-output keys and one recipe-output interval.
-- Total-meat aggregates cannot be added again to their beef/lamb components; low/high interval bounds cannot be summed as separate ingredients; skewer counts cannot be treated as ingredient mass.
-- The official SR Legacy/FNDDS portion audit covers **26 unresolved unit families**. Eighteen families have exact-form/measure candidates, four have catalog/measure gaps and four require a non-catalog protocol. Approved conversion count remains zero.
-- Unit evidence is staged in an independent-review queue. No conversion factor, interval or source form is automatically approved.
-- Source work is ranked by normalization effort only—not evidence quality. `DS2-KB-03` is the first and only Tier-A source because its seven independent ingredient quantities are already mass-anchored and servings are known.
-- `DS2-KB-03` is still not nutrient-ready: ingredient source selection, cooked yield, edible fractions and retention factors remain unresolved.
-- The seven independent `DS2-KB-03` ingredient keys now have complete candidate IFKB identity-target coverage.
-- Four candidate extension identities are reserved for black pepper, sumac, baking soda and onion of unspecified variety.
-- The source does not specify onion colour/variety. CI forbids silently specializing it to white, red or yellow onion.
-- Nutrient-source approval remains **0 / 7** and the candidate extension is not yet part of the frozen core ingredient catalog.
-- The bundled Concept/Variant audit yields single candidates for lamb, salt, black pepper and baking soda; one-concept variant ambiguity for onion; multi-concept/fat-class ambiguity for beef; and a catalog gap for sumac.
-- Raw ground-beef candidate values span approximately 121–332 kcal and 3–30 g fat per 100 g. Blind averaging across fat classes is forbidden.
-- Candidate nutrient vectors are compared only per 100 g. They are not multiplied by recipe mass and no recipe nutrition is calculated before mapping approval.
-- The reproducible status and remaining path are recorded in `docs/releases/NEOFIT_DS2_NORMALIZATION_GATE_V1.md`.
+| Class | Count | Runtime use |
+|---|---:|---|
+| Complete macros + official portion | 12,927 | grams and official portions |
+| Complete macros, no official portion | 297 | grams/per-100g only |
+| Macro incomplete | 1 | excluded from selectable results |
+| Missing Concept/Variant mapping | 0 | CI failure if introduced |
 
-### Persian search
+Additional verified counts:
 
-- A reproducible 500-query controlled regression corpus is implemented against the real bundled SQLite FTS index and production TypeScript alias/ranker logic.
-- The IFKB 1.2.0 run achieved route accuracy 100%, Top-1 100%, Top-5 100% and zero failures.
-- This result measures the controlled alias registry and deterministic perturbations. It is not evidence of unrestricted Persian natural-language understanding and is not the final independent user-query benchmark.
-- The collection/freeze validator for the independent natural-query corpus is implemented, but the real sanitized/adjudicated 500-query release is not yet published.
+- SR Legacy records: **7,793**
+- FNDDS records: **5,432**
+- records with official portions: **12,928**
+- macro-complete records: **13,224**
+- calcium coverage: **13,139**
+- iron coverage: **13,144**
+- potassium coverage: **12,947**
+- vitamin C coverage: **12,763**
 
-### Offline tracker and personal data
+The immutable SQLite asset remains catalog version **1.2.0**, **13,885,440 bytes**, SHA-256:
 
-- Nutrition Core schema is installed through real `neofit.db` migrations.
-- Local repositories and UI are active for Diary, Recipes, Goals, micronutrient progress, Favorites, Recents and History.
-- Legacy `meal_logs` migration is idempotent and new nutrition writes use Nutrition Diary as the source of truth.
-- CSV export preserves missing nutrients as blank.
-- JSON backup includes Diary, Recipes, Goals and Favorites while excluding the public catalog, API keys, Vision images, caches and provider responses.
-- JSON restore validates size, schema, finite/non-negative nutrition, duplicate identifiers and recipe cycles before writing.
-- Restore supports transactional Merge and destructive Replace with separate user confirmation.
-- Backup catalog version/SHA mismatch is disclosed while snapshot Diary nutrition remains preserved.
+`0164cb344c22eeec2556f9decdf13931e700078a9566bd884609edee78667247`
 
-### Migration and recovery gates
+The single macro-incomplete source record is preserved for provenance but filtered out before ranking. The 297 macro-complete records without official portions remain usable by grams.
 
-- The migration runner validates contiguous positive versions and rejects a database newer than the application.
-- A real SQLite upgrade test executes v1 → v5 with legacy Profile and `meal_logs` data present.
-- The v1 → v5 test verifies Profile preservation, one-time legacy Diary import, FTS synchronization, provenance backfill and idempotent repeated startup.
-- Failed migration SQL is rolled back together with its `user_version`; partially created tables do not survive.
-- Node CI uses a portable table substitute only when its SQLite build lacks FTS5. Expo/Android still exports against the actual Expo SQLite runtime and FTS schema.
-- Binary database restore retains its rollback copy and validates SQLite integrity before accepting the restored database.
+### Iranian profile readiness
 
-### Vision production boundary
+All **261 Iranian identities** are present and mapped one-to-one to app profiles:
 
-- Camera/gallery images are resized to a maximum 1,024-pixel dimension and compressed before upload.
-- Prepared upload size is limited to 1.5 MB.
-- Explicit upload consent is required.
-- Identity results use a provider/model-aware fingerprint cache without retaining image bytes.
-- Provider nutrition fields are stripped and ignored.
-- Mixed plates and ambiguous candidates require explicit user selection before local nutrition is shown.
+- **178** DS0 broad fallbacks requiring source acquisition and recipe/serving profiles
+- **80** legacy estimates requiring revalidation and replacement
+- **3** DS2 identity/recipe-consensus profiles still blocked from nutrient promotion
+- promotion eligible: **0**
+- known serving weights: **7**
+- unknown serving weights: **254**
 
-### Schema and ID freeze candidate
+Category coverage:
 
-- Mobile CI generates a deterministic schema/ID freeze candidate, not a final compatibility promise.
-- Current personal-database candidate: migration version 5, 23 application tables and 43 audited SQLite objects.
-- All 13,225 generic source records map to 9,279 concepts.
-- The 83 legacy app ids and 178 fallback app ids map one-to-one to all 261 IFKB canonical ids with zero unresolved or ambiguous mappings.
-- Post-candidate DS2 normalization files remain mutable and require a new reviewed candidate before final freeze.
+- bread: 12
+- breakfast: 9
+- dairy/beverage: 14
+- dessert: 41
+- kebab: 20
+- rice: 42
+- soup: 35
+- stew: 35
+- street food: 53
 
-### Validation and workflow governance
+### Twelve parallel Iranian execution batches
 
-- Mobile CI runs deterministic tests, Nutrition SQLite schema validation, DS2 normalization governance, Expo package checks, Expo Doctor, strict TypeScript and Android export.
-- Deterministic tests include v1 → v5 upgrade, migration rollback, future-version rejection, SQLite ↔ TypeScript equivalence, catalog precedence, provenance validation and Promotion Bundle validation.
-- The DS2 gate additionally covers consensus alignment, source queues, quantity semantics, official portion auditing, independent-review queues, work prioritization, ingredient identity targets, Concept/Variant candidate mapping and per-100-g candidate comparison.
-- Expensive catalog builds, media acquisition and source rebuilds are manual or path-scoped to relevant branch pushes.
-- Generic concept audit, fallback-profile generation and Persian benchmark no longer rerun for unrelated app changes in the long-lived PR.
+All 261 profiles are assigned exactly once to **12 balanced batches**:
+
+- batch size: **21–22 foods**
+- every batch mixes categories and readiness states
+- no individual food can block overall progress
+- batch assignment fingerprint:
+  `0ad7bbbffd86862f99a2b81865703c5ed56522ba62f7f557050b8c0ad023f53d`
+
+The frozen operational assignment CSV is stored under:
+
+`ifkb/universal/releases/iranian-bulk-source-registry-v1/iranian-batch-assignments.csv`
+
+This assignment is an execution order, not a scientific-verification score.
+
+### Multilingual bulk source discovery
+
+For every Iranian food, CI generates:
+
+- exact-name Persian searches
+- serving-weight and nutrition-source searches
+- English recipe and ingredient-quantity searches
+- alias-derived Persian searches when aliases exist
+- minimum independent-source requirements
+- required extraction outputs and rejected-evidence rules
+- one complete CSV queue and 12 per-batch JSON work packs
+
+Current generated totals:
+
+- canonical foods covered: **261 / 261**
+- Persian queries: **861**
+- English queries: **783**
+- foods with additional canonical aliases: **39**
+- approved source records: **0**
+
+### Multi-collection research registry
+
+Eight broad collections are currently registered by role, authority, access and reuse boundary:
+
+- Iranian Food Composition Table 2017
+- SAMAR Iranian food-composition candidate
+- Persian Mama recipe index
+- FAO/USDA Food Composition Tables for the Near East
+- WHO/EMRO traditional rural Iranian foods study
+- FAO/INFOODS Analytical Food Composition Database 2.0
+- USDA SR Legacy
+- USDA FNDDS
+
+Generated collection-plan results:
+
+- candidate collection assignments: **2,040**
+- foods with recipe-discovery assignments: **261 / 261**
+- foods with nutrient-authority assignments: **261 / 261**
+- exact food matches approved: **0**
+- source records approved: **0**
+
+A collection assignment means only that the collection should be searched. It does not establish exact coverage, reuse permission, source independence, nutrient authority or promotion readiness.
+
+### Bulk URL and structured-fact pipeline
+
+A path-scoped workflow processes broad recipe collections without blocking Mobile CI:
+
+1. index same-domain recipe titles and URLs;
+2. match all 261 canonical names and aliases;
+3. initialize null-safe source-fact records;
+4. extract only Recipe JSON-LD name, yield and ingredient labels for candidate pages;
+5. store no recipe instructions, images, raw page content or provider nutrition;
+6. record failures without discarding successful pages;
+7. route extracted facts into the 12 pre-assigned batches.
+
+Exact identity, reuse status, independence group, ingredient mapping, serving weight, nutrient source and promotion eligibility remain separate review dimensions. Automatic approval is forbidden and missing values are never interpreted as zero.
+
+The reproducible broad baseline is recorded in:
+
+`docs/releases/NEOFIT_FULL_NUTRITION_CATALOG_BULK_AUDIT_V1.md`
+
+### DS2 normalization as an exception workstream
+
+Three existing profiles—Ghormeh Sabzi, Fesenjan and Koobideh—have genuine multi-source identity/recipe consensus but remain nutrient-blocked.
+
+- source records: **13**
+- promotion eligible: **0 / 3**
+- fail-closed DS2 tests: **45**
+- raw structured quantity keys classified: **83 / 83**
+- approved household-unit conversions: **0**
+- calculated recipe nutrition: **0**
+
+The DS2 gate remains valuable for ambiguous/high-impact exceptions, but it no longer defines the pace of the entire Iranian catalog. The same governance contracts will be applied in groups after broad discovery and extraction populate each batch.
+
+### Promotion governance
+
+Migration 5 adds:
+
+- `evidence_tier`
+- `source_record_id`
+- `source_version`
+- source/evidence indexing
+- source precedence and provenance validation
+
+Imported profiles cannot be downgraded by later bundled reseeds. Custom user foods remain protected.
+
+Promotion Bundles require:
+
+- stable app/IFKB identity
+- source, version and record-level provenance
+- non-null serving basis
+- medium/high confidence
+- complete serving calories/macros
+- `verified_source` or `digital_consensus`
+
+Passing the schema proves structural completeness and provenance linkage only; scientific adequacy still requires independent review.
+
+## Local-first tracker and personal data
+
+Implemented and active:
+
+- Nutrition Diary as the source of truth
+- idempotent legacy `meal_logs` import
+- local search, grams and official portions
+- Favorites and Recents
+- nested Recipe Builder with cycle protection
+- Goals and missing-aware macro/micronutrient progress
+- History and CSV export
+- validated JSON backup
+- transactional Merge and destructive Replace restore
+
+Backups exclude the public catalog, API keys, Vision images, caches and provider responses.
+
+## Migration and arithmetic gates
+
+- real SQLite upgrade coverage from v1 to v5
+- Profile and legacy meal preservation
+- one-time legacy Diary import
+- FTS synchronization
+- provenance backfill
+- repeated-startup idempotence
+- rollback of failed migration SQL together with `user_version`
+- rejection of databases newer than the app
+- direct SQLite ↔ TypeScript equivalence tests for grams, portions, fractional quantities, ranges, missing nutrients and unknown serving weights
+
+## Vision production boundary
+
+- explicit user trigger and upload consent
+- on-device resize/compression
+- maximum image dimension: 1,024 px
+- maximum prepared upload: 1.5 MB
+- no raw image storage in SQLite/cache
+- provider/model-aware privacy-safe fingerprint cache
+- provider nutrition stripped and ignored
+- local IFKB identity resolution
+- explicit confirmation for mixed plates, close alternatives, weak matches, low confidence and provider warnings
+
+## Persian search evidence
+
+- controlled 500-query alias/search regression: route 100%, Top-1 100%, Top-5 100%, zero failures
+- this is a deterministic regression result, not unrestricted natural-language accuracy
+- independent natural-query collection/freeze validator is implemented
+- the real sanitized, double-annotated and adjudicated 500-query corpus is not yet published
+
+## Schema and ID freeze
+
+- current candidate: migration version 5
+- application tables: 23
+- audited SQLite objects: 43
+- 13,225 generic records map to 9,279 concepts
+- 261 app profiles map one-to-one to 261 canonical identities
+- zero unresolved or ambiguous app→canonical mappings
+- broad acquisition and batch files remain mutable and require a new reviewed candidate before final release freeze
+
+## Validation and workflow governance
+
+Mobile CI now gates:
+
+- deterministic TypeScript/SQLite tests
+- full 13,486-record bulk audit
+- 261-food discovery packs
+- multi-collection research plan
+- DS2 fail-closed governance
+- migration and recovery tests
+- catalog precedence/provenance tests
+- Promotion Bundle tests
+- SQLite ↔ TypeScript equivalence
+- schema/ID freeze-candidate generation
+- Expo compatibility and Expo Doctor
+- strict TypeScript
+- Android export
+
+External source discovery is isolated, path-scoped and cannot block the main product pipeline.
 
 ## Remaining release-critical path
 
-1. Complete independent nutrient-source review for `DS2-KB-03`, including beef fat-class governance and a defensible sumac source.
-2. Resolve `DS2-KB-03` edible fractions, cooked yield and nutrient-retention model; calculate and independently review p10/p50/p90 serving nutrition before creating a Promotion Bundle.
-3. Apply the same fail-closed normalization process to the remaining two DS2 profiles.
-4. Produce and independently review source-specific Promotion Bundles that replace the 178 DS0 broad fallbacks with defensible recipe profiles and serving weights.
+1. Execute broad collection discovery and structured-fact extraction across all 12 Iranian batches.
+2. Review exact identity and reuse status in groups; escalate only ambiguous, high-impact or source-gap records for deep review.
+3. Normalize ingredient quantities, serving/yield and nutrient-source mappings batch-by-batch.
+4. Produce independently reviewed Promotion Bundles in groups that progressively replace DS0 and legacy estimates.
 5. Freeze and evaluate the real independent 500-query Persian corpus.
-6. Run real-device Android QA for camera/gallery permissions, image manipulation, provider failures, cache behaviour and mixed-plate confirmation.
-7. Run real-device and large-data QA for backup selection, validation, transactional Merge/Replace, rollback behaviour and post-restore UI refresh.
-8. Generate and formally approve a new final schema/ID freeze after all accepted DS2/catalog changes.
-9. Perform final accessibility, RTL/LTR, performance, privacy and release-governance review before taking the PR out of Draft.
+6. Run real-device Android QA for Vision and backup/recovery flows.
+7. Complete accessibility, RTL/LTR, performance, privacy and release governance.
+8. Generate and approve a new final schema/ID freeze after accepted catalog changes.
 
 ## Definition of done
 
-- All 261 Iranian foods have stable profiles; broad category fallbacks are not counted as final verified profiles.
-- Every promoted profile retains reviewable source/version/record provenance and a defensible serving basis.
-- Every recipe-derived DS2 profile has frozen ingredient identities, approved nutrient sources or governed intervals, cooked yield, edible fractions, retention factors and independent review.
-- All 13,225 generic source records remain mapped to a stable Concept/Variant or an explicitly governed exception.
-- Persian search meets Top-1 >= 90% and Top-5 >= 97% on the frozen independent user-query corpus, not only the generated alias regression set.
-- SQLite and TypeScript nutrition calculations produce equivalent results across the release corpus.
-- Diary, recipes, goals, totals, history, export and restore work offline and pass real-device recovery tests.
-- Vision API results are locally resolved, cannot inject nutrition values and abstain or request confirmation when identity is unsafe.
-- IDs and schemas are frozen and every release-critical test passes.
+- all 13,225 generic records remain mapped and macro-incomplete exceptions are non-selectable
+- all 261 Iranian identities have stable source-reviewed profiles; broad fallbacks do not count as final profiles
+- every promoted profile retains reviewable provenance and a defensible serving basis
+- batch processing covers every Iranian identity exactly once and exceptions are explicit
+- Persian search passes the frozen independent corpus thresholds
+- Tracker, export, restore and Vision flows pass real-device QA
+- the approved final freeze supersedes the mutable candidate baseline
