@@ -7,6 +7,8 @@ on:
     paths:
       - 'ifkb/universal/discover_recipe_index_matches.py'
       - 'ifkb/universal/test_discover_recipe_index_matches.py'
+      - 'ifkb/universal/initialize_source_fact_queue.py'
+      - 'ifkb/universal/test_initialize_source_fact_queue.py'
       - 'ifkb/universal/iranian_canon_v1.csv'
       - '.github/workflows/ifkb-iranian-recipe-index-discovery.yml'
   workflow_dispatch:
@@ -30,8 +32,11 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Run offline parser and matcher tests
-        run: python -m unittest -v ifkb/universal/test_discover_recipe_index_matches.py
+      - name: Run offline parser, matcher and queue tests
+        run: |
+          python -m unittest -v \
+            ifkb/universal/test_discover_recipe_index_matches.py \
+            ifkb/universal/test_initialize_source_fact_queue.py
 
       - name: Discover Persian Mama recipe-index candidates for all canonical foods
         id: discovery
@@ -43,6 +48,14 @@ jobs:
             --source-collection-id SRC-COLLECTION-PERSIAN-MAMA-INDEX \
             --output-dir build/iranian-recipe-index-discovery \
             > /tmp/iranian-recipe-index-discovery.log 2>&1
+
+      - name: Initialize source-fact extraction queue
+        if: steps.discovery.outcome == 'success'
+        run: |
+          python ifkb/universal/initialize_source_fact_queue.py \
+            --candidates build/iranian-recipe-index-discovery/candidate-matches.csv \
+            --output-dir build/iranian-recipe-index-discovery/source-fact-queue \
+            >> /tmp/iranian-recipe-index-discovery.log 2>&1
 
       - uses: actions/upload-artifact@v4
         if: steps.discovery.outcome == 'success'
@@ -68,6 +81,7 @@ jobs:
           print(f"- workflow run: `{os.environ['GITHUB_RUN_ID']}`")
           print(f"- discovery outcome: **{os.environ['DISCOVERY_OUTCOME']}**")
           summary = Path('build/iranian-recipe-index-discovery/summary.json')
+          queue_summary = Path('build/iranian-recipe-index-discovery/source-fact-queue/summary.json')
           if summary.exists():
               value = json.loads(summary.read_text())
               print(f"- canonical foods evaluated: **{value['canonicalFoodCount']}**")
@@ -75,7 +89,11 @@ jobs:
               print(f"- foods with candidate URLs: **{value['foodsWithCandidates']}**")
               print(f"- foods with strong candidate URLs: **{value['foodsWithStrongCandidates']}**")
               print(f"- candidate links retained: **{value['candidateCount']}**")
+              if queue_summary.exists():
+                  queue = json.loads(queue_summary.read_text())
+                  print(f"- source-fact records initialized: **{queue['sourceFactRecordCount']}**")
               print('- approved exact matches: **0**')
+              print('- structured facts extracted: **0**')
               print('- approved nutrition use: **0**')
               print()
               print('Only candidate titles and URLs were retained. Recipe prose, images, quantities and nutrition were not copied or approved.')
