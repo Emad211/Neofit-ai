@@ -11,10 +11,13 @@ import argparse
 import hashlib
 import json
 import math
+import re
 import sqlite3
 import sys
 from pathlib import Path
 from typing import Any
+
+TOKEN_RE = re.compile(r"[a-z0-9]+")
 
 
 def sha256_file(path: Path) -> str:
@@ -29,13 +32,48 @@ def normalize(value: Any) -> str:
     return " ".join(str(value or "").lower().split())
 
 
+def tokens(value: Any) -> list[str]:
+    return TOKEN_RE.findall(normalize(value))
+
+
+def contains_token_phrase(value: Any, phrase: Any) -> bool:
+    value_tokens = tokens(value)
+    phrase_tokens = tokens(phrase)
+    if not phrase_tokens or len(phrase_tokens) > len(value_tokens):
+        return False
+    width = len(phrase_tokens)
+    return any(value_tokens[index:index + width] == phrase_tokens for index in range(len(value_tokens) - width + 1))
+
+
+def matched_substrings(value: Any, candidates: Any) -> list[str]:
+    text = normalize(value)
+    if not isinstance(candidates, list):
+        return []
+    return [normalize(candidate) for candidate in candidates if normalize(candidate) and normalize(candidate) in text]
+
+
+def review_disposition(qualified: list[dict[str, Any]], raw_count: int) -> str:
+    if not qualified:
+        return "catalog_gap" if raw_count == 0 else "no_candidate_passed_exact_form_measure_filters"
+    unique_weights = sorted({float(candidate["gramWeight"]) for candidate in qualified})
+    if len(qualified) == 1:
+        return "single_official_candidate_requires_human_review"
+    if len(unique_weights) == 1:
+        return "multiple_official_records_converge_but_still_require_human_review"
+    return "multiple_form_or_weight_candidates_require_source_specific_adjudication"
+
+
 def score_candidate(row: sqlite3.Row, family: dict[str, Any], matched_query: str) -> tuple[int, dict[str, Any]]:
     name = normalize(row["name_en"])
+    label = normalize(row["label"])
     measure_text = normalize(f"{row['label']} {row['measure_unit'] or ''}")
-    score = 50 if normalize(matched_query) in name else 0
+    name_query_matched = contains_token_phrase(name, matched_query)
+    score = 50 if name_query_matched else -50
+
     measure_tokens = [normalize(token) for token in family.get("measureTokens", [])]
     measure_matches = [token for token in measure_tokens if token and token in measure_text]
-    score += 25 if measure_matches else 0
+    score += 25 if measure_matches else -25
+
     target_amount = family.get("targetAmount")
     amount_matches = (
         isinstance(target_amount, (int, float))
@@ -43,12 +81,34 @@ def score_candidate(row: sqlite3.Row, family: dict[str, Any], matched_query: str
         and math.isfinite(float(target_amount))
         and abs(float(row["amount"]) - float(target_amount)) <= 1e-9
     )
-    score += 10 if amount_matches else 0
+    score += 10 if amount_matches else -10
+
     state_tokens = [normalize(token) for token in family.get("requiredStateTokensAny", [])]
     state_matches = [token for token in state_tokens if token and token in name]
+    state_requirement_matched = not state_tokens or bool(state_matches)
     if state_tokens:
         score += 15 if state_matches else -20
+
+    excluded_name_matches = matched_substrings(name, family.get("excludeNameTokens", []))
+    excluded_label_matches = matched_substrings(label, family.get("excludeLabelTokens", []))
+    score -= 40 * (len(excluded_name_matches) + len(excluded_label_matches))
     score += 2 if row["source_type"] == "sr_legacy" else 1
+
+    rejection_reasons: list[str] = []
+    if not name_query_matched:
+        rejection_reasons.append("food_name_did_not_match_query_as_token_phrase")
+    if not measure_matches:
+        rejection_reasons.append("requested_measure_not_present")
+    if not amount_matches:
+        rejection_reasons.append("portion_amount_did_not_match_target")
+    if not state_requirement_matched:
+        rejection_reasons.append("required_food_state_not_present")
+    if excluded_name_matches:
+        rejection_reasons.append("excluded_food_name_form_present")
+    if excluded_label_matches:
+        rejection_reasons.append("excluded_portion_label_form_present")
+    qualified = not rejection_reasons
+
     candidate = {
         "foodId": row["food_id"],
         "sourceType": row["source_type"],
@@ -60,9 +120,15 @@ def score_candidate(row: sqlite3.Row, family: dict[str, Any], matched_query: str
         "measureUnit": row["measure_unit"],
         "gramWeight": row["gram_weight"],
         "matchedFoodQuery": matched_query,
+        "foodNameTokenPhraseMatched": name_query_matched,
         "matchedMeasureTokens": measure_matches,
         "matchedStateTokens": state_matches,
         "targetAmountMatched": amount_matches,
+        "excludedFoodNameMatches": excluded_name_matches,
+        "excludedLabelMatches": excluded_label_matches,
+        "qualifiedForHumanReview": qualified,
+        "qualificationStatus": "qualified_for_human_review" if qualified else "rejected_by_audit_filter",
+        "rejectionReasons": rejection_reasons,
         "auditScore": score,
         "approvalStatus": "not_reviewed"
     }
@@ -135,8 +201,11 @@ def audit(database_path: Path, manifest_path: Path, queue_path: Path, spec_path:
                     "quantityFamily": quantity_family,
                     "mode": "unsupported",
                     "reason": reason,
-                    "candidateCount": 0,
-                    "candidates": [],
+                    "rawCandidateCount": 0,
+                    "qualifiedCandidateCount": 0,
+                    "qualifiedCandidates": [],
+                    "rejectedCandidates": [],
+                    "reviewDisposition": "blocked_requires_non_catalog_protocol",
                     "approvalStatus": "blocked_requires_non_catalog_protocol"
                 })
                 continue
@@ -165,18 +234,31 @@ def audit(database_path: Path, manifest_path: Path, queue_path: Path, spec_path:
                     existing = candidate_map.get(key)
                     if existing is None or score > existing[0]:
                         candidate_map[key] = (score, candidate)
-            candidates = [item[1] for item in sorted(
+            ranked = [item[1] for item in sorted(
                 candidate_map.values(),
-                key=lambda item: (-item[0], item[1]["foodNameEn"], item[1]["gramWeight"], item[1]["label"]),
-            )[:20]]
-            if not candidates:
-                warnings.append(f"{quantity_family}: no official catalog candidate found")
+                key=lambda item: (
+                    not item[1]["qualifiedForHumanReview"],
+                    -item[0],
+                    item[1]["foodNameEn"],
+                    item[1]["gramWeight"],
+                    item[1]["label"],
+                ),
+            )]
+            qualified = [candidate for candidate in ranked if candidate["qualifiedForHumanReview"]][:20]
+            rejected = [candidate for candidate in ranked if not candidate["qualifiedForHumanReview"]][:20]
+            disposition = review_disposition(qualified, len(ranked))
+            if not qualified:
+                warnings.append(f"{quantity_family}: {disposition}")
             report_families.append({
                 "quantityFamily": quantity_family,
                 "mode": "search",
                 "formReviewNote": family.get("formReviewNote"),
-                "candidateCount": len(candidates),
-                "candidates": candidates,
+                "rawCandidateCount": len(ranked),
+                "qualifiedCandidateCount": len(qualified),
+                "qualifiedGramWeights": sorted({float(candidate["gramWeight"]) for candidate in qualified}),
+                "qualifiedCandidates": qualified,
+                "rejectedCandidateSample": rejected,
+                "reviewDisposition": disposition,
                 "approvalStatus": "not_reviewed"
             })
     finally:
@@ -184,7 +266,7 @@ def audit(database_path: Path, manifest_path: Path, queue_path: Path, spec_path:
 
     return {
         "format": "ifkb-ds2-official-portion-audit-report",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "auditOnly": True,
         "catalog": {
             "version": manifest.get("version"),
@@ -195,7 +277,8 @@ def audit(database_path: Path, manifest_path: Path, queue_path: Path, spec_path:
         "familyCount": len(report_families),
         "searchFamilyCount": sum(row.get("mode") == "search" for row in report_families),
         "unsupportedFamilyCount": sum(row.get("mode") == "unsupported" for row in report_families),
-        "familiesWithCandidates": sum(bool(row.get("candidates")) for row in report_families),
+        "familiesWithRawCandidates": sum(int(row.get("rawCandidateCount", 0)) > 0 for row in report_families),
+        "familiesWithQualifiedCandidates": sum(int(row.get("qualifiedCandidateCount", 0)) > 0 for row in report_families),
         "approvedConversionCount": 0,
         "errors": errors,
         "warnings": warnings,
@@ -221,7 +304,8 @@ def main() -> int:
     print(json.dumps({
         "aligned": report["aligned"],
         "familyCount": report["familyCount"],
-        "familiesWithCandidates": report["familiesWithCandidates"],
+        "familiesWithRawCandidates": report["familiesWithRawCandidates"],
+        "familiesWithQualifiedCandidates": report["familiesWithQualifiedCandidates"],
         "approvedConversionCount": report["approvedConversionCount"],
         "warnings": report["warnings"]
     }, ensure_ascii=False, indent=2))
