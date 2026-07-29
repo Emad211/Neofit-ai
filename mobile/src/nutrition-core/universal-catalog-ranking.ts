@@ -125,6 +125,7 @@ export function rankUniversalCatalogCandidates(
   const querySuggestsAtomic = queryTokens.some((token) => ATOMIC_TERMS.has(token));
 
   return rows
+    .filter((row) => row.macroComplete)
     .map((row): RankedUniversalCatalogCandidate => {
       const name = normalizedEnglish(row.nameEn);
       const nameTokens = phraseTokens(name);
@@ -147,10 +148,8 @@ export function rankUniversalCatalogCandidates(
 
       // SQLite FTS5 returns better matches as more-negative BM25 values.
       score += Math.min(150, Math.max(0, -row.bm25 * 8));
-      if (row.macroComplete) {
-        score += 18;
-        reasons.push('complete_macros');
-      }
+      score += 18;
+      reasons.push('complete_macros');
       if (row.portionCount > 0) {
         score += Math.min(12, row.portionCount * 2);
         reasons.push('has_portions');
@@ -182,7 +181,6 @@ export function rankUniversalCatalogCandidates(
     .filter((row) => row.score > 0)
     .sort((left, right) =>
       right.score - left.score
-      || Number(right.macroComplete) - Number(left.macroComplete)
       || left.nameEn.length - right.nameEn.length
       || left.id.localeCompare(right.id),
     )
