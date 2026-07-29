@@ -40,9 +40,12 @@ class Kb03IdentityTargetTests(unittest.TestCase):
         self.assertTrue(report["valid"], report["errors"])
         self.assertEqual(report["independentIngredientCount"], 7)
         self.assertEqual(report["identityTargetCoverageCount"], 7)
-        self.assertEqual(report["candidateExtensionCount"], 3)
+        self.assertEqual(report["candidateExtensionCount"], 4)
         self.assertEqual(report["nutrientSourceApprovedCount"], 0)
         self.assertFalse(report["promotionEligible"])
+        onion = next(target for target in report["targets"] if target["quantityKey"] == "onion_total_g")
+        self.assertEqual(onion["ingredientId"], "IFKB-ING-0095")
+        self.assertEqual(onion["nameEn"], "Onion, raw, unspecified variety")
 
     def test_derived_meat_total_cannot_be_an_identity_target(self):
         targets = copy.deepcopy(TARGETS)
@@ -68,6 +71,19 @@ class Kb03IdentityTargetTests(unittest.TestCase):
         report = module.validate(CORE, EXTENSION, SEMANTICS, TARGETS)
         self.assertTrue(all(target["nutrientSourceApproved"] is False for target in report["targets"]))
         self.assertEqual(report["nutrientSourceApprovedCount"], 0)
+
+    def test_unspecified_onion_must_not_silently_use_white_onion_target(self):
+        targets = copy.deepcopy(TARGETS)
+        onion = next(target for target in targets["targets"] if target["quantityKey"] == "onion_total_g")
+        onion.update({
+            "ingredientId": "IFKB-ING-0053",
+            "expectedNameEn": "Onions, white, raw",
+            "expectedDefaultState": "raw",
+            "identityTargetStatus": "proposed"
+        })
+        report = module.validate(CORE, EXTENSION, SEMANTICS, targets)
+        self.assertFalse(report["valid"])
+        self.assertTrue(any("source-unspecified onion" in error for error in report["errors"]))
 
 
 if __name__ == "__main__":

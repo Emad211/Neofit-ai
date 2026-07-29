@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 ID_RE = re.compile(r"^IFKB-ING-(\d{4})$")
-EXPECTED_EXTENSION_IDS = {"IFKB-ING-0092", "IFKB-ING-0093", "IFKB-ING-0094"}
+EXPECTED_EXTENSION_IDS = {"IFKB-ING-0092", "IFKB-ING-0093", "IFKB-ING-0094", "IFKB-ING-0095"}
 
 
 def read_catalog(path: Path) -> list[dict[str, str]]:
@@ -22,9 +22,9 @@ def read_catalog(path: Path) -> list[dict[str, str]]:
 def validate(core_rows: Any, extension_rows: Any, semantics: Any, targets: Any) -> dict[str, Any]:
     errors: list[str] = []
     if not all(isinstance(value, list) for value in (core_rows, extension_rows)):
-        return {"format": "ifkb-ds2-kb03-identity-target-validation-report", "version": "1.0.0", "valid": False, "errors": ["catalog inputs must be arrays"]}
+        return {"format": "ifkb-ds2-kb03-identity-target-validation-report", "version": "1.1.0", "valid": False, "errors": ["catalog inputs must be arrays"]}
     if not isinstance(semantics, dict) or not isinstance(targets, dict):
-        return {"format": "ifkb-ds2-kb03-identity-target-validation-report", "version": "1.0.0", "valid": False, "errors": ["semantics and targets must be objects"]}
+        return {"format": "ifkb-ds2-kb03-identity-target-validation-report", "version": "1.1.0", "valid": False, "errors": ["semantics and targets must be objects"]}
     if targets.get("format") != "ifkb-ds2-kb03-ingredient-identity-targets":
         errors.append("invalid identity target format")
     if targets.get("status") != "candidate-not-final":
@@ -35,6 +35,7 @@ def validate(core_rows: Any, extension_rows: Any, semantics: Any, targets: Any) 
         "derivedAggregateExcluded",
         "nutrientSourceApprovalRequiredSeparately",
         "promotionForbiddenFromIdentityCoverageAlone",
+        "sourceUnspecifiedSubtypesMustNotBeSilentlySpecialized",
     ):
         if policy.get(key) is not True:
             errors.append(f"policy.{key} must be true")
@@ -55,8 +56,9 @@ def validate(core_rows: Any, extension_rows: Any, semantics: Any, targets: Any) 
     core_numbers = [int(match.group(1)) for key in [row.get("ingredient_id", "") for row in core_rows if isinstance(row, dict)] if (match := ID_RE.fullmatch(key))]
     if core_numbers and max(core_numbers) != 91:
         errors.append(f"core ingredient id tail changed; expected 0091, found {max(core_numbers):04d}")
-    if sorted(int(ID_RE.fullmatch(value).group(1)) for value in extension_ids if isinstance(value, str) and ID_RE.fullmatch(value)) != [92, 93, 94]:
-        errors.append("candidate extension ids must be contiguous 0092-0094")
+    extension_numbers = sorted(int(ID_RE.fullmatch(value).group(1)) for value in extension_ids if isinstance(value, str) and ID_RE.fullmatch(value))
+    if extension_numbers != [92, 93, 94, 95]:
+        errors.append("candidate extension ids must be contiguous 0092-0095")
 
     semantic_records = semantics.get("records")
     semantic = next((row for row in semantic_records if isinstance(row, dict) and row.get("recipeSourceId") == "DS2-KB-03"), None) if isinstance(semantic_records, list) else None
@@ -95,6 +97,8 @@ def validate(core_rows: Any, extension_rows: Any, semantics: Any, targets: Any) 
             continue
         quantity_key = target.get("quantityKey")
         ingredient_id = target.get("ingredientId")
+        if quantity_key == "onion_total_g" and ingredient_id != "IFKB-ING-0095":
+            errors.append("source-unspecified onion must use IFKB-ING-0095 rather than a white/red/yellow subtype")
         row = by_id.get(ingredient_id)
         if row is None:
             errors.append(f"{quantity_key}: ingredient id {ingredient_id} does not exist")
@@ -119,7 +123,7 @@ def validate(core_rows: Any, extension_rows: Any, semantics: Any, targets: Any) 
 
     return {
         "format": "ifkb-ds2-kb03-identity-target-validation-report",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "valid": not errors,
         "recipeSourceId": "DS2-KB-03",
         "independentIngredientCount": len(independent),

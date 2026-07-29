@@ -1,6 +1,6 @@
 {
   "format": "ifkb-ds2-kb03-ingredient-identity-targets",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "recipeSourceId": "DS2-KB-03",
   "canonId": "IFKB-CANON-00028",
   "status": "candidate-not-final",
@@ -8,7 +8,8 @@
     "identityTargetIsSeparateFromNutrientSource": true,
     "derivedAggregateExcluded": true,
     "nutrientSourceApprovalRequiredSeparately": true,
-    "promotionForbiddenFromIdentityCoverageAlone": true
+    "promotionForbiddenFromIdentityCoverageAlone": true,
+    "sourceUnspecifiedSubtypesMustNotBeSilentlySpecialized": true
   },
   "targets": [
     {
@@ -27,10 +28,10 @@
     },
     {
       "quantityKey": "onion_total_g",
-      "ingredientId": "IFKB-ING-0053",
-      "expectedNameEn": "Onions, white, raw",
+      "ingredientId": "IFKB-ING-0095",
+      "expectedNameEn": "Onion, raw, unspecified variety",
       "expectedDefaultState": "raw",
-      "identityTargetStatus": "proposed"
+      "identityTargetStatus": "proposed_extension"
     },
     {
       "quantityKey": "salt_total_g",
