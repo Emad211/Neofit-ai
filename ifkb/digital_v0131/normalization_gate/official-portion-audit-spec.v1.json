@@ -1,6 +1,6 @@
 {
   "format": "ifkb-ds2-official-portion-audit-spec",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "policy": {
     "auditOnly": true,
     "automaticApprovalForbidden": true,
@@ -11,7 +11,7 @@
     {
       "quantityFamily": "baking_soda_total_tsp",
       "mode": "search",
-      "foodQueries": ["leavening agents, baking soda", "baking soda"],
+      "foodQueries": ["leavening agents, baking soda"],
       "measureTokens": ["tsp", "teaspoon"],
       "targetAmount": 1,
       "formReviewNote": "Use only a baking-soda record; do not substitute baking powder."
@@ -37,7 +37,7 @@
     {
       "quantityFamily": "butter_total_tbsp",
       "mode": "search",
-      "foodQueries": ["butter, salted", "butter, without salt", "butter"],
+      "foodQueries": ["butter, salted", "butter, without salt"],
       "measureTokens": ["tbsp", "tablespoon"],
       "targetAmount": 1,
       "formReviewNote": "Salted versus unsalted form must follow the recipe source when stated."
@@ -45,33 +45,38 @@
     {
       "quantityFamily": "chicken_thigh_count",
       "mode": "search",
-      "foodQueries": ["chicken, broilers or fryers, thigh", "chicken thigh"],
-      "measureTokens": ["thigh", "piece", "unit"],
+      "foodQueries": ["chicken, broilers or fryers, thigh"],
+      "measureTokens": ["thigh"],
       "targetAmount": 1,
+      "requiredStateTokensAny": ["raw"],
+      "excludeLabelTokens": ["yield from"],
       "formReviewNote": "Bone, skin and edible-yield state must be handled separately; count is not automatically edible grams."
     },
     {
       "quantityFamily": "chives_cup",
       "mode": "search",
-      "foodQueries": ["chives, raw", "chives"],
+      "foodQueries": ["chives, raw"],
       "measureTokens": ["cup"],
       "targetAmount": 1,
-      "formReviewNote": "Fresh chopped form must match the source."
+      "requiredStateTokensAny": ["raw"],
+      "formReviewNote": "Fresh chopped form must match the source; freeze-dried chives are excluded."
     },
     {
       "quantityFamily": "cilantro_cup",
       "mode": "search",
-      "foodQueries": ["coriander (cilantro) leaves, raw", "cilantro, raw", "coriander leaves"],
+      "foodQueries": ["coriander (cilantro) leaves, raw", "cilantro, raw"],
       "measureTokens": ["cup"],
       "targetAmount": 1,
+      "requiredStateTokensAny": ["raw"],
       "formReviewNote": "Leaf form only; seed records are invalid substitutes."
     },
     {
       "quantityFamily": "coriander_cup",
       "mode": "search",
-      "foodQueries": ["coriander (cilantro) leaves, raw", "cilantro, raw", "coriander leaves"],
+      "foodQueries": ["coriander (cilantro) leaves, raw", "cilantro, raw"],
       "measureTokens": ["cup"],
       "targetAmount": 1,
+      "requiredStateTokensAny": ["raw"],
       "formReviewNote": "Leaf form only; seed records are invalid substitutes."
     },
     {
@@ -92,10 +97,11 @@
     {
       "quantityFamily": "egg_count",
       "mode": "search",
-      "foodQueries": ["egg, whole, raw, fresh", "egg, whole, raw"],
-      "measureTokens": ["large", "egg", "unit"],
+      "foodQueries": ["egg, whole, raw, fresh"],
+      "measureTokens": ["large"],
       "targetAmount": 1,
-      "formReviewNote": "Egg size must be resolved from the source or represented as an interval."
+      "excludeLabelTokens": ["extra large", "medium", "small", "jumbo", "cup"],
+      "formReviewNote": "The default candidate is one large raw whole egg; another source size must be represented explicitly."
     },
     {
       "quantityFamily": "fenugreek_cup",
@@ -103,6 +109,7 @@
       "foodQueries": ["fenugreek leaves, raw", "fenugreek, raw"],
       "measureTokens": ["cup"],
       "targetAmount": 1,
+      "requiredStateTokensAny": ["raw"],
       "formReviewNote": "Fresh leaf record only; dried leaf and seed forms remain separate."
     },
     {
@@ -116,9 +123,10 @@
     {
       "quantityFamily": "onion_count",
       "mode": "search",
-      "foodQueries": ["onions, raw", "onion, raw"],
-      "measureTokens": ["medium", "small", "large", "onion", "unit"],
+      "foodQueries": ["onions, raw"],
+      "measureTokens": ["medium", "small", "large"],
       "targetAmount": 1,
+      "excludeLabelTokens": ["slice", "ring", "cup", "tbsp"],
       "formReviewNote": "Count requires size class or interval; edible fraction must be applied separately."
     },
     {
@@ -140,9 +148,10 @@
     {
       "quantityFamily": "scallion_cup",
       "mode": "search",
-      "foodQueries": ["onions, spring or scallions", "scallions, raw", "green onions, raw"],
+      "foodQueries": ["onions, spring or scallions"],
       "measureTokens": ["cup"],
       "targetAmount": 1,
+      "requiredStateTokensAny": ["raw"],
       "formReviewNote": "Bulb-and-top versus top-only form must match the source."
     },
     {
@@ -151,6 +160,7 @@
       "foodQueries": ["onions, spring or scallions", "leeks, raw"],
       "measureTokens": ["cup"],
       "targetAmount": 1,
+      "requiredStateTokensAny": ["raw"],
       "formReviewNote": "Scallion and leek are separate ingredients; source-specific identity must be selected before conversion."
     },
     {
@@ -164,28 +174,31 @@
       "foodQueries": ["spinach, raw"],
       "measureTokens": ["cup"],
       "targetAmount": 1,
-      "formReviewNote": "Raw chopped/leaf volume must not be replaced by cooked spinach portions."
+      "requiredStateTokensAny": ["raw"],
+      "excludeNameTokens": ["new zealand"],
+      "formReviewNote": "Raw spinach only; New Zealand spinach and cooked portions are excluded."
     },
     {
       "quantityFamily": "spring_onion_cup",
       "mode": "search",
-      "foodQueries": ["onions, spring or scallions", "spring onions, raw"],
+      "foodQueries": ["onions, spring or scallions"],
       "measureTokens": ["cup"],
       "targetAmount": 1,
+      "requiredStateTokensAny": ["raw"],
       "formReviewNote": "Bulb-and-top versus top-only form must match the source."
     },
     {
       "quantityFamily": "sugar_total_tbsp",
       "mode": "search",
-      "foodQueries": ["sugars, granulated", "sugar, granulated"],
+      "foodQueries": ["sugars, granulated"],
       "measureTokens": ["tbsp", "tablespoon"],
       "targetAmount": 1,
-      "formReviewNote": "Granulated sugar record only unless the source explicitly specifies another sugar."
+      "formReviewNote": "Granulated sugar record only. A teaspoon or cup record does not qualify as a tablespoon without a separately reviewed unit derivation."
     },
     {
       "quantityFamily": "tomato_paste_tbsp",
       "mode": "search",
-      "foodQueries": ["tomato products, canned, paste", "tomato paste"],
+      "foodQueries": ["tomato products, canned, paste"],
       "measureTokens": ["tbsp", "tablespoon"],
       "targetAmount": 1,
       "formReviewNote": "Use paste, not sauce or puree."
@@ -193,7 +206,7 @@
     {
       "quantityFamily": "tomato_paste_total_tbsp",
       "mode": "search",
-      "foodQueries": ["tomato products, canned, paste", "tomato paste"],
+      "foodQueries": ["tomato products, canned, paste"],
       "measureTokens": ["tbsp", "tablespoon"],
       "targetAmount": 1,
       "formReviewNote": "Use paste, not sauce or puree."
@@ -201,9 +214,10 @@
     {
       "quantityFamily": "walnuts_total_cup",
       "mode": "search",
-      "foodQueries": ["nuts, walnuts, english", "walnuts"],
+      "foodQueries": ["nuts, walnuts, english"],
       "measureTokens": ["cup"],
       "targetAmount": 1,
+      "excludeLabelTokens": ["in shell"],
       "formReviewNote": "Halves, pieces, chopped and ground forms have different cup weights; source form must be selected."
     }
   ]
