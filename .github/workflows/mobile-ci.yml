@@ -60,7 +60,9 @@ jobs:
       - name: Run IFKB Python contract tests
         working-directory: ifkb/universal
         run: |
-          python -m unittest -v test_natural_query_corpus.py \
+          python -m unittest -v \
+            test_natural_query_corpus.py \
+            test_iranian_collection_research_plan.py \
             > /tmp/ifkb-python-tests.log 2>&1 \
             || { cat /tmp/ifkb-python-tests.log; exit 1; }
 
@@ -130,6 +132,16 @@ jobs:
             --batch-plan ../build/full-nutrition-catalog-audit/iranian-batch-plan.json \
             --output-dir ../build/iranian-source-discovery \
             > /tmp/iranian-source-discovery.log 2>&1 \
+            || { cat /tmp/iranian-source-discovery.log; exit 1; }
+
+      - name: Generate multi-collection research plan
+        working-directory: .
+        run: |
+          python ifkb/universal/build_iranian_collection_research_plan.py \
+            --discovery-queue build/iranian-source-discovery/all-iranian-source-discovery-queue.csv \
+            --registry ifkb/universal/releases/iranian-bulk-source-registry-v1/source-collections.csv \
+            --output-dir build/iranian-source-discovery/collection-plan \
+            >> /tmp/iranian-source-discovery.log 2>&1 \
             || { cat /tmp/iranian-source-discovery.log; exit 1; }
 
       - name: Upload Iranian discovery diagnostics
