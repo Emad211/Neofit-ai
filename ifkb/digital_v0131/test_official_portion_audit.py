@@ -38,6 +38,8 @@ class OfficialPortionAuditTests(unittest.TestCase):
         );
         INSERT INTO generic_foods VALUES ('sr:test','sr_legacy',123,NULL,'Oil, olive, salad or cooking');
         INSERT INTO generic_portions VALUES (1,'sr:test',1,'1 tablespoon','tbsp',13.5);
+        INSERT INTO generic_foods VALUES ('sr:false','sr_legacy',124,NULL,'Olive flavored dressing');
+        INSERT INTO generic_portions VALUES (2,'sr:false',1,'1 tablespoon','tbsp',15.0);
         """)
         connection.commit()
         connection.close()
@@ -79,17 +81,37 @@ class OfficialPortionAuditTests(unittest.TestCase):
         }), encoding="utf-8")
         return database, manifest, queue, spec
 
-    def test_returns_raw_official_candidate_without_approval(self):
+    def test_returns_qualified_official_candidate_without_approval(self):
         with tempfile.TemporaryDirectory() as temp:
             database, manifest, queue, spec = self.fixture(Path(temp))
             report = audit_module.audit(database, manifest, queue, spec)
             self.assertTrue(report["aligned"], report["errors"])
             self.assertEqual(report["approvedConversionCount"], 0)
+            self.assertEqual(report["familiesWithQualifiedCandidates"], 1)
             oil = next(row for row in report["families"] if row["quantityFamily"] == "oil_total_tbsp")
-            self.assertEqual(oil["candidateCount"], 1)
-            self.assertEqual(oil["candidates"][0]["gramWeight"], 13.5)
-            self.assertEqual(oil["candidates"][0]["approvalStatus"], "not_reviewed")
-            self.assertNotIn("conversionFactorToGrams", oil["candidates"][0])
+            self.assertEqual(oil["qualifiedCandidateCount"], 1)
+            candidate = oil["qualifiedCandidates"][0]
+            self.assertEqual(candidate["gramWeight"], 13.5)
+            self.assertTrue(candidate["qualifiedForHumanReview"])
+            self.assertEqual(candidate["approvalStatus"], "not_reviewed")
+            self.assertNotIn("conversionFactorToGrams", candidate)
+
+    def test_token_phrase_matching_does_not_accept_partial_or_adjacent_words(self):
+        self.assertTrue(audit_module.contains_token_phrase("Butter, salted", "butter"))
+        self.assertFalse(audit_module.contains_token_phrase("Buttermilk dressing", "butter"))
+        self.assertFalse(audit_module.contains_token_phrase("Olive flavored dressing", "oil, olive"))
+
+    def test_wrong_measure_stays_raw_but_is_not_qualified(self):
+        with tempfile.TemporaryDirectory() as temp:
+            database, manifest, queue, spec = self.fixture(Path(temp))
+            value = json.loads(spec.read_text(encoding="utf-8"))
+            value["families"][0]["measureTokens"] = ["cup"]
+            spec.write_text(json.dumps(value), encoding="utf-8")
+            report = audit_module.audit(database, manifest, queue, spec)
+            oil = next(row for row in report["families"] if row["quantityFamily"] == "oil_total_tbsp")
+            self.assertGreater(oil["rawCandidateCount"], 0)
+            self.assertEqual(oil["qualifiedCandidateCount"], 0)
+            self.assertEqual(oil["reviewDisposition"], "no_candidate_passed_exact_form_measure_filters")
 
     def test_rejects_spec_that_does_not_cover_queue(self):
         with tempfile.TemporaryDirectory() as temp:
