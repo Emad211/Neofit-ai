@@ -46,7 +46,7 @@ def main() -> int:
     output.mkdir(parents=True, exist_ok=True)
     report: dict[str, Any] = {
         "format": "ifkb-ds2-normalization-gate-run-report",
-        "version": "1.2.0",
+        "version": "1.3.0",
         "enforceRelease": args.enforce_release,
         "success": False,
         "steps": [],
@@ -59,6 +59,7 @@ def main() -> int:
         "ifkb/digital_v0131/test_quantity_semantics.py",
         "ifkb/digital_v0131/test_source_normalization_priority.py",
         "ifkb/digital_v0131/test_kb03_ingredient_mapping_audit.py",
+        "ifkb/digital_v0131/test_kb03_ingredient_mapping_review_queue.py",
     ]
     commands: list[tuple[str, list[str]]] = [
         ("normalization gate tests", ["-m", "unittest", "-v", *tests]),
@@ -109,6 +110,11 @@ def main() -> int:
             "--semantics", str(GATE / "source-quantity-semantics.v1.json"),
             "--spec", str(GATE / "kb03-ingredient-mapping-audit-spec.v1.json"),
             "--report", str(output / "kb03-ingredient-mapping-candidates.json"),
+        ]),
+        ("DS2-KB-03 ingredient mapping review queue", [
+            str(GATE / "build_kb03_ingredient_mapping_review_queue.py"),
+            "--audit-report", str(output / "kb03-ingredient-mapping-candidates.json"),
+            "--output", str(output / "kb03-ingredient-mapping-review-queue.json"),
         ]),
         ("draft normalization gate", [
             str(GATE / "validate_normalization_gate.py"),
