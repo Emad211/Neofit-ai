@@ -1,0 +1,4 @@
+ingredient_id,name_fa,name_en,food_group,default_state,priority,intended_recipe_families,current_match_status,match_quality,evidence_grade,review_status
+IFKB-ING-0092,فلفل سیاه آسیاب‌شده,"Black pepper, ground",spice,ground_dry,P0,koobideh|kebab|savory seasoning,unmatched,U,E,proposed_extension
+IFKB-ING-0093,سماق آسیاب‌شده,"Sumac, ground",spice,ground_dry,P0,koobideh|kebab|savory seasoning,unmatched,U,E,proposed_extension
+IFKB-ING-0094,جوش شیرین,Baking soda,leavening_agent,dry,P1,koobideh|bread|leavening,unmatched,U,E,proposed_extension

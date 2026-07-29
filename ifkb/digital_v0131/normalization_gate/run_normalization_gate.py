@@ -46,7 +46,7 @@ def main() -> int:
     output.mkdir(parents=True, exist_ok=True)
     report: dict[str, Any] = {
         "format": "ifkb-ds2-normalization-gate-run-report",
-        "version": "1.4.0",
+        "version": "1.5.0",
         "enforceRelease": args.enforce_release,
         "success": False,
         "steps": [],
@@ -61,6 +61,7 @@ def main() -> int:
         "ifkb/digital_v0131/test_kb03_ingredient_mapping_audit.py",
         "ifkb/digital_v0131/test_kb03_ingredient_mapping_review_queue.py",
         "ifkb/digital_v0131/test_kb03_candidate_nutrient_comparison.py",
+        "ifkb/digital_v0131/test_kb03_identity_targets.py",
     ]
     commands: list[tuple[str, list[str]]] = [
         ("normalization gate tests", ["-m", "unittest", "-v", *tests]),
@@ -81,6 +82,14 @@ def main() -> int:
             "--source-queue", str(GATE / "source-record-normalization-work-queue.v1.json"),
             "--semantics", str(GATE / "source-quantity-semantics.v1.json"),
             "--report", str(output / "source-quantity-semantics-report.json"),
+        ]),
+        ("DS2-KB-03 ingredient identity targets", [
+            str(GATE / "validate_kb03_identity_targets.py"),
+            "--core-catalog", "mobile/data/ifkb/reference/ingredient-catalog-core.csv",
+            "--extension", str(GATE / "kb03-ingredient-identity-extension.v1.csv"),
+            "--semantics", str(GATE / "source-quantity-semantics.v1.json"),
+            "--targets", str(GATE / "kb03-ingredient-identity-targets.v1.json"),
+            "--report", str(output / "kb03-ingredient-identity-targets-report.json"),
         ]),
         ("official portion audit", [
             str(GATE / "audit_official_portion_candidates.py"),
