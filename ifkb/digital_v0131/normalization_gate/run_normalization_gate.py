@@ -46,7 +46,7 @@ def main() -> int:
     output.mkdir(parents=True, exist_ok=True)
     report: dict[str, Any] = {
         "format": "ifkb-ds2-normalization-gate-run-report",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "enforceRelease": args.enforce_release,
         "success": False,
         "steps": [],
@@ -57,6 +57,7 @@ def main() -> int:
         "ifkb/digital_v0131/test_official_portion_audit.py",
         "ifkb/digital_v0131/test_official_portion_review_queue.py",
         "ifkb/digital_v0131/test_quantity_semantics.py",
+        "ifkb/digital_v0131/test_source_normalization_priority.py",
     ]
     commands: list[tuple[str, list[str]]] = [
         ("normalization gate tests", ["-m", "unittest", "-v", *tests]),
@@ -91,6 +92,13 @@ def main() -> int:
             "--audit-report", str(output / "official-portion-candidates.json"),
             "--unit-queue", str(GATE / "unit-conversion-work-queue.v1.json"),
             "--output", str(output / "official-portion-review-queue.json"),
+        ]),
+        ("source normalization priority", [
+            str(GATE / "build_source_normalization_priority.py"),
+            "--source-queue", str(GATE / "source-record-normalization-work-queue.v1.json"),
+            "--semantics", str(GATE / "source-quantity-semantics.v1.json"),
+            "--review-queue", str(output / "official-portion-review-queue.json"),
+            "--output", str(output / "source-normalization-priority.json"),
         ]),
         ("draft normalization gate", [
             str(GATE / "validate_normalization_gate.py"),
