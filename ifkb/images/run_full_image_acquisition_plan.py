@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
-"""Locked Stage-1 entrypoint for the full IFKB image acquisition plan.
-
-The historical P0 class roster is defined only by the 12-class pilot manifest
-plus the 48-class P0 candidate queue. Later wave, exact-source and field-capture
-files describe execution status; they must not add or remove P0 classes.
-"""
+"""Portable Stage-1 runner for the locked IFKB image acquisition plan."""
 from __future__ import annotations
 
-from ifkb.images import build_full_image_acquisition_plan as planner
+import sys
+from pathlib import Path
 
-planner.P0_INPUTS = (
-    "ifkb/images/pilot_seed_manifest.csv",
-    "ifkb/images/p0_candidate_queries.csv",
-)
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from ifkb.images.build_full_image_acquisition_plan import main
 
 if __name__ == "__main__":
-    raise SystemExit(planner.main())
+    raise SystemExit(main())
