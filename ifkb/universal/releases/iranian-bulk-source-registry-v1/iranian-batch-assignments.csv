@@ -1,0 +1,262 @@
+canonId,batchId,appProfileId,nameFa,nameEn,category,readinessStatus,workstream,priorityScore
+IFKB-CANON-00001,IRANIAN-BATCH-02,iranian-khoresh-kadoo,خورش کدو,Persian zucchini stew,stew,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00002,IRANIAN-BATCH-03,iranian-khoresh-karafs,خورش کرفس,Persian celery stew,stew,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00003,IRANIAN-BATCH-04,iranian-khoresh-aloo-esfenaj,خورش آلو اسفناج,Persian prune and spinach stew,stew,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00004,IRANIAN-BATCH-05,iranian-khoresh-loobia-sabz,خورش لوبیا سبز,Persian green bean stew,stew,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00005,IRANIAN-BATCH-06,iranian-gheimeh,قیمه,Gheimeh stew,stew,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00006,IRANIAN-BATCH-07,iranian-khoresh-beh,خورش به,Persian quince stew,stew,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00007,IRANIAN-BATCH-08,iranian-khoresh-bademjan,خورش بادمجان,Persian eggplant stew,stew,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00008,IRANIAN-BATCH-05,iranian-ghormeh-sabzi,قورمه‌سبزی,Ghormeh sabzi,stew,ds2_consensus_blocked,finish_ds2_normalization,105
+IFKB-CANON-00009,IRANIAN-BATCH-09,iranian-gheimeh-bademjan,قیمه بادمجان,Gheimeh eggplant stew,stew,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00010,IRANIAN-BATCH-06,iranian-fesenjan,فسنجان,Fesenjan walnut pomegranate stew,stew,ds2_consensus_blocked,finish_ds2_normalization,105
+IFKB-CANON-00011,IRANIAN-BATCH-10,iranian-tahdig-potato,ته‌دیگ سیب‌زمینی,Potato tahdig,rice,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00012,IRANIAN-BATCH-11,iranian-chelo-sefid,چلو سفید,Plain Persian rice,rice,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00013,IRANIAN-BATCH-12,iranian-sabzi-polo,سبزی پلو,Persian herb rice,rice,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00014,IRANIAN-BATCH-01,iranian-baghali-polo-plain,شوید باقالی‌پلو,Dill fava bean rice,rice,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00015,IRANIAN-BATCH-02,iranian-estamboli-polo,استانبولی پلو,Estamboli polo,rice,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00016,IRANIAN-BATCH-03,iranian-adas-polo,عدس پلو,Lentil rice,rice,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00017,IRANIAN-BATCH-04,iranian-kalam-polo,کلم پلو,Cabbage herb rice,rice,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00018,IRANIAN-BATCH-05,iranian-loobia-polo,لوبیا پلو,Green bean rice,rice,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00019,IRANIAN-BATCH-06,iranian-zereshk-polo-morgh,زرشک‌پلو با مرغ,Barberry rice with chicken,rice,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00020,IRANIAN-BATCH-07,iranian-tahchin-morgh,ته‌چین مرغ,Chicken tahchin,rice,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00021,IRANIAN-BATCH-08,iranian-baghali-polo-mahicheh,باقالی‌پلو با ماهیچه,Fava bean rice with lamb shank,rice,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00022,IRANIAN-BATCH-09,iranian-jegar-kebab,جگر,Grilled liver skewer,kebab,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00023,IRANIAN-BATCH-10,iranian-joojeh-kebab,جوجه کباب,Joojeh kebab,kebab,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00024,IRANIAN-BATCH-11,iranian-kebab-barg,کباب برگ,Kebab barg,kebab,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00025,IRANIAN-BATCH-12,iranian-chenjeh,چنجه,Chenjej kebab,kebab,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00026,IRANIAN-BATCH-01,iranian-kebab-torsh,کباب ترش,Torsh kebab,kebab,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00027,IRANIAN-BATCH-02,iranian-kebab-bakhtiari,کباب بختیاری,Bakhtiari kebab,kebab,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00028,IRANIAN-BATCH-07,iranian-kebab-koobideh,کباب کوبیده,Koobideh kebab,kebab,ds2_consensus_blocked,finish_ds2_normalization,105
+IFKB-CANON-00029,IRANIAN-BATCH-03,iranian-shishlik,شیشلیک,Shishlik,kebab,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00030,IRANIAN-BATCH-04,iranian-chelo-kebab-koobideh,چلوکباب کوبیده,Rice with koobideh kebab,kebab,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00031,IRANIAN-BATCH-05,iranian-soup-jo,سوپ جو,Barley soup,soup,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00032,IRANIAN-BATCH-06,iranian-eshkeneh,اشکنه,Eshkeneh,soup,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00033,IRANIAN-BATCH-07,iranian-ash-doogh,آش دوغ,Yogurt herb soup,soup,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00034,IRANIAN-BATCH-08,iranian-ash-anar,آش انار,Pomegranate soup,soup,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00035,IRANIAN-BATCH-09,iranian-ash-reshteh,آش رشته,Ash reshteh,soup,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00036,IRANIAN-BATCH-10,iranian-haleem,حلیم,Halim wheat porridge,soup,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00037,IRANIAN-BATCH-11,iranian-abgoosht,آبگوشت,Abgoosht / dizi,soup,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00038,IRANIAN-BATCH-12,iranian-boiled-egg,تخم‌مرغ آب‌پز,Boiled egg,breakfast,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00039,IRANIAN-BATCH-01,iranian-halva-ardeh,حلوا ارده,Tahini halva,breakfast,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00040,IRANIAN-BATCH-02,iranian-bread-cheese-tea,نان و پنیر و چای,"Bread, cheese and tea",breakfast,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00041,IRANIAN-BATCH-03,iranian-nimroo,نیمرو,Fried eggs,breakfast,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00042,IRANIAN-BATCH-04,iranian-adasi,عدسی,Lentil stew,breakfast,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00043,IRANIAN-BATCH-05,iranian-omelet-gojeh,املت گوجه,Tomato omelet,breakfast,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00044,IRANIAN-BATCH-06,iranian-kaleh-pacheh,کله‌پاچه,Kaleh pacheh,breakfast,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00045,IRANIAN-BATCH-07,iranian-noon-barbari,نان بربری,Barbari flatbread,bread,legacy_estimate,review_legacy_estimate,45
+IFKB-CANON-00046,IRANIAN-BATCH-08,iranian-noon-sangak,نان سنگک,Sangak flatbread,bread,legacy_estimate,review_legacy_estimate,45
+IFKB-CANON-00047,IRANIAN-BATCH-09,iranian-noon-lavash,نان لواش,Lavash flatbread,bread,legacy_estimate,review_legacy_estimate,45
+IFKB-CANON-00048,IRANIAN-BATCH-10,iranian-noon-taftoon,نان تافتون,Taftoon flatbread,bread,legacy_estimate,review_legacy_estimate,45
+IFKB-CANON-00049,IRANIAN-BATCH-11,iranian-falafel,فلافل,Falafel,street_food,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00050,IRANIAN-BATCH-12,iranian-sandwich-kotlet,ساندویچ کتلت,Kotlet sandwich,street_food,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00051,IRANIAN-BATCH-01,iranian-sandwich-jegar,ساندویچ جگر,Liver sandwich,street_food,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00052,IRANIAN-BATCH-02,iranian-sandwich-bandari,ساندویچ بندری,Bandari sausage sandwich,street_food,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00053,IRANIAN-BATCH-03,iranian-pizza-makhlut,پیتزا مخلوط,Iranian mixed pizza,street_food,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00054,IRANIAN-BATCH-04,iranian-halva,حلوا,Iranian flour halva,dessert,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00055,IRANIAN-BATCH-05,iranian-shir-berenj,شیربرنج,Rice pudding,dessert,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00056,IRANIAN-BATCH-06,iranian-shole-zard,شله‌زرد,Saffron rice pudding,dessert,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00057,IRANIAN-BATCH-07,iranian-fereni,فرنی,Persian milk pudding,dessert,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00058,IRANIAN-BATCH-08,iranian-zoolbia-bamieh,زولبیا بامیه,Zoolbia and bamieh,dessert,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00059,IRANIAN-BATCH-09,iranian-gaz,گز,Persian nougat,dessert,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00060,IRANIAN-BATCH-10,iranian-pashmak,پشمک,Persian cotton candy,dessert,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00061,IRANIAN-BATCH-11,iranian-nabat,نبات,Rock candy,dessert,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00062,IRANIAN-BATCH-12,iranian-sohan,سوهان,Sohan brittle,dessert,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00063,IRANIAN-BATCH-01,iranian-ghorabieh,قرابیه,Ghorabieh almond cookie,dessert,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00064,IRANIAN-BATCH-02,iranian-koloocheh,کلوچه,Persian filled cookie,dessert,legacy_estimate,review_legacy_estimate,65
+IFKB-CANON-00065,IRANIAN-BATCH-03,iranian-doogh,دوغ,Doogh yogurt drink,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00066,IRANIAN-BATCH-04,iranian-shir-porcharb,شیر پرچرب,Whole milk,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00067,IRANIAN-BATCH-05,iranian-maast,ماست,Plain yogurt,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00068,IRANIAN-BATCH-06,iranian-maast-chakideh,ماست چکیده,Strained yogurt,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00069,IRANIAN-BATCH-07,iranian-kashk,کشک,Kashk,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00070,IRANIAN-BATCH-08,iranian-khiar,خیار,Cucumber,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00071,IRANIAN-BATCH-09,iranian-gojeh,گوجه‌فرنگی,Tomato,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00072,IRANIAN-BATCH-10,iranian-piaz,پیاز,Onion,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00073,IRANIAN-BATCH-11,iranian-sib-zamini,سیب‌زمینی,Potato,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00074,IRANIAN-BATCH-12,iranian-bademjan,بادمجان,Eggplant,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00075,IRANIAN-BATCH-01,iranian-kadoo-sabz,کدو سبز,Zucchini,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00076,IRANIAN-BATCH-02,iranian-morgh-sineh,سینه مرغ,Chicken breast,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00077,IRANIAN-BATCH-03,iranian-goosht-gav,گوشت گاو,Beef,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00078,IRANIAN-BATCH-04,iranian-goosht-gosfand,گوشت گوسفند,Lamb,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00079,IRANIAN-BATCH-05,iranian-roghan-zeytoon,روغن زیتون,Olive oil,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00080,IRANIAN-BATCH-06,iranian-berenj-kham,برنج خام,Raw rice,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00081,IRANIAN-BATCH-07,iranian-lobia-ghermez,لوبیا قرمز,Kidney beans,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00082,IRANIAN-BATCH-08,iranian-adas,عدس,Lentils,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00083,IRANIAN-BATCH-09,iranian-nokhod,نخود,Chickpeas,dairy_beverage,legacy_estimate,review_legacy_estimate,55
+IFKB-CANON-00084,IRANIAN-BATCH-01,iranian-fallback-ifkb-canon-00084,خورش غوره مسما,Ghooreh mosama stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00085,IRANIAN-BATCH-04,iranian-fallback-ifkb-canon-00085,خورش اناربیج,Anarbij pomegranate herb stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00086,IRANIAN-BATCH-07,iranian-fallback-ifkb-canon-00086,خورش ترشه تره,Torshe tareh sour herb stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00087,IRANIAN-BATCH-10,iranian-fallback-ifkb-canon-00087,خورش سیر قلیه,Seer ghalieh garlic herb stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00088,IRANIAN-BATCH-02,iranian-fallback-ifkb-canon-00088,خورش مرغ ترش,Torsh chicken herb stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00089,IRANIAN-BATCH-05,iranian-fallback-ifkb-canon-00089,خورش آغوز مسما,Aghooz mosama walnut stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00090,IRANIAN-BATCH-08,iranian-fallback-ifkb-canon-00090,خورش ناردون,Nardoon pomegranate chicken stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00091,IRANIAN-BATCH-11,iranian-fallback-ifkb-canon-00091,خورش خلال بادام,Khoresht khalal almond stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00092,IRANIAN-BATCH-03,iranian-fallback-ifkb-canon-00092,خورش آلو مسما,Aloo mosama prune stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00093,IRANIAN-BATCH-06,iranian-fallback-ifkb-canon-00093,خورش کنگر,Kangar cardoon stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00094,IRANIAN-BATCH-09,iranian-fallback-ifkb-canon-00094,خورش ریواس,Rhubarb stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00095,IRANIAN-BATCH-12,iranian-fallback-ifkb-canon-00095,خورش قلیه ماهی,Ghalieh mahi fish herb stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00096,IRANIAN-BATCH-02,iranian-fallback-ifkb-canon-00096,قلیه میگو,Ghalieh meygoo shrimp herb stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00097,IRANIAN-BATCH-01,iranian-fallback-ifkb-canon-00097,قیمه یزدی,Yazdi gheimeh,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00098,IRANIAN-BATCH-04,iranian-fallback-ifkb-canon-00098,قیمه نخود یزدی,Yazdi chickpea gheimeh,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00099,IRANIAN-BATCH-07,iranian-fallback-ifkb-canon-00099,فسنجان با گوشت قلقلی,Fesenjan with meatballs,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00100,IRANIAN-BATCH-10,iranian-fallback-ifkb-canon-00100,فسنجان اردک,Duck fesenjan,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00101,IRANIAN-BATCH-02,iranian-fallback-ifkb-canon-00101,خورش گوجه سبز,Green plum stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00102,IRANIAN-BATCH-05,iranian-fallback-ifkb-canon-00102,خورش بامیه,Okra stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00103,IRANIAN-BATCH-08,iranian-fallback-ifkb-canon-00103,خورش کدو حلوایی,Pumpkin stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00104,IRANIAN-BATCH-11,iranian-fallback-ifkb-canon-00104,خورش لوبیا سفید,White bean stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00105,IRANIAN-BATCH-03,iranian-fallback-ifkb-canon-00105,خوراک لوبیا چیتی,Pinto bean dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00106,IRANIAN-BATCH-06,iranian-fallback-ifkb-canon-00106,خوراک مرغ و آلو,Chicken and prune dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00107,IRANIAN-BATCH-09,iranian-fallback-ifkb-canon-00107,خوراک گوشت و نخود,Meat and chickpea dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00108,IRANIAN-BATCH-12,iranian-fallback-ifkb-canon-00108,کشک بادمجان,Kashk eggplant dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00109,IRANIAN-BATCH-01,iranian-fallback-ifkb-canon-00109,کله جوش,Kaleh joosh kashk dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00110,IRANIAN-BATCH-04,iranian-fallback-ifkb-canon-00110,یتیمچه,Yatimcheh vegetable dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00111,IRANIAN-BATCH-07,iranian-fallback-ifkb-canon-00111,میرزا قاسمی,Mirza ghasemi eggplant dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00112,IRANIAN-BATCH-10,iranian-fallback-ifkb-canon-00112,باقلا قاتق,Baghali ghatogh fava bean dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00113,IRANIAN-BATCH-02,iranian-fallback-ifkb-canon-00113,واویشکا,Vavishka meat dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00114,IRANIAN-BATCH-05,iranian-fallback-ifkb-canon-00114,دوپیازه آلو,Dopiazeh aloo potato dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00115,IRANIAN-BATCH-08,iranian-fallback-ifkb-canon-00115,ترشه کباب,Torshe kabab Gilani stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00116,IRANIAN-BATCH-11,iranian-fallback-ifkb-canon-00116,قیمه ریزه نخودچی,Gheymeh rizeh chickpea meatballs,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00117,IRANIAN-BATCH-03,iranian-fallback-ifkb-canon-00117,خوراک دل و جگر,Heart and liver dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00118,IRANIAN-BATCH-06,iranian-fallback-ifkb-canon-00118,خوراک زبان,Beef tongue dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00119,IRANIAN-BATCH-09,iranian-fallback-ifkb-canon-00119,خوراک کله پاچه,Kaleh pacheh dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00120,IRANIAN-BATCH-12,iranian-fallback-ifkb-canon-00120,خوراک مرغ شکم‌پر,Stuffed chicken dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00121,IRANIAN-BATCH-01,iranian-fallback-ifkb-canon-00121,خوراک ماهی شکم‌پر,Stuffed fish dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00122,IRANIAN-BATCH-04,iranian-fallback-ifkb-canon-00122,خورش اسفناج ساده,Spinach stew,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00123,IRANIAN-BATCH-07,iranian-fallback-ifkb-canon-00123,خوراک کدو و گوجه,Zucchini tomato dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00124,IRANIAN-BATCH-10,iranian-fallback-ifkb-canon-00124,خوراک عدس و قارچ,Lentil mushroom dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00125,IRANIAN-BATCH-02,iranian-fallback-ifkb-canon-00125,خوراک نخود و سبزی,Chickpea herb dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00126,IRANIAN-BATCH-05,iranian-fallback-ifkb-canon-00126,خوراک بادمجان و عدس,Eggplant lentil dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00127,IRANIAN-BATCH-08,iranian-fallback-ifkb-canon-00127,خوراک لوبیا سبز,Green bean dish,stew,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00128,IRANIAN-BATCH-11,iranian-fallback-ifkb-canon-00128,شویدپلو با ماهی,Dill rice with fish,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00129,IRANIAN-BATCH-03,iranian-fallback-ifkb-canon-00129,باقالی‌پلو با مرغ,Fava bean rice with chicken,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00130,IRANIAN-BATCH-06,iranian-fallback-ifkb-canon-00130,باقالی‌پلو با گوشت,Fava bean rice with meat,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00131,IRANIAN-BATCH-09,iranian-fallback-ifkb-canon-00131,زرشک‌پلو ساده,Plain barberry rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00132,IRANIAN-BATCH-12,iranian-fallback-ifkb-canon-00132,مرصع پلو,Morasa polo jeweled rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00133,IRANIAN-BATCH-01,iranian-fallback-ifkb-canon-00133,شیرین پلو,Shirin polo sweet rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00134,IRANIAN-BATCH-04,iranian-fallback-ifkb-canon-00134,هویج پلو,Carrot rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00135,IRANIAN-BATCH-07,iranian-fallback-ifkb-canon-00135,رشته پلو,Reshteh polo noodle rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00136,IRANIAN-BATCH-10,iranian-fallback-ifkb-canon-00136,ماش پلو,Mash polo mung bean rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00137,IRANIAN-BATCH-02,iranian-fallback-ifkb-canon-00137,کشمش پلو,Raisin rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00138,IRANIAN-BATCH-05,iranian-fallback-ifkb-canon-00138,دمی گوجه,Tomato rice dami,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00139,IRANIAN-BATCH-08,iranian-fallback-ifkb-canon-00139,دمی عدس,Lentil dami rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00140,IRANIAN-BATCH-11,iranian-fallback-ifkb-canon-00140,دمپختک,Dumpokhtak turmeric rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00141,IRANIAN-BATCH-03,iranian-fallback-ifkb-canon-00141,ته‌چین گوشت,Meat tahchin,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00142,IRANIAN-BATCH-06,iranian-fallback-ifkb-canon-00142,ته‌چین بادمجان,Eggplant tahchin,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00143,IRANIAN-BATCH-09,iranian-fallback-ifkb-canon-00143,قیمه نثار,Gheymeh nesar jeweled rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00144,IRANIAN-BATCH-12,iranian-fallback-ifkb-canon-00144,قنبر پلو,Ghanbar polo Shirazi rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00145,IRANIAN-BATCH-01,iranian-fallback-ifkb-canon-00145,کلم پلو شیرازی,Shirazi cabbage rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00146,IRANIAN-BATCH-04,iranian-fallback-ifkb-canon-00146,لوبیا پلو شیرازی,Shirazi green bean rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00147,IRANIAN-BATCH-07,iranian-fallback-ifkb-canon-00147,میگو پلو,Shrimp rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00148,IRANIAN-BATCH-10,iranian-fallback-ifkb-canon-00148,عنبه پلو,Mango rice regional dish,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00149,IRANIAN-BATCH-02,iranian-fallback-ifkb-canon-00149,استانبولی شیرازی,Shirazi estamboli rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00150,IRANIAN-BATCH-05,iranian-fallback-ifkb-canon-00150,استانبولی جنوبی,Southern estamboli rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00151,IRANIAN-BATCH-08,iranian-fallback-ifkb-canon-00151,عدس پلو با گوشت قلقلی,Lentil rice with meatballs,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00152,IRANIAN-BATCH-11,iranian-fallback-ifkb-canon-00152,عدس پلو با کشمش,Lentil rice with raisins,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00153,IRANIAN-BATCH-03,iranian-fallback-ifkb-canon-00153,سبزی پلو با ماهی,Herb rice with fish,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00154,IRANIAN-BATCH-06,iranian-fallback-ifkb-canon-00154,سبزی پلو با مرغ,Herb rice with chicken,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00155,IRANIAN-BATCH-09,iranian-fallback-ifkb-canon-00155,سبزی پلو با گوشت,Herb rice with meat,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00156,IRANIAN-BATCH-12,iranian-fallback-ifkb-canon-00156,ته‌دیگ نان,Bread tahdig,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00157,IRANIAN-BATCH-01,iranian-fallback-ifkb-canon-00157,ته‌دیگ زعفرانی,Saffron tahdig,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00158,IRANIAN-BATCH-04,iranian-fallback-ifkb-canon-00158,ته‌دیگ ماست و زعفران,Yogurt saffron tahdig,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00159,IRANIAN-BATCH-07,iranian-fallback-ifkb-canon-00159,برنج کته,Kateh rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00160,IRANIAN-BATCH-10,iranian-fallback-ifkb-canon-00160,برنج آبکش,Drained Persian rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00161,IRANIAN-BATCH-02,iranian-fallback-ifkb-canon-00161,پلوی مخلوط سبزیجات,Mixed vegetable rice,rice,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00162,IRANIAN-BATCH-05,iranian-fallback-ifkb-canon-00162,کباب بناب,Bonab kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00163,IRANIAN-BATCH-08,iranian-fallback-ifkb-canon-00163,کباب سلطانی,Soltani kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00164,IRANIAN-BATCH-11,iranian-fallback-ifkb-canon-00164,کباب وزیری,Vaziri kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00165,IRANIAN-BATCH-03,iranian-fallback-ifkb-canon-00165,کباب نگینی,Negini kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00166,IRANIAN-BATCH-06,iranian-fallback-ifkb-canon-00166,کباب لقمه,Loghmeh kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00167,IRANIAN-BATCH-09,iranian-fallback-ifkb-canon-00167,دنده کباب,Kermanshahi rib kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00168,IRANIAN-BATCH-12,iranian-fallback-ifkb-canon-00168,کباب حسینی,Hosseini kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00169,IRANIAN-BATCH-01,iranian-fallback-ifkb-canon-00169,کباب تابه‌ای,Pan kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00170,IRANIAN-BATCH-04,iranian-fallback-ifkb-canon-00170,کباب دیگی,Pot kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00171,IRANIAN-BATCH-07,iranian-fallback-ifkb-canon-00171,کباب ماهیتابه‌ای,Skillet kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00172,IRANIAN-BATCH-10,iranian-fallback-ifkb-canon-00172,کباب ماهی,Fish kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00173,IRANIAN-BATCH-02,iranian-fallback-ifkb-canon-00173,کباب میگو,Shrimp kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00174,IRANIAN-BATCH-05,iranian-fallback-ifkb-canon-00174,جوجه ترش,Torsh chicken kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00175,IRANIAN-BATCH-08,iranian-fallback-ifkb-canon-00175,جوجه زعفرانی,Saffron chicken kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00176,IRANIAN-BATCH-11,iranian-fallback-ifkb-canon-00176,جوجه با استخوان,Bone-in chicken kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00177,IRANIAN-BATCH-03,iranian-fallback-ifkb-canon-00177,مرغ تنوری,Roasted Persian chicken,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00178,IRANIAN-BATCH-06,iranian-fallback-ifkb-canon-00178,ماهی کبابی,Grilled fish,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00179,IRANIAN-BATCH-09,iranian-fallback-ifkb-canon-00179,جگر کبابی,Grilled liver,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00180,IRANIAN-BATCH-12,iranian-fallback-ifkb-canon-00180,دل کبابی,Grilled heart,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00181,IRANIAN-BATCH-01,iranian-fallback-ifkb-canon-00181,قلوه کبابی,Grilled kidney,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00182,IRANIAN-BATCH-04,iranian-fallback-ifkb-canon-00182,خوش‌گوشت کبابی,Grilled lamb sweetbreads,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00183,IRANIAN-BATCH-07,iranian-fallback-ifkb-canon-00183,چلوکباب برگ,Rice with barg kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00184,IRANIAN-BATCH-10,iranian-fallback-ifkb-canon-00184,چلوکباب سلطانی,Rice with soltani kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00185,IRANIAN-BATCH-02,iranian-fallback-ifkb-canon-00185,چلوکباب وزیری,Rice with vaziri kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00186,IRANIAN-BATCH-05,iranian-fallback-ifkb-canon-00186,چلوجوجه کباب,Rice with chicken kebab,kebab,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00187,IRANIAN-BATCH-08,iranian-fallback-ifkb-canon-00187,آش شله قلمکار,Sholeh ghalamkar soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00188,IRANIAN-BATCH-11,iranian-fallback-ifkb-canon-00188,آش جو,Barley ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00189,IRANIAN-BATCH-03,iranian-fallback-ifkb-canon-00189,آش ماست,Yogurt ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00190,IRANIAN-BATCH-06,iranian-fallback-ifkb-canon-00190,آش ترخینه,Tarkhineh ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00191,IRANIAN-BATCH-09,iranian-fallback-ifkb-canon-00191,آش گندم,Wheat ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00192,IRANIAN-BATCH-12,iranian-fallback-ifkb-canon-00192,آش ماش,Mung bean ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00193,IRANIAN-BATCH-01,iranian-fallback-ifkb-canon-00193,آش عدس,Lentil ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00194,IRANIAN-BATCH-04,iranian-fallback-ifkb-canon-00194,آش سبزی شیرازی,Shirazi herb ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00195,IRANIAN-BATCH-07,iranian-fallback-ifkb-canon-00195,آش دوغ اردبیلی,Ardabili yogurt ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00196,IRANIAN-BATCH-10,iranian-fallback-ifkb-canon-00196,آش رشته تهرانی,Tehrani noodle ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00197,IRANIAN-BATCH-02,iranian-fallback-ifkb-canon-00197,آش انار شیرازی,Shirazi pomegranate ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00198,IRANIAN-BATCH-05,iranian-fallback-ifkb-canon-00198,آش اوماج,Omaj ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00199,IRANIAN-BATCH-08,iranian-fallback-ifkb-canon-00199,آش میوه,Fruit ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00200,IRANIAN-BATCH-11,iranian-fallback-ifkb-canon-00200,آش سورانه,Sooraneh ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00201,IRANIAN-BATCH-03,iranian-fallback-ifkb-canon-00201,آش بادمجان,Eggplant ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00202,IRANIAN-BATCH-06,iranian-fallback-ifkb-canon-00202,آش کدو,Pumpkin ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00203,IRANIAN-BATCH-09,iranian-fallback-ifkb-canon-00203,آش آبغوره,Sour grape ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00204,IRANIAN-BATCH-12,iranian-fallback-ifkb-canon-00204,آش سماق,Sumac ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00205,IRANIAN-BATCH-01,iranian-fallback-ifkb-canon-00205,آش شولی,Shooli beet herb soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00206,IRANIAN-BATCH-04,iranian-fallback-ifkb-canon-00206,آش ترش,Sour ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00207,IRANIAN-BATCH-07,iranian-fallback-ifkb-canon-00207,آش شلغم,Turnip ash soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00208,IRANIAN-BATCH-10,iranian-fallback-ifkb-canon-00208,سوپ شیر,Milk soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00209,IRANIAN-BATCH-02,iranian-fallback-ifkb-canon-00209,سوپ ورمیشل,Vermicelli soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00210,IRANIAN-BATCH-05,iranian-fallback-ifkb-canon-00210,سوپ مرغ,Chicken soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00211,IRANIAN-BATCH-08,iranian-fallback-ifkb-canon-00211,سوپ قارچ,Mushroom soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00212,IRANIAN-BATCH-11,iranian-fallback-ifkb-canon-00212,سوپ سبزیجات,Vegetable soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00213,IRANIAN-BATCH-03,iranian-fallback-ifkb-canon-00213,سوپ عدس,Lentil soup,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00214,IRANIAN-BATCH-06,iranian-fallback-ifkb-canon-00214,حلیم بادمجان,Halim bademjan eggplant dish,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00215,IRANIAN-BATCH-09,iranian-fallback-ifkb-canon-00215,حلیم گندم با گوشت,Wheat halim with meat,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00216,IRANIAN-BATCH-12,iranian-fallback-ifkb-canon-00216,حلیم شیر,Milk halim,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00217,IRANIAN-BATCH-01,iranian-fallback-ifkb-canon-00217,آبگوشت بزباش,Bozbash abgoosht,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00218,IRANIAN-BATCH-04,iranian-fallback-ifkb-canon-00218,آبگوشت کشک,Kashk abgoosht,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00219,IRANIAN-BATCH-07,iranian-fallback-ifkb-canon-00219,آبگوشت غوره,Sour grape abgoosht,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00220,IRANIAN-BATCH-10,iranian-fallback-ifkb-canon-00220,آبگوشت به,Quince abgoosht,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00221,IRANIAN-BATCH-02,iranian-fallback-ifkb-canon-00221,دیزی سنگی,Stone-pot dizi,soup,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00222,IRANIAN-BATCH-05,iranian-fallback-ifkb-canon-00222,کوکو سبزی,Kuku sabzi herb frittata,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00223,IRANIAN-BATCH-08,iranian-fallback-ifkb-canon-00223,کوکو سیب‌زمینی,Potato kuku,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00224,IRANIAN-BATCH-11,iranian-fallback-ifkb-canon-00224,کوکو بادمجان,Eggplant kuku,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00225,IRANIAN-BATCH-03,iranian-fallback-ifkb-canon-00225,کوکو کدو,Zucchini kuku,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00226,IRANIAN-BATCH-06,iranian-fallback-ifkb-canon-00226,کوکو لوبیا سبز,Green bean kuku,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00227,IRANIAN-BATCH-09,iranian-fallback-ifkb-canon-00227,کتلت گوشت,Meat kotlet,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00228,IRANIAN-BATCH-12,iranian-fallback-ifkb-canon-00228,کتلت مرغ,Chicken kotlet,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00229,IRANIAN-BATCH-01,iranian-fallback-ifkb-canon-00229,شامی کباب,Shami kebab patties,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00230,IRANIAN-BATCH-04,iranian-fallback-ifkb-canon-00230,شامی پوک,Shami pok hollow patties,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00231,IRANIAN-BATCH-07,iranian-fallback-ifkb-canon-00231,شامی لپه,Split pea shami patties,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00232,IRANIAN-BATCH-10,iranian-fallback-ifkb-canon-00232,دلمه برگ مو,Stuffed grape leaves,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00233,IRANIAN-BATCH-02,iranian-fallback-ifkb-canon-00233,دلمه فلفل,Stuffed peppers,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00234,IRANIAN-BATCH-05,iranian-fallback-ifkb-canon-00234,دلمه کلم,Stuffed cabbage,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00235,IRANIAN-BATCH-08,iranian-fallback-ifkb-canon-00235,دلمه بادمجان,Stuffed eggplant,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00236,IRANIAN-BATCH-11,iranian-fallback-ifkb-canon-00236,سمبوسه,Persian samosa,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00237,IRANIAN-BATCH-03,iranian-fallback-ifkb-canon-00237,پیراشکی گوشت,Meat pirashki,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00238,IRANIAN-BATCH-06,iranian-fallback-ifkb-canon-00238,فلافل آبادانی,Abadani falafel,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00239,IRANIAN-BATCH-09,iranian-fallback-ifkb-canon-00239,ساندویچ مغز,Brain sandwich,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00240,IRANIAN-BATCH-12,iranian-fallback-ifkb-canon-00240,ساندویچ زبان,Tongue sandwich,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00241,IRANIAN-BATCH-01,iranian-fallback-ifkb-canon-00241,ساندویچ مرغ,Chicken sandwich,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00242,IRANIAN-BATCH-04,iranian-fallback-ifkb-canon-00242,ساندویچ کوکو سبزی,Kuku sabzi sandwich,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00243,IRANIAN-BATCH-07,iranian-fallback-ifkb-canon-00243,ساندویچ فلافل,Falafel sandwich,street_food,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00244,IRANIAN-BATCH-10,iranian-fallback-ifkb-canon-00244,نان شیرمال,Shirmal sweet bread,bread,ds0_broad_fallback,acquire_sources_and_recipe_profile,120
+IFKB-CANON-00245,IRANIAN-BATCH-02,iranian-fallback-ifkb-canon-00245,نان روغنی,Roghani bread,bread,ds0_broad_fallback,acquire_sources_and_recipe_profile,120
+IFKB-CANON-00246,IRANIAN-BATCH-05,iranian-fallback-ifkb-canon-00246,نان فتیر,Fatir bread,bread,ds0_broad_fallback,acquire_sources_and_recipe_profile,120
+IFKB-CANON-00247,IRANIAN-BATCH-08,iranian-fallback-ifkb-canon-00247,نان کماج,Komaj bread,bread,ds0_broad_fallback,acquire_sources_and_recipe_profile,120
+IFKB-CANON-00248,IRANIAN-BATCH-11,iranian-fallback-ifkb-canon-00248,نان تیری,Tiri thin bread,bread,ds0_broad_fallback,acquire_sources_and_recipe_profile,120
+IFKB-CANON-00249,IRANIAN-BATCH-03,iranian-fallback-ifkb-canon-00249,نان یوخا,Yukha thin bread,bread,ds0_broad_fallback,acquire_sources_and_recipe_profile,120
+IFKB-CANON-00250,IRANIAN-BATCH-06,iranian-fallback-ifkb-canon-00250,نان ساجی,Saj bread,bread,ds0_broad_fallback,acquire_sources_and_recipe_profile,120
+IFKB-CANON-00251,IRANIAN-BATCH-09,iranian-fallback-ifkb-canon-00251,نان بلوط,Acorn bread,bread,ds0_broad_fallback,acquire_sources_and_recipe_profile,120
+IFKB-CANON-00252,IRANIAN-BATCH-12,iranian-fallback-ifkb-canon-00252,رنگینک,Ranginak date walnut dessert,dessert,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00253,IRANIAN-BATCH-01,iranian-fallback-ifkb-canon-00253,مسقطی,Masghati starch sweet,dessert,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00254,IRANIAN-BATCH-04,iranian-fallback-ifkb-canon-00254,باقلوا یزدی,Yazdi baklava,dessert,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00255,IRANIAN-BATCH-07,iranian-fallback-ifkb-canon-00255,قطاب,Qottab pastry,dessert,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00256,IRANIAN-BATCH-10,iranian-fallback-ifkb-canon-00256,کیک یزدی,Yazdi cupcake,dessert,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00257,IRANIAN-BATCH-02,iranian-fallback-ifkb-canon-00257,نان برنجی,Nan berenji rice cookie,dessert,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00258,IRANIAN-BATCH-05,iranian-fallback-ifkb-canon-00258,حاجی بادام,Haji badam almond cookie,dessert,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00259,IRANIAN-BATCH-08,iranian-fallback-ifkb-canon-00259,لوز نارگیل,Coconut loz,dessert,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00260,IRANIAN-BATCH-11,iranian-fallback-ifkb-canon-00260,کاچی,Kachi flour pudding,dessert,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
+IFKB-CANON-00261,IRANIAN-BATCH-03,iranian-fallback-ifkb-canon-00261,فالوده شیرازی,Shirazi faludeh,dessert,ds0_broad_fallback,acquire_sources_and_recipe_profile,130
