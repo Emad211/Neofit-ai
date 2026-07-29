@@ -45,6 +45,12 @@ def contains_token_phrase(value: Any, phrase: Any) -> bool:
     return any(value_tokens[index:index + width] == phrase_tokens for index in range(len(value_tokens) - width + 1))
 
 
+def starts_with_token_phrase(value: Any, phrase: Any) -> bool:
+    value_tokens = tokens(value)
+    phrase_tokens = tokens(phrase)
+    return bool(phrase_tokens) and value_tokens[:len(phrase_tokens)] == phrase_tokens
+
+
 def matched_substrings(value: Any, candidates: Any) -> list[str]:
     text = normalize(value)
     if not isinstance(candidates, list):
@@ -67,7 +73,7 @@ def score_candidate(row: sqlite3.Row, family: dict[str, Any], matched_query: str
     name = normalize(row["name_en"])
     label = normalize(row["label"])
     measure_text = normalize(f"{row['label']} {row['measure_unit'] or ''}")
-    name_query_matched = contains_token_phrase(name, matched_query)
+    name_query_matched = starts_with_token_phrase(name, matched_query)
     score = 50 if name_query_matched else -50
 
     measure_tokens = [normalize(token) for token in family.get("measureTokens", [])]
@@ -96,7 +102,7 @@ def score_candidate(row: sqlite3.Row, family: dict[str, Any], matched_query: str
 
     rejection_reasons: list[str] = []
     if not name_query_matched:
-        rejection_reasons.append("food_name_did_not_match_query_as_token_phrase")
+        rejection_reasons.append("food_name_did_not_start_with_exact_query_tokens")
     if not measure_matches:
         rejection_reasons.append("requested_measure_not_present")
     if not amount_matches:
@@ -120,7 +126,7 @@ def score_candidate(row: sqlite3.Row, family: dict[str, Any], matched_query: str
         "measureUnit": row["measure_unit"],
         "gramWeight": row["gram_weight"],
         "matchedFoodQuery": matched_query,
-        "foodNameTokenPhraseMatched": name_query_matched,
+        "foodNameTokenPrefixMatched": name_query_matched,
         "matchedMeasureTokens": measure_matches,
         "matchedStateTokens": state_matches,
         "targetAmountMatched": amount_matches,
@@ -266,7 +272,7 @@ def audit(database_path: Path, manifest_path: Path, queue_path: Path, spec_path:
 
     return {
         "format": "ifkb-ds2-official-portion-audit-report",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "auditOnly": True,
         "catalog": {
             "version": manifest.get("version"),
