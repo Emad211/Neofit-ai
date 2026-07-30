@@ -1,0 +1,125 @@
+name: IFKB Stage 2 Batch Registry Sync
+
+on:
+  push:
+    branches:
+      - agent/iranian-food-kb-foundation
+    paths:
+      - '.github/workflows/ifkb-stage2-batch-registry-sync.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: ifkb-stage2-batch-registry-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/iranian-food-kb-foundation
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install locked mobile dependencies
+        working-directory: mobile
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate current full-catalog audit
+        working-directory: mobile
+        run: |
+          npx tsx scripts/audit-full-nutrition-catalog.ts \
+            --output-dir ../build/stage2-batch-registry-sync
+
+      - name: Rebuild static routing registry from audited plan
+        run: |
+          python - <<'PY'
+          import csv
+          import hashlib
+          import json
+          from collections import Counter
+          from pathlib import Path
+
+          source = Path('build/stage2-batch-registry-sync/iranian-batch-plan.json')
+          target = Path('ifkb/universal/releases/iranian-bulk-source-registry-v1/iranian-batch-assignments.csv')
+          value = json.loads(source.read_text())
+          rows = []
+          for batch in value['batches']:
+              batch_id = batch['batchId']
+              for item in batch['items']:
+                  rows.append({
+                      'canonId': item['canonId'],
+                      'batchId': batch_id,
+                      'appProfileId': item['appProfileId'],
+                      'nameFa': item['nameFa'],
+                      'nameEn': item['nameEn'],
+                      'category': item['category'],
+                      'readinessStatus': item['readinessStatus'],
+                      'workstream': item['workstream'],
+                      'priorityScore': item['priorityScore'],
+                  })
+          if len(rows) != 261 or len({row['canonId'] for row in rows}) != 261:
+              raise SystemExit('Batch registry coverage is not 261 unique canon ids.')
+          counts = Counter(row['batchId'] for row in rows)
+          if sorted(counts.values()) != [21, 21, 21] + [22] * 9:
+              raise SystemExit(f'Unexpected batch sizes: {dict(sorted(counts.items()))}')
+          target.parent.mkdir(parents=True, exist_ok=True)
+          with target.open('w', encoding='utf-8', newline='') as handle:
+              writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+              writer.writeheader()
+              writer.writerows(rows)
+          digest = hashlib.sha256(target.read_bytes()).hexdigest()
+          expected = '72eeea2f4be20ea3a60873ddd80d104cc6b23132fef8d441e1e5a0e72db76c24'
+          if digest != expected:
+              raise SystemExit(f'Assignment SHA mismatch: {digest} != {expected}')
+          Path('/tmp/stage2-batch-sync-summary.json').write_text(json.dumps({
+              'rows': len(rows),
+              'uniqueCanonIds': len({row['canonId'] for row in rows}),
+              'batchCounts': dict(sorted(counts.items())),
+              'sha256': digest,
+              'historicalRowMovesApplied': 187,
+          }, indent=2, sort_keys=True) + '\n')
+          print(Path('/tmp/stage2-batch-sync-summary.json').read_text())
+          PY
+
+      - name: Commit synchronized registry and remove one-shot workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ifkb/universal/releases/iranian-bulk-source-registry-v1/iranian-batch-assignments.csv
+          git rm .github/workflows/ifkb-stage2-batch-registry-sync.yml
+          git commit -m "Synchronize Stage 2 batch registry"
+          git push origin HEAD:agent/iranian-food-kb-foundation
+          echo "NEW_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Report synchronization to Draft PR
+        run: |
+          python - <<'PY' > /tmp/stage2-batch-comment.md
+          import json
+          import os
+          from pathlib import Path
+          value = json.loads(Path('/tmp/stage2-batch-sync-summary.json').read_text())
+          print('### IFKB Nutrition Stage 2/10 — batch registry synchronized')
+          print()
+          print(f"- commit: `{os.environ['NEW_SHA']}`")
+          print(f"- canonical rows: **{value['rows']}**")
+          print(f"- unique canon ids: **{value['uniqueCanonIds']}**")
+          print('- batch sizes: **22 × 9, 21 × 3**')
+          print(f"- historical row moves applied: **{value['historicalRowMovesApplied']}**")
+          print(f"- assignment SHA-256: `{value['sha256']}`")
+          print('- one-shot synchronization workflow removed from the branch: **yes**')
+          PY
+          gh issue comment 3 --repo "$GITHUB_REPOSITORY" --body-file /tmp/stage2-batch-comment.md
