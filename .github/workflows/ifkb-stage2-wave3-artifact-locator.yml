@@ -1,0 +1,70 @@
+name: IFKB Stage 2 Wave 3 Artifact Locator
+
+on:
+  push:
+    branches:
+      - agent/iranian-food-kb-foundation
+    paths:
+      - '.github/workflows/ifkb-stage2-wave3-artifact-locator.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: ifkb-stage2-wave3-artifact-locator
+  cancel-in-progress: false
+
+jobs:
+  locate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/iranian-food-kb-foundation
+          fetch-depth: 0
+
+      - name: Locate retained Wave 3 artifact by exact name
+        run: |
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts?name=ifkb-p0-wave3-candidates-v0.11.2&per_page=100" \
+            > /tmp/wave3-artifacts.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path('/tmp/wave3-artifacts.json').read_text())
+          available = [item for item in payload.get('artifacts', []) if not item.get('expired')]
+          if not available:
+              raise SystemExit('No non-expired Wave 3 artifact found by exact name.')
+          selected = max(available, key=lambda item: item.get('created_at') or '')
+          output = {
+              'format': 'ifkb-stage2-wave3-artifact-pointer',
+              'artifactId': selected['id'],
+              'name': selected['name'],
+              'sizeInBytes': selected['size_in_bytes'],
+              'createdAt': selected['created_at'],
+              'expiresAt': selected['expires_at'],
+              'expired': selected['expired'],
+              'workflowRun': selected.get('workflow_run') or {},
+              'selectionPolicy': 'newest non-expired artifact with exact historical workflow artifact name',
+              'identityApproval': False,
+              'nutritionGoldApproval': False,
+          }
+          target = Path('ifkb/images/releases/0.12.2/wave3-artifact-pointer.json')
+          target.parent.mkdir(parents=True, exist_ok=True)
+          target.write_text(json.dumps(output, indent=2, sort_keys=True) + '\n')
+          print(target.read_text())
+          PY
+
+      - name: Commit pointer and remove one-shot workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ifkb/images/releases/0.12.2/wave3-artifact-pointer.json
+          git rm .github/workflows/ifkb-stage2-wave3-artifact-locator.yml
+          git commit -m "Locate retained Stage 2 Wave 3 artifact"
+          git push origin HEAD:agent/iranian-food-kb-foundation
