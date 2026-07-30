@@ -1,0 +1,131 @@
+name: IFKB Stage 2 Wave 3 Manifest Build
+
+on:
+  push:
+    branches:
+      - agent/iranian-food-kb-foundation
+    paths:
+      - '.github/workflows/ifkb-stage2-wave3-manifest-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+  issues: write
+
+concurrency:
+  group: ifkb-stage2-wave3-manifest-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/iranian-food-kb-foundation
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Download retained Wave 3 candidate artifact
+        run: |
+          mkdir -p build/stage2-wave3-source
+          gh api /repos/${GITHUB_REPOSITORY}/actions/artifacts/8634114609/zip \
+            > build/stage2-wave3-source.zip
+          unzip -q build/stage2-wave3-source.zip -d build/stage2-wave3-source
+          test -s build/stage2-wave3-source/candidate_manifest.csv
+
+      - name: Generate full row-level manifest from source metadata and review decisions
+        run: |
+          python - <<'PY'
+          import csv
+          import hashlib
+          from pathlib import Path
+
+          source_path = Path('build/stage2-wave3-source/candidate_manifest.csv')
+          decisions_path = Path('ifkb/images/releases/0.12.2/wave3-readjudication-decisions.csv')
+          target = Path('ifkb/images/releases/0.12.2/wave3-readjudicated-manifest.csv')
+
+          with source_path.open('r', encoding='utf-8-sig', newline='') as handle:
+              source_rows = {row['candidate_id']: row for row in csv.DictReader(handle)}
+          with decisions_path.open('r', encoding='utf-8-sig', newline='') as handle:
+              decisions = list(csv.DictReader(handle))
+
+          if len(decisions) != 5 or len({row['candidate_id'] for row in decisions}) != 5:
+              raise SystemExit('Wave 3 decisions must contain exactly five unique candidate ids.')
+          missing = [row['candidate_id'] for row in decisions if row['candidate_id'] not in source_rows]
+          if missing:
+              raise SystemExit(f'Decision ids missing from retained artifact: {missing}')
+
+          base_fields = [
+              'candidate_id', 'canon_id', 'food_name_fa', 'food_name_en', 'title',
+              'page_url', 'original_url', 'candidate_url', 'mime', 'width', 'height',
+              'source_size_bytes', 'commons_sha1', 'artist', 'credit',
+              'license_short_name', 'license_url', 'license_bucket', 'image_description',
+              'local_relative_path', 'local_sha256', 'decoded_width', 'decoded_height',
+              'downloaded_size_bytes',
+          ]
+          decision_fields = [field for field in decisions[0] if field != 'candidate_id']
+          allowed_roles = {
+              'served_final', 'preparation_process', 'restaurant_context', 'vessel_context'
+          }
+          allowed_licenses = {'cc0_pd', 'cc_by', 'cc_by_sa'}
+
+          target.parent.mkdir(parents=True, exist_ok=True)
+          with target.open('w', encoding='utf-8', newline='') as handle:
+              writer = csv.DictWriter(handle, fieldnames=base_fields + decision_fields)
+              writer.writeheader()
+              for decision in decisions:
+                  source = source_rows[decision['candidate_id']]
+                  if source['license_bucket'] not in allowed_licenses:
+                      raise SystemExit(f"Disallowed licence: {decision['candidate_id']}")
+                  if decision['image_role'] not in allowed_roles:
+                      raise SystemExit(f"Disallowed role: {decision['candidate_id']}")
+                  if decision['identity_review'] != 'approved':
+                      raise SystemExit(f"Decision not approved: {decision['candidate_id']}")
+                  if decision['nutrition_gold_allowed'] != 'no':
+                      raise SystemExit(f"Internet image marked Nutrition Gold: {decision['candidate_id']}")
+                  if decision['automatic_identity_approval_allowed'] != 'no':
+                      raise SystemExit(f"Automatic identity approval enabled: {decision['candidate_id']}")
+                  output = {field: source[field] for field in base_fields}
+                  output.update({field: decision[field] for field in decision_fields})
+                  writer.writerow(output)
+
+          digest = hashlib.sha256(target.read_bytes()).hexdigest()
+          expected = '88a6365d5391942c7ea402bb77ed2e52c4cb5f1f9766390cf8feee253bb31a6a'
+          if digest != expected:
+              raise SystemExit(f'Wave 3 manifest SHA mismatch: {digest} != {expected}')
+          print(f'Generated {target} with SHA-256 {digest}')
+          PY
+
+      - name: Commit generated manifest and remove one-shot workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ifkb/images/releases/0.12.2/wave3-readjudicated-manifest.csv
+          git rm .github/workflows/ifkb-stage2-wave3-manifest-build.yml
+          git commit -m "Generate Stage 2 Wave 3 evidence manifest"
+          git push origin HEAD:agent/iranian-food-kb-foundation
+          echo "NEW_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Report generated manifest to Draft PR
+        run: |
+          cat > /tmp/wave3-manifest-comment.md <<EOF
+          ### IFKB Nutrition Stage 2/10 — Wave 3 manifest generated
+
+          - commit: \`${NEW_SHA}\`
+          - retained artifact: \`8634114609\`
+          - reviewed candidate rows: **5**
+          - covered classes: **3**
+          - generated manifest SHA-256: \`88a6365d5391942c7ea402bb77ed2e52c4cb5f1f9766390cf8feee253bb31a6a\`
+          - automatic identity approvals: **0**
+          - Nutrition Gold images: **0**
+          - one-shot workflow removed from the branch: **yes**
+          EOF
+          gh issue comment 3 --repo "$GITHUB_REPOSITORY" --body-file /tmp/wave3-manifest-comment.md
