@@ -1,44 +1,64 @@
 # IFKB Image Recovery v0.12.2 — Stage 2/10
 
-This release advances the historical row-level image ledger from **42/58** to
-**53/58** without inventing the five unresolved Wave 3 rows.
+This release closes the historical row-level image ledger at **58/58 assets**
+and **43/43 covered P0 classes** without claiming that the newly reviewed rows
+were an unrecorded historical final selection.
 
 ## Retry recovery
 
-The retained GitHub Actions artifact `8634119409` contains 61 licence-tracked
-candidate thumbnails across 14 classes. The historical release records only an
-aggregate of 11 selected assets and seven new covered classes, but does not
-retain the final candidate-id selection in the repository.
+Retained artifact `8634119409` contained 61 candidate thumbnails. Stage 2
+performed an explicit re-adjudication and accepted 11 rows across seven classes.
+All authors, licences, landing pages, Commons SHA1 values, local SHA-256 values,
+roles and split groups are retained.
 
-Stage 2 therefore performs an explicit **re-adjudication**, not a false
-historical reconstruction:
+## Wave 3 recovery
 
-- 11 candidate rows selected after visual/metadata review;
-- seven newly covered classes;
-- full Commons landing page, original URL, author, licence, Commons SHA1 and
-  downloaded thumbnail SHA-256 retained;
-- same-session views share one split group;
-- one Dolmeh frame is `preparation_process`, not `served_final`;
-- every row is identity/retrieval or preparation context only;
-- Nutrition Gold count remains zero.
+The historical Wave 3 artifact was located by exact artifact name:
 
-The recovery workflow downloads the retained artifact, verifies every
-selected file SHA-256 and produces a recoverable asset bundle plus attribution report.
+- artifact id: `8634114609`
+- workflow run: `30209762006`
+- artifact digest:
+  `sha256:969dfe1c8c9f8b208129bc3752068a0e93c74f39b6d445f6785ca65e6d3fff97`
+- candidate rows reviewed: 18
+- accepted rows: 5
+- covered classes: 3
 
-## Wave 3 boundary
+Accepted role boundaries:
 
-The earlier release aggregate reports five Wave 3 assets, but their artifact id
-and row-level manifest are not present in the known repository manifests.
-No candidate id, class id, licence or hash is inferred. The five rows remain
-release-blocking until the artifact is located or the aggregate-only rows are
-formally deprecated and replaced through a separately reviewed release.
+- Chicken Tahchin: one preparation-process reference only;
+- Shishlik: two served-final references in one split group;
+- Stone-pot Dizi: one restaurant-context and one vessel-context reference;
+  neither is a served-food identity image.
 
-## Batch synchronization
+False-positive Plain Rice and Adasi results, an unrelated Akbar Joojeh result,
+and a duplicate Gheimeh Nesar candidate were not accepted.
 
-`ifdb/universal/releases/iranian-bulk-source-registry-v1/iranian-batch-assignments.csv` has been regenerated from Mobile CI artifact `8744934639` (digest `sha256:9fbba5dde8305ee3435cbcab7783ff93346a1e84eb2d1318a236d3a87d247730`).
-It contains all 261 canonical foods exactly once across 12 batches: nine 22-food batches and three 21-food batches. Exactly 187 canon rows moved from the older static routing registry. Nutrition, image and structured-source routing now share the same current assignment release.
+## Historical ledger result
 
-## Status
+- reconstructable before Stage 2: 42 assets / 33 classes;
+- Retry re-adjudication: +11 assets / +7 classes;
+- Wave 3 re-adjudication: +5 assets / +3 classes;
+- row-level historical ledger: **58 assets / 43 classes**;
+- remaining historical row gap: **0**.
 
-Stage 2 remains open until the five Wave 3 rows are resolved and the broad
-metadata review/download-eligibility pass is complete.
+## Batch routing
+
+The static registry is synchronized with the current full-catalog audit:
+
+- 261 unique canonical foods;
+- 12 batches;
+- 22 foods in nine batches;
+- 21 foods in three batches;
+- assignment SHA-256:
+  `72eeea2f4be20ea3a60873ddd80d104cc6b23132fef8d441e1e5a0e72db76c24`.
+
+## Safety
+
+- automatic identity approval: zero;
+- internet Nutrition Gold images: zero;
+- NC, ND and unknown licences: prohibited;
+- source and downloaded-file hashes: mandatory;
+- same-session images remain in a shared split group.
+
+Stage 2 remains open for broad Commons/Openverse metadata review, exact-source
+verification and download-eligibility selection across the 261-class plan.

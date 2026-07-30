@@ -7,59 +7,121 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 RELEASE = ROOT / "ifkb/images/releases/0.12.2"
+
+
 def read_csv(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
         return list(csv.DictReader(handle))
 
+
 class Stage2ImageRecoveryTests(unittest.TestCase):
-    def test_retry_readjudication_is_complete_and_fail_closed(self) -> None:
-        rows = read_csv(RELEASE / "retry-readjudicated-manifest.csv")
-        self.assertEqual(len(rows), 11)
-        self.assertEqual(len({row["candidate_id"] for row in rows}), 11)
-        self.assertEqual(len({row["canon_id"] for row in rows}), 7)
-        self.assertTrue(all(row["identity_review"] == "approved" for row in rows))
-        self.assertTrue(all(row["nutrition_gold_allowed"] == "no" for row in rows))
-        self.assertTrue(all(row["automatic_identity_approval_allowed"] == "no" for row in rows))
-        self.assertTrue(all(row["license_bucket"] in {"cc0_pd", "cc_by", "cc_by_sa"} for row in rows))
-        self.assertTrue(all(len(row["local_sha256"]) == 64 for row in rows))
-        self.assertTrue(all(row["source_artifact_id"] == "8634119409" for row in rows))
+    def test_retry_and_wave3_manifests_close_historical_ledger(self) -> None:
+        retry = read_csv(RELEASE / "retry-readjudicated-manifest.csv")
+        wave3 = read_csv(RELEASE / "wave3-readjudicated-manifest.csv")
+        self.assertEqual(len(retry), 11)
+        self.assertEqual(len(wave3), 5)
+        combined = retry + wave3
+        self.assertEqual(len({row["candidate_id"] for row in combined}), 16)
+        self.assertEqual(len({row["canon_id"] for row in combined}), 10)
+        self.assertTrue(
+            all(
+                row["identity_review"] == "approved"
+                and row["nutrition_gold_allowed"] == "no"
+                and row["automatic_identity_approval_allowed"] == "no"
+                for row in combined
+            )
+        )
+        self.assertTrue(
+            all(
+                row["license_bucket"] in {"cc0_pd", "cc_by", "cc_by_sa"}
+                for row in combined
+            )
+        )
+        self.assertTrue(all(len(row["local_sha256"]) == 64 for row in combined))
 
-        dolmeh = next(row for row in rows if row["candidate_id"] == "IFKB-CANON-00050-C04")
-        self.assertEqual(dolmeh["image_role"], "preparation_process")
-        self.assertEqual(dolmeh["dataset_use"], "preparation_context_only")
+        tahchin = next(
+            row for row in wave3
+            if row["candidate_id"] == "IFKB-CANON-00020-C01"
+        )
+        self.assertEqual(tahchin["image_role"], "preparation_process")
+        self.assertEqual(
+            tahchin["dataset_use"],
+            "preparation_context_only",
+        )
 
-        gheymeh = [
-            row for row in rows if row["canon_id"] == "IFKB-CANON-00119"
+        shishlik = [
+            row for row in wave3
+            if row["canon_id"] == "IFKB-CANON-00029"
         ]
-        self.assertEqual(len(gheymeh), 3)
-        self.assertEqual(len({row["split_group_id"] for row in gheymeh}), 1)
+        self.assertEqual(len(shishlik), 2)
+        self.assertEqual(
+            len({row["split_group_id"] for row in shishlik}),
+            1,
+        )
+        self.assertTrue(
+            all(row["image_role"] == "served_final" for row in shishlik)
+        )
 
-        reshteh = [
-            row for row in rows if row["canon_id"] == "IFKB-CANON-00122"
+        dizi = [
+            row for row in wave3
+            if row["canon_id"] == "IFKB-CANON-00108"
         ]
-        self.assertEqual(len(reshteh), 2)
-        self.assertEqual(len({row["split_group_id"] for row in reshteh}), 1)
+        self.assertEqual(
+            {row["image_role"] for row in dizi},
+            {"restaurant_context", "vessel_context"},
+        )
+        self.assertTrue(
+            all(
+                row["identity_reference_allowed"] == "no_context_only"
+                for row in dizi
+            )
+        )
 
-    def test_wave3_gap_is_not_fabricated(self) -> None:
+    def test_wave3_resolution_is_traceable_and_not_fabricated(self) -> None:
         rows = read_csv(RELEASE / "unresolved-wave3-recovery.csv")
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["historical_asset_row_count"], "5")
-        self.assertEqual(rows[0]["row_level_identity_status"], "unresolved")
-        self.assertEqual(rows[0]["artifact_id"], "")
-        self.assertIn("No candidate id", rows[0]["evidence_boundary"])
+        self.assertEqual(rows[0]["artifact_id"], "8634114609")
+        self.assertEqual(
+            rows[0]["row_level_identity_status"],
+            "resolved_by_stage2_explicit_readjudication",
+        )
+        self.assertIn(
+            "not falsely claimed",
+            rows[0]["evidence_boundary"],
+        )
 
-    def test_release_manifest_reports_only_proven_progress(self) -> None:
-        value = json.loads((RELEASE / "manifest.json").read_text(encoding="utf-8"))
-        self.assertEqual(value["stage2Recovery"]["readjudicatedAssetRows"], 11)
-        self.assertEqual(value["stage2Recovery"]["reconstructableAssetRowsAfterRetry"], 53)
-        self.assertEqual(value["stage2Recovery"]["remainingHistoricalAssetRowGap"], 5)
-        self.assertEqual(value["stage2Recovery"]["remainingHistoricalCoveredClassGap"], 3)
+    def test_release_manifest_reports_zero_historical_gap(self) -> None:
+        value = json.loads(
+            (RELEASE / "manifest.json").read_text(encoding="utf-8")
+        )
+        recovery = value["stage2Recovery"]
+        self.assertEqual(recovery["totalReadjudicatedAssetRows"], 16)
+        self.assertEqual(recovery["totalNewCoveredClasses"], 10)
+        self.assertEqual(recovery["reconstructableAssetRowsAfterStage2"], 58)
+        self.assertEqual(
+            recovery["reconstructableCoveredClassesAfterStage2"],
+            43,
+        )
+        self.assertEqual(recovery["remainingHistoricalAssetRowGap"], 0)
+        self.assertEqual(recovery["remainingHistoricalCoveredClassGap"], 0)
+        self.assertEqual(recovery["wave3"]["readjudicatedAssetRows"], 5)
+        self.assertEqual(recovery["wave3"]["newCoveredClasses"], 3)
+        self.assertEqual(
+            value["status"],
+            "stage2_historical_recovery_complete_broad_metadata_review_open",
+        )
         self.assertEqual(value["safety"]["internetNutritionGoldImages"], 0)
         self.assertEqual(value["safety"]["automaticIdentityApprovals"], 0)
-        self.assertEqual(value["batchRegistry"]["status"], "synchronized_stage2")
-        self.assertEqual(value["batchRegistry"]["knownRowMovesApplied"], 187)
-        self.assertEqual(value["batchRegistry"]["canonicalRows"], 261)
-        self.assertEqual(value["batchRegistry"]["batchSizes"], [22] * 9 + [21] * 3)
+        self.assertEqual(
+            value["batchRegistry"]["status"],
+            "synchronized_stage2",
+        )
+        self.assertEqual(
+            value["batchRegistry"]["batchSizes"],
+            [22] * 9 + [21] * 3,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

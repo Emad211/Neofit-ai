@@ -18,12 +18,12 @@
     ],
     "canonicalRows": 261,
     "knownRowMovesApplied": 187,
-    "safetyBoundary": "All image and structured-source routing now uses the current full-catalog audit assignment release.",
+    "safetyBoundary": "All image and structured-source routing uses the current full-catalog audit assignment release.",
     "sourceArtifactDigest": "sha256:9fbba5dde8305ee3435cbcab7783ff93346a1e84eb2d1318a236d3a87d247730",
     "sourceArtifactId": 8744934639,
     "status": "synchronized_stage2"
   },
-  "createdAt": "2026-07-30T00:01:00Z",
+  "createdAt": "2026-07-30T01:31:00Z",
   "format": "ifkb-stage2-image-recovery-release",
   "historicalBaseline": {
     "branchReconstructableAssetRowsBeforeStage2": 42,
@@ -31,25 +31,43 @@
     "coveredP0ClassAggregate": 43,
     "licensedAssetAggregate": 58
   },
-  "releaseId": "IFKB-0.12.2-stage2-retry-readjudication",
+  "releaseId": "IFKB-0.12.2-stage2-complete-historical-image-recovery",
   "safety": {
     "automaticIdentityApprovals": 0,
+    "historicalSelectionClaimed": false,
     "internetNutritionGoldImages": 0,
     "retryManifestDecision": "assistant re-adjudication from retained candidate bytes; not claimed as reconstruction of unknown historical candidate selection",
-    "wave3Policy": "no row inferred from aggregate-only counts"
+    "wave3ManifestDecision": "assistant re-adjudication from the located retained Wave 3 candidate artifact; context-only rows remain context-only"
   },
   "stage2Recovery": {
-    "newCoveredClasses": 7,
-    "readjudicatedAssetRows": 11,
-    "reconstructableAssetRowsAfterRetry": 53,
-    "reconstructableCoveredClassesAfterRetry": 40,
-    "remainingHistoricalAssetRowGap": 5,
-    "remainingHistoricalCoveredClassGap": 3,
-    "retainedCandidatesReviewed": 61,
-    "retryArtifactDigest": "sha256:e8707801495ec76655d0fffe564aab5013610a7316de87ef4f7500d4beaa1a8f",
-    "retryArtifactId": 8634119409,
-    "unresolvedWave3AggregateRows": 5
+    "reconstructableAssetRowsAfterStage2": 58,
+    "reconstructableCoveredClassesAfterStage2": 43,
+    "remainingHistoricalAssetRowGap": 0,
+    "remainingHistoricalCoveredClassGap": 0,
+    "retry": {
+      "artifactDigest": "sha256:e8707801495ec76655d0fffe564aab5013610a7316de87ef4f7500d4beaa1a8f",
+      "artifactId": 8634119409,
+      "newCoveredClasses": 7,
+      "readjudicatedAssetRows": 11,
+      "retainedCandidatesReviewed": 61
+    },
+    "totalNewCoveredClasses": 10,
+    "totalReadjudicatedAssetRows": 16,
+    "wave3": {
+      "artifactDigest": "sha256:969dfe1c8c9f8b208129bc3752068a0e93c74f39b6d445f6785ca65e6d3fff97",
+      "artifactId": 8634114609,
+      "newCoveredClasses": 3,
+      "readjudicatedAssetRows": 5,
+      "retainedCandidatesReviewed": 18,
+      "roles": {
+        "preparation_process": 1,
+        "restaurant_context": 1,
+        "served_final": 2,
+        "vessel_context": 1
+      },
+      "workflowRunId": 30209762006
+    }
   },
-  "status": "stage2_in_progress_wave3_open",
+  "status": "stage2_historical_recovery_complete_broad_metadata_review_open",
   "version": "0.12.2"
 }

@@ -25,7 +25,7 @@ concurrency:
 jobs:
   recover:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -43,27 +43,69 @@ jobs:
             > /tmp/stage2-contracts.log 2>&1 \
             || { cat /tmp/stage2-contracts.log; exit 1; }
 
-      - name: Download retained retry artifact
+      - name: Download retained historical candidate artifacts
         run: |
-          mkdir -p build/stage2-retry-source
+          mkdir -p build/stage2-retry-source build/stage2-wave3-source
           gh api /repos/${GITHUB_REPOSITORY}/actions/artifacts/8634119409/zip \
             > build/stage2-retry-source.zip
           unzip -q build/stage2-retry-source.zip -d build/stage2-retry-source
+          gh api /repos/${GITHUB_REPOSITORY}/actions/artifacts/8634114609/zip \
+            > build/stage2-wave3-source.zip
+          unzip -q build/stage2-wave3-source.zip -d build/stage2-wave3-source
 
-      - name: Verify and recover selected asset bytes
+      - name: Verify and recover Retry asset bytes
         run: |
           python ifkb/images/recover_stage2_retry_assets.py \
             --manifest ifkb/images/releases/0.12.2/retry-readjudicated-manifest.csv \
             --artifact-root build/stage2-retry-source \
-            --output-dir build/stage2-recovered-retry-assets \
-            > /tmp/stage2-recovery.log 2>&1 \
-            || { cat /tmp/stage2-recovery.log; exit 1; }
+            --output-dir build/stage2-recovered-historical-assets/retry \
+            --expected-rows 11 \
+            --output-format ifkb-stage2-recovered-retry-assets \
+            > /tmp/stage2-retry-recovery.log 2>&1 \
+            || { cat /tmp/stage2-retry-recovery.log; exit 1; }
+
+      - name: Verify and recover Wave 3 asset bytes
+        run: |
+          python ifkb/images/recover_stage2_retry_assets.py \
+            --manifest ifkb/images/releases/0.12.2/wave3-readjudicated-manifest.csv \
+            --artifact-root build/stage2-wave3-source \
+            --output-dir build/stage2-recovered-historical-assets/wave3 \
+            --expected-rows 5 \
+            --output-format ifkb-stage2-recovered-wave3-assets \
+            > /tmp/stage2-wave3-recovery.log 2>&1 \
+            || { cat /tmp/stage2-wave3-recovery.log; exit 1; }
+
+      - name: Build combined recovery summary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          base = Path('build/stage2-recovered-historical-assets')
+          retry = json.loads((base / 'retry/summary.json').read_text())
+          wave3 = json.loads((base / 'wave3/summary.json').read_text())
+          value = {
+              'format': 'ifkb-stage2-complete-historical-image-recovery',
+              'recoveredAssetRows': retry['recoveredAssetRows'] + wave3['recoveredAssetRows'],
+              'coveredClasses': retry['coveredClasses'] + wave3['coveredClasses'],
+              'hashMismatches': retry['hashMismatches'] + wave3['hashMismatches'],
+              'nutritionGoldImages': 0,
+              'automaticIdentityApprovals': 0,
+              'historicalLedgerAssets': 58,
+              'historicalLedgerClasses': 43,
+              'remainingHistoricalAssetGap': 0,
+              'remainingHistoricalClassGap': 0,
+          }
+          (base / 'summary.json').write_text(
+              json.dumps(value, indent=2, sort_keys=True) + '\n'
+          )
+          print(json.dumps(value, indent=2, sort_keys=True))
+          PY
 
       - name: Upload hash-verified Stage 2 assets
         uses: actions/upload-artifact@v4
         with:
-          name: ifkb-stage2-recovered-retry-assets
-          path: build/stage2-recovered-retry-assets
+          name: ifkb-stage2-recovered-historical-assets
+          path: build/stage2-recovered-historical-assets
           if-no-files-found: error
           retention-days: 90
 
@@ -77,32 +119,41 @@ jobs:
           import os
           from pathlib import Path
 
-          print('### IFKB Nutrition Stage 2/10 — retry image recovery')
+          print('### IFKB Nutrition Stage 2/10 — historical image ledger recovery')
           print()
           print(f"- head: `{os.environ['GITHUB_SHA']}`")
           print(f"- workflow run: `{os.environ['GITHUB_RUN_ID']}`")
           print(f"- job status: **{os.environ['JOB_STATUS']}**")
-          summary_path = Path('build/stage2-recovered-retry-assets/summary.json')
+          summary_path = Path(
+              'build/stage2-recovered-historical-assets/summary.json'
+          )
           if summary_path.exists():
               value = json.loads(summary_path.read_text())
-              print(f"- SHA-verified recovered assets: **{value['recoveredAssetRows']}**")
-              print(f"- covered classes: **{value['coveredClasses']}**")
+              print(f"- SHA-verified re-adjudicated assets: **{value['recoveredAssetRows']}**")
+              print(f"- newly covered classes: **{value['coveredClasses']}**")
               print(f"- hash mismatches: **{value['hashMismatches']}**")
+              print('- historical row-level ledger: **58/58 assets, 43/43 classes**')
+              print('- remaining historical gap: **0 assets, 0 classes**')
               print(f"- Nutrition Gold images: **{value['nutritionGoldImages']}**")
               print(f"- automatic identity approvals: **{value['automaticIdentityApprovals']}**")
-              print('- historical ledger after retry: **53/58 assets, 40/43 classes**')
-              print('- unresolved Wave 3 boundary: **5 assets, 3 classes**')
           else:
-              print('- recovery summary: **not produced**')
-              for log_name in ('/tmp/stage2-contracts.log', '/tmp/stage2-recovery.log'):
+              print('- combined recovery summary: **not produced**')
+              for log_name in (
+                  '/tmp/stage2-contracts.log',
+                  '/tmp/stage2-retry-recovery.log',
+                  '/tmp/stage2-wave3-recovery.log',
+              ):
                   path = Path(log_name)
                   if path.exists():
                       print()
                       print(f'Last lines of `{log_name}`:')
                       print('```text')
-                      print('\n'.join(path.read_text(errors='replace').splitlines()[-20:]))
+                      print('\n'.join(
+                          path.read_text(errors='replace').splitlines()[-20:]
+                      ))
                       print('```')
           print()
-          print('All recovered internet images remain identity/retrieval or preparation context only; none is Nutrition Gold.')
+          print('All recovered internet images retain explicit roles and remain outside Nutrition Gold.')
           PY
-          gh issue comment 3 --repo "$GITHUB_REPOSITORY" --body-file /tmp/stage2-comment.md
+          gh issue comment 3 --repo "$GITHUB_REPOSITORY" \
+            --body-file /tmp/stage2-comment.md
