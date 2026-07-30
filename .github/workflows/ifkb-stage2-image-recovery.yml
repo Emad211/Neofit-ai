@@ -8,6 +8,7 @@ on:
       - 'ifkb/images/releases/0.12.2/**'
       - 'ifkb/images/recover_stage2_retry_assets.py'
       - 'ifkb/images/test_stage2_image_recovery.py'
+      - 'ifkb/images/test_full_image_acquisition_plan.py'
       - 'ifkb/images/build_full_image_acquisition_plan.py'
       - '.github/workflows/ifkb-stage2-image-recovery.yml'
   workflow_dispatch:
@@ -15,6 +16,7 @@ on:
 permissions:
   contents: read
   actions: read
+  issues: write
 
 concurrency:
   group: ifkb-stage2-image-recovery
@@ -35,17 +37,27 @@ jobs:
 
       - name: Validate Stage 2 contracts
         run: |
-          python -m unittest -v             ifkb/images/test_stage2_image_recovery.py             ifkb/images/test_full_image_acquisition_plan.py
+          python -m unittest -v \
+            ifkb/images/test_stage2_image_recovery.py \
+            ifkb/images/test_full_image_acquisition_plan.py \
+            > /tmp/stage2-contracts.log 2>&1 \
+            || { cat /tmp/stage2-contracts.log; exit 1; }
 
       - name: Download retained retry artifact
         run: |
           mkdir -p build/stage2-retry-source
-          gh api /repos/${GITHUB_REPOSITORY}/actions/artifacts/8634119409/zip             > build/stage2-retry-source.zip
+          gh api /repos/${GITHUB_REPOSITORY}/actions/artifacts/8634119409/zip \
+            > build/stage2-retry-source.zip
           unzip -q build/stage2-retry-source.zip -d build/stage2-retry-source
 
       - name: Verify and recover selected asset bytes
         run: |
-          python ifkb/images/recover_stage2_retry_assets.py             --manifest ifkb/images/releases/0.12.2/retry-readjudicated-manifest.csv             --artifact-root build/stage2-retry-source             --output-dir build/stage2-recovered-retry-assets
+          python ifkb/images/recover_stage2_retry_assets.py \
+            --manifest ifkb/images/releases/0.12.2/retry-readjudicated-manifest.csv \
+            --artifact-root build/stage2-retry-source \
+            --output-dir build/stage2-recovered-retry-assets \
+            > /tmp/stage2-recovery.log 2>&1 \
+            || { cat /tmp/stage2-recovery.log; exit 1; }
 
       - name: Upload hash-verified Stage 2 assets
         uses: actions/upload-artifact@v4
@@ -54,3 +66,43 @@ jobs:
           path: build/stage2-recovered-retry-assets
           if-no-files-found: error
           retention-days: 90
+
+      - name: Report Stage 2 recovery to Draft PR
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          python - <<'PY' > /tmp/stage2-comment.md
+          import json
+          import os
+          from pathlib import Path
+
+          print('### IFKB Nutrition Stage 2/10 — retry image recovery')
+          print()
+          print(f"- head: `{os.environ['GITHUB_SHA']}`")
+          print(f"- workflow run: `{os.environ['GITHUB_RUN_ID']}`")
+          print(f"- job status: **{os.environ['JOB_STATUS']}**")
+          summary_path = Path('build/stage2-recovered-retry-assets/summary.json')
+          if summary_path.exists():
+              value = json.loads(summary_path.read_text())
+              print(f"- SHA-verified recovered assets: **{value['recoveredAssetRows']}**")
+              print(f"- covered classes: **{value['coveredClasses']}**")
+              print(f"- hash mismatches: **{value['hashMismatches']}**")
+              print(f"- Nutrition Gold images: **{value['nutritionGoldImages']}**")
+              print(f"- automatic identity approvals: **{value['automaticIdentityApprovals']}**")
+              print('- historical ledger after retry: **53/58 assets, 40/43 classes**')
+              print('- unresolved Wave 3 boundary: **5 assets, 3 classes**')
+          else:
+              print('- recovery summary: **not produced**')
+              for log_name in ('/tmp/stage2-contracts.log', '/tmp/stage2-recovery.log'):
+                  path = Path(log_name)
+                  if path.exists():
+                      print()
+                      print(f'Last lines of `{log_name}`:')
+                      print('```text')
+                      print('\n'.join(path.read_text(errors='replace').splitlines()[-20:]))
+                      print('```')
+          print()
+          print('All recovered internet images remain identity/retrieval or preparation context only; none is Nutrition Gold.')
+          PY
+          gh issue comment 3 --repo "$GITHUB_REPOSITORY" --body-file /tmp/stage2-comment.md
