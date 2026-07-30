@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Locked Stage-1 entrypoint for the full IFKB image acquisition plan.
+"""Locked Stage-2 entrypoint for the full IFKB image acquisition plan.
 
-The P0 roster is exactly the 12 pilot classes plus the 48-class P0 candidate
-queue. Later wave, exact-source and field-capture files only describe status;
-they cannot add or remove classes from the historical P0 scope.
+The P0 roster remains the 12 pilot classes plus the 48-class candidate queue.
+Stage 2 additionally includes the explicitly re-adjudicated retry manifest in
+the row-level asset ledger. Aggregate-only Wave 3 rows remain excluded.
 """
 from __future__ import annotations
 
@@ -20,8 +20,14 @@ planner.P0_INPUTS = (
     "ifkb/images/pilot_seed_manifest.csv",
     "ifkb/images/p0_candidate_queries.csv",
 )
+planner.ROW_LEVEL_ACCEPTED_INPUTS = (
+    "ifkb/images/pilot_seed_manifest.csv",
+    "ifkb/images/p0_wave2_accepted_manifest.csv",
+    "ifkb/images/releases/0.12.2/retry-readjudicated-manifest.csv",
+)
 
 P0_INPUTS = planner.P0_INPUTS
+ROW_LEVEL_ACCEPTED_INPUTS = planner.ROW_LEVEL_ACCEPTED_INPUTS
 main = planner.main
 
 if __name__ == "__main__":

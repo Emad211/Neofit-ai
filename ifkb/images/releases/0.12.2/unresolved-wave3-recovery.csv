@@ -1,0 +1,2 @@
+gap_id,historical_wave,historical_asset_row_count,artifact_id,artifact_location_status,row_level_identity_status,release_effect,required_action,evidence_boundary
+IMG-W3-RECON-001,wave3,5,,not_located_in_repository_or_known_release_manifests,unresolved,historical_58_asset_aggregate_remains_incomplete,Locate the retained Wave 3 workflow artifact or formally deprecate the five aggregate-only rows and replace them through a separately reviewed acquisition release.,"No candidate id, canon id, licence, hash or asset status is inferred from the aggregate count."

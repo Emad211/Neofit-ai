@@ -1,0 +1,56 @@
+name: IFKB Stage 2 Image Recovery
+
+on:
+  push:
+    branches:
+      - agent/iranian-food-kb-foundation
+    paths:
+      - 'ifkb/images/releases/0.12.2/**'
+      - 'ifkb/images/recover_stage2_retry_assets.py'
+      - 'ifkb/images/test_stage2_image_recovery.py'
+      - 'ifkb/images/build_full_image_acquisition_plan.py'
+      - '.github/workflows/ifkb-stage2-image-recovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ifkb-stage2-image-recovery
+  cancel-in-progress: true
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate Stage 2 contracts
+        run: |
+          python -m unittest -v             ifkb/images/test_stage2_image_recovery.py             ifkb/images/test_full_image_acquisition_plan.py
+
+      - name: Download retained retry artifact
+        run: |
+          mkdir -p build/stage2-retry-source
+          gh api /repos/${GITHUB_REPOSITORY}/actions/artifacts/8634119409/zip             > build/stage2-retry-source.zip
+          unzip -q build/stage2-retry-source.zip -d build/stage2-retry-source
+
+      - name: Verify and recover selected asset bytes
+        run: |
+          python ifkb/images/recover_stage2_retry_assets.py             --manifest ifkb/images/releases/0.12.2/retry-readjudicated-manifest.csv             --artifact-root build/stage2-retry-source             --output-dir build/stage2-recovered-retry-assets
+
+      - name: Upload hash-verified Stage 2 assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-stage2-recovered-retry-assets
+          path: build/stage2-recovered-retry-assets
+          if-no-files-found: error
+          retention-days: 90

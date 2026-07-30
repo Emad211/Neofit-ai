@@ -1,0 +1,45 @@
+{
+  "batchRegistry": {
+    "canonicalRows": 261,
+    "currentDynamicBatchSizes": [
+      21,
+      22
+    ],
+    "knownRowMovesRequired": 187,
+    "safetyBoundary": "The stale static registry is not represented as synchronized until a generated/current assignment release is committed or routing is changed to use the current audit directly.",
+    "staleStaticBatchSizeRange": [
+      20,
+      23
+    ],
+    "status": "pending_stage2_sync"
+  },
+  "createdAt": "2026-07-30T00:01:00Z",
+  "format": "ifkb-stage2-image-recovery-release",
+  "historicalBaseline": {
+    "branchReconstructableAssetRowsBeforeStage2": 42,
+    "branchReconstructableCoveredClassesBeforeStage2": 33,
+    "coveredP0ClassAggregate": 43,
+    "licensedAssetAggregate": 58
+  },
+  "releaseId": "IFKB-0.12.2-stage2-retry-readjudication",
+  "safety": {
+    "automaticIdentityApprovals": 0,
+    "internetNutritionGoldImages": 0,
+    "retryManifestDecision": "assistant re-adjudication from retained candidate bytes; not claimed as reconstruction of unknown historical candidate selection",
+    "wave3Policy": "no row inferred from aggregate-only counts"
+  },
+  "stage2Recovery": {
+    "newCoveredClasses": 7,
+    "readjudicatedAssetRows": 11,
+    "reconstructableAssetRowsAfterRetry": 53,
+    "reconstructableCoveredClassesAfterRetry": 40,
+    "remainingHistoricalAssetRowGap": 5,
+    "remainingHistoricalCoveredClassGap": 3,
+    "retainedCandidatesReviewed": 61,
+    "retryArtifactDigest": "sha256:e8707801495ec76655d0fffe564aab5013610a7316de87ef4f7500d4beaa1a8f",
+    "retryArtifactId": 8634119409,
+    "unresolvedWave3AggregateRows": 5
+  },
+  "status": "stage2_in_progress_wave3_open",
+  "version": "0.12.2"
+}
