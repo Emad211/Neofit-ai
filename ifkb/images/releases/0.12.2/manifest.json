@@ -1,17 +1,27 @@
 {
   "batchRegistry": {
-    "canonicalRows": 261,
-    "currentDynamicBatchSizes": [
+    "assignmentSha256": "72eeea2f4be20ea3a60873ddd80d104cc6b23132fef8d441e1e5a0e72db76c24",
+    "batchCount": 12,
+    "batchSizes": [
+      22,
+      22,
+      22,
+      22,
+      22,
+      22,
+      22,
+      22,
+      22,
       21,
-      22
+      21,
+      21
     ],
-    "knownRowMovesRequired": 187,
-    "safetyBoundary": "The stale static registry is not represented as synchronized until a generated/current assignment release is committed or routing is changed to use the current audit directly.",
-    "staleStaticBatchSizeRange": [
-      20,
-      23
-    ],
-    "status": "pending_stage2_sync"
+    "canonicalRows": 261,
+    "knownRowMovesApplied": 187,
+    "safetyBoundary": "All image and structured-source routing now uses the current full-catalog audit assignment release.",
+    "sourceArtifactDigest": "sha256:9fbba5dde8305ee3435cbcab7783ff93346a1e84eb2d1318a236d3a87d247730",
+    "sourceArtifactId": 8744934639,
+    "status": "synchronized_stage2"
   },
   "createdAt": "2026-07-30T00:01:00Z",
   "format": "ifkb-stage2-image-recovery-release",

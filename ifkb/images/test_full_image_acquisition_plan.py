@@ -66,17 +66,18 @@ class FullImageAcquisitionPlanTests(unittest.TestCase):
             self.assertTrue(all(row["download_original_allowed_before_review"] == "no" for row in queries))
 
             batch_rows = []
+            batch_counts: dict[str, int] = {}
             batch_files = sorted((output / "batches").glob("*.csv"))
             for path in batch_files:
                 with path.open("r", encoding="utf-8", newline="") as handle:
-                    batch_rows.extend(csv.DictReader(handle))
+                    rows = list(csv.DictReader(handle))
+                    batch_rows.extend(rows)
+                    batch_counts[path.stem] = len(rows)
             self.assertEqual(len(batch_files), 12)
             self.assertEqual(len(batch_rows), 261)
             self.assertEqual(len({row["canon_id"] for row in batch_rows}), 261)
-
-            # Stage 2 has not yet synchronized the older static routing registry
-            # to the current 21/22-balanced nutrition plan. Do not assert the
-            # per-batch sizes until that explicit synchronization is committed.
+            self.assertTrue(all(value in {21, 22} for value in batch_counts.values()))
+            self.assertEqual(sorted(batch_counts.values()), [21, 21, 21] + [22] * 9)
 
     def test_release_mode_fails_until_wave3_rows_are_resolved(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

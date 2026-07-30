@@ -16,8 +16,10 @@ internet images to Nutrition Gold.
 - Preserved author, licence, landing page, Commons SHA1 and local SHA-256.
 - Marked Dolmeh Barg-e Mo as preparation-process context, not a served image.
 - Locked same-session Gheimeh nesar and Reshteh polo images to shared split groups.
-- Confirmed the current dynamic plan is 21/22-balanced and recorded that the
-  older static registry still requires 187 row moves; it remains explicitly stale.
+- Regenerated the static registry from Mobile CI artifact `8744934639`; all 261
+  foods are now routed through nine 22-food batches and three 21-food batches.
+- Applied all 187 row moves from the older static registry and restored the
+  21/22 batch-size gate.
 - Added a recovery workflow that downloads the retained artifact, verifies all
   selected SHA-256 values and publishes the recovered bytes as a 90-day artifact.
 
@@ -31,6 +33,15 @@ internet images to Nutrition Gold.
 
 The 11 rows are not falsely described as the unknown historical final selection.
 They are a new, traceable adjudication from the retained candidate bytes.
+
+## Batch synchronization closed
+
+- assignment rows: **261 / 261**;
+- unique canon ids: **261**;
+- batch count: **12**;
+- batch sizes: **22 × 9, 21 × 3**;
+- historical row moves applied: **187**;
+- assignment SHA-256: `72eeea2f4be20ea3a60873ddd80d104cc6b23132fef8d441e1e5a0e72db76c24`.
 
 ## Remaining Wave 3 boundary
 

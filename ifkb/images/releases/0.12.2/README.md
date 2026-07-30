@@ -10,7 +10,7 @@ candidate thumbnails across 14 classes. The historical release records only an
 aggregate of 11 selected assets and seven new covered classes, but does not
 retain the final candidate-id selection in the repository.
 
-Stage 2 therefore performs an **re-adjudication**, not a false
+Stage 2 therefore performs an explicit **re-adjudication**, not a false
 historical reconstruction:
 
 - 11 candidate rows selected after visual/metadata review;
@@ -22,8 +22,8 @@ historical reconstruction:
 - every row is identity/retrieval or preparation context only;
 - Nutrition Gold count remains zero.
 
-The recovery workflow downloads the retained artifact, verifies every selected
-file SHA-256 and produces a recoverable asset bundle plus attribution report.
+The recovery workflow downloads the retained artifact, verifies every
+selected file SHA-256 and produces a recoverable asset bundle plus attribution report.
 
 ## Wave 3 boundary
 
@@ -35,10 +35,8 @@ formally deprecated and replaced through a separately reviewed release.
 
 ## Batch synchronization
 
-The dynamic full-catalog audit already produces 12 balanced batches of 21/22
-foods, while the older static routing registry remains at 20–23. Stage 2 marks
-this drift explicitly; synchronization remains open and the stale registry is
-not described as current.
+`ifdb/universal/releases/iranian-bulk-source-registry-v1/iranian-batch-assignments.csv` has been regenerated from Mobile CI artifact `8744934639` (digest `sha256:9fbba5dde8305ee3435cbcab7783ff93346a1e84eb2d1318a236d3a87d247730`).
+It contains all 261 canonical foods exactly once across 12 batches: nine 22-food batches and three 21-food batches. Exactly 187 canon rows moved from the older static routing registry. Nutrition, image and structured-source routing now share the same current assignment release.
 
 ## Status
 

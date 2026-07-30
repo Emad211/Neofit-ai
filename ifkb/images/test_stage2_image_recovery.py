@@ -56,8 +56,10 @@ class Stage2ImageRecoveryTests(unittest.TestCase):
         self.assertEqual(value["stage2Recovery"]["remainingHistoricalCoveredClassGap"], 3)
         self.assertEqual(value["safety"]["internetNutritionGoldImages"], 0)
         self.assertEqual(value["safety"]["automaticIdentityApprovals"], 0)
-        self.assertEqual(value["batchRegistry"]["status"], "pending_stage2_sync")
-        self.assertEqual(value["batchRegistry"]["knownRowMovesRequired"], 187)
+        self.assertEqual(value["batchRegistry"]["status"], "synchronized_stage2")
+        self.assertEqual(value["batchRegistry"]["knownRowMovesApplied"], 187)
+        self.assertEqual(value["batchRegistry"]["canonicalRows"], 261)
+        self.assertEqual(value["batchRegistry"]["batchSizes"], [22] * 9 + [21] * 3)
 
 if __name__ == "__main__":
     unittest.main()
