@@ -55,8 +55,14 @@ test('food names drive meaningful archetype separation', () => {
   assert.notEqual(walnutStew.fatG, herbStew.fatG);
 });
 
-test('runtime repository is wired to the transformed fallback seed', () => {
-  const source = readFileSync(new URL('../src/db/food-repository-impl.ts', import.meta.url), 'utf8');
-  assert.match(source, /IRANIAN_ARCHETYPE_FALLBACK_SEED/);
-  assert.doesNotMatch(source, /\.\.\.IRANIAN_FALLBACK_SEED,/);
+test('runtime facade reapplies Stage 5 values after seed, import and restore', () => {
+  const facade = readFileSync(new URL('../src/db/food-repository.ts', import.meta.url), 'utf8');
+  const runtime = readFileSync(new URL('../src/db/food-repository-stage5.ts', import.meta.url), 'utf8');
+  assert.match(facade, /food-repository-stage5/);
+  assert.match(runtime, /IRANIAN_ARCHETYPE_FALLBACK_SEED/);
+  assert.match(runtime, /WHERE id = \? AND source_type = 'seeded'/);
+  assert.match(runtime, /seedNutritionCoreFromFoodCatalog/);
+  assert.match(runtime, /seedIranianFoodCatalog/);
+  assert.match(runtime, /importFoodCatalogItems/);
+  assert.match(runtime, /deleteImportedFoodCatalog/);
 });
