@@ -1,11 +1,33 @@
 #!/usr/bin/env python3
-ˆˆˆ“ØÚÙYİYÙKLˆ[\Ú[›ÜˆH[Q’Ğˆ[XYÙHXÜ]Z\Ú][Ûˆ[‹‚‚•H›Üİ\ˆ\È^XİHHLˆ[İÛ\ÜÙ\È\ÈHXÛ\ÜÈØ[™Y]Bœ]Y]YKˆ›İË[]™[XØÙ\Y]šY[˜ÙHÛÛZ[œÈHÜšYÚ[˜[[İÕØ]™Hˆ›İÜÈ\ÂH^XÚ]İYÙKLˆ™]H[™Ø]™HÈ™KXYYXØ][ÛˆX[šY™\İË‚ˆˆˆ‚™œ›ÛH×Ù]\™W×È[\Ü[››İ][ÛœÂ‚š[\ÜŞ\Âš[\Ü]‚”“ÓÕH]
-×Ùš[W×ÊKœ™\ÛÛ™J
-Kœ\™[ÖÌ—BšYˆİŠ“ÓÕ
-H›İ[ˆŞ\Ëœ]‚ˆŞ\Ëœ]š[œÙ\
-İŠ“ÓÕ
-JB‚™œ›ÛHYšØ‹š[XYÙ\È[\Ü[Ú[XYÙWØXÜ]Z\Ú][Û—Ü[—Ú[\\È[›™\‚‚œ[›™\‹”ÒS”UÈH
-ˆšYšØ‹Ú[XYÙ\ËÜ[İÜÙYYÛX[šY™\İ˜Üİˆ‹ˆšYšØ‹Ú[XYÙ\ËÜØØ[™Y]WÜ]Y\šY\Ë˜Üİˆ‹ŠBœ[›™\‹”“Õ×ÓU‘SĞPĞÑTQÒS”UÈH
-ˆšYšØ‹Ú[XYÙ\ËÜ[İÜÙYYÛX[šY™\İ˜Üİˆ‹ˆšYšØ‹Ú[XYÙ\ËÜİØ]™L—ØXØÙ\YÛX[šY™\İ˜Üİˆ‹ˆšYšØ‹Ú[XYÙ\ËÜ™[X\Ù\ËÌŒL‹Œ‹Ü™]K\™XYYXØ]Y[X[šY™\İ˜Üİˆ‹ˆšYšØ‹Ú[XYÙ\ËÜ™[X\Ù\ËÌŒL‹Œ‹İØ]™LË\™XYYXØ]Y[X[šY™\İ˜Üİˆ‹ŠB‚”ÒS”UÈH[›™\‹”ÒS”UÂ”“Õ×ÓU‘SĞPĞÑTQÒS”UÈH[›™\‹”“Õ×ÓU‘SĞPĞÑTQÒS”UÂ›XZ[ˆH[›™\‹›XZ[‚‚šYˆ×Û˜[YW×ÈOH—×ÛXZ[—×È‚ˆ˜Z\ÙHŞ\İ[Q^]
-XZ[Š
-JB
+"""Portable entrypoint for the IFKB image plan.
+
+Image QA is maintained separately from nutrition dataset readiness. This wrapper
+only configures the historical manifests and delegates to the deterministic
+implementation.
+"""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from ifkb.images import full_image_acquisition_plan_impl as planner
+
+planner.P0_INPUTS = (
+    "ifkb/images/pilot_seed_manifest.csv",
+    "ifkb/images/p0_candidate_queries.csv",
+)
+planner.ROW_LEVEL_ACCEPTED_INPUTS = (
+    "ifkb/images/pilot_seed_manifest.csv",
+    "ifkb/images/p0_wave2_accepted_manifest.csv",
+    "ifkb/images/releases/0.12.2/retry-readjudicated-manifest.csv",
+    "ifkb/images/releases/0.12.2/wave3-readjudicated-manifest.csv",
+)
+
+main = planner.main
+
+if __name__ == "__main__":
+    raise SystemExit(main())

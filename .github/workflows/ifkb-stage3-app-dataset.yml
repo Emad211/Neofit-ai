@@ -1,0 +1,84 @@
+name: IFKB Stage 3 App Dataset
+
+on:
+  push:
+    branches:
+      - agent/iranian-food-kb-foundation
+    paths:
+      - 'mobile/scripts/build-iranian-app-dataset.ts'
+      - 'mobile/tests/iranian-app-dataset.test.ts'
+      - 'mobile/src/data/iranian-food-seed.ts'
+      - 'mobile/src/data/iranian-fallback-seed.generated.ts'
+      - 'mobile/assets/ifkb/ifkb-universal-v1.db'
+      - 'ifkb/digital_v0131/ds2_consensus_profiles.csv'
+      - 'ifkb/images/pilot_seed_manifest.csv'
+      - 'ifkb/images/p0_wave2_accepted_manifest.csv'
+      - 'ifkb/images/releases/0.12.2/**'
+      - '.github/workflows/ifkb-stage3-app-dataset.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ifkb-stage3-app-dataset
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run Stage 3 dataset contract
+        run: node --import tsx --test tests/iranian-app-dataset.test.ts
+
+      - name: Build JSON and CSV dataset
+        run: |
+          npx tsx scripts/build-iranian-app-dataset.ts \
+            --output-dir ../build/iranian-app-dataset
+
+      - name: Upload Stage 3 dataset
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-iranian-app-dataset-stage3
+          path: build/iranian-app-dataset
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Report Stage 3 to Draft PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node - <<'NODE' > /tmp/stage3-comment.md
+          const fs = require('node:fs');
+          const manifest = JSON.parse(fs.readFileSync('../build/iranian-app-dataset/manifest.json', 'utf8'));
+          console.log('### NeoFit Nutrition Stage 3/10 — app-ready Iranian dataset');
+          console.log();
+          console.log(`- head: \`${process.env.GITHUB_SHA}\``);
+          console.log(`- workflow run: \`${process.env.GITHUB_RUN_ID}\``);
+          console.log(`- Iranian foods: **${manifest.foodCount}**`);
+          console.log(`- declared serving weights: **${manifest.declaredServingWeightCount}**`);
+          console.log(`- explicit category-default serving estimates: **${manifest.estimatedServingWeightCount}**`);
+          console.log(`- licensed image-reference coverage: **${manifest.licensedImageReferenceCount}**`);
+          console.log(`- placeholder images: **${manifest.placeholderImageCount}**`);
+          console.log(`- evidence counts: \`${JSON.stringify(manifest.evidenceCounts)}\``);
+          console.log(`- dataset SHA-256: \`${manifest.foodsSha256}\``);
+          console.log();
+          console.log('Every food is usable in the app. Estimated serving weights and low-confidence records remain visibly labelled; no provider/LLM nutrition is accepted.');
+          NODE
+          gh issue comment 3 --repo "$GITHUB_REPOSITORY" --body-file /tmp/stage3-comment.md
