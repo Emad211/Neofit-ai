@@ -2,8 +2,8 @@ import { IRANIAN_FALLBACK_SEED } from '@/data/iranian-fallback-seed.generated';
 import { IRANIAN_FOOD_SEED } from '@/data/iranian-food-seed';
 import { FoodCatalogItemSchema, type FoodCatalogItem } from '@/domain/models';
 
-const UPDATED_AT = '2026-08-01T02:05:00.000Z';
-const SOURCE_PREFIX = 'IFKB DS0 broad-fallback archetype prior v2.1';
+const UPDATED_AT = '2026-08-01T02:12:00.000Z';
+const SOURCE_PREFIX = 'IFKB DS0 broad-fallback archetype prior v2.2';
 
 type MacroValues = Pick<FoodCatalogItem, 'calories' | 'proteinG' | 'carbsG' | 'fatG'>;
 type PortionPolicy = {
@@ -24,6 +24,20 @@ const CATEGORY_VARIABILITY: Readonly<Record<FoodCatalogItem['category'], number>
   dairy_beverage: 50,
   ingredient: 40,
   custom: 60,
+};
+
+const CURATED_SAMPLE_PORTION_GRAMS: Readonly<Record<FoodCatalogItem['category'], number>> = {
+  stew: 250,
+  rice: 320,
+  kebab: 200,
+  soup: 300,
+  breakfast: 200,
+  street_food: 180,
+  bread: 60,
+  dessert: 100,
+  dairy_beverage: 250,
+  ingredient: 100,
+  custom: 100,
 };
 
 const ARCHETYPE_PORTIONS = {
@@ -49,7 +63,10 @@ const ARCHETYPE_PORTIONS = {
   street_stuffed: { grams: 220, labelFa: 'یک سهم متوسط', labelEn: '1 medium serving' },
   street_patty_meatball: { grams: 180, labelFa: 'یک سهم متوسط', labelEn: '1 medium serving' },
   street_fried: { grams: 120, labelFa: 'یک سهم متوسط', labelEn: '1 medium serving' },
-  street_side_condiment: { grams: 100, labelFa: 'یک سهم کوچک', labelEn: '1 small serving' },
+  street_fresh_side: { grams: 120, labelFa: 'یک پیاله یا سهم کوچک', labelEn: '1 small bowl or serving' },
+  street_dairy_side: { grams: 120, labelFa: 'یک پیاله کوچک', labelEn: '1 small bowl' },
+  street_rich_side: { grams: 80, labelFa: 'یک سهم کوچک', labelEn: '1 small serving' },
+  street_sauce_condiment: { grams: 30, labelFa: 'یک قاشق یا سهم کوچک', labelEn: '1 spoon or small serving' },
   street_offal: { grams: 220, labelFa: 'یک پرس', labelEn: '1 serving' },
   street_meat_main: { grams: 220, labelFa: 'یک پرس', labelEn: '1 serving' },
   street_vegetable_main: { grams: 180, labelFa: 'یک سهم متوسط', labelEn: '1 medium serving' },
@@ -75,8 +92,11 @@ const ZERO_SAMPLE_MULTIPLIERS: Partial<Record<IranianFallbackArchetypeId, MacroV
   rice_tahchin: { calories: 1.12, proteinG: 1.2, carbsG: 0.95, fatG: 1.5 },
   stew_poultry: { calories: 1.05, proteinG: 1.25, carbsG: 0.85, fatG: 0.9 },
   stew_seafood: { calories: 0.85, proteinG: 1.15, carbsG: 0.8, fatG: 0.75 },
+  street_dairy_side: { calories: 0.55, proteinG: 0.6, carbsG: 0.45, fatG: 0.55 },
+  street_fresh_side: { calories: 0.25, proteinG: 0.3, carbsG: 0.4, fatG: 0.15 },
   street_meat_main: { calories: 1.15, proteinG: 1.5, carbsG: 0.7, fatG: 1.15 },
   street_offal: { calories: 1.1, proteinG: 1.5, carbsG: 0.4, fatG: 1.2 },
+  street_sauce_condiment: { calories: 0.35, proteinG: 0.6, carbsG: 0.4, fatG: 0.25 },
 };
 
 function normalize(value: string): string {
@@ -142,7 +162,10 @@ export function classifyIranianFallbackArchetype(
       if (containsAny(text, ['دلمه', 'شکم پر', 'stuffed', 'dolma'])) return 'street_stuffed';
       if (containsAny(text, ['کوکو', 'کتلت', 'شامی', 'کوفته', 'قیمه ریزه', '~سرگنجشک', 'meatball', 'cutlet', 'kuku'])) return 'street_patty_meatball';
       if (containsAny(text, ['سمبوسه', 'فلافل', 'پیراشکی', 'سوخاری', 'سرخ', 'پکوره', 'fried', 'falafel', 'samosa', 'pakora'])) return 'street_fried';
-      if (containsAny(text, ['سالاد', 'ترشی', 'شور', 'ماست', 'زیتون', 'کشک', 'چاشنی', 'سس', 'سوراغ', 'مهیاوه', 'بورانی', 'کال کباب', 'دویماج', 'salad', 'pickle', 'condiment', 'sauce', 'yogurt'])) return 'street_side_condiment';
+      if (containsAny(text, ['الویه', 'زیتون پرورده', 'کشک بادمجان', 'کال کباب', 'دویماج', 'olivieh', 'olive dip', 'kashk bademjan', 'rich dip'])) return 'street_rich_side';
+      if (containsAny(text, ['بورانی', 'ماست و خیار', 'ماست موسیر', 'yogurt dip', 'borani'])) return 'street_dairy_side';
+      if (containsAny(text, ['مهیاوه', 'سوراغ', 'چاشنی', 'سس', 'condiment', 'sauce'])) return 'street_sauce_condiment';
+      if (containsAny(text, ['سالاد', 'ترشی', 'شور', 'نازخاتون', 'salad', 'pickle'])) return 'street_fresh_side';
       if (containsAny(text, ['کله', 'پاچه', 'جگر', 'دل', 'قلوه', 'سیرابی', 'جغور', 'offal'])) return 'street_offal';
       if (containsAny(text, ['مرغ', 'گوشت', 'ماهی', 'میگو', 'بریانی', 'بریان', 'تنورچه', 'تباهگ', 'roast', 'chicken', 'meat', 'fish'])) return 'street_meat_main';
       return 'street_vegetable_main';
@@ -181,12 +204,27 @@ function round(value: number, digits = 1): number {
   return Math.round((value + Number.EPSILON) * factor) / factor;
 }
 
-function medianMacros(items: readonly FoodCatalogItem[]): MacroValues {
+function sampleWeight(item: FoodCatalogItem): number {
+  return item.portionGrams ?? CURATED_SAMPLE_PORTION_GRAMS[item.category];
+}
+
+function per100g(item: FoodCatalogItem): MacroValues {
+  const grams = sampleWeight(item);
   return {
-    calories: median(items.map((item) => item.calories)),
-    proteinG: median(items.map((item) => item.proteinG)),
-    carbsG: median(items.map((item) => item.carbsG)),
-    fatG: median(items.map((item) => item.fatG)),
+    calories: (item.calories * 100) / grams,
+    proteinG: (item.proteinG * 100) / grams,
+    carbsG: (item.carbsG * 100) / grams,
+    fatG: (item.fatG * 100) / grams,
+  };
+}
+
+function medianMacros(items: readonly FoodCatalogItem[]): MacroValues {
+  const normalized = items.map(per100g);
+  return {
+    calories: median(normalized.map((item) => item.calories)),
+    proteinG: median(normalized.map((item) => item.proteinG)),
+    carbsG: median(normalized.map((item) => item.carbsG)),
+    fatG: median(normalized.map((item) => item.fatG)),
   };
 }
 
@@ -202,7 +240,7 @@ for (const item of IRANIAN_FOOD_SEED) {
   archetypeSamples.set(archetype, archetypeRows);
 }
 
-function blendedPrior(item: FoodCatalogItem, archetype: IranianFallbackArchetypeId): {
+function blendedDensity(item: FoodCatalogItem, archetype: IranianFallbackArchetypeId): {
   readonly values: MacroValues;
   readonly archetypeSampleCount: number;
   readonly categorySampleCount: number;
@@ -216,10 +254,10 @@ function blendedPrior(item: FoodCatalogItem, archetype: IranianFallbackArchetype
     return {
       values: multiplier
         ? {
-            calories: round(category.calories * multiplier.calories, 0),
-            proteinG: round(category.proteinG * multiplier.proteinG),
-            carbsG: round(category.carbsG * multiplier.carbsG),
-            fatG: round(category.fatG * multiplier.fatG),
+            calories: category.calories * multiplier.calories,
+            proteinG: category.proteinG * multiplier.proteinG,
+            carbsG: category.carbsG * multiplier.carbsG,
+            fatG: category.fatG * multiplier.fatG,
           }
         : category,
       archetypeSampleCount: 0,
@@ -232,13 +270,23 @@ function blendedPrior(item: FoodCatalogItem, archetype: IranianFallbackArchetype
     : Math.min(0.8, archetypeRows.length / (archetypeRows.length + 2));
   return {
     values: {
-      calories: Math.round((category.calories * (1 - weight) + archetypeValues.calories * weight) / 5) * 5,
-      proteinG: round(category.proteinG * (1 - weight) + archetypeValues.proteinG * weight),
-      carbsG: round(category.carbsG * (1 - weight) + archetypeValues.carbsG * weight),
-      fatG: round(category.fatG * (1 - weight) + archetypeValues.fatG * weight),
+      calories: category.calories * (1 - weight) + archetypeValues.calories * weight,
+      proteinG: category.proteinG * (1 - weight) + archetypeValues.proteinG * weight,
+      carbsG: category.carbsG * (1 - weight) + archetypeValues.carbsG * weight,
+      fatG: category.fatG * (1 - weight) + archetypeValues.fatG * weight,
     },
     archetypeSampleCount: archetypeRows.length,
     categorySampleCount: categoryRows.length,
+  };
+}
+
+function scaleDensity(values: MacroValues, grams: number): MacroValues {
+  const factor = grams / 100;
+  return {
+    calories: Math.round((values.calories * factor) / 5) * 5,
+    proteinG: round(values.proteinG * factor),
+    carbsG: round(values.carbsG * factor),
+    fatG: round(values.fatG * factor),
   };
 }
 
@@ -260,30 +308,31 @@ export interface IranianFallbackArchetypeMetadata {
 
 export function applyIranianFallbackArchetypePrior(item: FoodCatalogItem): FoodCatalogItem {
   const archetype = classifyIranianFallbackArchetype(item);
-  const prior = blendedPrior(item, archetype);
+  const prior = blendedDensity(item, archetype);
   const portion = ARCHETYPE_PORTIONS[archetype];
+  const values = scaleDensity(prior.values, portion.grams);
   return FoodCatalogItemSchema.parse({
     ...item,
     portionLabelFa: portion.labelFa,
     portionLabelEn: portion.labelEn,
     portionGrams: portion.grams,
-    calories: prior.values.calories,
-    proteinG: prior.values.proteinG,
-    carbsG: prior.values.carbsG,
-    fatG: prior.values.fatG,
+    calories: values.calories,
+    proteinG: values.proteinG,
+    carbsG: values.carbsG,
+    fatG: values.fatG,
     variabilityPct: variability(item.category, prior.archetypeSampleCount),
     confidence: 'low',
     sourceType: 'seeded',
-    sourceLabel: `${SOURCE_PREFIX} — ${archetype}; curatedSamples=${prior.archetypeSampleCount}; not recipe-specific`,
-    notesFa: `برآورد مرحله ۵ بر پایه archetype «${archetype}» و ${prior.archetypeSampleCount} نمونهٔ curated است و به میانهٔ دسته shrink شده است. وزن سهم ${portion.grams} گرم نیز تخمینی است؛ دستور، روغن و مقدار واقعی باید تأیید شود.`,
-    notesEn: `Stage 5 estimate uses archetype ${archetype} with ${prior.archetypeSampleCount} curated samples, shrunk toward the category median. The ${portion.grams} g serving is also estimated; recipe, oil and actual amount must be confirmed.`,
+    sourceLabel: `${SOURCE_PREFIX} — ${archetype}; curatedSamples=${prior.archetypeSampleCount}; density-normalized; not recipe-specific`,
+    notesFa: `برآورد مرحله ۵ بر پایه چگالی تغذیه‌ای archetype «${archetype}» و ${prior.archetypeSampleCount} نمونهٔ curated است و به میانهٔ دسته shrink شده است. وزن سهم ${portion.grams} گرم نیز تخمینی است؛ دستور، روغن و مقدار واقعی باید تأیید شود.`,
+    notesEn: `Stage 5 estimate uses serving-normalized nutrient density for archetype ${archetype} with ${prior.archetypeSampleCount} curated samples, shrunk toward the category median. The ${portion.grams} g serving is also estimated; recipe, oil and actual amount must be confirmed.`,
     updatedAt: UPDATED_AT,
   });
 }
 
 export function getIranianFallbackArchetypeMetadata(item: FoodCatalogItem): IranianFallbackArchetypeMetadata {
   const archetypeId = classifyIranianFallbackArchetype(item);
-  const prior = blendedPrior(item, archetypeId);
+  const prior = blendedDensity(item, archetypeId);
   return {
     archetypeId,
     archetypeSampleCount: prior.archetypeSampleCount,
