@@ -36,7 +36,7 @@ class FullImageAcquisitionPlanTests(unittest.TestCase):
             self.assertEqual(
                 summary["waveCounts"],
                 {
-                    "IMAGE-WAY4-AA": 60,
+                    "IMAGE-WAVE-A": 60,
                     "IMAGE-WAVE-B": 115,
                     "IMAGE-WAVE-C": 86,
                 },
