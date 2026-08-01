@@ -1,0 +1,153 @@
+name: One-shot Stage 6 source policy
+
+on:
+  push:
+    branches:
+      - agent/iranian-food-kb-foundation
+    paths:
+      - '.github/workflows/one-shot-stage6-source-policy.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/iranian-food-kb-foundation
+          fetch-depth: 0
+
+      - name: Add strict source-name candidate policy
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('mobile/scripts/build-iranian-app-dataset-stage6.ts')
+          text = path.read_text(encoding='utf-8')
+
+          def replace_once(old: str, new: str) -> None:
+              global text
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'Expected exactly one match, found {count}: {old[:100]!r}')
+              text = text.replace(old, new, 1)
+
+          marker = """function matchesTier(row: GenericFoodRow, tier: Stage6AnalogTier): boolean {
+  const name = normalizeEnglish(row.name_en);
+  if (!tier.includeAny.some((phrase) => hasPhrase(name, phrase))) return false;
+  if ((tier.excludeAny ?? []).some((phrase) => hasPhrase(name, phrase))) return false;
+  return true;
+}
+"""
+          insertion = marker + """
+interface SourceNamePolicy {
+  readonly allowAny?: readonly string[];
+  readonly denyAny?: readonly string[];
+}
+
+const GLOBAL_SOURCE_DENY = [
+  'babyfood', 'baby food', 'pretzel', 'pimiento loaf', 'pickle loaf',
+] as const;
+
+const SOURCE_NAME_POLICY: Readonly<Partial<Record<string, SourceNamePolicy>>> = {
+  'IFKB-CANON-00102': {
+    allowAny: ['shrimp with lobster sauce', 'shrimp in garlic sauce'],
+    denyAny: ['noodles', 'cream sauce', 'cheese sauce'],
+  },
+  'IFKB-CANON-00114': { denyAny: ['coated', 'fried', 'sandwich'] },
+  'IFKB-CANON-00115': { denyAny: ['coated', 'fried', 'sandwich'] },
+  'IFKB-CANON-00155': { denyAny: ['tortilla', 'sandwich', 'salad'] },
+  'IFKB-CANON-00159': { denyAny: ['tortilla', 'sandwich', 'salad'] },
+  'IFKB-CANON-00161': { denyAny: ['coated', 'fried', 'sandwich'] },
+  'IFKB-CANON-00194': {
+    allowAny: ['eggplant and meat casserole', 'stuffed eggplant'],
+    denyAny: ['fried', 'raw', 'dip', 'pickled'],
+  },
+  'IFKB-CANON-00201': {
+    allowAny: ['tomato and cucumber salad', 'cucumber salad'],
+    denyAny: ['seafood', 'ham', 'pork', 'beef', 'gelatin', 'taco', 'egg salad', 'pasta', 'tuna'],
+  },
+  'IFKB-CANON-00204': { denyAny: ['fried', 'sweet', 'relish', 'loaf', 'sandwich'] },
+  'IFKB-CANON-00205': { denyAny: ['fried', 'sweet', 'relish', 'loaf', 'sandwich'] },
+  'IFKB-CANON-00206': { denyAny: ['fried', 'sweet', 'relish', 'loaf', 'sandwich'] },
+  'IFKB-CANON-00227': { denyAny: ['cookie', 'hershey', 'skor'] },
+  'IFKB-CANON-00235': {
+    allowAny: ['fruit-filled bar', 'fruit filled bar', 'date filled', 'date-filled'],
+    denyAny: ['chocolate', 'marshmallow'],
+  },
+  'IFKB-CANON-00237': {
+    allowAny: ['shortbread'],
+    denyAny: ['marshmallow', 'chocolate', 'icing', 'filling', 'rice cereal'],
+  },
+  'IFKB-CANON-00238': {
+    allowAny: ['sugar wafer', 'vanilla wafer'],
+    denyAny: ['chocolate', 'candy', 'kit kat', 'cone shell', 'ice cream cone'],
+  },
+  'IFKB-CANON-00240': {
+    allowAny: ['shortbread', 'almond cookie'],
+    denyAny: ['peanut butter', 'chocolate', 'twix'],
+  },
+  'IFKB-CANON-00242': { denyAny: ['chocolate'] },
+  'IFKB-CANON-00248': {
+    allowAny: ['sugar wafer', 'vanilla wafer'],
+    denyAny: ['chocolate', 'candy', 'kit kat', 'cone shell', 'ice cream cone'],
+  },
+  'IFKB-CANON-00251': {
+    allowAny: ['tea biscuit', 'shortbread'],
+    denyAny: ['peanut butter', 'chocolate', 'twix'],
+  },
+  'IFKB-CANON-00252': {
+    allowAny: ['shortbread'],
+    denyAny: ['peanut butter', 'chocolate', 'twix'],
+  },
+  'IFKB-CANON-00253': {
+    allowAny: ['pastry cookie type fried', 'rosette cookie', 'fried cookie', 'fried dough'],
+    denyAny: ['chocolate', 'marshmallow'],
+  },
+};
+
+function sourcePolicyAllows(canonId: string, sourceName: string): boolean {
+  const name = normalizeEnglish(sourceName);
+  if (GLOBAL_SOURCE_DENY.some((phrase) => hasPhrase(name, phrase))) return false;
+  const policy = SOURCE_NAME_POLICY[canonId];
+  if (!policy) return true;
+  if ((policy.denyAny ?? []).some((phrase) => hasPhrase(name, phrase))) return false;
+  if (policy.allowAny && !policy.allowAny.some((phrase) => hasPhrase(name, phrase))) return false;
+  return true;
+}
+"""
+          replace_once(marker, insertion)
+
+          replace_once(
+              """function selectCandidates(
+  genericRows: readonly GenericFoodRow[],
+  rule: Stage6AnalogRule,
+): { tierIndex: number | null; candidates: SelectedAnalog[] } {""",
+              """function selectCandidates(
+  canonId: string,
+  genericRows: readonly GenericFoodRow[],
+  rule: Stage6AnalogRule,
+): { tierIndex: number | null; candidates: SelectedAnalog[] } {""",
+          )
+          replace_once(
+              ".filter((row) => matchesTier(row, tier))",
+              ".filter((row) => matchesTier(row, tier) && sourcePolicyAllows(canonId, row.name_en))",
+          )
+          replace_once(
+              "const selected = selectCandidates(genericRows, rule);",
+              "const selected = selectCandidates(food.canonId, genericRows, rule);",
+          )
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Commit patch and remove workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm .github/workflows/one-shot-stage6-source-policy.yml
+          git add mobile/scripts/build-iranian-app-dataset-stage6.ts
+          git commit -m "fix(nutrition): reject unrelated Stage 6 analog sources"
+          git push origin HEAD:agent/iranian-food-kb-foundation
