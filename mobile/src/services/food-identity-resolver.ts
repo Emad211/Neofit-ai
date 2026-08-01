@@ -80,8 +80,12 @@ export async function resolveFoodIdentityLocalFirst(input: {
   const interpretation = await interpretFoodIdentityWithLlm({
     description,
     locale: input.locale,
-    visionCandidates: input.visionCandidates,
-    visionWarnings: input.visionWarnings,
+    ...(input.visionCandidates !== undefined
+      ? { visionCandidates: input.visionCandidates }
+      : {}),
+    ...(input.visionWarnings !== undefined
+      ? { visionWarnings: input.visionWarnings }
+      : {}),
   });
   const queries = buildCatalogQueries(interpretation);
   const matched = (await Promise.all(queries.map(async (query) => ({
