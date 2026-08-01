@@ -38,7 +38,6 @@ test('catalog queries preserve only an explicitly copied amount and deduplicate 
 
   assert.deepEqual(queries, [
     'دو کاسه آش رشته',
-    'دو کاسه آش‌رشته',
     'دو کاسه ash reshteh',
   ]);
 });
@@ -46,10 +45,10 @@ test('catalog queries preserve only an explicitly copied amount and deduplicate 
 test('food identity resolver is local-first and calls LLM only after weak local matching', () => {
   const source = readFileSync(new URL('../src/services/food-identity-resolver.ts', import.meta.url), 'utf8');
   const localIndex = source.indexOf('findBestLocalFoodMatch(description)');
-  const llmIndex = source.indexOf('interpretFoodIdentityWithLlm');
+  const llmCallIndex = source.indexOf('const interpretation = await interpretFoodIdentityWithLlm');
   assert.ok(localIndex >= 0);
-  assert.ok(llmIndex >= 0);
-  assert.ok(localIndex < source.indexOf('const interpretation = await interpretFoodIdentityWithLlm'));
+  assert.ok(llmCallIndex >= 0);
+  assert.ok(localIndex < llmCallIndex);
   assert.match(source, /directMatch\.score >= RELIABLE_LOCAL_SCORE/);
   assert.match(source, /if \(!input\.allowLlm\)/);
 });
@@ -60,4 +59,16 @@ test('LLM interpreter prompt forbids nutrition, hidden ingredients and invented 
   assert.match(source, /Never create an amount that the user did not state/);
   assert.match(source, /Do not merge visibly separate plate components/);
   assert.match(source, /requestStructured/);
+});
+
+test('meal estimator exposes local-first text, Vision, and Vision plus LLM fallback', () => {
+  const source = readFileSync(new URL('../app/meal-estimator.tsx', import.meta.url), 'utf8');
+  assert.match(source, /resolveFoodIdentityLocalFirst/);
+  assert.match(source, /recognizeFoodFromPhoto/);
+  assert.match(source, /Vision \+ LLM/);
+  assert.match(source, /allowLlm: hasAvalAiKey/);
+  assert.match(source, /visionCandidates: observation\.candidates/);
+  assert.match(source, /Nutrition was calculated only from the local catalog/);
+  assert.doesNotMatch(source, /calories:\s*languageResolution/);
+  assert.doesNotMatch(source, /proteinG:\s*observation/);
 });
