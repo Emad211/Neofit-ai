@@ -185,7 +185,6 @@ function selectCandidates(
   genericRows: readonly GenericFoodRow[],
   rule: Stage6AnalogRule,
 ): { tierIndex: number | null; candidates: SelectedAnalog[] } {
-  let firstNonEmpty: { tierIndex: number; candidates: SelectedAnalog[] } | null = null;
   for (let tierIndex = 0; tierIndex < rule.tiers.length; tierIndex += 1) {
     const tier = rule.tiers[tierIndex]!;
     const candidates = uniqueCandidates(
@@ -193,10 +192,10 @@ function selectCandidates(
         .filter((row) => matchesTier(row, tier))
         .map((row) => ({ row, score: scoreCandidate(row, tier) })),
     );
-    if (candidates.length >= 2) return { tierIndex, candidates };
-    if (candidates.length > 0 && !firstNonEmpty) firstNonEmpty = { tierIndex, candidates };
+    // A single exact-tier analog is safer than many broad-tier matches.
+    if (candidates.length > 0) return { tierIndex, candidates };
   }
-  return firstNonEmpty ?? { tierIndex: null, candidates: [] };
+  return { tierIndex: null, candidates: [] };
 }
 
 function medianMacros(candidates: readonly SelectedAnalog[]): MacroVector {
