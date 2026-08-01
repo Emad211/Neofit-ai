@@ -7,6 +7,10 @@ import {
   IRANIAN_ARCHETYPE_FALLBACK_SEED,
   IRANIAN_FALLBACK_ARCHETYPE_COUNT,
 } from '../src/data/iranian-fallback-archetypes';
+import {
+  IRANIAN_STAGE6_GENERIC_ANALOG_COUNT,
+  IRANIAN_STAGE6_GENERIC_ANALOG_SEED,
+} from '../src/data/iranian-generic-analog-overrides.generated';
 import { legacyCatalogFoodToDocument } from '../src/nutrition-core';
 
 test('Stage 5 replaces one-prior-per-category with diverse archetype priors', () => {
@@ -91,11 +95,22 @@ test('density-normalized side and beverage estimates stay within broad product b
   }
 });
 
-test('runtime facade reapplies Stage 5 values after seed, import and restore', () => {
+test('runtime facade applies Stage 5 then Stage 6 after seed, import and restore', () => {
+  assert.equal(IRANIAN_STAGE6_GENERIC_ANALOG_COUNT, 69);
+  assert.equal(IRANIAN_STAGE6_GENERIC_ANALOG_SEED.length, 69);
+  assert.equal(new Set(IRANIAN_STAGE6_GENERIC_ANALOG_SEED.map((item) => item.id)).size, 69);
+  for (const item of IRANIAN_STAGE6_GENERIC_ANALOG_SEED) {
+    assert.match(item.sourceLabel, /IFKB generic analog fallback v1/);
+    assert.match(item.sourceLabel, /exactGenericRecords=/);
+    assert.match(item.sourceLabel, /not exact-food evidence/);
+    assert.equal(item.confidence, 'low');
+  }
+
   const facade = readFileSync(new URL('../src/db/food-repository.ts', import.meta.url), 'utf8');
-  const runtime = readFileSync(new URL('../src/db/food-repository-stage5.ts', import.meta.url), 'utf8');
-  assert.match(facade, /food-repository-stage5/);
+  const runtime = readFileSync(new URL('../src/db/food-repository-stage6.ts', import.meta.url), 'utf8');
+  assert.match(facade, /food-repository-stage6/);
   assert.match(runtime, /IRANIAN_ARCHETYPE_FALLBACK_SEED/);
+  assert.match(runtime, /IRANIAN_STAGE6_GENERIC_ANALOG_SEED/);
   assert.match(runtime, /WHERE id = \? AND source_type = 'seeded'/);
   assert.match(runtime, /seedNutritionCoreFromFoodCatalog/);
   assert.match(runtime, /seedIranianFoodCatalog/);
