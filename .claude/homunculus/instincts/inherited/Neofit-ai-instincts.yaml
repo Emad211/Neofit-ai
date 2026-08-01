@@ -1,0 +1,554 @@
+# Instincts generated from https://github.com/Emad211/Neofit-ai
+# Generated: 2026-08-01T00:07:45.753Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: Neofit-ai-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/Emad211/Neofit-ai
+---
+
+# Neofit Ai Commit Length
+
+## Action
+
+Write moderate-length commit messages (~51 characters)
+
+## Evidence
+
+- Average commit message length: 51 chars
+- Based on 100 commits
+
+---
+id: Neofit-ai-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/Emad211/Neofit-ai
+---
+
+# Neofit Ai Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: Neofit-ai-import-alias
+trigger: "when importing modules"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/Emad211/Neofit-ai
+---
+
+# Neofit Ai Import Alias
+
+## Action
+
+Use path aliases (@/, ~/) instead of relative imports
+
+## Evidence
+
+- Import analysis shows alias pattern
+- Example: import { x } from '@/lib/x'
+
+---
+id: Neofit-ai-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/Emad211/Neofit-ai
+---
+
+# Neofit Ai Export Style
+
+## Action
+
+Prefer mixed exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: mixed
+
+---
+id: Neofit-ai-arch-type-based
+trigger: "when adding new code"
+confidence: 0.8
+domain: architecture
+source: repo-analysis
+source_repo: https://github.com/Emad211/Neofit-ai
+---
+
+# Neofit Ai Arch Type Based
+
+## Action
+
+Place code in the appropriate type folder (components/, services/, utils/, etc.)
+
+## Evidence
+
+- Type-based module organization detected
+- Folders: 
+
+---
+id: Neofit-ai-test-naming
+trigger: "when creating a test file"
+confidence: 0.85
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/Emad211/Neofit-ai
+---
+
+# Neofit Ai Test Naming
+
+## Action
+
+Name test files using the pattern: *.test.ts
+
+## Evidence
+
+- File pattern: *.test.ts
+- Consistent across test files
+
+---
+id: Neofit-ai-workflow-feature-development
+trigger: "when implementing a new feature"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Emad211/Neofit-ai
+---
+
+# Neofit Ai Workflow Feature Development
+
+## Action
+
+Follow the feature-development workflow:
+1. Add feature implementation
+2. Add tests for feature
+3. Update documentation
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~23x per month
+- Files: 
+
+---
+id: Neofit-ai-workflow-release-version-workflow
+trigger: "when doing release version workflow"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Emad211/Neofit-ai
+---
+
+# Neofit Ai Workflow Release Version Workflow
+
+## Action
+
+Follow the release-version-workflow workflow:
+1. Create new manifest.json under releases/{version}/
+2. Add or update README.md, RELEASE_NOTES.md, and/or STATUS.md under releases/{version}/
+3. Optionally, add SUPERSEDED.md if superseding a previous release
+4. Update main project README.md to reflect new release
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: mobile/data/ifkb/releases/{version}/manifest.json, mobile/data/ifkb/releases/{version}/README.md, mobile/data/ifkb/releases/{version}/RELEASE_NOTES.md
+
+---
+id: Neofit-ai-workflow-staging-data-ingestion-workflow
+trigger: "when doing staging data ingestion workflow"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Emad211/Neofit-ai
+---
+
+# Neofit Ai Workflow Staging Data Ingestion Workflow
+
+## Action
+
+Follow the staging-data-ingestion-workflow workflow:
+1. Add or update source-observations.csv, qa-issues.csv, food-qa-summary.csv, selected-foundation-foods.csv, or mobile-projection-candidates.csv under staging/{version}/
+2. If corrective, use new sub-version (e.g., 0.2.1, 0.5.1)
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: mobile/data/ifkb/staging/{version}/source-observations.csv, mobile/data/ifkb/staging/{version}/qa-issues.csv, mobile/data/ifkb/staging/{version}/food-qa-summary.csv
+
+---
+id: Neofit-ai-workflow-research-log-and-summary-workflow
+trigger: "when doing research log and summary workflow"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Emad211/Neofit-ai
+---
+
+# Neofit Ai Workflow Research Log And Summary Workflow
+
+## Action
+
+Follow the research-log-and-summary-workflow workflow:
+1. Add or update research log or summary files under research/{version}/ or research/
+2. Include files such as research-log-v{version}.csv, run-summary.md, scientific-review-summary.csv, variability-summary.csv, gap-resolution.csv
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: mobile/data/ifkb/research/research-log-v{version}.csv, mobile/data/ifkb/research/v{version}/run-summary.md, mobile/data/ifkb/research/v{version}/scientific-review-summary.csv
+
+---
+id: Neofit-ai-workflow-documentation-update-workflow
+trigger: "when doing documentation update workflow"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/Emad211/Neofit-ai
+---
+
+# Neofit Ai Workflow Documentation Update Workflow
+
+## Action
+
+Follow the documentation-update-workflow workflow:
+1. Update or add README.md in the main data directory or under pipelines/{pipeline}/
+2. Add or update release notes, status, or roadmap files
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: mobile/data/ifkb/README.md, mobile/data/ifkb/pipelines/{pipeline}/README.md, mobile/data/ifkb/releases/{version}/RELEASE_NOTES.md
+
+---
+id: neofit-ai-instinct-file-naming-camelCase
+trigger: "When creating a new file in the codebase"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: Emad211/Neofit-ai
+---
+
+# Neofit Ai Instinct File Naming CamelCase
+
+## Action
+
+Name the file using camelCase (e.g., myNewFile.ts)
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.files
+- Consistent with TypeScript community standards
+
+---
+id: neofit-ai-instinct-function-naming-camelCase
+trigger: "When defining a new function"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: Emad211/Neofit-ai
+---
+
+# Neofit Ai Instinct Function Naming CamelCase
+
+## Action
+
+Name the function using camelCase (e.g., processData())
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.functions
+
+---
+id: neofit-ai-instinct-class-naming-PascalCase
+trigger: "When defining a new class"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: Emad211/Neofit-ai
+---
+
+# Neofit Ai Instinct Class Naming PascalCase
+
+## Action
+
+Name the class using PascalCase (e.g., DataProcessor)
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.classes
+
+---
+id: neofit-ai-instinct-constant-naming-SCREAMING_SNAKE_CASE
+trigger: "When defining a constant"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: Emad211/Neofit-ai
+---
+
+# Neofit Ai Instinct Constant Naming SCREAMING_SNAKE_CASE
+
+## Action
+
+Name the constant using SCREAMING_SNAKE_CASE (e.g., MAX_SIZE)
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.constants
+
+---
+id: neofit-ai-instinct-import-alias-style
+trigger: "When importing modules"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: Emad211/Neofit-ai
+---
+
+# Neofit Ai Instinct Import Alias Style
+
+## Action
+
+Use alias import style instead of relative paths
+
+## Evidence
+
+- Pattern in codeStyle.importStyle
+
+---
+id: neofit-ai-instinct-mixed-export-style
+trigger: "When exporting modules or functions"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: Emad211/Neofit-ai
+---
+
+# Neofit Ai Instinct Mixed Export Style
+
+## Action
+
+Use either named or default exports as appropriate (mixed export style)
+
+## Evidence
+
+- Pattern in codeStyle.exportStyle
+
+---
+id: neofit-ai-instinct-test-file-pattern
+trigger: "When writing a test file"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: Emad211/Neofit-ai
+---
+
+# Neofit Ai Instinct Test File Pattern
+
+## Action
+
+Name the test file with the pattern *.test.ts
+
+## Evidence
+
+- Pattern in testing.filePattern
+
+---
+id: neofit-ai-instinct-unit-test-type
+trigger: "When writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: Emad211/Neofit-ai
+---
+
+# Neofit Ai Instinct Unit Test Type
+
+## Action
+
+Write unit tests as the primary test type
+
+## Evidence
+
+- Pattern in testing.testTypes
+
+---
+id: neofit-ai-instinct-coverage-config
+trigger: "When configuring tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: Emad211/Neofit-ai
+---
+
+# Neofit Ai Instinct Coverage Config
+
+## Action
+
+Ensure code coverage is configured and measured
+
+## Evidence
+
+- Pattern in testing.coverageConfig
+
+---
+id: neofit-ai-instinct-try-catch-error-handling
+trigger: "When handling errors in code"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: Emad211/Neofit-ai
+---
+
+# Neofit Ai Instinct Try Catch Error Handling
+
+## Action
+
+Use try-catch blocks for error handling
+
+## Evidence
+
+- Pattern in errorHandling.style
+
+---
+id: neofit-ai-instinct-commit-prefix-format
+trigger: "When writing a commit message"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: Emad211/Neofit-ai
+---
+
+# Neofit Ai Instinct Commit Prefix Format
+
+## Action
+
+Prefix the commit message with a type (e.g., feat, fix, docs, data, ci) followed by a scope in parentheses and a colon (e.g., feat(ifkb): ...)
+
+## Evidence
+
+- Pattern in commits.prefixes
+- Examples: 'feat(ifkb): ...', 'fix(ifkb): ...'
+
+---
+id: neofit-ai-instinct-commit-length-guideline
+trigger: "When writing a commit message"
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: Emad211/Neofit-ai
+---
+
+# Neofit Ai Instinct Commit Length Guideline
+
+## Action
+
+Keep the commit message concise, around 50 characters on average
+
+## Evidence
+
+- Pattern in commits.averageLength
+
+---
+id: neofit-ai-instinct-release-version-workflow
+trigger: "When someone wants to publish a new IFKB data release version"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: Emad211/Neofit-ai
+---
+
+# Neofit Ai Instinct Release Version Workflow
+
+## Action
+
+Create manifest.json, update README.md, RELEASE_NOTES.md, STATUS.md under releases/{version}/, optionally add SUPERSEDED.md, and update main README.md
+
+## Evidence
+
+- release-version-workflow detected in workflows
+- Example commit sequences and files
+
+---
+id: neofit-ai-instinct-staging-data-ingestion-workflow
+trigger: "When someone wants to ingest or update source data for a new or corrective release"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: Emad211/Neofit-ai
+---
+
+# Neofit Ai Instinct Staging Data Ingestion Workflow
+
+## Action
+
+Add or update staging data files (source-observations.csv, qa-issues.csv, food-qa-summary.csv, selected-foundation-foods.csv, mobile-projection-candidates.csv) under staging/{version}/; if corrective, use a new sub-version
+
+## Evidence
+
+- staging-data-ingestion-workflow detected in workflows
+- Example commit sequences and files
+
+---
+id: neofit-ai-instinct-research-log-summary-workflow
+trigger: "When someone wants to document research outcomes or scientific review for a release"
+confidence: 0.85
+domain: workflow
+source: repo-analysis
+source_repo: Emad211/Neofit-ai
+---
+
+# Neofit Ai Instinct Research Log Summary Workflow
+
+## Action
+
+Add or update research log or summary files (research-log-v{version}.csv, run-summary.md, scientific-review-summary.csv, variability-summary.csv, gap-resolution.csv) under research/{version}/ or research/
+
+## Evidence
+
+- research-log-and-summary-workflow detected in workflows
+- Example commit sequences and files
+
+---
+id: neofit-ai-instinct-documentation-update-workflow
+trigger: "When someone wants to document a new release, pipeline, or workflow update"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: Emad211/Neofit-ai
+---
+
+# Neofit Ai Instinct Documentation Update Workflow
+
+## Action
+
+Update or add README.md in the main data directory or under pipelines/{pipeline}/; add or update release notes, status, or roadmap files
+
+## Evidence
+
+- documentation-update-workflow detected in workflows
+- Example commit sequences and files
+
