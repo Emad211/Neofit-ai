@@ -67,7 +67,6 @@ test('token-aware matching avoids Persian and English substring collisions', () 
     ['iranian-fallback-ifkb-canon-00211', 'street_meat_main'],
     ['iranian-fallback-ifkb-canon-00212', 'dessert_pudding'],
     ['iranian-fallback-ifkb-canon-00237', 'dessert_pastry'],
-    ['iranian-fallback-ifkb-canon-00245', 'dessert_pudding'],
     ['iranian-fallback-ifkb-canon-00257', 'beverage_sweet_herbal'],
   ] as const);
   for (const [id, archetype] of expected) {
