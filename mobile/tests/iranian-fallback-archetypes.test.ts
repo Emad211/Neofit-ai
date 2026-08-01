@@ -61,8 +61,8 @@ test('token-aware matching avoids Persian and English substring collisions', () 
     ['iranian-fallback-ifkb-canon-00177', 'soup_cold'],
     ['iranian-fallback-ifkb-canon-00178', 'soup_light'],
     ['iranian-fallback-ifkb-canon-00190', 'street_patty_meatball'],
-    ['iranian-fallback-ifkb-canon-00196', 'street_side_condiment'],
-    ['iranian-fallback-ifkb-canon-00207', 'street_side_condiment'],
+    ['iranian-fallback-ifkb-canon-00196', 'street_dairy_side'],
+    ['iranian-fallback-ifkb-canon-00207', 'street_sauce_condiment'],
     ['iranian-fallback-ifkb-canon-00209', 'street_fried'],
     ['iranian-fallback-ifkb-canon-00211', 'street_meat_main'],
     ['iranian-fallback-ifkb-canon-00212', 'dessert_pudding'],
@@ -73,6 +73,21 @@ test('token-aware matching avoids Persian and English substring collisions', () 
     const item = byId.get(id);
     assert.ok(item, `Missing ${id}`);
     assert.equal(classifyIranianFallbackArchetype(item), archetype, item.nameFa);
+  }
+});
+
+test('density-normalized side and beverage estimates stay within broad product bounds', () => {
+  const byId = new Map(IRANIAN_ARCHETYPE_FALLBACK_SEED.map((item) => [item.id, item] as const));
+  for (const id of [
+    'iranian-fallback-ifkb-canon-00196',
+    'iranian-fallback-ifkb-canon-00207',
+    'iranian-fallback-ifkb-canon-00257',
+  ]) {
+    const item = byId.get(id);
+    assert.ok(item, `Missing ${id}`);
+    assert.ok(item.portionGrams !== null && item.portionGrams > 0);
+    const caloriesPer100g = item.calories * 100 / item.portionGrams;
+    assert.ok(caloriesPer100g >= 0 && caloriesPer100g <= 450, `${item.nameFa}: ${caloriesPer100g}`);
   }
 });
 
