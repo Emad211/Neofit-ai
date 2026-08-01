@@ -3,4 +3,4 @@ export {
   deleteImportedFoodCatalog,
   importFoodCatalogItems,
   seedIranianFoodCatalog,
-} from '@/db/food-repository-stage5';
+} from '@/db/food-repository-stage6';
