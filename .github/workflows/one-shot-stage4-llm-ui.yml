@@ -1,0 +1,271 @@
+name: One-shot Stage 4 LLM UI integration
+
+on:
+  push:
+    branches:
+      - agent/iranian-food-kb-foundation
+    paths:
+      - '.github/workflows/one-shot-stage4-llm-ui.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/iranian-food-kb-foundation
+          fetch-depth: 0
+
+      - name: Patch meal estimator with local-first LLM fallback
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('mobile/app/meal-estimator.tsx')
+          text = path.read_text(encoding='utf-8')
+
+          def replace_once(old: str, new: str) -> None:
+              global text
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'Expected exactly one match, found {count}: {old[:100]!r}')
+              text = text.replace(old, new, 1)
+
+          replace_once(
+              "import { AvalAiError } from '@/services/avalai-client';\n",
+              "import { AvalAiError } from '@/services/avalai-client';\nimport {\n  resolveFoodIdentityLocalFirst,\n  type LlmFoodResolutionChoice,\n} from '@/services/food-identity-resolver';\n",
+          )
+
+          replace_once(
+              "interface VisionReviewContext {\n  readonly choices: readonly VisionResolvedChoice[];\n  readonly reasons: readonly VisionResolutionReason[];\n  readonly visibleComponents: readonly string[];\n  readonly warnings: readonly string[];\n  readonly prepared: {\n    readonly width: number;\n    readonly height: number;\n    readonly byteLength: number;\n  };\n}\n",
+              "interface VisionReviewContext {\n  readonly choices: readonly VisionResolvedChoice[];\n  readonly reasons: readonly VisionResolutionReason[];\n  readonly visibleComponents: readonly string[];\n  readonly warnings: readonly string[];\n  readonly prepared: {\n    readonly width: number;\n    readonly height: number;\n    readonly byteLength: number;\n  };\n}\n\ninterface LlmReviewContext {\n  readonly choices: readonly LlmFoodResolutionChoice[];\n  readonly question: string;\n  readonly warnings: readonly string[];\n  readonly fromVision: boolean;\n}\n",
+          )
+
+          replace_once(
+              "  const [identifiedByVision, setIdentifiedByVision] = React.useState(false);\n  const [visionLabels, setVisionLabels] = React.useState<string[]>([]);\n  const [visionReview, setVisionReview] = React.useState<VisionReviewContext | null>(null);\n",
+              "  const [identifiedByVision, setIdentifiedByVision] = React.useState(false);\n  const [identifiedByLlm, setIdentifiedByLlm] = React.useState(false);\n  const [visionLabels, setVisionLabels] = React.useState<string[]>([]);\n  const [visionReview, setVisionReview] = React.useState<VisionReviewContext | null>(null);\n  const [llmReview, setLlmReview] = React.useState<LlmReviewContext | null>(null);\n",
+          )
+
+          replace_once(
+              "    setIdentifiedByVision(false);\n    setVisionLabels([]);\n    setVisionReview(null);\n",
+              "    setIdentifiedByVision(false);\n    setIdentifiedByLlm(false);\n    setVisionLabels([]);\n    setVisionReview(null);\n    setLlmReview(null);\n",
+          )
+
+          marker = "  const estimateText = async () => {\n"
+          insert = """  const confirmLlmChoice = (choice: LlmFoodResolutionChoice) => {
+    if (!llmReview) return;
+    applyLocalMatch({
+      local: choice.local,
+      fromVision: llmReview.fromVision,
+      assumptions: [
+        label(
+          `LLM identity interpretation: ${choice.query}. Nutrition was calculated only from the local catalog.`,
+          `تفسیر هویت توسط LLM: ${choice.query}. تغذیه فقط از کاتالوگ محلی محاسبه شد.`,
+        ),
+        label(
+          'The user confirmed this catalog identity before nutrition was shown.',
+          'کاربر پیش از نمایش تغذیه، این هویت کاتالوگی را تأیید کرد.',
+        ),
+        ...llmReview.warnings,
+      ],
+    });
+    setIdentifiedByLlm(true);
+    setLlmReview(null);
+    setError(null);
+  };
+
+"""
+          replace_once(marker, insert + marker)
+
+          start = text.index("  const estimateText = async () => {\n")
+          end = text.index("\n  const estimatePhoto = async", start)
+          old_block = text[start:end]
+          new_block = """  const estimateText = async () => {
+    if (description.trim().length < 2) {
+      setError(label('Describe the food and serving size.', 'نام غذا و مقدار آن را بنویسید.'));
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    resetResult();
+    try {
+      const resolution = await resolveFoodIdentityLocalFirst({
+        description,
+        locale,
+        allowLlm: hasAvalAiKey,
+      });
+      if (resolution.source === 'local' && resolution.directMatch) {
+        applyLocalMatch({
+          local: resolution.directMatch,
+          fromVision: false,
+          assumptions: [label(
+            'Matched and calculated entirely from the on-device food catalog.',
+            'تطبیق و محاسبه کاملاً با کاتالوگ غذایی روی گوشی انجام شد.',
+          )],
+        });
+        return;
+      }
+
+      const best = resolution.choices[0];
+      if (!best) {
+        const question = resolution.interpretation?.clarificationQuestion;
+        setError(question || label(
+          hasAvalAiKey
+            ? 'The LLM could not map this description to a reliable local catalog item. Add the exact food name or use manual logging.'
+            : 'No reliable local match was found. Configure AvalAI for language interpretation, browse the catalog, or use manual logging.',
+          hasAvalAiKey
+            ? 'LLM نتوانست این توضیح را به یک غذای قابل‌اعتماد در کاتالوگ محلی وصل کند. نام دقیق غذا را اضافه کنید یا ثبت دستی را انتخاب کنید.'
+            : 'تطبیق محلی قابل‌اعتماد پیدا نشد. برای تفسیر زبانی AvalAI را تنظیم کنید، کاتالوگ را مرور کنید یا ثبت دستی را انتخاب کنید.',
+        ));
+        return;
+      }
+
+      if (resolution.requiresConfirmation) {
+        setLlmReview({
+          choices: resolution.choices,
+          question: resolution.interpretation?.clarificationQuestion || label(
+            'Which catalog food did you mean?',
+            'منظورتان کدام غذای کاتالوگ است؟',
+          ),
+          warnings: resolution.interpretation?.warnings ?? [],
+          fromVision: false,
+        });
+        return;
+      }
+
+      applyLocalMatch({
+        local: best.local,
+        fromVision: false,
+        assumptions: [
+          label(
+            `LLM interpreted the wording as ${best.query}. Nutrition was calculated only from the local catalog.`,
+            `LLM عبارت را به‌صورت «${best.query}» تفسیر کرد. تغذیه فقط از کاتالوگ محلی محاسبه شد.`,
+          ),
+          ...(resolution.interpretation?.warnings ?? []),
+        ],
+      });
+      setIdentifiedByLlm(true);
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setLoading(false);
+    }
+  };
+"""
+          text = text[:start] + new_block + text[end:]
+
+          old_no_match = """      if (decision.mode === 'no_match' || decision.bestIndex === null) {
+        const names = labels.length > 0 ? labels.join('، ') : label('no reliable candidate', 'بدون کاندید قابل‌اعتماد');
+        setError(label(
+          `The Vision API suggested: ${names}. None maps reliably to the local catalog. Type the exact food name or use manual logging.`,
+          `پیشنهادهای API بینایی: ${names}. هیچ‌کدام با اطمینان به کاتالوگ محلی متصل نشدند. نام دقیق غذا را بنویسید یا ثبت دستی را انتخاب کنید.`,
+        ));
+        return;
+      }
+"""
+          new_no_match = """      if (decision.mode === 'no_match' || decision.bestIndex === null) {
+        const languageResolution = await resolveFoodIdentityLocalFirst({
+          description,
+          locale,
+          allowLlm: true,
+          visionCandidates: observation.candidates,
+          visionWarnings: observation.warnings,
+        });
+        const languageBest = languageResolution.choices[0];
+        if (languageBest) {
+          if (languageResolution.requiresConfirmation) {
+            setLlmReview({
+              choices: languageResolution.choices,
+              question: languageResolution.interpretation?.clarificationQuestion || label(
+                'Vision was unclear. Which catalog food is correct?',
+                'نتیجهٔ بینایی مبهم بود. کدام غذای کاتالوگ درست است؟',
+              ),
+              warnings: languageResolution.interpretation?.warnings ?? observation.warnings,
+              fromVision: true,
+            });
+          } else {
+            applyLocalMatch({
+              local: languageBest.local,
+              fromVision: true,
+              assumptions: [
+                label(
+                  `Vision observations were interpreted by the LLM as ${languageBest.query}. Nutrition was calculated only from the local catalog.`,
+                  `مشاهدات Vision توسط LLM به‌صورت «${languageBest.query}» تفسیر شد. تغذیه فقط از کاتالوگ محلی محاسبه شد.`,
+                ),
+                ...(languageResolution.interpretation?.warnings ?? []),
+              ],
+            });
+            setIdentifiedByLlm(true);
+          }
+          return;
+        }
+
+        const names = labels.length > 0 ? labels.join('، ') : label('no reliable candidate', 'بدون کاندید قابل‌اعتماد');
+        setError(languageResolution.interpretation?.clarificationQuestion || label(
+          `The Vision API suggested: ${names}. Vision and LLM interpretation could not map it reliably to the local catalog. Type the exact food name or use manual logging.`,
+          `پیشنهادهای API بینایی: ${names}. Vision و تفسیر LLM نتوانستند آن را با اطمینان به کاتالوگ محلی متصل کنند. نام دقیق غذا را بنویسید یا ثبت دستی را انتخاب کنید.`,
+        ));
+        return;
+      }
+"""
+          replace_once(old_no_match, new_no_match)
+
+          replace_once(
+              "      ) : mode === 'text' ? (\n        <InlineNotice>{label('Text search and nutrition calculation are fully local. AI is not used to invent calories or macros.', 'جست‌وجوی متنی و محاسبهٔ تغذیه کاملاً محلی است. هوش مصنوعی برای ساخت کالری یا ماکرو استفاده نمی‌شود.')}</InlineNotice>\n",
+              "      ) : mode === 'text' ? (\n        <InlineNotice>{label('NeoFit searches locally first. Only when no reliable match exists, the LLM interprets your wording; nutrition always comes from the local catalog.', 'NeoFit ابتدا محلی جست‌وجو می‌کند. فقط وقتی تطبیق قابل‌اعتماد پیدا نشود، LLM عبارت شما را تفسیر می‌کند؛ تغذیه همیشه از کاتالوگ محلی می‌آید.')}</InlineNotice>\n",
+          )
+
+          replace_once(
+              "                <PrimaryButton title={label('Search local catalog', 'جست‌وجو در کاتالوگ محلی')} onPress={estimateText} loading={loading} />\n",
+              "                <PrimaryButton title={label('Identify food', 'شناسایی غذا')} onPress={estimateText} loading={loading} />\n",
+          )
+
+          vision_marker = "          {visionReview ? (\n"
+          llm_card = """          {llmReview ? (
+            <Card>
+              <AppText size={21} weight="800">{label('Confirm the interpreted food', 'غذای تفسیرشده را تأیید کنید')}</AppText>
+              <InlineNotice tone="warning">{llmReview.question}</InlineNotice>
+              {llmReview.choices.map((choice) => (
+                <View key={choice.key} style={{ gap: 7 }}>
+                  <AppText weight="700">{locale === 'fa' ? choice.local.item.nameFa : choice.local.item.nameEn}</AppText>
+                  <AppText muted size={12}>{label(
+                    `LLM query: ${choice.query} · local score ${Math.round(choice.local.score)}`,
+                    `عبارت LLM: ${choice.query} · امتیاز محلی ${Math.round(choice.local.score)}`,
+                  )}</AppText>
+                  <PrimaryButton
+                    title={label(`Use ${choice.local.item.nameEn}`, `انتخاب ${choice.local.item.nameFa}`)}
+                    variant="secondary"
+                    onPress={() => confirmLlmChoice(choice)}
+                  />
+                </View>
+              ))}
+              <PrimaryButton
+                title={label('None of these — edit the description', 'هیچ‌کدام — توضیح را اصلاح می‌کنم')}
+                variant="ghost"
+                onPress={() => setLlmReview(null)}
+              />
+            </Card>
+          ) : null}
+
+"""
+          replace_once(vision_marker, llm_card + vision_marker)
+
+          replace_once(
+              "                <AppText muted size={13}>{identifiedByVision\n                  ? label('Identity: Vision API · Nutrition: local IFKB catalog', 'هویت: API بینایی · تغذیه: کاتالوگ محلی IFKB')\n                  : label('Source: local IFKB catalog', 'منبع: کاتالوگ محلی IFKB')}</AppText>\n",
+              "                <AppText muted size={13}>{identifiedByVision && identifiedByLlm\n                  ? label('Identity: Vision + LLM · Nutrition: local IFKB catalog', 'هویت: Vision + LLM · تغذیه: کاتالوگ محلی IFKB')\n                  : identifiedByVision\n                    ? label('Identity: Vision API · Nutrition: local IFKB catalog', 'هویت: API بینایی · تغذیه: کاتالوگ محلی IFKB')\n                    : identifiedByLlm\n                      ? label('Identity: LLM interpretation · Nutrition: local IFKB catalog', 'هویت: تفسیر LLM · تغذیه: کاتالوگ محلی IFKB')\n                      : label('Source: local IFKB catalog', 'منبع: کاتالوگ محلی IFKB')}</AppText>\n",
+          )
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Commit patch and remove one-shot workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm .github/workflows/one-shot-stage4-llm-ui.yml
+          git add mobile/app/meal-estimator.tsx
+          git commit -m "feat(nutrition): connect Vision and LLM to local catalog"
+          git push origin HEAD:agent/iranian-food-kb-foundation
