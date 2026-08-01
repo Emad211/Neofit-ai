@@ -4,7 +4,7 @@ import test from 'node:test';
 import {
   buildCatalogQueries,
   FoodIdentityInterpretationSchema,
-} from '../src/services/food-language-interpretation';
+} from '../src/services/food-language-contract';
 
 test('LLM food identity contract strips nutrition and invented-weight fields', () => {
   const parsed = FoodIdentityInterpretationSchema.parse({
