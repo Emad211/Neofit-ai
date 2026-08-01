@@ -164,7 +164,7 @@ jobs:
 
       - name: Build app-ready Iranian nutrition dataset
         run: |
-          npx tsx scripts/build-iranian-app-dataset-stage5.ts \
+          npx tsx scripts/build-iranian-app-dataset-stage6.ts \
             --output-dir ../build/iranian-app-dataset \
             > /tmp/iranian-app-dataset.log 2>&1 \
             || { cat /tmp/iranian-app-dataset.log; exit 1; }
@@ -182,7 +182,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: neofit-iranian-app-dataset-stage5
+          name: neofit-iranian-app-dataset-stage6
           path: build/iranian-app-dataset
           if-no-files-found: error
           retention-days: 90
