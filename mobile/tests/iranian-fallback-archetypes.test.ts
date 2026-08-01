@@ -55,6 +55,28 @@ test('food names drive meaningful archetype separation', () => {
   assert.notEqual(walnutStew.fatG, herbStew.fatG);
 });
 
+test('token-aware matching avoids Persian and English substring collisions', () => {
+  const byId = new Map(IRANIAN_ARCHETYPE_FALLBACK_SEED.map((item) => [item.id, item] as const));
+  const expected = new Map([
+    ['iranian-fallback-ifkb-canon-00177', 'soup_cold'],
+    ['iranian-fallback-ifkb-canon-00178', 'soup_light'],
+    ['iranian-fallback-ifkb-canon-00190', 'street_patty_meatball'],
+    ['iranian-fallback-ifkb-canon-00196', 'street_side_condiment'],
+    ['iranian-fallback-ifkb-canon-00207', 'street_side_condiment'],
+    ['iranian-fallback-ifkb-canon-00209', 'street_fried'],
+    ['iranian-fallback-ifkb-canon-00211', 'street_meat_main'],
+    ['iranian-fallback-ifkb-canon-00212', 'dessert_pudding'],
+    ['iranian-fallback-ifkb-canon-00237', 'dessert_pastry'],
+    ['iranian-fallback-ifkb-canon-00245', 'dessert_pudding'],
+    ['iranian-fallback-ifkb-canon-00257', 'beverage_sweet_herbal'],
+  ] as const);
+  for (const [id, archetype] of expected) {
+    const item = byId.get(id);
+    assert.ok(item, `Missing ${id}`);
+    assert.equal(classifyIranianFallbackArchetype(item), archetype, item.nameFa);
+  }
+});
+
 test('runtime facade reapplies Stage 5 values after seed, import and restore', () => {
   const facade = readFileSync(new URL('../src/db/food-repository.ts', import.meta.url), 'utf8');
   const runtime = readFileSync(new URL('../src/db/food-repository-stage5.ts', import.meta.url), 'utf8');
