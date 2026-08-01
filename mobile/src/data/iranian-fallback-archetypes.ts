@@ -2,8 +2,8 @@ import { IRANIAN_FALLBACK_SEED } from '@/data/iranian-fallback-seed.generated';
 import { IRANIAN_FOOD_SEED } from '@/data/iranian-food-seed';
 import { FoodCatalogItemSchema, type FoodCatalogItem } from '@/domain/models';
 
-const UPDATED_AT = '2026-08-01T01:30:00.000Z';
-const SOURCE_PREFIX = 'IFKB DS0 broad-fallback archetype prior v2';
+const UPDATED_AT = '2026-08-01T02:05:00.000Z';
+const SOURCE_PREFIX = 'IFKB DS0 broad-fallback archetype prior v2.1';
 
 type MacroValues = Pick<FoodCatalogItem, 'calories' | 'proteinG' | 'carbsG' | 'fatG'>;
 type PortionPolicy = {
@@ -59,6 +59,7 @@ const ARCHETYPE_PORTIONS = {
   dessert_syrup_fat: { grams: 80, labelFa: 'یک سهم کوچک', labelEn: '1 small serving' },
   dessert_pudding: { grams: 150, labelFa: 'یک کاسه کوچک', labelEn: '1 small bowl' },
   dessert_fruit_nut: { grams: 80, labelFa: 'یک سهم کوچک', labelEn: '1 small serving' },
+  dessert_pastry: { grams: 60, labelFa: 'یک عدد یا سهم کوچک', labelEn: '1 small piece or serving' },
   dessert_other: { grams: 100, labelFa: 'یک سهم متوسط', labelEn: '1 medium serving' },
   beverage_dairy: { grams: 250, labelFa: 'یک لیوان یا کاسه', labelEn: '1 glass or bowl' },
   beverage_sweet_herbal: { grams: 250, labelFa: 'یک لیوان', labelEn: '1 glass' },
@@ -68,6 +69,7 @@ export type IranianFallbackArchetypeId = keyof typeof ARCHETYPE_PORTIONS;
 
 const ZERO_SAMPLE_MULTIPLIERS: Partial<Record<IranianFallbackArchetypeId, MacroValues>> = {
   bread_enriched: { calories: 1.25, proteinG: 1, carbsG: 1.15, fatG: 1.8 },
+  dessert_pastry: { calories: 1.25, proteinG: 0.9, carbsG: 1.15, fatG: 1.35 },
   dessert_pudding: { calories: 0.8, proteinG: 1.45, carbsG: 0.95, fatG: 0.6 },
   kebab_seafood: { calories: 0.75, proteinG: 1, carbsG: 0.5, fatG: 0.55 },
   rice_tahchin: { calories: 1.12, proteinG: 1.2, carbsG: 0.95, fatG: 1.5 },
@@ -97,7 +99,13 @@ function searchableText(item: Pick<FoodCatalogItem, 'nameFa' | 'nameEn' | 'alias
 }
 
 function containsAny(text: string, values: readonly string[]): boolean {
-  return values.some((value) => text.includes(value));
+  const padded = ` ${text} `;
+  return values.some((raw) => {
+    const substring = raw.startsWith('~');
+    const value = normalize(substring ? raw.slice(1) : raw);
+    if (!value) return false;
+    return substring ? text.includes(value) : padded.includes(` ${value} `);
+  });
 }
 
 export function classifyIranianFallbackArchetype(
@@ -108,8 +116,8 @@ export function classifyIranianFallbackArchetype(
     case 'stew':
       if (containsAny(text, ['ماهی', 'میگو', 'fish', 'shrimp'])) return 'stew_seafood';
       if (containsAny(text, ['مرغ', 'اردک', 'غاز', 'chicken', 'duck', 'poultry'])) return 'stew_poultry';
-      if (containsAny(text, ['گردو', 'آغوز', 'انار', 'ناردون', 'فسنج', 'خلال', 'بادام', 'پسته', 'walnut', 'pomegranate', 'almond', 'nut'])) return 'stew_nut_fruit';
-      if (containsAny(text, ['بادمجان', 'کدو', 'تره', 'سبزی', 'سیر', 'اسفناج', 'کرفس', 'بامیه', 'vegetable', 'eggplant', 'herb', 'garlic', 'okra'])) return 'stew_vegetable';
+      if (containsAny(text, ['گردو', 'آغوز', 'انار', '~ناردون', '~فسنج', 'خلال', 'بادام', 'پسته', 'آلو', 'walnut', 'pomegranate', 'almond', 'nut', 'plum'])) return 'stew_nut_fruit';
+      if (containsAny(text, ['بادمجان', 'کدو', 'تره', 'سبزی', 'سیر', 'اسفناج', 'کرفس', 'بامیه', 'هویج', 'vegetable', 'eggplant', 'herb', 'garlic', 'okra', 'carrot'])) return 'stew_vegetable';
       return 'stew_meat_legume';
     case 'rice':
       if (containsAny(text, ['ته چین', 'tahchin'])) return 'rice_tahchin';
@@ -123,8 +131,8 @@ export function classifyIranianFallbackArchetype(
     case 'soup':
       if (containsAny(text, ['آبگوشت', 'دیزی', 'abgoosht', 'dizi'])) return 'soup_abgoosht';
       if (containsAny(text, ['حلیم', 'کاچی', 'فرنی', 'شله', 'porridge', 'haleem'])) return 'soup_porridge';
-      if (containsAny(text, ['آش', 'رشته', 'دوغ', 'ash', 'noodle'])) return 'soup_ash';
-      if (containsAny(text, ['سرد', 'ماست', 'cold', 'yogurt'])) return 'soup_cold';
+      if (containsAny(text, ['سرد', 'ماست', 'خیار', 'cold', 'yogurt', 'cucumber'])) return 'soup_cold';
+      if (containsAny(text, ['آش', 'رشته', 'دوغ', 'ash', 'noodle', 'doogh'])) return 'soup_ash';
       return 'soup_light';
     case 'breakfast':
       return containsAny(text, ['تخم', 'املت', 'خاگینه', 'egg', 'omelet'])
@@ -132,11 +140,11 @@ export function classifyIranianFallbackArchetype(
         : 'breakfast_other';
     case 'street_food':
       if (containsAny(text, ['دلمه', 'شکم پر', 'stuffed', 'dolma'])) return 'street_stuffed';
-      if (containsAny(text, ['کوکو', 'کتلت', 'شامی', 'کوفته', 'meatball', 'cutlet', 'kuku'])) return 'street_patty_meatball';
-      if (containsAny(text, ['سمبوسه', 'فلافل', 'پیراشکی', 'سوخاری', 'سرخ', 'fried', 'falafel', 'samosa'])) return 'street_fried';
-      if (containsAny(text, ['سالاد', 'ترشی', 'شور', 'ماست', 'زیتون', 'کشک', 'چاشنی', 'سس', 'salad', 'pickle', 'condiment', 'yogurt'])) return 'street_side_condiment';
-      if (containsAny(text, ['کله', 'پاچه', 'جگر', 'دل', 'قلوه', 'سیرابی', 'offal'])) return 'street_offal';
-      if (containsAny(text, ['مرغ', 'گوشت', 'ماهی', 'میگو', 'roast', 'chicken', 'meat', 'fish'])) return 'street_meat_main';
+      if (containsAny(text, ['کوکو', 'کتلت', 'شامی', 'کوفته', 'قیمه ریزه', '~سرگنجشک', 'meatball', 'cutlet', 'kuku'])) return 'street_patty_meatball';
+      if (containsAny(text, ['سمبوسه', 'فلافل', 'پیراشکی', 'سوخاری', 'سرخ', 'پکوره', 'fried', 'falafel', 'samosa', 'pakora'])) return 'street_fried';
+      if (containsAny(text, ['سالاد', 'ترشی', 'شور', 'ماست', 'زیتون', 'کشک', 'چاشنی', 'سس', 'سوراغ', 'مهیاوه', 'بورانی', 'کال کباب', 'دویماج', 'salad', 'pickle', 'condiment', 'sauce', 'yogurt'])) return 'street_side_condiment';
+      if (containsAny(text, ['کله', 'پاچه', 'جگر', 'دل', 'قلوه', 'سیرابی', 'جغور', 'offal'])) return 'street_offal';
+      if (containsAny(text, ['مرغ', 'گوشت', 'ماهی', 'میگو', 'بریانی', 'بریان', 'تنورچه', 'تباهگ', 'roast', 'chicken', 'meat', 'fish'])) return 'street_meat_main';
       return 'street_vegetable_main';
     case 'bread':
       return containsAny(text, ['شیرمال', 'کلوچه', 'فطیر', 'قندی', 'sweet', 'milk bread', 'cookie'])
@@ -145,11 +153,12 @@ export function classifyIranianFallbackArchetype(
     case 'dessert':
       if (containsAny(text, ['بستنی', 'فالوده', 'یخ', 'ice', 'faloodeh'])) return 'dessert_frozen';
       if (containsAny(text, ['حلوا', 'زولبیا', 'بامیه', 'گوش فیل', 'قطاب', 'باقلوا', 'شربت', 'fried', 'baklava', 'halva'])) return 'dessert_syrup_fat';
-      if (containsAny(text, ['فرنی', 'شیربرنج', 'شله زرد', 'پودینگ', 'pudding', 'rice pudding'])) return 'dessert_pudding';
+      if (containsAny(text, ['فرنی', 'شیربرنج', 'شله زرد', 'سمنو', 'ماست', 'پودینگ', 'pudding', 'rice pudding', 'yogurt'])) return 'dessert_pudding';
       if (containsAny(text, ['خرما', 'کشمش', 'گردو', 'بادام', 'پسته', 'میوه', 'date', 'raisin', 'walnut', 'almond', 'fruit'])) return 'dessert_fruit_nut';
+      if (containsAny(text, ['نان برنجی', 'سوهان', 'گز', 'پولکی', 'کیک', 'لوز', 'کلوچه', 'رشته خوشکار', 'کاک', 'قرابیه', 'نوقا', 'اریس', 'باسلوق', 'یوخه', 'کماچ', 'نان چایی', 'نخودچی', 'پنجره', 'cookie', 'cake', 'pastry', 'nougat', 'candy'])) return 'dessert_pastry';
       return 'dessert_other';
     case 'dairy_beverage':
-      return containsAny(text, ['دوغ', 'شیر', 'ماست', 'milk', 'yogurt', 'doogh'])
+      return containsAny(text, ['دوغ', 'شیر', 'ماست', 'پنیر', 'کشک', 'milk', 'yogurt', 'doogh', 'cheese', 'kashk'])
         ? 'beverage_dairy'
         : 'beverage_sweet_herbal';
     case 'ingredient':
@@ -218,7 +227,9 @@ function blendedPrior(item: FoodCatalogItem, archetype: IranianFallbackArchetype
     };
   }
   const archetypeValues = medianMacros(archetypeRows);
-  const weight = Math.min(0.8, archetypeRows.length / (archetypeRows.length + 2));
+  const weight = archetype === 'beverage_sweet_herbal'
+    ? 1
+    : Math.min(0.8, archetypeRows.length / (archetypeRows.length + 2));
   return {
     values: {
       calories: Math.round((category.calories * (1 - weight) + archetypeValues.calories * weight) / 5) * 5,
