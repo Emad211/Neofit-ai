@@ -1,0 +1,137 @@
+name: Apply NeoFit Nutrition RC
+
+on:
+  push:
+    branches:
+      - automation/nutrition-rc-stage9-10
+    paths:
+      - '.github/rc-bundle/**'
+      - '.github/workflows/apply-neofit-nutrition-rc.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-neofit-nutrition-rc
+  cancel-in-progress: false
+
+jobs:
+  apply-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CI: '1'
+      EXPO_NO_TELEMETRY: '1'
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Reconstruct and verify release candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/rc-bundle/chunks/part* | base64 --decode > /tmp/neofit-nutrition-rc.zip
+          echo '5cbd9db8cc6ef706ff3d2481af44e6b330ae5c3d9bfe683532e10e1fdfee521b  /tmp/neofit-nutrition-rc.zip' | sha256sum --check --strict
+          rm -rf /tmp/neofit-nutrition-rc
+          mkdir -p /tmp/neofit-nutrition-rc
+          unzip -q /tmp/neofit-nutrition-rc.zip -d /tmp/neofit-nutrition-rc
+          test -f /tmp/neofit-nutrition-rc/neofit-nutrition-rc-stage9-10/scripts/apply_neofit_nutrition_rc.py
+
+      - name: Check compatibility without writing
+        run: |
+          python /tmp/neofit-nutrition-rc/neofit-nutrition-rc-stage9-10/scripts/apply_neofit_nutrition_rc.py \
+            "$GITHUB_WORKSPACE" \
+            --check-only \
+            --report /tmp/neofit-nutrition-rc-check.json
+
+      - name: Apply release candidate atomically
+        run: |
+          python /tmp/neofit-nutrition-rc/neofit-nutrition-rc-stage9-10/scripts/apply_neofit_nutrition_rc.py \
+            "$GITHUB_WORKSPACE" \
+            --report /tmp/neofit-nutrition-rc-apply.json
+
+      - name: Install locked mobile dependencies
+        working-directory: mobile
+        run: npm ci --no-audit --no-fund
+
+      - name: Run deterministic domain and nutrition tests
+        working-directory: mobile
+        run: npm test
+
+      - name: Run IFKB Python contract tests
+        working-directory: ifkb/universal
+        run: |
+          python -m unittest -v \
+            test_natural_query_corpus.py \
+            test_iranian_collection_research_plan.py
+
+      - name: Run DS2 normalization gate
+        run: |
+          python ifkb/digital_v0131/normalization_gate/run_normalization_gate.py \
+            --output-dir build/ds2-normalization
+
+      - name: Audit complete nutrition catalog
+        working-directory: mobile
+        run: npx tsx scripts/audit-full-nutrition-catalog.ts --output-dir ../build/full-nutrition-catalog-audit
+
+      - name: Generate Iranian discovery packs and collection plan
+        run: |
+          cd mobile
+          npx tsx scripts/generate-iranian-source-discovery-packs.ts \
+            --batch-plan ../build/full-nutrition-catalog-audit/iranian-batch-plan.json \
+            --output-dir ../build/iranian-source-discovery
+          cd ..
+          python ifkb/universal/build_iranian_collection_research_plan.py \
+            --discovery-queue build/iranian-source-discovery/all-iranian-source-discovery-queue.csv \
+            --registry ifkb/universal/releases/iranian-bulk-source-registry-v1/source-collections.csv \
+            --output-dir build/iranian-source-discovery/collection-plan
+
+      - name: Build app-ready Iranian dataset and schema freeze candidate
+        working-directory: mobile
+        run: |
+          npx tsx scripts/build-iranian-app-dataset-stage6.ts --output-dir ../build/iranian-app-dataset
+          npx tsx scripts/audit-schema-freeze-candidate.ts --output ../build/schema-freeze-candidate/manifest.json
+
+      - name: Validate Expo dependencies and TypeScript
+        working-directory: mobile
+        run: |
+          npx expo install --check
+          npm run doctor
+          npm run typecheck
+
+      - name: Export Android bundle
+        working-directory: mobile
+        run: npx expo export --platform android --output-dir dist
+
+      - name: Commit only release-candidate product changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .github/rc-bundle
+          rm -f .github/workflows/apply-neofit-nutrition-rc.yml
+          rm -rf build mobile/dist
+          git config user.name 'NeoFit Release Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'No product changes were produced.' >&2
+            exit 1
+          fi
+          git commit -m 'feat(nutrition): resolve AI plans through IFKB and apply Stage 7 portions'
+          git push origin HEAD:automation/nutrition-rc-stage9-10
