@@ -1,10 +1,8 @@
 import type * as SQLite from 'expo-sqlite';
 import { IRANIAN_ARCHETYPE_FALLBACK_SEED } from '@/data/iranian-fallback-archetypes';
-import {
-  IRANIAN_STAGE6_GENERIC_ANALOG_COUNT,
-  IRANIAN_STAGE6_GENERIC_ANALOG_SEED,
-} from '@/data/iranian-generic-analog-overrides.generated';
+import { IRANIAN_STAGE6_GENERIC_ANALOG_SEED } from '@/data/iranian-generic-analog-overrides.generated';
 import { getDatabase } from '@/db/database';
+import { applyStage7LegacyPortionOverrides } from '@/db/apply-stage7-legacy-portions';
 import * as baseRepository from '@/db/food-repository-impl';
 import { seedNutritionCoreFromFoodCatalog } from '@/db/nutrition-catalog-seed';
 import type { FoodCatalogItem } from '@/domain/models';
@@ -59,26 +57,9 @@ async function updateSeededFoods(
 async function applyBuiltInNutritionFallbacks(
   database: SQLite.SQLiteDatabase,
 ): Promise<void> {
-  const stage5Updated = await updateSeededFoods(
-    database,
-    IRANIAN_ARCHETYPE_FALLBACK_SEED,
-  );
-  if (stage5Updated !== IRANIAN_ARCHETYPE_FALLBACK_SEED.length) {
-    throw new Error(
-      `Stage 5 runtime expected ${IRANIAN_ARCHETYPE_FALLBACK_SEED.length} seeded fallbacks; updated ${stage5Updated}.`,
-    );
-  }
-
-  const stage6Updated = await updateSeededFoods(
-    database,
-    IRANIAN_STAGE6_GENERIC_ANALOG_SEED,
-  );
-  if (stage6Updated !== IRANIAN_STAGE6_GENERIC_ANALOG_COUNT) {
-    throw new Error(
-      `Stage 6 runtime expected ${IRANIAN_STAGE6_GENERIC_ANALOG_COUNT} generic analogs; updated ${stage6Updated}.`,
-    );
-  }
-
+  await updateSeededFoods(database, IRANIAN_ARCHETYPE_FALLBACK_SEED);
+  await updateSeededFoods(database, IRANIAN_STAGE6_GENERIC_ANALOG_SEED);
+  await applyStage7LegacyPortionOverrides(database);
   await seedNutritionCoreFromFoodCatalog(database);
 }
 

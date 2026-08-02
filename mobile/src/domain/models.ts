@@ -111,9 +111,14 @@ export const IngredientSchema = z.object({
   name: z.string().trim().min(1).max(120),
   quantity: z.string().trim().min(1).max(80),
   category: z.enum(['produce', 'fruit', 'protein', 'dairy', 'pantry', 'other']),
+  // Optional for backward compatibility. Every newly generated AI plan must fill all five fields.
+  grams: z.number().positive().max(5_000).optional(),
+  catalogQuery: z.string().trim().min(1).max(200).optional(),
+  catalogSource: z.enum(['ifkb', 'fndds', 'sr_legacy']).optional(),
+  catalogFoodId: z.string().trim().min(1).max(240).optional(),
+  resolvedName: z.string().trim().min(1).max(300).optional(),
 });
 export type Ingredient = z.infer<typeof IngredientSchema>;
-
 export const MealSchema = z.object({
   id: z.string().min(1).max(100),
   type: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
@@ -122,6 +127,8 @@ export const MealSchema = z.object({
   proteinG: z.number().min(0).max(500),
   carbsG: z.number().min(0).max(1_000),
   fatG: z.number().min(0).max(500),
+  // Undefined means a readable legacy plan. It is not eligible for one-tap meal logging.
+  nutritionSource: z.enum(['ifkb_resolved', 'legacy_plan']).optional(),
   ingredients: z.array(IngredientSchema).min(1).max(30),
 });
 export type Meal = z.infer<typeof MealSchema>;

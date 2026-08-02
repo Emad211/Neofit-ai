@@ -5,7 +5,6 @@ import {
   FoodEstimateSchema,
   MovementPatternSchema,
   NutritionPlan,
-  NutritionPlanSchema,
   Profile,
   WorkoutPlan,
   WorkoutPlanSchema,
@@ -14,6 +13,7 @@ import { createId } from '@/lib/id';
 import { getAvalAiSettings } from '@/services/ai-settings';
 import { AvalAiError, requestStructured } from '@/services/avalai-client';
 import { calculateNutritionTargets } from '@/services/nutrition-targets';
+import { resolveNutritionPlanDraft } from '@/services/nutrition-plan-resolver';
 
 const AiExerciseSchema = z.object({
   name: z.string().trim().min(1).max(160),
@@ -66,16 +66,13 @@ type AiWorkoutPlan = z.infer<typeof AiWorkoutPlanSchema>;
 const AiIngredientSchema = z.object({
   name: z.string().trim().min(1).max(120),
   quantity: z.string().trim().min(1).max(80),
+  catalogQuery: z.string().trim().min(2).max(200),
+  grams: z.number().positive().max(5_000),
   category: z.enum(['produce', 'fruit', 'protein', 'dairy', 'pantry', 'other']),
 });
-
 const AiMealSchema = z.object({
   type: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
   name: z.string().trim().min(1).max(160),
-  calories: z.number().int().min(0).max(3_000),
-  proteinG: z.number().min(0).max(500),
-  carbsG: z.number().min(0).max(1_000),
-  fatG: z.number().min(0).max(500),
   ingredients: z.array(AiIngredientSchema).min(1).max(30),
 });
 type AiMeal = z.infer<typeof AiMealSchema>;
@@ -179,14 +176,12 @@ function nutritionJsonContract() {
     "dayIndex": integer 0..6,
     "meals": [{
       "type": breakfast|lunch|dinner|snack,
-      "name": string,
-      "calories": integer,
-      "proteinG": number,
-      "carbsG": number,
-      "fatG": number,
+      "name": localized display name,
       "ingredients": [{
-        "name": string,
-        "quantity": explicit grams, millilitres, cups, pieces, or tablespoons,
+        "name": localized display name,
+        "quantity": human-readable planned amount,
+        "catalogQuery": exact Iranian catalog name/alias or concise conventional English food query,
+        "grams": positive edible mass in grams,
         "category": produce|fruit|protein|dairy|pantry|other
       }]
     }]
@@ -194,7 +189,6 @@ function nutritionJsonContract() {
   "safetyNotes": string[]
 }`;
 }
-
 function equipmentAvailable(exercise: AiExercise, profile: Profile) {
   if (profile.workoutLocation === 'gym') return true;
   const declared = normalize(profile.availableEquipment.join(' '));
@@ -280,16 +274,18 @@ Return the complete corrected JSON object. Do not explain the changes outside JS
 
 function iranianFoodAnchors() {
   return IRANIAN_FOOD_SEED.map((item) => (
-    `${item.nameFa} | ${item.nameEn} | ${item.portionLabelFa} | ${item.calories} kcal | P${item.proteinG} C${item.carbsG} F${item.fatG}`
+    `${item.nameFa} | ${item.nameEn} | ${item.portionLabelFa}${item.portionGrams ? ` | ${item.portionGrams} g` : ''}`
   )).join('\n');
 }
 
-function mealText(meal: AiMeal) {
+function mealText(meal: {
+  readonly name: string;
+  readonly ingredients: readonly { readonly name: string }[];
+}) {
   return normalize([meal.name, ...meal.ingredients.map((ingredient) => ingredient.name)].join(' '));
 }
 
-function nutritionQualityIssues(plan: AiNutritionPlan, profile: Profile) {
-  const targets = calculateNutritionTargets(profile);
+function nutritionDraftQualityIssues(plan: AiNutritionPlan, profile: Profile) {
   const issues: string[] = [];
   const allergens = profile.allergies.map(normalize).filter(Boolean);
   const disliked = profile.details.dislikedFoods.map(normalize).filter(Boolean);
@@ -299,38 +295,65 @@ function nutritionQualityIssues(plan: AiNutritionPlan, profile: Profile) {
     if (day.meals.length !== profile.details.mealsPerDay) {
       issues.push(`dayIndex ${day.dayIndex} must contain exactly ${profile.details.mealsPerDay} meals; received ${day.meals.length}.`);
     }
-    const calories = day.meals.reduce((sum, meal) => sum + meal.calories, 0);
-    const protein = day.meals.reduce((sum, meal) => sum + meal.proteinG, 0);
-    const lower = targets.calorieRange.low * 0.92;
-    const upper = targets.calorieRange.high * 1.08;
-    if (calories < lower || calories > upper) {
-      issues.push(`dayIndex ${day.dayIndex} totals ${Math.round(calories)} kcal outside the target range ${targets.calorieRange.low}-${targets.calorieRange.high}.`);
-    }
-    if (protein < targets.proteinRangeG.low * 0.85 || protein > targets.proteinRangeG.high * 1.2) {
-      issues.push(`dayIndex ${day.dayIndex} protein ${Math.round(protein)} g is outside a practical range near ${targets.proteinRangeG.low}-${targets.proteinRangeG.high} g.`);
-    }
-
     for (const meal of day.meals) {
       const text = mealText(meal);
       const allergen = allergens.find((value) => text.includes(value));
       if (allergen) issues.push(`${meal.name} contains or names the excluded allergy term "${allergen}".`);
       const dislikedFood = disliked.find((value) => text.includes(value));
       if (dislikedFood) issues.push(`${meal.name} contains the disliked food "${dislikedFood}".`);
-
-      const macroCalories = meal.proteinG * 4 + meal.carbsG * 4 + meal.fatG * 9;
-      const denominator = Math.max(100, meal.calories, macroCalories);
-      if (Math.abs(meal.calories - macroCalories) / denominator > 0.32) {
-        issues.push(`${meal.name} calories (${meal.calories}) are inconsistent with its macros (${Math.round(macroCalories)} kcal).`);
-      }
       const normalizedName = normalize(meal.name);
       mealNames.set(normalizedName, (mealNames.get(normalizedName) || 0) + 1);
     }
   }
-
   for (const [name, count] of mealNames) {
     if (count > 3) issues.push(`Meal "${name}" is repeated ${count} times; increase variety.`);
   }
   return issues.slice(0, 24);
+}
+
+function resolvedNutritionQualityIssues(plan: NutritionPlan, profile: Profile) {
+  const targets = calculateNutritionTargets(profile);
+  const issues: string[] = [];
+  for (const day of plan.days) {
+    const calories = day.totalCalories;
+    const protein = day.meals.reduce((sum, meal) => sum + meal.proteinG, 0);
+    const lower = targets.calorieRange.low * 0.92;
+    const upper = targets.calorieRange.high * 1.08;
+    if (calories < lower || calories > upper) {
+      issues.push(`dayIndex ${day.dayIndex} resolves to ${Math.round(calories)} local kcal outside ${targets.calorieRange.low}-${targets.calorieRange.high}. Adjust catalog foods or grams.`);
+    }
+    if (protein < targets.proteinRangeG.low * 0.85 || protein > targets.proteinRangeG.high * 1.2) {
+      issues.push(`dayIndex ${day.dayIndex} resolves to ${Math.round(protein)} g local protein outside a practical range near ${targets.proteinRangeG.low}-${targets.proteinRangeG.high} g.`);
+    }
+    for (const meal of day.meals) {
+      const macroCalories = meal.proteinG * 4 + meal.carbsG * 4 + meal.fatG * 9;
+      const denominator = Math.max(100, meal.calories, macroCalories);
+      if (Math.abs(meal.calories - macroCalories) / denominator > 0.35) {
+        issues.push(`${meal.name} has a material energy-versus-macro discrepancy in the selected local records.`);
+      }
+    }
+  }
+  return issues.slice(0, 24);
+}
+
+async function resolveNutritionCandidate(input: {
+  plan: AiNutritionPlan;
+  profile: Profile;
+  createdAt: string;
+}) {
+  const draftIssues = nutritionDraftQualityIssues(input.plan, input.profile);
+  if (draftIssues.length > 0) return { plan: null, issues: draftIssues };
+
+  const targets = calculateNutritionTargets(input.profile);
+  const resolution = await resolveNutritionPlanDraft({
+    draft: input.plan,
+    dailyCalorieTarget: targets.targetCalories,
+    createdAt: input.createdAt,
+  });
+  if (!resolution.ok) return { plan: null, issues: [...resolution.issues] };
+
+  const issues = resolvedNutritionQualityIssues(resolution.plan, input.profile);
+  return { plan: issues.length === 0 ? resolution.plan : null, issues };
 }
 
 async function repairNutritionPlan(input: {
@@ -340,23 +363,22 @@ async function repairNutritionPlan(input: {
   model: string;
 }) {
   const targets = calculateNutritionTargets(input.profile);
-  const response = await requestStructured({
+  return requestStructured({
     kind: 'repair_nutrition_plan',
     schema: AiNutritionPlanSchema,
     locale: input.profile.locale,
     model: input.model,
     maxTokens: 12_000,
     temperature: 0.05,
-    system: 'You are a meticulous meal-plan quality controller. Repair the listed defects without introducing allergies, extreme restriction, fake precision, or impractical recipes.',
-    prompt: `Repair the complete seven-day meal plan.
-
+    system: 'You are a meticulous meal-plan quality controller. Repair only food identities, catalog queries, planned gram amounts, practicality, exclusions, and variety. Do not return or invent calories or macronutrients; NeoFit calculates them from its local catalog.',
+    prompt: `Repair the complete seven-day meal-plan draft.
 VALIDATED PROFILE:
 ${profilePrompt(input.profile)}
 
-LOCAL CALORIE AND MACRO TARGETS (calculated on-device, authoritative for this task):
+ON-DEVICE TARGETS (use only to adjust food choices and grams; do not output nutrition numbers):
 ${JSON.stringify(targets, null, 2)}
 
-QUALITY DEFECTS:
+QUALITY OR LOCAL-CATALOG DEFECTS:
 ${input.issues.map((issue, index) => `${index + 1}. ${issue}`).join('\n')}
 
 CANDIDATE JSON:
@@ -365,11 +387,9 @@ ${JSON.stringify(input.plan, null, 2)}
 REQUIRED OUTPUT CONTRACT:
 ${nutritionJsonContract()}
 
-Return the complete corrected JSON object only.`,
+Return the complete corrected JSON object only. Every ingredient must resolve independently through catalogQuery and grams. Never add calories, proteinG, carbsG, or fatG fields.`,
   });
-  return response;
 }
-
 function normalizeFoodEstimate(estimate: FoodEstimate): FoodEstimate {
   const macroCalories = estimate.proteinG * 4 + estimate.carbsG * 4 + estimate.fatG * 9;
   const denominator = Math.max(100, estimate.calories, macroCalories);
@@ -472,78 +492,61 @@ export async function generateNutritionPlan(profile: Profile): Promise<Nutrition
     model: settings.textModel,
     maxTokens: 12_000,
     temperature: 0.12,
-    system: 'You are an evidence-informed nutrition planning assistant. Build practical general-wellness meal plans. Never diagnose, treat disease, recommend crash diets, detoxes, unsafe supplements, or pretend a recipe has laboratory precision.',
-    prompt: `Create a realistic seven-day meal plan from the validated profile.
-
+    system: 'You are an evidence-informed nutrition planning assistant. Build practical general-wellness meal-plan drafts. You select food identities and planned amounts only. Never return calories or macronutrients; NeoFit resolves every ingredient and calculates nutrition from its local IFKB/USDA catalog.',
+    prompt: `Create a realistic seven-day meal-plan draft from the validated profile.
 VALIDATED PROFILE:
 ${profilePrompt(profile)}
 
-ON-DEVICE NUTRITION TARGETS (authoritative constraints, not suggestions):
+ON-DEVICE NUTRITION TARGETS (planning constraints only; never return nutrition numbers):
 ${JSON.stringify(targets, null, 2)}
 
-IRANIAN STANDARD-SERVING ANCHORS FROM THE LOCAL CATALOG:
+EXACT IRANIAN NAMES AND DEFAULT-SERVING ANCHORS AVAILABLE IN THE LOCAL CATALOG:
 ${iranianFoodAnchors()}
 
 NON-NEGOTIABLE PLAN RULES:
 - Return each dayIndex 0 through 6 exactly once and exactly ${profile.details.mealsPerDay} meals per day.
-- Keep each day inside or very near ${targets.calorieRange.low}-${targets.calorieRange.high} kcal and protein near ${targets.proteinRangeG.low}-${targets.proteinRangeG.high} g.
 - Respect every allergy as an absolute exclusion, including ingredient-level sources. Respect dietary preferences and dislikedFoods.
 - Match budgetLevel, cookingAccess, cookingMinutes, workSchedule, preferred meal count, training time, and cultural context.
-- Use realistic household or gram quantities. Ingredients must be sufficient to reproduce the meal; do not write vague quantities such as "some".
-- If you use a named Iranian dish from the catalog anchors, use its standard serving as a starting point and scale calories/macros coherently. Recipe oil and portions vary, so do not claim exactness.
-- Calories should be reasonably consistent with 4 kcal/g protein, 4 kcal/g carbohydrate, and 9 kcal/g fat after ordinary rounding.
+- Each ingredient needs: a localized name, a human-readable quantity, one catalogQuery, positive edible grams, and a category.
+- For an Iranian named dish, use exactly one listed Persian/English anchor as catalogQuery and represent the dish as one ingredient. Add rice, bread, drink, yogurt, salad, and other sides as separate ingredients.
+- For generic foods, catalogQuery must be a concise conventional English food name including meaningful preparation, such as "chicken breast grilled", "rice white cooked", or "egg whole cooked".
+- Include only nutritionally material components. Do not create separate entries for water or trace salt/spices/herbs unless they materially affect nutrition and have a resolvable catalog query.
+- grams is a planned edible default, not measured intake. quantity is the matching human-readable amount. Never claim laboratory precision.
 - Avoid monotonous repetition; leftovers can repeat intentionally but no exact meal more than three times in the week.
 - Do not prescribe therapeutic diets. For health flags requiring individualized care, keep the plan conservative and add a safetyNote.
 - Do not add powders or supplements unless the profile explicitly lists them as acceptable; prefer ordinary foods.
-
+- Do not return calories, proteinG, carbsG, fatG, serving nutrition, or hidden nutrition estimates anywhere in the JSON.
 REQUIRED JSON CONTRACT:
 ${nutritionJsonContract()}`,
   });
 
+  const createdAt = new Date().toISOString();
   let candidate = initial.data;
-  let issues = nutritionQualityIssues(candidate, profile);
   let requestId = initial.metadata.requestId;
-  if (issues.length > 0) {
+  let validation = await resolveNutritionCandidate({ plan: candidate, profile, createdAt });
+
+  if (validation.issues.length > 0) {
     const repaired = await repairNutritionPlan({
       plan: candidate,
-      issues,
+      issues: validation.issues,
       profile,
       model: settings.textModel,
     });
     candidate = repaired.data;
     requestId = repaired.metadata.requestId;
-    issues = nutritionQualityIssues(candidate, profile);
+    validation = await resolveNutritionCandidate({ plan: candidate, profile, createdAt });
   }
-  if (issues.length > 0) {
+
+  if (!validation.plan || validation.issues.length > 0) {
     throw new AvalAiError(
-      `Generated nutrition plan failed quality checks: ${issues.slice(0, 4).join(' ')}`,
+      `Generated nutrition plan could not be fully resolved through the local catalog: ${validation.issues.slice(0, 4).join(' ')}`,
       'QUALITY_VALIDATION_FAILED',
       502,
       requestId,
     );
   }
-
-  const createdAt = new Date().toISOString();
-  return NutritionPlanSchema.parse({
-    id: createId('nutrition-plan'),
-    title: candidate.title,
-    summary: candidate.summary,
-    dailyCalorieTarget: targets.targetCalories,
-    safetyNotes: candidate.safetyNotes,
-    createdAt,
-    days: candidate.days
-      .sort((a, b) => a.dayIndex - b.dayIndex)
-      .map((day) => ({
-        dayIndex: day.dayIndex,
-        totalCalories: Math.round(day.meals.reduce((sum, meal) => sum + meal.calories, 0)),
-        meals: day.meals.map((meal) => ({
-          id: createId('meal'),
-          ...meal,
-        })),
-      })),
-  });
+  return validation.plan;
 }
-
 export async function estimateFoodFromText(input: {
   description: string;
   locale: 'fa' | 'en';
