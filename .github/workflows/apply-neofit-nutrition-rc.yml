@@ -40,11 +40,21 @@ jobs:
           from pathlib import Path
           p = Path('/tmp/rc/neofit-nutrition-rc-stage9-10/scripts/apply_neofit_nutrition_rc.py')
           s = p.read_text(encoding='utf-8')
-          old = "export type Ingredient = z.infer<typeof IngredientSchema>;\nexport const MealSchema"
-          new = "export type Ingredient = z.infer<typeof IngredientSchema>;\n\nexport const MealSchema"
-          if old not in s:
-              raise SystemExit('expected formatting anchor not found')
-          p.write_text(s.replace(old, new), encoding='utf-8')
+          adaptations = [
+              (
+                  "export type Ingredient = z.infer<typeof IngredientSchema>;\nexport const MealSchema",
+                  "export type Ingredient = z.infer<typeof IngredientSchema>;\n\nexport const MealSchema",
+              ),
+              (
+                  'r"function nutritionJsonContract\\(\\) \\{.*?\\n\\}\\n(?=function equipmentAvailable)"',
+                  'r"function nutritionJsonContract\\(\\) \\{.*?\\n\\}\\n+(?=function equipmentAvailable)"',
+              ),
+          ]
+          for old, new in adaptations:
+              if old not in s:
+                  raise SystemExit(f'expected formatting anchor not found: {old}')
+              s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
           PY
       - name: Compatibility check and atomic apply
         run: |
