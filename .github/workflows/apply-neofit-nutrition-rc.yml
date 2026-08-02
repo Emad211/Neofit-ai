@@ -49,6 +49,10 @@ jobs:
                   'r"function nutritionJsonContract\\(\\) \\{.*?\\n\\}\\n(?=function equipmentAvailable)"',
                   'r"function nutritionJsonContract\\(\\) \\{.*?\\n\\}\\n+(?=function equipmentAvailable)"',
               ),
+              (
+                  'r"export async function generateNutritionPlan\\(profile: Profile\\): Promise<NutritionPlan> \\{.*?\\n\\}\\n(?=export async function estimateFoodFromText)"',
+                  'r"export async function generateNutritionPlan\\(profile: Profile\\): Promise<NutritionPlan> \\{.*?\\n\\}\\n+(?=export async function estimateFoodFromText)"',
+              ),
           ]
           for old, new in adaptations:
               if old not in s:
