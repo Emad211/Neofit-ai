@@ -1,17 +1,61 @@
-name: Stage NeoFit Nutrition RC Payload
+name: Validate NeoFit Nutrition RC
 
 on:
   pull_request:
-    branches:
-      - agent/iranian-food-kb-foundation
-    paths:
-      - '.github/workflows/apply-neofit-nutrition-rc.yml'
+    branches: [agent/iranian-food-kb-foundation]
+    paths: ['.github/workflows/apply-neofit-nutrition-rc.yml']
 
 permissions:
   contents: read
 
 jobs:
-  payload-staging:
+  validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CI: '1'
+      EXPO_NO_TELEMETRY: '1'
     steps:
-      - run: echo 'Direct text payload is being staged; no product mutation occurs in this run.'
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reconstruct and verify RC
+        run: |
+          cat .github/rc-bundle/chunks/part* | base64 --decode > /tmp/rc.zip
+          echo '5cbd9db8cc6ef706ff3d2481af44e6b330ae5c3d9bfe683532e10e1fdfee521b  /tmp/rc.zip' | sha256sum -c --strict
+          mkdir /tmp/rc
+          unzip -q /tmp/rc.zip -d /tmp/rc
+      - name: Compatibility check and atomic apply
+        run: |
+          P=/tmp/rc/neofit-nutrition-rc-stage9-10/scripts/apply_neofit_nutrition_rc.py
+          python "$P" "$GITHUB_WORKSPACE" --check-only --report /tmp/check.json
+          python "$P" "$GITHUB_WORKSPACE" --report /tmp/apply.json
+      - name: Install and run release-critical checks
+        working-directory: mobile
+        run: |
+          npm ci --no-audit --no-fund
+          npm test
+          npx expo install --check
+          npm run doctor
+          npm run typecheck
+          npx expo export --platform android --output-dir dist
+      - name: Package validated product diff
+        run: |
+          git diff --check
+          git diff --binary > /tmp/nutrition-rc.patch
+          mkdir -p /tmp/validated
+          cp /tmp/nutrition-rc.patch /tmp/check.json /tmp/apply.json /tmp/validated/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: validated-nutrition-rc
+          path: /tmp/validated
+          if-no-files-found: error
