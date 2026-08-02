@@ -8,6 +8,7 @@ import { Meal } from '@/domain/models';
 import { useApp } from '@/providers/app-provider';
 import { generateNutritionPlan } from '@/services/ai-features';
 import { AvalAiError } from '@/services/avalai-client';
+import { isIfkbResolvedNutritionPlan } from '@/services/nutrition-plan-resolution-core';
 
 function dayName(index: number, locale: 'fa' | 'en') {
   const referenceMonday = new Date(2024, 0, 1 + index);
@@ -29,6 +30,7 @@ export default function NutritionScreen() {
   const [notice, setNotice] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const label = (en: string, fa: string) => locale === 'fa' ? fa : en;
+  const nutritionPlanResolved = nutritionPlan ? isIfkbResolvedNutritionPlan(nutritionPlan) : false;
 
   const generate = async () => {
     if (!profile) return;
@@ -53,6 +55,13 @@ export default function NutritionScreen() {
   };
 
   const logPlannedMeal = async (meal: Meal) => {
+    if (meal.nutritionSource !== 'ifkb_resolved') {
+      setError(label(
+        'This is a legacy AI plan whose nutrition was not resolved through IFKB. Regenerate the plan before logging it.',
+        'این برنامهٔ قدیمی هوش مصنوعی است و تغذیهٔ آن از IFKB محاسبه نشده؛ پیش از ثبت، برنامه را دوباره تولید کنید.',
+      ));
+      return;
+    }
     setBusyMealId(meal.id);
     setError(null);
     try {
@@ -140,6 +149,12 @@ export default function NutritionScreen() {
 
       {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
       {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
+      {nutritionPlan && !nutritionPlanResolved ? (
+        <InlineNotice tone="warning">{label(
+          'This saved plan predates local IFKB resolution. It remains readable, but one-tap meal logging is blocked until you regenerate it.',
+          'این برنامه پیش از اتصال کامل به IFKB ذخیره شده است. نمایش آن حفظ می‌شود، اما تا تولید دوباره، ثبت یک‌مرحله‌ای وعده‌ها غیرفعال است.',
+        )}</InlineNotice>
+      ) : null}
 
       {nutritionPlan ? (
         <>
