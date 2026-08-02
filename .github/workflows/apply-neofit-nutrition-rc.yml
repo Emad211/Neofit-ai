@@ -1,4 +1,4 @@
-name: Commit Validated NeoFit Nutrition RC
+name: Clean Nutrition RC Staging Files
 
 on:
   pull_request:
@@ -9,76 +9,18 @@ permissions:
   contents: write
 
 jobs:
-  commit-validated-product-files:
+  cleanup:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    env:
-      CI: '1'
-      EXPO_NO_TELEMETRY: '1'
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
           persist-credentials: true
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22.13.1
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Verify, adapt, and apply RC
-        run: |
-          cat .github/rc-bundle/chunks/part* | base64 --decode > /tmp/rc.zip
-          echo '5cbd9db8cc6ef706ff3d2481af44e6b330ae5c3d9bfe683532e10e1fdfee521b  /tmp/rc.zip' | sha256sum -c --strict
-          mkdir /tmp/rc && unzip -q /tmp/rc.zip -d /tmp/rc
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('/tmp/rc/neofit-nutrition-rc-stage9-10/scripts/apply_neofit_nutrition_rc.py')
-          s = p.read_text(encoding='utf-8')
-          adaptations = [
-              ("export type Ingredient = z.infer<typeof IngredientSchema>;\nexport const MealSchema", "export type Ingredient = z.infer<typeof IngredientSchema>;\n\nexport const MealSchema"),
-              ('r"function nutritionJsonContract\\(\\) \\{.*?\\n\\}\\n(?=function equipmentAvailable)"', 'r"function nutritionJsonContract\\(\\) \\{.*?\\n\\}\\n+(?=function equipmentAvailable)"'),
-              ('r"export async function generateNutritionPlan\\(profile: Profile\\): Promise<NutritionPlan> \\{.*?\\n\\}\\n(?=export async function estimateFoodFromText)"', 'r"export async function generateNutritionPlan\\(profile: Profile\\): Promise<NutritionPlan> \\{.*?\\n\\}\\n+(?=export async function estimateFoodFromText)"'),
-          ]
-          for old, new in adaptations:
-              if old not in s:
-                  raise SystemExit(f'expected formatting anchor not found: {old}')
-              s = s.replace(old, new, 1)
-          p.write_text(s, encoding='utf-8')
-          PY
-          P=/tmp/rc/neofit-nutrition-rc-stage9-10/scripts/apply_neofit_nutrition_rc.py
-          python "$P" "$GITHUB_WORKSPACE" --check-only --report /tmp/check.json
-          python "$P" "$GITHUB_WORKSPACE" --report /tmp/apply.json
-      - name: Repeat release-critical validation
-        working-directory: mobile
-        run: |
-          npm ci --no-audit --no-fund
-          npm test
-          npx expo install --check
-          npm run doctor
-          npm run typecheck
-          npx expo export --platform android --output-dir dist
-      - name: Commit only validated product files
+      - name: Remove temporary staging payload
         run: |
           git config user.name 'NeoFit Release Automation'
           git config user.email 'actions@users.noreply.github.com'
-          git add -- \
-            'mobile/app/(tabs)/nutrition.tsx' \
-            mobile/src/data/stage7-legacy-portion-overrides.generated.ts \
-            mobile/src/db/apply-stage7-legacy-portions.ts \
-            mobile/src/db/food-repository-stage6.ts \
-            mobile/src/db/plan-repository.ts \
-            mobile/src/domain/models.ts \
-            mobile/src/services/ai-features.ts \
-            mobile/src/services/nutrition-plan-resolution-core.ts \
-            mobile/src/services/nutrition-plan-resolver.ts \
-            mobile/tests/nutrition-plan-resolution.test.ts \
-            mobile/tests/stage7-runtime-application.test.ts \
-            mobile/tests/stage7-runtime-contract.test.ts
-          git diff --cached --check
-          test "$(git diff --cached --name-only | wc -l)" -eq 12
-          git commit -m 'feat(nutrition): resolve AI plans through IFKB and apply Stage 7 portions'
+          git rm -r .github/rc-bundle .github/workflows/apply-neofit-nutrition-rc.yml
+          git commit -m 'chore(nutrition): remove temporary RC staging files'
           git push origin HEAD:automation/nutrition-rc-stage9-10
