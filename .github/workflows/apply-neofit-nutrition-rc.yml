@@ -34,6 +34,18 @@ jobs:
           echo '5cbd9db8cc6ef706ff3d2481af44e6b330ae5c3d9bfe683532e10e1fdfee521b  /tmp/rc.zip' | sha256sum -c --strict
           mkdir /tmp/rc
           unzip -q /tmp/rc.zip -d /tmp/rc
+      - name: Adapt exact formatting to live head
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('/tmp/rc/neofit-nutrition-rc-stage9-10/scripts/apply_neofit_nutrition_rc.py')
+          s = p.read_text(encoding='utf-8')
+          old = "export type Ingredient = z.infer<typeof IngredientSchema>;\nexport const MealSchema"
+          new = "export type Ingredient = z.infer<typeof IngredientSchema>;\n\nexport const MealSchema"
+          if old not in s:
+              raise SystemExit('expected formatting anchor not found')
+          p.write_text(s.replace(old, new), encoding='utf-8')
+          PY
       - name: Compatibility check and atomic apply
         run: |
           P=/tmp/rc/neofit-nutrition-rc-stage9-10/scripts/apply_neofit_nutrition_rc.py
