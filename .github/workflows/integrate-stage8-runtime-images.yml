@@ -50,7 +50,7 @@ jobs:
         run: |
           set -euo pipefail
           base64 --decode .github/stage8-build/bundle.b64 > /tmp/stage8-build-bundle.zip
-          echo 'abe0de084696a5a25cd529580b0db1add50778e8b20f069fa59335d3b0b0f46c  /tmp/stage8-build-bundle.zip' | sha256sum --check --strict
+          echo '9ae051c80accfa6ea307dd251dbb1d409a3dc6567ccc19215488f1d7644fb4a4  /tmp/stage8-build-bundle.zip' | sha256sum --check --strict
           rm -rf /tmp/stage8-builder
           mkdir -p /tmp/stage8-builder
           unzip -q /tmp/stage8-build-bundle.zip -d /tmp/stage8-builder
