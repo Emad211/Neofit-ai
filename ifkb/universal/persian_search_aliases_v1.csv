@@ -1,0 +1,219 @@
+alias_fa,target,target_type
+تخم مرغ,"egg, whole",generic
+تخم مرغ کامل,"egg, whole",generic
+تخم مرغ آب پز,"egg, whole, boiled",generic
+تخم مرغ نیمرو,"egg, whole, fried",generic
+سفیده تخم مرغ,"egg, white",generic
+سفیده,"egg, white",generic
+زرده تخم مرغ,"egg, yolk",generic
+زرده,"egg, yolk",generic
+گوجه,tomato,generic
+گوجه فرنگی,tomato,generic
+گوجه خام,"tomatoes, red, ripe, raw",generic
+خیار,cucumber,generic
+کاهو,lettuce,generic
+هویج,carrot,generic
+کلم,cabbage,generic
+اسفناج,spinach,generic
+بادمجان,eggplant,generic
+کدو,squash,generic
+کدو سبز,summer squash,generic
+فلفل دلمه ای,sweet pepper,generic
+قارچ,mushroom,generic
+سیب زمینی,potato,generic
+سیب زمینی سرخ کرده,french fries,generic
+پیاز,onion,generic
+سیر,garlic,generic
+سالاد,salad,generic
+سالاد سزار,caesar salad,generic
+سالاد مرغ,chicken salad,generic
+سالاد تن ماهی,tuna salad,generic
+سالاد میوه,fruit salad,generic
+برنج,rice,generic
+برنج سفید پخته,"rice, white",generic
+برنج قهوه ای,brown rice,generic
+ماکارونی,pasta,generic
+اسپاگتی,spaghetti,generic
+نان,bread,generic
+نان تست,toast,generic
+نان سفید,white bread,generic
+نان سبوس دار,whole wheat bread,generic
+شیر,milk,generic
+شیر کم چرب,lowfat milk,generic
+شیر پرچرب,whole milk,generic
+ماست,yogurt,generic
+ماست یونانی,greek yogurt,generic
+پنیر,cheese,generic
+پنیر خامه ای,cream cheese,generic
+کره,butter,generic
+خامه,cream,generic
+مرغ,chicken,generic
+سینه مرغ,chicken breast,generic
+ران مرغ,chicken thigh,generic
+مرغ گریل,grilled chicken,generic
+مرغ سوخاری,fried chicken,generic
+گوشت گاو,beef,generic
+گوشت گوسفند,lamb,generic
+گوشت چرخ کرده,ground beef,generic
+ماهی,fish,generic
+ماهی سالمون,salmon,generic
+تن ماهی,tuna,generic
+میگو,shrimp,generic
+لوبیا,beans,generic
+عدس,lentils,generic
+نخود,chickpeas,generic
+آجیل,nuts,generic
+گردو,walnuts,generic
+بادام,almonds,generic
+پسته,pistachios,generic
+سیب,apple,generic
+موز,banana,generic
+پرتقال,orange,generic
+نارنگی,tangerine,generic
+انگور,grapes,generic
+هندوانه,watermelon,generic
+خربزه,melon,generic
+توت فرنگی,strawberries,generic
+خرما,dates,generic
+کشمش,raisins,generic
+آب میوه,fruit juice,generic
+نوشابه,soft drink,generic
+قهوه,coffee,generic
+چای,tea,generic
+پیتزا,pizza,generic
+پیتزا پنیر,pizza with cheese,generic
+همبرگر,hamburger,generic
+چیزبرگر,cheeseburger,generic
+ساندویچ,sandwich,generic
+هات داگ,hot dog,generic
+ناگت مرغ,chicken nuggets,generic
+غلات صبحانه,breakfast cereal,generic
+جو دوسر,oatmeal,generic
+شکلات,chocolate,generic
+بیسکویت,cookie,generic
+کیک,cake,generic
+بستنی,ice cream,generic
+خورش کرفس,IFKB-CANON-00002,iranian_canon
+خورشت کرفس,IFKB-CANON-00002,iranian_canon
+قیمه,IFKB-CANON-00005,iranian_canon
+خورش قیمه,IFKB-CANON-00005,iranian_canon
+خورشت قیمه,IFKB-CANON-00005,iranian_canon
+خورش بادمجان,IFKB-CANON-00007,iranian_canon
+خورشت بادمجان,IFKB-CANON-00007,iranian_canon
+قورمه‌سبزی,IFKB-CANON-00008,iranian_canon
+قورمه سبزی,IFKB-CANON-00008,iranian_canon
+قرمه سبزی,IFKB-CANON-00008,iranian_canon
+خورش قورمه‌سبزی,IFKB-CANON-00008,iranian_canon
+قیمه بادمجان,IFKB-CANON-00009,iranian_canon
+قیمه بادمجون,IFKB-CANON-00009,iranian_canon
+فسنجان,IFKB-CANON-00010,iranian_canon
+فسنجون,IFKB-CANON-00010,iranian_canon
+خورش فسنجان,IFKB-CANON-00010,iranian_canon
+چلو سفید,IFKB-CANON-00012,iranian_canon
+برنج سفید,IFKB-CANON-00012,iranian_canon
+چلو,IFKB-CANON-00012,iranian_canon
+عدس پلو,IFKB-CANON-00016,iranian_canon
+عدس‌پلو,IFKB-CANON-00016,iranian_canon
+لوبیا پلو,IFKB-CANON-00018,iranian_canon
+لوبیاپلو,IFKB-CANON-00018,iranian_canon
+زرشک‌پلو با مرغ,IFKB-CANON-00019,iranian_canon
+زرشک پلو با مرغ,IFKB-CANON-00019,iranian_canon
+مرغ و زرشک پلو,IFKB-CANON-00019,iranian_canon
+ته‌چین مرغ,IFKB-CANON-00020,iranian_canon
+ته چین مرغ,IFKB-CANON-00020,iranian_canon
+باقالی‌پلو با ماهیچه,IFKB-CANON-00021,iranian_canon
+باقالی پلو با ماهیچه,IFKB-CANON-00021,iranian_canon
+باقلا پلو با ماهیچه,IFKB-CANON-00021,iranian_canon
+جوجه کباب,IFKB-CANON-00023,iranian_canon
+جوجه‌کباب,IFKB-CANON-00023,iranian_canon
+کباب برگ,IFKB-CANON-00024,iranian_canon
+برگ,IFKB-CANON-00024,iranian_canon
+چنجه,IFKB-CANON-00025,iranian_canon
+کباب چنجه,IFKB-CANON-00025,iranian_canon
+کباب کوبیده,IFKB-CANON-00028,iranian_canon
+کوبیده,IFKB-CANON-00028,iranian_canon
+کباب‌کوبیده,IFKB-CANON-00028,iranian_canon
+شیشلیک,IFKB-CANON-00029,iranian_canon
+کباب شیشلیک,IFKB-CANON-00029,iranian_canon
+چلوکباب کوبیده,IFKB-CANON-00030,iranian_canon
+چلو کباب کوبیده,IFKB-CANON-00030,iranian_canon
+آش دوغ,IFKB-CANON-00033,iranian_canon
+آش‌دوغ,IFKB-CANON-00033,iranian_canon
+آش رشته,IFKB-CANON-00035,iranian_canon
+آش‌رشته,IFKB-CANON-00035,iranian_canon
+حلیم,IFKB-CANON-00036,iranian_canon
+هلیم,IFKB-CANON-00036,iranian_canon
+آبگوشت,IFKB-CANON-00037,iranian_canon
+دیزی,IFKB-CANON-00037,iranian_canon
+آب گوشت,IFKB-CANON-00037,iranian_canon
+نیمرو,IFKB-CANON-00041,iranian_canon
+تخم مرغ نیمرو,IFKB-CANON-00041,iranian_canon
+عدسی,IFKB-CANON-00042,iranian_canon
+خوراک عدس,IFKB-CANON-00042,iranian_canon
+املت گوجه,IFKB-CANON-00043,iranian_canon
+املت گوجه فرنگی,IFKB-CANON-00043,iranian_canon
+کله‌پاچه,IFKB-CANON-00045,iranian_canon
+کله پاچه,IFKB-CANON-00045,iranian_canon
+کوکو سبزی,IFKB-CANON-00046,iranian_canon
+کوکوسبزی,IFKB-CANON-00046,iranian_canon
+سمبوسه,IFKB-CANON-00047,iranian_canon
+سمبوسه سیب زمینی,IFKB-CANON-00047,iranian_canon
+شامی,IFKB-CANON-00048,iranian_canon
+شامی کباب,IFKB-CANON-00048,iranian_canon
+کتلت,IFKB-CANON-00049,iranian_canon
+کتلت گوشت,IFKB-CANON-00049,iranian_canon
+دلمه برگ مو,IFKB-CANON-00050,iranian_canon
+دلمه برگ,IFKB-CANON-00050,iranian_canon
+دلمه برگ انگور,IFKB-CANON-00050,iranian_canon
+خوراک لوبیا چیتی,IFKB-CANON-00051,iranian_canon
+لوبیا چیتی,IFKB-CANON-00051,iranian_canon
+خوراک لوبیا,IFKB-CANON-00051,iranian_canon
+میرزاقاسمی,IFKB-CANON-00054,iranian_canon
+میرزا قاسمی,IFKB-CANON-00054,iranian_canon
+کشک بادمجان,IFKB-CANON-00056,iranian_canon
+کشک بادمجون,IFKB-CANON-00056,iranian_canon
+ماکارونی,IFKB-CANON-00059,iranian_canon
+ماکارانی,IFKB-CANON-00059,iranian_canon
+پاستا ایرانی,IFKB-CANON-00059,iranian_canon
+الویه,IFKB-CANON-00060,iranian_canon
+سالاد الویه,IFKB-CANON-00060,iranian_canon
+ساندویچ الویه,IFKB-CANON-00060,iranian_canon
+فلافل,IFKB-CANON-00061,iranian_canon
+ساندویچ فلافل,IFKB-CANON-00061,iranian_canon
+نان لواش,IFKB-CANON-00062,iranian_canon
+لواش,IFKB-CANON-00062,iranian_canon
+نان تافتون,IFKB-CANON-00063,iranian_canon
+تافتون,IFKB-CANON-00063,iranian_canon
+نان سنگک,IFKB-CANON-00064,iranian_canon
+سنگک,IFKB-CANON-00064,iranian_canon
+نان بربری,IFKB-CANON-00065,iranian_canon
+بربری,IFKB-CANON-00065,iranian_canon
+دوغ,IFKB-CANON-00077,iranian_canon
+دوغ کم نمک,IFKB-CANON-00077,iranian_canon
+پنیر,IFKB-CANON-00078,iranian_canon
+پنیر سفید,IFKB-CANON-00078,iranian_canon
+پنیر صبحانه,IFKB-CANON-00078,iranian_canon
+کشک,IFKB-CANON-00079,iranian_canon
+کشک مایع,IFKB-CANON-00079,iranian_canon
+ماست,IFKB-CANON-00080,iranian_canon
+ماست ساده,IFKB-CANON-00080,iranian_canon
+ماست چکیده,IFKB-CANON-00083,iranian_canon
+ماست یونانی ایرانی,IFKB-CANON-00083,iranian_canon
+قلیه ماهی,IFKB-CANON-00101,iranian_canon
+دیزی سنگی,IFKB-CANON-00108,iranian_canon
+دیزی,IFKB-CANON-00108,iranian_canon
+اکبرجوجه,IFKB-CANON-00112,iranian_canon
+اکبر جوجه,IFKB-CANON-00112,iranian_canon
+قیمه نثار,IFKB-CANON-00119,iranian_canon
+کلم پلو شیرازی,IFKB-CANON-00120,iranian_canon
+سبزی پلو با ماهی,IFKB-CANON-00121,iranian_canon
+رشته پلو,IFKB-CANON-00122,iranian_canon
+کباب بناب,IFKB-CANON-00150,iranian_canon
+دنده کباب,IFKB-CANON-00151,iranian_canon
+آش شله قلمکار,IFKB-CANON-00162,iranian_canon
+شله مشهدی,IFKB-CANON-00175,iranian_canon
+کوکو سیب‌زمینی,IFKB-CANON-00184,iranian_canon
+کوکو سیب زمینی,IFKB-CANON-00184,iranian_canon
+کوفته تبریزی,IFKB-CANON-00187,iranian_canon
+بریانی اصفهان,IFKB-CANON-00211,iranian_canon
+بریونی,IFKB-CANON-00211,iranian_canon

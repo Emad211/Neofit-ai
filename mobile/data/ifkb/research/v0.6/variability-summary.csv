@@ -1,0 +1,28 @@
+variant_id,fdc_id,description,source_sample_count,acquisition_count,geographic_unit_count,lab_method_count,lab_nutrient_count,lab_result_count,sampling_grade,analytical_depth
+IFKB-ING-0001,2512381,"Rice, white, long grain, unenriched, raw",8,8,1,14,25,200,adequate_US_sampling,high
+IFKB-ING-0008,2710820,"Bulgur, dry, raw",8,8,2,11,19,152,broad_US_sampling,moderate
+IFKB-ING-0015,2644283,"Lentils, dry",8,8,1,7,15,120,adequate_US_sampling,moderate
+IFKB-ING-0018,2644282,"Chickpeas, (garbanzo beans, bengal gram), dry",8,8,1,7,15,120,adequate_US_sampling,moderate
+IFKB-ING-0026,2644284,"Blackeye pea, dry",8,8,2,7,15,120,broad_US_sampling,moderate
+IFKB-ING-0030,2514743,"Beef, ground, 90% lean meat / 10% fat, raw",8,8,2,7,18,140,broad_US_sampling,moderate
+IFKB-ING-0029,2727570,"Lamb, ground, raw",6,6,2,6,14,84,adequate_US_sampling,limited
+IFKB-ING-0032,2646170,"Chicken, breast, boneless, skinless, raw",8,8,1,7,18,144,adequate_US_sampling,moderate
+IFKB-ING-0033,2646171,"Chicken, thigh, boneless, skinless, raw",8,8,2,7,18,144,broad_US_sampling,moderate
+IFKB-ING-0058,2685577,"Eggplant, raw",8,8,2,10,22,176,broad_US_sampling,moderate
+IFKB-ING-0059,2685568,"Squash, summer, green, zucchini, includes skin, raw",8,8,1,9,17,136,adequate_US_sampling,moderate
+IFKB-ING-0060,2346405,"Celery, raw",8,8,2,7,16,128,broad_US_sampling,moderate
+IFKB-ING-0061,2346400,"Beans, snap, green, raw",8,8,2,13,26,208,broad_US_sampling,high
+IFKB-ING-0062-RUSSET,2346401,"Potatoes, russet, without skin, raw",8,8,1,14,30,240,adequate_US_sampling,high
+IFKB-ING-0062-RED,2346402,"Potatoes, red, without skin, raw",8,8,1,14,30,240,adequate_US_sampling,high
+IFKB-ING-0062-GOLD,2346403,"Potatoes, gold, without skin, raw",8,8,1,14,30,237,adequate_US_sampling,high
+IFKB-ING-0063-BABY,1999632,"Spinach, baby",8,8,2,16,32,256,broad_US_sampling,high
+IFKB-ING-0063-MATURE,1999633,"Spinach, mature",8,8,2,16,32,256,broad_US_sampling,high
+IFKB-ING-0065,2346407,"Cabbage, green, raw",8,8,2,10,19,152,broad_US_sampling,moderate
+IFKB-ING-0066,2258586,"Carrots, mature, raw",8,8,2,13,21,168,broad_US_sampling,moderate
+IFKB-ING-0053,1104962,"Onions, white, raw",6,6,2,9,21,126,adequate_US_sampling,moderate
+IFKB-ING-0055,1104647,"Garlic, raw",6,6,2,7,7,42,adequate_US_sampling,limited
+IFKB-ING-0056,1999634,"Tomato, roma",8,8,2,15,31,247,broad_US_sampling,high
+IFKB-ING-0077,2346394,"Nuts, walnuts, English, halves, raw",8,8,1,14,44,257,adequate_US_sampling,high
+IFKB-ING-0043,2259793,"Yogurt, plain, whole milk",8,8,2,18,40,320,broad_US_sampling,high
+IFKB-ING-0046,2259796,"Cheese, feta, whole milk, crumbled",8,8,2,18,44,352,broad_US_sampling,high
+IFKB-ING-0048,2346386,"Cream, heavy",8,8,2,16,31,248,broad_US_sampling,high

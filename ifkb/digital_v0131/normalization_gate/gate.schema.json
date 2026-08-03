@@ -1,0 +1,292 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neofit.local/schemas/ifkb-ds2-normalization-gate-v1.json",
+  "title": "IFKB DS2 normalization gate v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "sourceRelease",
+    "status",
+    "scientificPolicy",
+    "profiles"
+  ],
+  "properties": {
+    "format": {
+      "const": "ifkb-ds2-normalization-gate"
+    },
+    "version": {
+      "const": "1.0.0"
+    },
+    "sourceRelease": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "blocked-pending-normalization",
+        "partially-ready",
+        "release-ready"
+      ]
+    },
+    "scientificPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identityConsensusIsNotNutrientReadiness",
+        "legacyNutritionCenterMayNotBeRelabelledAsNormalizedRecipeCalculation",
+        "promotionRequiresIndependentReview"
+      ],
+      "properties": {
+        "identityConsensusIsNotNutrientReadiness": {
+          "const": true
+        },
+        "legacyNutritionCenterMayNotBeRelabelledAsNormalizedRecipeCalculation": {
+          "const": true
+        },
+        "promotionRequiresIndependentReview": {
+          "const": true
+        }
+      }
+    },
+    "profiles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/profile"
+      }
+    }
+  },
+  "$defs": {
+    "sha256OrNull": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      ]
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "canonId",
+        "consensusId",
+        "foodNameFa",
+        "sourceRecords",
+        "independentSourceGroups",
+        "identityStatus",
+        "evidenceTier",
+        "sourceRecordIds",
+        "sourceStatus",
+        "normalization",
+        "servingWeightG",
+        "nutrientIntervals",
+        "nutritionCenterBasis",
+        "calculationArtifactSha256",
+        "ingredientMappingArtifactSha256",
+        "review",
+        "promotionEligible",
+        "blockingReasons"
+      ],
+      "properties": {
+        "canonId": {
+          "type": "string",
+          "pattern": "^IFKB-CANON-[0-9]{5}$"
+        },
+        "consensusId": {
+          "type": "string",
+          "pattern": "^CONS-IFKB-CANON-[0-9]{5}-V[0-9]+$"
+        },
+        "foodNameFa": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceRecords": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "independentSourceGroups": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "identityStatus": {
+          "const": "multi_source_consensus"
+        },
+        "evidenceTier": {
+          "const": "DS2"
+        },
+        "sourceRecordIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "normalization": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "ingredientMapping",
+            "quantityNormalization",
+            "yieldNormalization",
+            "retentionFactors",
+            "edibleFractions",
+            "servingBasis"
+          ],
+          "properties": {
+            "ingredientMapping": {
+              "enum": [
+                "not_started",
+                "incomplete",
+                "complete"
+              ]
+            },
+            "quantityNormalization": {
+              "enum": [
+                "not_started",
+                "incomplete",
+                "complete"
+              ]
+            },
+            "yieldNormalization": {
+              "enum": [
+                "not_started",
+                "incomplete",
+                "complete"
+              ]
+            },
+            "retentionFactors": {
+              "enum": [
+                "not_assessed",
+                "not_started",
+                "incomplete",
+                "complete"
+              ]
+            },
+            "edibleFractions": {
+              "enum": [
+                "not_assessed",
+                "not_started",
+                "incomplete",
+                "complete"
+              ]
+            },
+            "servingBasis": {
+              "enum": [
+                "missing",
+                "prior_only",
+                "measured_or_calculated"
+              ]
+            }
+          }
+        },
+        "servingWeightG": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          ]
+        },
+        "nutrientIntervals": {
+          "enum": [
+            "blocked",
+            "ready"
+          ]
+        },
+        "nutritionCenterBasis": {
+          "enum": [
+            "none",
+            "legacy_estimate",
+            "normalized_recipe_calculation"
+          ]
+        },
+        "calculationArtifactSha256": {
+          "$ref": "#/$defs/sha256OrNull"
+        },
+        "ingredientMappingArtifactSha256": {
+          "$ref": "#/$defs/sha256OrNull"
+        },
+        "review": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "reviewer1",
+            "reviewer2",
+            "adjudicator",
+            "status"
+          ],
+          "properties": {
+            "reviewer1": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "reviewer2": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "adjudicator": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "status": {
+              "enum": [
+                "not_ready",
+                "in_review",
+                "adjudicated"
+              ]
+            }
+          }
+        },
+        "promotionEligible": {
+          "type": "boolean"
+        },
+        "blockingReasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "sourceStatus": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "nutrientIntervalStatusRaw",
+            "portionPriorStatusRaw",
+            "userGroundingRequiredForDS3"
+          ],
+          "properties": {
+            "nutrientIntervalStatusRaw": {
+              "type": "string",
+              "minLength": 1
+            },
+            "portionPriorStatusRaw": {
+              "type": "string",
+              "minLength": 1
+            },
+            "userGroundingRequiredForDS3": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    }
+  }
+}

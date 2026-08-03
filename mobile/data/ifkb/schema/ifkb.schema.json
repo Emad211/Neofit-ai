@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neofit.local/schemas/ifkb-v1.schema.json",
+  "title": "Iranian Food Knowledge Base canonical entities",
+  "type": "object",
+  "required": ["release", "foods", "names", "portions", "nutrientValues", "sources", "qaIssues"],
+  "properties": {
+    "release": {
+      "type": "object",
+      "required": ["releaseId", "version", "status", "createdAt"],
+      "properties": {
+        "releaseId": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+"},
+        "status": {"enum": ["foundation", "draft", "review", "published", "withdrawn"]},
+        "createdAt": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": true
+    },
+    "foods": {"type": "array", "items": {"$ref": "#/$defs/food"}},
+    "names": {"type": "array", "items": {"$ref": "#/$defs/name"}},
+    "portions": {"type": "array", "items": {"$ref": "#/$defs/portion"}},
+    "nutrientValues": {"type": "array", "items": {"$ref": "#/$defs/nutrientValue"}},
+    "sources": {"type": "array", "items": {"$ref": "#/$defs/source"}},
+    "qaIssues": {"type": "array", "items": {"$ref": "#/$defs/qaIssue"}}
+  },
+  "$defs": {
+    "evidenceGrade": {"enum": ["A", "B", "C", "D", "E"]},
+    "reviewStatus": {"enum": ["unverified", "in_review", "verified", "rejected", "planned"]},
+    "food": {
+      "type": "object",
+      "required": ["food_id", "name_fa", "name_en", "food_kind", "preparation_state", "evidence_grade", "review_status", "primary_source_id"],
+      "properties": {
+        "food_id": {"type": "string", "pattern": "^IFKB-FOOD-[0-9]{5,}$"},
+        "name_fa": {"type": "string", "minLength": 1},
+        "name_en": {"type": "string", "minLength": 1},
+        "food_kind": {"type": "string"},
+        "preparation_state": {"type": "string"},
+        "evidence_grade": {"$ref": "#/$defs/evidenceGrade"},
+        "review_status": {"$ref": "#/$defs/reviewStatus"},
+        "confidence_score": {"type": "number", "minimum": 0, "maximum": 1},
+        "primary_source_id": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": true
+    },
+    "name": {
+      "type": "object",
+      "required": ["name_id", "food_id", "language", "name_type", "name_text"],
+      "properties": {
+        "language": {"enum": ["fa", "en"]},
+        "name_type": {"enum": ["primary", "alias", "regional", "transliteration", "scientific"]}
+      },
+      "additionalProperties": true
+    },
+    "portion": {
+      "type": "object",
+      "required": ["portion_id", "food_id", "label_fa", "label_en", "review_status"],
+      "properties": {
+        "weight_g": {"type": ["number", "null"], "exclusiveMinimum": 0},
+        "review_status": {"$ref": "#/$defs/reviewStatus"}
+      },
+      "additionalProperties": true
+    },
+    "nutrientValue": {
+      "type": "object",
+      "required": ["value_id", "food_id", "nutrient_code", "value", "unit", "basis", "derivation_method", "source_id", "evidence_grade", "review_status"],
+      "properties": {
+        "value": {"type": "number", "minimum": 0},
+        "basis": {"enum": ["per_100g", "per_portion", "per_recipe", "per_package"]},
+        "evidence_grade": {"$ref": "#/$defs/evidenceGrade"},
+        "review_status": {"$ref": "#/$defs/reviewStatus"}
+      },
+      "additionalProperties": true
+    },
+    "source": {
+      "type": "object",
+      "required": ["source_id", "title", "source_type", "access_status", "license_status"],
+      "additionalProperties": true
+    },
+    "qaIssue": {
+      "type": "object",
+      "required": ["issue_id", "food_id", "severity", "rule_code", "message", "status"],
+      "properties": {
+        "severity": {"enum": ["critical", "high", "medium", "low"]},
+        "status": {"enum": ["open", "resolved", "accepted_risk", "not_applicable"]}
+      },
+      "additionalProperties": true
+    }
+  }
+}

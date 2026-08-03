@@ -1,0 +1,54 @@
+{
+  "format": "ifkb-usda-foundation-ingestion",
+  "pipelineVersion": "0.5.0",
+  "createdAt": "2026-07-26T08:47:28.988833+00:00",
+  "source": {
+    "publisher": "USDA Agricultural Research Service",
+    "dataset": "FoodData Central Foundation Foods",
+    "release": "2026-04-30",
+    "officialUrl": "https://fdc.nal.usda.gov/download-datasets/",
+    "license": "CC0-1.0 / US public domain",
+    "archiveFilename": "FoodData_Central_foundation_food_csv_2026-04-30.zip",
+    "archiveSha256": "d6d4f41dcd19a46abcdd67775379cb6f0292ff08daa7e0680fdd0982830bf57b",
+    "archiveSizeBytes": 3825517
+  },
+  "counts": {
+    "coverageRows": 34,
+    "exactMatches": 34,
+    "unmatched": 0,
+    "ambiguous": 0,
+    "selectedFoundationFoods": 34,
+    "nutrientObservations": 1071,
+    "unresolvedNutrientIds": 1,
+    "portions": 0,
+    "foodComponents": 0,
+    "sourceSampleLinks": 253,
+    "subSampleResults": 6766,
+    "foodAttributes": 528,
+    "conversionFactors": 60,
+    "qaIssues": 29,
+    "criticalQaIssues": 0,
+    "highQaIssues": 28,
+    "automatedQaPassFoods": 34,
+    "automatedQuarantinedFoods": 0,
+    "mobileProjectionCandidates": 27,
+    "verifiedFoods": 0
+  },
+  "schemaNotes": {
+    "foundationIdentity": "foundation_food.csv membership + food.data_type=foundation_food",
+    "derivationLookup": "food_nutrient_derivation table is not present in this archive; derivation_id is retained unresolved",
+    "missingNutrientDefinition": ["2066"],
+    "foodComponentYearField": "archive spelling min_year_acqured is normalized to min_year_acquired",
+    "inputFoodField": "archive spelling fdc_of_input_food is normalized semantically"
+  },
+  "promotionPolicy": {
+    "automaticVerification": false,
+    "allSelectedRemain": "in_review",
+    "verifiedRequires": [
+      "identity and preparation-state review",
+      "resolution of critical/high QA findings",
+      "review of source derivation and analytical metadata",
+      "independent scientific sign-off"
+    ]
+  }
+}

@@ -1,0 +1,150 @@
+name: IFKB Full Image Stage 1
+
+on:
+  push:
+    branches:
+      - agent/iranian-food-kb-foundation
+    paths:
+      - 'ifkb/images/build_full_image_acquisition_plan.py'
+      - 'ifkb/images/discover_full_image_metadata.py'
+      - 'ifkb/images/test_full_image_acquisition_plan.py'
+      - 'ifkb/images/test_discover_full_image_metadata.py'
+      - 'ifkb/images/pilot_seed_manifest.csv'
+      - 'ifkb/images/p0_candidate_queries.csv'
+      - 'ifkb/images/p0_wave2_accepted_manifest.csv'
+      - 'ifkb/images/p0_wave3_refined_queries.csv'
+      - 'ifkb/images/p0_wave3_rate_limit_retry_queries.csv'
+      - 'ifkb/images/openverse_unresolved_queries.csv'
+      - 'ifkb/images/manual_exact_commons_manifest_v0.12.csv'
+      - 'ifkb/images/releases/0.12.0/**'
+      - 'ifkb/universal/iranian_canon_v1.csv'
+      - 'ifkb/universal/releases/iranian-bulk-source-registry-v1/iranian-batch-assignments.csv'
+      - '.github/workflows/ifkb-full-image-stage1.yml'
+  workflow_dispatch:
+    inputs:
+      source:
+        description: Metadata source to query
+        type: choice
+        options:
+          - commons
+          - openverse
+          - both
+        default: commons
+      max_queries_per_class:
+        description: Maximum query variants per class
+        type: choice
+        options:
+          - '1'
+          - '2'
+          - '3'
+        default: '1'
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ifkb-full-image-stage1
+  cancel-in-progress: true
+
+jobs:
+  plan-and-discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run deterministic image-planning tests
+        run: |
+          python -m unittest -v \
+            ifkb/images/test_full_image_acquisition_plan.py \
+            ifkb/images/test_discover_full_image_metadata.py
+
+      - name: Build complete 261-class image acquisition plan
+        run: |
+          python ifkb/images/build_full_image_acquisition_plan.py \
+            --output-dir build/full-image-stage1/plan \
+            > /tmp/full-image-stage1-plan.log 2>&1 \
+            || { cat /tmp/full-image-stage1-plan.log; exit 1; }
+
+      - name: Discover openly licensed metadata for all image classes
+        id: discovery
+        continue-on-error: true
+        env:
+          REQUESTED_SOURCE: ${{ github.event.inputs.source || 'commons' }}
+          MAX_QUERIES: ${{ github.event.inputs.max_queries_per_class || '1' }}
+        run: |
+          python ifkb/images/discover_full_image_metadata.py \
+            --query-pack build/full-image-stage1/plan/image-query-pack.csv \
+            --output-dir build/full-image-stage1/discovery \
+            --source "$REQUESTED_SOURCE" \
+            --max-per-class 6 \
+            --max-queries-per-class "$MAX_QUERIES" \
+            --sleep-seconds 0.35 \
+            > /tmp/full-image-stage1-discovery.log 2>&1
+
+      - name: Upload Stage 1 plan and discovery
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-full-image-stage1
+          path: build/full-image-stage1
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Report Stage 1 image result to Draft PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISCOVERY_OUTCOME: ${{ steps.discovery.outcome }}
+        run: |
+          python - <<'PY' > /tmp/full-image-stage1-comment.md
+          import json
+          import os
+          from pathlib import Path
+
+          print('### Nutrition Stage 1/10 — full image acquisition foundation')
+          print()
+          print(f"- head: `{os.environ['GITHUB_SHA']}`")
+          print(f"- workflow run: `{os.environ['GITHUB_RUN_ID']}`")
+          plan = json.loads(Path('build/full-image-stage1/plan/summary.json').read_text())
+          print(f"- canonical image classes planned: **{plan['canonicalClassCount']}**")
+          print(f"- balanced batches: **{plan['batchCount']}**")
+          print(f"- operational waves: **{plan['waveCounts']}**")
+          print(f"- row-level licensed assets reconstructable from branch: **{plan['rowLevelAcceptedAssetCount']}**")
+          print(f"- aggregate licensed assets claimed by v0.11.3: **{plan['releaseAggregateLicensedAssetCount']}**")
+          print(f"- missing asset manifest rows to reconstruct: **{plan['assetRowsMissingFromBranchLedger']}**")
+          print(f"- field-capture classes: **{plan['fieldCaptureClassCount']}**")
+          print(f"- Commons queries prepared: **{plan['commonsQueryCount']}**")
+          print(f"- Openverse queries prepared: **{plan['openverseQueryCount']}**")
+          print(f"- metadata discovery outcome: **{os.environ['DISCOVERY_OUTCOME']}**")
+          manifest = Path('build/full-image-stage1/discovery/manifest.json')
+          if manifest.exists():
+              value = json.loads(manifest.read_text())
+              print(f"- candidate metadata rows: **{value['candidateMetadataCount']}**")
+              print(f"- classes with candidates: **{value['classesWithCandidates']} / {value['classCount']}**")
+              print(f"- classes without candidates: **{value['classesWithoutCandidates']}**")
+              print(f"- source failures: **{value['failureCount']}**")
+              print(f"- licence buckets: **{value['licenseBuckets']}**")
+          else:
+              log = Path('/tmp/full-image-stage1-discovery.log')
+              tail = log.read_text(errors='replace').splitlines()[-15:] if log.exists() else ['No discovery log.']
+              print()
+              print('External metadata discovery failed; the deterministic 261-class plan remains valid.')
+              print('```text')
+              print('\n'.join(tail))
+              print('```')
+          print()
+          print('No candidate was downloaded, identity-approved, selected for the dataset, or marked Nutrition Gold.')
+          PY
+          gh issue comment 3 --repo "$GITHUB_REPOSITORY" --body-file /tmp/full-image-stage1-comment.md
+
+      - name: Fail external discovery workflow when metadata search failed
+        if: steps.discovery.outcome != 'success'
+        run: |
+          cat /tmp/full-image-stage1-discovery.log
+          exit 1

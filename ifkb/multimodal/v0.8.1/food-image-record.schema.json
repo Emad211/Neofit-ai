@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ifkb.local/schemas/food-image-record-v0.8.json",
+  "title": "IFKB Food Image Record",
+  "type": "object",
+  "required": [
+    "image_id",
+    "canon_id",
+    "dish_instance_id",
+    "source_type",
+    "license",
+    "angle",
+    "lighting",
+    "background",
+    "contains_multiple_foods",
+    "split_group_id",
+    "dataset_split",
+    "review_status"
+  ],
+  "properties": {
+    "image_id": {"type": "string", "minLength": 1},
+    "canon_id": {"type": "string", "minLength": 1},
+    "variant_id": {"type": ["string", "null"]},
+    "dish_instance_id": {"type": "string", "minLength": 1},
+    "source_type": {"enum": ["owned_capture", "consented_user", "licensed_dataset", "manufacturer"]},
+    "license": {"type": "string", "minLength": 1},
+    "consent_record_id": {"type": ["string", "null"]},
+    "angle": {"enum": ["top", "45deg", "side", "closeup", "multi_item_scene"]},
+    "lighting": {"enum": ["daylight", "indoor_warm", "indoor_cool", "mixed", "low_light"]},
+    "background": {"enum": ["plain", "home_table", "restaurant", "tray", "packaging"]},
+    "plate_diameter_cm": {"type": ["number", "null"], "minimum": 5, "maximum": 50},
+    "total_food_weight_g": {"type": ["number", "null"], "exclusiveMinimum": 0},
+    "component_weights": {"type": ["object", "null"], "additionalProperties": {"type": "number", "minimum": 0}},
+    "recipe_version_id": {"type": ["string", "null"]},
+    "user_entered_name": {"type": ["string", "null"]},
+    "ground_truth_source": {"enum": ["recipe", "kitchen_log", "expert_review", "user_only"]},
+    "contains_multiple_foods": {"type": "boolean"},
+    "is_augmented": {"type": "boolean"},
+    "augmentation_parent_id": {"type": ["string", "null"]},
+    "split_group_id": {"type": "string", "minLength": 1},
+    "dataset_split": {"enum": ["train", "validation", "test", "external_test"]},
+    "review_status": {"enum": ["pending", "accepted", "rejected", "gold"]}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"ground_truth_source": {"const": "user_only"}}},
+      "then": {"properties": {"review_status": {"not": {"const": "gold"}}}}
+    },
+    {
+      "if": {"properties": {"is_augmented": {"const": true}}},
+      "then": {"required": ["augmentation_parent_id"]}
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+name: IFKB Generic Concept Audit
+
+# Use push paths on the active data branch. Pull-request path filters inspect
+# the entire long-lived PR diff and would re-run this audit on every mobile edit.
+on:
+  push:
+    branches:
+      - agent/iranian-food-kb-foundation
+    paths:
+      - 'ifkb/universal/audit_mobile_catalog_concepts.py'
+      - 'ifkb/universal/augment_mobile_catalog_concepts.py'
+      - 'mobile/assets/ifkb/ifkb-universal-v1.db'
+      - 'mobile/assets/ifkb/ifkb-universal-v1.manifest.json'
+      - '.github/workflows/ifkb-generic-concept-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ifkb-generic-concept-audit
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Audit complete mapping and largest clusters
+        run: |
+          mkdir -p build/generic-concept-audit
+          python ifkb/universal/audit_mobile_catalog_concepts.py \
+            --database mobile/assets/ifkb/ifkb-universal-v1.db \
+            --output-json build/generic-concept-audit/audit.json \
+            --output-csv build/generic-concept-audit/top-clusters.csv
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-generic-concept-audit-v1
+          path: build/generic-concept-audit
+          if-no-files-found: error
+          retention-days: 30

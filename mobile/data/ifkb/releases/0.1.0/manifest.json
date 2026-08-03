@@ -1,0 +1,23 @@
+{
+  "format": "ifkb-release",
+  "schemaVersion": 1,
+  "releaseId": "IFKB-0.1.0-foundation",
+  "version": "0.1.0",
+  "status": "foundation",
+  "createdAt": "2026-07-25T21:00:12.715988+00:00",
+  "counts": {
+    "foods": 83,
+    "names": 408,
+    "portions": 83,
+    "nutrientValues": 332,
+    "sources": 8,
+    "qaIssues": 159,
+    "verifiedFoods": 0
+  },
+  "distribution": "internal-development-only",
+  "warnings": [
+    "All 83 food records are legacy internal estimates.",
+    "No record is suitable for clinical, regulatory, research, or food-label use.",
+    "The mobile v1 projection is lossy and is not the canonical scientific model."
+  ]
+}

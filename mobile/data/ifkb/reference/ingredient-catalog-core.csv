@@ -1,0 +1,92 @@
+ingredient_id,name_fa,name_en,food_group,default_state,priority,intended_recipe_families,current_match_status,match_quality,evidence_grade,review_status
+IFKB-ING-0001,برنج سفید دانه‌بلند خام,"Rice, white, long-grain, raw",grain,raw,P0,rice dishes|plain rice|tahdig,unmatched,U,E,planned
+IFKB-ING-0002,برنج سفید دانه‌بلند پخته,"Rice, white, long-grain, cooked",grain,cooked,P0,chelo|polo|serving conversion,unmatched,U,E,planned
+IFKB-ING-0003,برنج باسماتی خام,"Basmati rice, raw",grain,raw,P1,rice dishes,unmatched,U,E,planned
+IFKB-ING-0004,آرد گندم سفید,"Wheat flour, white",grain_flour,raw,P0,bread|halva|pastry|thickening,unmatched,U,E,planned
+IFKB-ING-0005,آرد گندم کامل,Whole-wheat flour,grain_flour,raw,P1,traditional bread,unmatched,U,E,planned
+IFKB-ING-0006,جو پوست‌کنده خشک,"Barley, pearled, dry",grain,raw,P0,barley soup|ash,unmatched,U,E,planned
+IFKB-ING-0007,جو پوست‌کنده پخته,"Barley, pearled, cooked",grain,cooked,P1,barley soup,unmatched,U,E,planned
+IFKB-ING-0008,بلغور گندم خشک,"Bulgur, dry",grain,raw,P1,ash|regional dishes,unmatched,U,E,planned
+IFKB-ING-0009,رشته آش خشک,"Ash noodles, dry",grain_product,dry,P0,ash reshteh,unmatched,U,E,planned
+IFKB-ING-0010,ماکارونی خشک,"Pasta, dry",grain_product,dry,P1,Iranian macaroni,unmatched,U,E,planned
+IFKB-ING-0011,نان لواش,Lavash bread,bread,as_sold,P0,breakfast|sandwich|serving,unmatched,U,E,planned
+IFKB-ING-0012,نان تافتون,Taftoon bread,bread,as_sold,P1,breakfast|serving,unmatched,U,E,planned
+IFKB-ING-0013,نان سنگک,Sangak bread,bread,as_sold,P0,breakfast|serving,unmatched,U,E,planned
+IFKB-ING-0014,نان بربری,Barbari bread,bread,as_sold,P0,breakfast|serving,unmatched,U,E,planned
+IFKB-ING-0015,عدس خشک,"Lentils, brown, dry",legume,raw_dry,P0,adasi|adas polo|soups,unmatched,U,E,planned
+IFKB-ING-0016,عدس پخته,"Lentils, cooked",legume,cooked,P0,adasi|adas polo|serving,unmatched,U,E,planned
+IFKB-ING-0017,لپه زرد خشک,"Split peas, yellow, dry",legume,raw_dry,P0,gheimeh,unmatched,U,E,planned
+IFKB-ING-0018,نخود خشک,"Chickpeas, dry",legume,raw_dry,P0,abgoosht|falafel|ash,unmatched,U,E,planned
+IFKB-ING-0019,نخود پخته,"Chickpeas, cooked",legume,cooked,P1,abgoosht|ash|serving,unmatched,U,E,planned
+IFKB-ING-0020,لوبیا قرمز خشک,"Kidney beans, red, dry",legume,raw_dry,P0,ghormeh sabzi|ash,unmatched,U,E,planned
+IFKB-ING-0021,لوبیا قرمز پخته,"Kidney beans, red, cooked",legume,cooked,P0,ghormeh sabzi|serving,unmatched,U,E,planned
+IFKB-ING-0022,لوبیا چیتی خشک,"Pinto beans, dry",legume,raw_dry,P0,loobia chiti|ash,unmatched,U,E,planned
+IFKB-ING-0023,لوبیا چیتی پخته,"Pinto beans, cooked",legume,cooked,P1,loobia chiti|serving,unmatched,U,E,planned
+IFKB-ING-0024,باقلا خشک,"Fava beans, dry",legume,raw_dry,P1,baghali polo|regional dishes,unmatched,U,E,planned
+IFKB-ING-0025,باقلا پخته,"Fava beans, cooked",legume,cooked,P0,baghali polo,unmatched,U,E,planned
+IFKB-ING-0026,لوبیا چشم‌بلبلی خشک,"Black-eyed peas, dry",legume,raw_dry,P1,regional rice|ash,unmatched,U,E,planned
+IFKB-ING-0027,گوشت گاو کم‌چرب خام,"Beef, lean, raw",meat,raw,P0,stews|kebab|kotlet,unmatched,U,E,planned
+IFKB-ING-0028,گوشت گوسفند کم‌چرب خام,"Lamb, lean, raw",meat,raw,P0,stews|kebab|abgoosht,unmatched,U,E,planned
+IFKB-ING-0029,گوشت چرخ‌کرده گوسفندی خام,"Lamb, ground, raw",meat,raw,P0,koobideh|kotlet|dolmeh,unmatched,U,E,planned
+IFKB-ING-0030,گوشت چرخ‌کرده گاوی خام,"Beef, ground, raw",meat,raw,P1,koobideh|kotlet,unmatched,U,E,planned
+IFKB-ING-0031,ماهیچه گوسفندی خام,"Lamb shank, raw",meat,raw,P0,baghali polo mahicheh,unmatched,U,E,planned
+IFKB-ING-0032,سینه مرغ بدون پوست خام,"Chicken breast, skinless, raw",poultry,raw,P0,joojeh|zereshk polo|tahchin,unmatched,U,E,planned
+IFKB-ING-0033,ران مرغ بدون پوست خام,"Chicken thigh, skinless, raw",poultry,raw,P0,stews|rice dishes,unmatched,U,E,planned
+IFKB-ING-0034,مرغ با پوست خام,"Chicken, meat and skin, raw",poultry,raw,P1,whole chicken dishes,unmatched,U,E,planned
+IFKB-ING-0035,جگر گاو خام,"Beef liver, raw",organ_meat,raw,P0,jegar kebab,unmatched,U,E,planned
+IFKB-ING-0036,تخم‌مرغ کامل خام,"Egg, chicken, whole, raw",egg,raw,P0,omelet|kuku|breakfast,unmatched,U,E,planned
+IFKB-ING-0037,تخم‌مرغ آب‌پز,"Egg, chicken, boiled",egg,cooked,P1,breakfast|serving,unmatched,U,E,planned
+IFKB-ING-0038,ماهی قزل‌آلا خام,"Trout, raw",fish,raw,P0,fish dishes,unmatched,U,E,planned
+IFKB-ING-0039,ماهی سفید خام,"White fish, raw",fish,raw,P0,sabzi polo mahi,unmatched,U,E,planned
+IFKB-ING-0040,تن ماهی کنسروی آبکش‌شده,"Tuna, canned, drained",fish_product,as_sold_drained,P1,sandwich|salad,unmatched,U,E,planned
+IFKB-ING-0041,شیر گاو پرچرب,"Cow milk, whole",dairy,liquid,P0,breakfast|desserts,unmatched,U,E,planned
+IFKB-ING-0042,شیر گاو کم‌چرب,"Cow milk, low-fat",dairy,liquid,P1,breakfast,unmatched,U,E,planned
+IFKB-ING-0043,ماست ساده پرچرب,"Yogurt, plain, whole milk",dairy,as_sold,P0,doogh|ash doogh|side dish,unmatched,U,E,planned
+IFKB-ING-0044,ماست چکیده,"Yogurt, strained",dairy,as_sold,P0,breakfast|side dish,unmatched,U,E,planned
+IFKB-ING-0045,کشک مایع,"Kashk, liquid",dairy_product,as_sold,P0,ash reshteh|kashk bademjan,unmatched,U,E,planned
+IFKB-ING-0046,پنیر سفید آب‌نمکی,"Cheese, white, brined",dairy_product,as_sold,P0,breakfast,unmatched,U,E,planned
+IFKB-ING-0047,کره بدون نمک,"Butter, unsalted",fat_dairy,as_sold,P0,rice|desserts|breakfast,unmatched,U,E,planned
+IFKB-ING-0048,خامه پرچرب,"Cream, heavy",fat_dairy,as_sold,P1,breakfast|desserts,unmatched,U,E,planned
+IFKB-ING-0049,روغن آفتابگردان,Sunflower oil,oil,liquid,P0,all cooked dishes,unmatched,U,E,planned
+IFKB-ING-0050,روغن کانولا,Canola oil,oil,liquid,P0,all cooked dishes,unmatched,U,E,planned
+IFKB-ING-0051,روغن زیتون,Olive oil,oil,liquid,P1,salads|regional dishes,unmatched,U,E,planned
+IFKB-ING-0052,دنبه گوسفندی,Sheep tail fat,animal_fat,raw,P1,koobideh|abgoosht,unmatched,U,E,planned
+IFKB-ING-0053,پیاز سفید خام,"Onions, white, raw",vegetable,raw,P0,nearly all savory dishes,unmatched,U,E,planned
+IFKB-ING-0054,پیاز سرخ‌شده,"Onion, fried",vegetable_preparation,cooked_fried,P0,ash|stews|garnish,unmatched,U,E,planned
+IFKB-ING-0055,سیر خام,"Garlic, raw",vegetable,raw,P0,stews|mirza ghasemi|marinades,unmatched,U,E,planned
+IFKB-ING-0056,گوجه‌فرنگی قرمز خام,"Tomatoes, red, raw",vegetable,raw,P0,omelet|stews|rice dishes,unmatched,U,E,planned
+IFKB-ING-0057,رب گوجه‌فرنگی,Tomato paste,vegetable_product,as_sold,P0,stews|rice dishes,unmatched,U,E,planned
+IFKB-ING-0058,بادمجان خام,"Eggplant, raw",vegetable,raw,P0,khoresh bademjan|kashk bademjan|mirza ghasemi,unmatched,U,E,planned
+IFKB-ING-0059,کدو سبز خام,"Zucchini, raw",vegetable,raw,P0,khoresh kadoo,unmatched,U,E,planned
+IFKB-ING-0060,کرفس خام,"Celery, raw",vegetable,raw,P0,khoresh karafs,unmatched,U,E,planned
+IFKB-ING-0061,لوبیا سبز خام,"Green beans, raw",vegetable,raw,P0,loobia polo|green bean stew,unmatched,U,E,planned
+IFKB-ING-0062,سیب‌زمینی خام,"Potatoes, raw",vegetable,raw,P0,gheimeh|kotlet|tahdig,unmatched,U,E,planned
+IFKB-ING-0063,اسفناج خام,"Spinach, raw",leafy_vegetable,raw,P0,aloo esfenaj|ash,unmatched,U,E,planned
+IFKB-ING-0064,برگ مو خام,"Grape leaves, raw",leafy_vegetable,raw,P0,dolmeh,unmatched,U,E,planned
+IFKB-ING-0065,کلم سفید خام,"Cabbage, white, raw",vegetable,raw,P1,kalam polo,unmatched,U,E,planned
+IFKB-ING-0066,هویج خام,"Carrots, raw",vegetable,raw,P1,soups|rice dishes,unmatched,U,E,planned
+IFKB-ING-0067,کدو حلوایی خام,"Pumpkin, raw",vegetable,raw,P1,desserts|regional dishes,unmatched,U,E,planned
+IFKB-ING-0068,جعفری تازه,"Parsley, fresh",herb,raw,P0,ghormeh sabzi|kuku|ash,unmatched,U,E,planned
+IFKB-ING-0069,گشنیز تازه,"Cilantro, fresh",herb,raw,P0,ash|kuku|regional foods,unmatched,U,E,planned
+IFKB-ING-0070,تره تازه,"Persian leek/chives, fresh",herb,raw,P0,ghormeh sabzi|kuku|ash,unmatched,U,E,planned
+IFKB-ING-0071,شنبلیله تازه,"Fenugreek leaves, fresh",herb,raw,P0,ghormeh sabzi,unmatched,U,E,planned
+IFKB-ING-0072,شوید تازه,"Dill, fresh",herb,raw,P0,baghali polo,unmatched,U,E,planned
+IFKB-ING-0073,نعناع تازه,"Mint, fresh",herb,raw,P1,ash|doogh|garnish,unmatched,U,E,planned
+IFKB-ING-0074,نعناع خشک,"Mint, dried",herb_dried,dried,P0,ash|garnish,unmatched,U,E,planned
+IFKB-ING-0075,مرزه خشک,"Savory, dried",herb_dried,dried,P1,beans|regional dishes,unmatched,U,E,planned
+IFKB-ING-0076,ترخون تازه,"Tarragon, fresh",herb,raw,P1,herb mixes|pickles,unmatched,U,E,planned
+IFKB-ING-0077,گردو خام,"Walnuts, raw",nut,raw,P0,fesenjan|ranginak,unmatched,U,E,planned
+IFKB-ING-0078,رب انار,Pomegranate molasses,fruit_product,as_sold,P0,fesenjan|kebab torsh,unmatched,U,E,planned
+IFKB-ING-0079,زرشک خشک,"Barberries, dried",dried_fruit,dried,P0,zereshk polo,unmatched,U,E,planned
+IFKB-ING-0080,کشمش,Raisins,dried_fruit,dried,P0,adas polo|desserts,unmatched,U,E,planned
+IFKB-ING-0081,خرما,"Dates, dried",dried_fruit,dried,P0,ranginak|snack,unmatched,U,E,planned
+IFKB-ING-0082,به خام,"Quince, raw",fruit,raw,P1,khoresh beh,unmatched,U,E,planned
+IFKB-ING-0083,آلو بخارا خشک,"Prunes, dried",dried_fruit,dried,P0,aloo esfenaj|stews,unmatched,U,E,planned
+IFKB-ING-0084,آب‌لیمو,Lemon juice,condiment,liquid,P0,seasoning|marinades,unmatched,U,E,planned
+IFKB-ING-0085,لیموعمانی خشک,Dried lime,spice,dried,P0,stews|abgoosht,unmatched,U,E,planned
+IFKB-ING-0086,زردچوبه آسیاب‌شده,"Turmeric, ground",spice,ground_dry,P0,all savory dishes,unmatched,U,E,planned
+IFKB-ING-0087,زعفران خشک,"Saffron, dried",spice,dried,P0,rice|desserts|marinades,unmatched,U,E,planned
+IFKB-ING-0088,دارچین آسیاب‌شده,"Cinnamon, ground",spice,ground_dry,P1,desserts|stews,unmatched,U,E,planned
+IFKB-ING-0089,نمک خوراکی,"Salt, table",seasoning,dry,P0,all recipes,unmatched,U,E,planned
+IFKB-ING-0090,شکر سفید,"Sugar, white",sweetener,dry,P0,desserts|beverages,unmatched,U,E,planned
+IFKB-ING-0091,سرکه,Vinegar,condiment,liquid,P1,pickles|seasoning,unmatched,U,E,planned

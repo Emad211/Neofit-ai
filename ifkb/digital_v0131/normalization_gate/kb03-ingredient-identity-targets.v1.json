@@ -1,0 +1,65 @@
+{
+  "format": "ifkb-ds2-kb03-ingredient-identity-targets",
+  "version": "1.1.0",
+  "recipeSourceId": "DS2-KB-03",
+  "canonId": "IFKB-CANON-00028",
+  "status": "candidate-not-final",
+  "policy": {
+    "identityTargetIsSeparateFromNutrientSource": true,
+    "derivedAggregateExcluded": true,
+    "nutrientSourceApprovalRequiredSeparately": true,
+    "promotionForbiddenFromIdentityCoverageAlone": true,
+    "sourceUnspecifiedSubtypesMustNotBeSilentlySpecialized": true
+  },
+  "targets": [
+    {
+      "quantityKey": "lamb_total_g",
+      "ingredientId": "IFKB-ING-0029",
+      "expectedNameEn": "Lamb, ground, raw",
+      "expectedDefaultState": "raw",
+      "identityTargetStatus": "proposed"
+    },
+    {
+      "quantityKey": "beef_total_g",
+      "ingredientId": "IFKB-ING-0030",
+      "expectedNameEn": "Beef, ground, raw",
+      "expectedDefaultState": "raw",
+      "identityTargetStatus": "proposed"
+    },
+    {
+      "quantityKey": "onion_total_g",
+      "ingredientId": "IFKB-ING-0095",
+      "expectedNameEn": "Onion, raw, unspecified variety",
+      "expectedDefaultState": "raw",
+      "identityTargetStatus": "proposed_extension"
+    },
+    {
+      "quantityKey": "salt_total_g",
+      "ingredientId": "IFKB-ING-0089",
+      "expectedNameEn": "Salt, table",
+      "expectedDefaultState": "dry",
+      "identityTargetStatus": "proposed"
+    },
+    {
+      "quantityKey": "black_pepper_total_g",
+      "ingredientId": "IFKB-ING-0092",
+      "expectedNameEn": "Black pepper, ground",
+      "expectedDefaultState": "ground_dry",
+      "identityTargetStatus": "proposed_extension"
+    },
+    {
+      "quantityKey": "sumac_total_g",
+      "ingredientId": "IFKB-ING-0093",
+      "expectedNameEn": "Sumac, ground",
+      "expectedDefaultState": "ground_dry",
+      "identityTargetStatus": "proposed_extension"
+    },
+    {
+      "quantityKey": "baking_soda_total_g",
+      "ingredientId": "IFKB-ING-0094",
+      "expectedNameEn": "Baking soda",
+      "expectedDefaultState": "dry",
+      "identityTargetStatus": "proposed_extension"
+    }
+  ]
+}

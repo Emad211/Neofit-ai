@@ -1,0 +1,154 @@
+name: IFKB Iranian Recipe Index Discovery
+
+on:
+  push:
+    branches:
+      - agent/iranian-food-kb-foundation
+    paths:
+      - 'ifkb/universal/discover_recipe_index_matches.py'
+      - 'ifkb/universal/test_discover_recipe_index_matches.py'
+      - 'ifkb/universal/initialize_source_fact_queue.py'
+      - 'ifkb/universal/test_initialize_source_fact_queue.py'
+      - 'ifkb/universal/extract_recipe_jsonld_facts.py'
+      - 'ifkb/universal/test_extract_recipe_jsonld_facts.py'
+      - 'ifkb/universal/route_source_facts_to_batches.py'
+      - 'ifkb/universal/test_route_source_facts_to_batches.py'
+      - 'ifkb/universal/iranian_canon_v1.csv'
+      - 'ifkb/universal/releases/iranian-bulk-source-registry-v1/iranian-batch-assignments.csv'
+      - '.github/workflows/ifkb-iranian-recipe-index-discovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ifkb-iranian-recipe-index-discovery
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run offline discovery, extraction and routing tests
+        run: |
+          python -m unittest -v \
+            ifkb/universal/test_discover_recipe_index_matches.py \
+            ifkb/universal/test_initialize_source_fact_queue.py \
+            ifkb/universal/test_extract_recipe_jsonld_facts.py \
+            ifkb/universal/test_route_source_facts_to_batches.py
+
+      - name: Discover Persian Mama recipe-index candidates for all canonical foods
+        id: discovery
+        continue-on-error: true
+        run: |
+          python ifkb/universal/discover_recipe_index_matches.py \
+            --canon ifkb/universal/iranian_canon_v1.csv \
+            --index-url https://persianmama.com/recipe-index/ \
+            --source-collection-id SRC-COLLECTION-PERSIAN-MAMA-INDEX \
+            --output-dir build/iranian-recipe-index-discovery \
+            > /tmp/iranian-recipe-index-discovery.log 2>&1
+
+      - name: Initialize source-fact extraction queue
+        if: steps.discovery.outcome == 'success'
+        run: |
+          python ifkb/universal/initialize_source_fact_queue.py \
+            --candidates build/iranian-recipe-index-discovery/candidate-matches.csv \
+            --output-dir build/iranian-recipe-index-discovery/source-fact-queue \
+            >> /tmp/iranian-recipe-index-discovery.log 2>&1
+
+      - name: Extract structured Recipe JSON-LD facts in bulk
+        if: steps.discovery.outcome == 'success'
+        run: |
+          python ifkb/universal/extract_recipe_jsonld_facts.py \
+            --records build/iranian-recipe-index-discovery/source-fact-queue/source-fact-records.json \
+            --output-dir build/iranian-recipe-index-discovery/structured-facts \
+            --max-records 200 \
+            --workers 2 \
+            >> /tmp/iranian-recipe-index-discovery.log 2>&1
+
+      - name: Route extracted facts into the 12 Iranian batches
+        if: steps.discovery.outcome == 'success'
+        run: |
+          python ifkb/universal/route_source_facts_to_batches.py \
+            --records build/iranian-recipe-index-discovery/structured-facts/source-fact-records.extracted.json \
+            --discovery-queue ifkb/universal/releases/iranian-bulk-source-registry-v1/iranian-batch-assignments.csv \
+            --output-dir build/iranian-recipe-index-discovery/by-batch \
+            >> /tmp/iranian-recipe-index-discovery.log 2>&1
+
+      - uses: actions/upload-artifact@v4
+        if: steps.discovery.outcome == 'success'
+        with:
+          name: ifkb-iranian-recipe-index-discovery
+          path: build/iranian-recipe-index-discovery
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Report result to Draft PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISCOVERY_OUTCOME: ${{ steps.discovery.outcome }}
+        run: |
+          python - <<'PY' > /tmp/recipe-index-comment.md
+          import json
+          import os
+          from pathlib import Path
+          print('### Bulk Iranian recipe-index discovery')
+          print()
+          print(f"- head: `{os.environ['GITHUB_SHA']}`")
+          print(f"- workflow run: `{os.environ['GITHUB_RUN_ID']}`")
+          print(f"- discovery outcome: **{os.environ['DISCOVERY_OUTCOME']}**")
+          summary = Path('build/iranian-recipe-index-discovery/summary.json')
+          queue_summary = Path('build/iranian-recipe-index-discovery/source-fact-queue/summary.json')
+          extraction_summary = Path('build/iranian-recipe-index-discovery/structured-facts/summary.json')
+          routing_summary = Path('build/iranian-recipe-index-discovery/by-batch/summary.json')
+          if summary.exists():
+              value = json.loads(summary.read_text())
+              print(f"- canonical foods evaluated: **{value['canonicalFoodCount']}**")
+              print(f"- recipe links indexed: **{value['recipeLinkCount']}**")
+              print(f"- foods with candidate URLs: **{value['foodsWithCandidates']}**")
+              print(f"- foods with strong candidate URLs: **{value['foodsWithStrongCandidates']}**")
+              print(f"- candidate links retained: **{value['candidateCount']}**")
+              if queue_summary.exists():
+                  queue = json.loads(queue_summary.read_text())
+                  print(f"- source-fact records initialized: **{queue['sourceFactRecordCount']}**")
+              if extraction_summary.exists():
+                  extracted = json.loads(extraction_summary.read_text())
+                  print(f"- pages attempted for structured facts: **{extracted['attemptedRecordCount']}**")
+                  print(f"- records with Recipe JSON-LD facts: **{extracted['structuredFactsExtractedCount']}**")
+                  print(f"- canonical foods with structured facts: **{extracted['foodsWithStructuredFacts']}**")
+                  print(f"- ingredient labels extracted: **{extracted['ingredientLabelCount']}**")
+                  print(f"- page failures/no Recipe schema: **{extracted['failureCount']}**")
+              if routing_summary.exists():
+                  routed = json.loads(routing_summary.read_text())
+                  print(f"- routed execution batches: **{routed['batchCount']}**")
+                  print(f"- source-fact records routed: **{routed['routedRecordCount']}**")
+              print('- approved exact matches: **0**')
+              print('- approved nutrition use: **0**')
+              print()
+              print('Only candidate titles/URLs and Recipe JSON-LD name, yield and ingredient labels were retained. Instructions, images and nutrition were not copied or approved.')
+          else:
+              log = Path('/tmp/iranian-recipe-index-discovery.log')
+              tail = log.read_text(errors='replace').splitlines()[-20:] if log.exists() else ['No discovery log was produced.']
+              print()
+              print('The external collection could not be indexed. The 12-batch catalog workflow remains unaffected.')
+              print()
+              print('```text')
+              print('\n'.join(tail))
+              print('```')
+          PY
+          gh issue comment 3 --repo "$GITHUB_REPOSITORY" --body-file /tmp/recipe-index-comment.md
+
+      - name: Fail workflow when external discovery failed
+        if: steps.discovery.outcome != 'success'
+        run: |
+          cat /tmp/iranian-recipe-index-discovery.log
+          exit 1

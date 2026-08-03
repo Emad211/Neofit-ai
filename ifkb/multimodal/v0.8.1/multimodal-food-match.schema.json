@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ifkb.local/schemas/multimodal-food-match-v0.8.json",
+  "title": "IFKB Multimodal Food Match Output",
+  "type": "object",
+  "required": [
+    "candidates",
+    "needs_user_confirmation",
+    "identity_confidence",
+    "recipe_confidence",
+    "portion_confidence",
+    "nutrition_lookup_allowed"
+  ],
+  "properties": {
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["canon_id", "name_fa", "score", "evidence"],
+        "properties": {
+          "canon_id": {"type": "string"},
+          "variant_id": {"type": ["string", "null"]},
+          "name_fa": {"type": "string"},
+          "score": {"type": "number", "minimum": 0, "maximum": 1},
+          "evidence": {"type": "array", "items": {"type": "string"}},
+          "conflicts": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "typed_name_interpretation": {"type": ["object", "null"]},
+    "needs_user_confirmation": {"type": "boolean"},
+    "questions": {"type": "array", "maxItems": 4, "items": {"type": "string"}},
+    "identity_confidence": {"enum": ["low", "medium", "high"]},
+    "recipe_confidence": {"enum": ["low", "medium", "high"]},
+    "portion_confidence": {"enum": ["low", "medium", "high"]},
+    "nutrition_lookup_allowed": {"type": "boolean"},
+    "abstain_reason": {"type": ["string", "null"]}
+  }
+}

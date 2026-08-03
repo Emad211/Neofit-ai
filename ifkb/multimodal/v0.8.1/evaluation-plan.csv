@@ -1,0 +1,16 @@
+metric_id,metric,definition,stratification,release_rule
+EVAL-01,Food identity top-1 accuracy,Exact canon ID accuracy.,overall + category + region,test instances grouped by kitchen/provider
+EVAL-02,Food identity top-3 recall,Ground truth appears among top 3.,overall + ambiguous families,supports user confirmation UX
+EVAL-03,Hierarchical accuracy,Correct category/recipe family when exact dish is wrong.,category and family,important for unseen variants
+EVAL-04,Text-assisted gain,Difference between image-only and image+typed-name performance.,absolute percentage points,"evaluate exact, broad and incorrect names separately"
+EVAL-05,Conflict detection,Detect incorrect user-entered names.,precision/recall,must not blindly trust user text
+EVAL-06,Calibration,Expected calibration error and Brier score.,identity probabilities,per category and OOD
+EVAL-07,Abstention precision,Accuracy among accepted predictions at coverage levels.,risk-coverage curve,unknown foods must be rejectable
+EVAL-08,OOD detection,Unknown/non-Iranian food detection.,AUROC/AUPRC,external foods and non-food images
+EVAL-09,Segmentation,Component mask IoU/Dice.,single and mixed plates,rice/stew/bread/sides
+EVAL-10,Portion error,MAE and MAPE in grams.,by portion method,report median and tail error
+EVAL-11,Calorie error,MAE/MAPE and interval coverage.,dish and meal level,uses verified recipe source only
+EVAL-12,User correction rate,Fraction of sessions requiring identity or variant correction.,production telemetry,privacy-safe aggregate
+EVAL-13,Regional robustness,Performance by province/region and home vs restaurant.,stratified,avoid Tehran-centric bias
+EVAL-14,Device robustness,Performance by camera/device/lighting.,stratified,prevent hardware bias
+EVAL-15,Leakage audit,Nearest-neighbour and metadata duplicate checks across splits.,zero instance/provider leakage,mandatory before release

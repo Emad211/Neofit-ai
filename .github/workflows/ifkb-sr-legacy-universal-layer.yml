@@ -1,0 +1,55 @@
+name: IFKB SR Legacy Atomic Food Layer
+
+# This source rebuild is intentionally manual. Pull-request path filters are
+# insufficient here because every synchronize event sees the full PR diff.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ifkb-sr-legacy-universal-layer
+  cancel-in-progress: false
+
+jobs:
+  build-sr-layer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build SR Legacy layer
+        run: python ifkb/universal/import_sr_legacy_app_layer.py --output build/ifkb-sr-legacy
+      - name: Verify atomic-food coverage
+        run: |
+          python - <<'PY'
+          import json,sqlite3
+          from pathlib import Path
+          root=Path('build/ifkb-sr-legacy')
+          manifest=json.loads((root/'manifest.json').read_text())
+          db=sqlite3.connect(root/'sr_legacy_app_layer.sqlite')
+          foods=db.execute('select count(*) from foods').fetchone()[0]
+          portions=db.execute('select count(*) from portions').fetchone()[0]
+          yolk=db.execute("select count(*) from foods where lower(name_en) like '%egg, yolk%'").fetchone()[0]
+          whites=db.execute("select count(*) from foods where lower(name_en) like '%egg, white%'").fetchone()[0]
+          tomatoes=db.execute("select count(*) from foods where lower(name_en) like 'tomatoes, red, ripe, raw%'").fetchone()[0]
+          db.close()
+          assert foods==manifest['foodCount'] and foods>7000,(foods,manifest)
+          assert portions>foods
+          assert yolk>0 and whites>0 and tomatoes>0,(yolk,whites,tomatoes)
+          print({'foods':foods,'portions':portions,'eggYolk':yolk,'eggWhite':whites,'rawTomato':tomatoes})
+          PY
+      - name: Upload SR layer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-sr-legacy-app-layer
+          path: |
+            build/ifkb-sr-legacy/sr_legacy_app_layer.json
+            build/ifkb-sr-legacy/sr_legacy_app_layer.sqlite
+            build/ifkb-sr-legacy/manifest.json
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 30

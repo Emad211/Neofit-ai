@@ -1,0 +1,35 @@
+{
+  "format": "ifkb-release",
+  "schemaVersion": 1,
+  "releaseId": "IFKB-0.2.1-ingredient-foundation",
+  "version": "0.2.1",
+  "status": "research-patch",
+  "createdAt": "2026-07-25T21:34:21.195477+00:00",
+  "supersedes": "IFKB-0.2.0-ingredient-foundation",
+  "corrections": [
+    {
+      "recordId": "STG-0003",
+      "field": "qa_status",
+      "from": "candidate_secondary",
+      "to": "quarantined",
+      "reason": "Energy delta approximately 30%, exceeding QA-EN-004 threshold."
+    }
+  ],
+  "counts": {
+    "canonicalIngredients": 91,
+    "p0Ingredients": 64,
+    "verifiedIngredients": 0,
+    "stagingObservations": 6,
+    "quarantinedObservations": 4,
+    "qaRules": 20
+  },
+  "affectedVerifiedOrMobileRecords": 0,
+  "promotionGate": [
+    "authoritative source record and pinned release",
+    "food identity and state match",
+    "known unit and per-100-g basis",
+    "licence permits intended use",
+    "automated QA passed",
+    "independent scientific review"
+  ]
+}

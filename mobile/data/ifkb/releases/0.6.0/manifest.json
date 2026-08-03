@@ -1,0 +1,26 @@
+{
+  "format": "ifkb-research-release",
+  "releaseId": "IFKB-0.6.0-scientific-review-pass-1",
+  "version": "0.6.0",
+  "createdAt": "2026-07-26T09:55:47.422567+00:00",
+  "dependsOn": "IFKB-0.5.1-usda-foundation-ingested",
+  "counts": {
+    "completeProfilesReviewed": 27,
+    "R1": 10,
+    "R2": 13,
+    "R3": 4,
+    "independentlyVerified": 0,
+    "incompleteProfilesOpen": 7,
+    "remainingMajorStages": 4
+  },
+  "governance": {
+    "reviewType": "assistant_scientific_review_pass_1",
+    "independentReviewRequired": true,
+    "automaticVerification": false
+  },
+  "sourcePrinciples": [
+    "USDA analytical evidence and Iranian-cuisine applicability are separate dimensions.",
+    "Cultivar, process, edible part and preparation state remain explicit.",
+    "No profile is promoted to verified by this release."
+  ]
+}

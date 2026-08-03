@@ -1,0 +1,22 @@
+{
+  "format": "ifkb-digital-only-release",
+  "releaseId": "IFKB-0.13.0-digital-only-consensus",
+  "createdAt": "2026-07-26T18:05:29.717885+00:00",
+  "counts": {
+    "p0Classes": 60,
+    "recipeSourceSlots": 300,
+    "licensedImageSeed": 58,
+    "validatorTestsPassed": 5,
+    "validatorTestsFailed": 0,
+    "digitalConsensusProfilesReady": 0,
+    "nutritionGoldRecords": 0
+  },
+  "policy": {
+    "physicalCollectionRequired": false,
+    "mixedDishEvidenceCeiling": "DS3",
+    "exactPackagedEvidenceCeiling": "DS4",
+    "syntheticValidationTestAllowed": false,
+    "llmNutritionInventionAllowed": false
+  },
+  "nextGate": "collect independent digital recipe sources and create first DS2 consensus profiles"
+}

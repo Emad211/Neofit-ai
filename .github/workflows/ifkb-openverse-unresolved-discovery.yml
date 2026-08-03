@@ -1,0 +1,50 @@
+name: IFKB Openverse Unresolved Image Discovery
+
+# Discovery is intentionally manual and serialized. It should run only for a
+# deliberate unresolved-class research batch, not every PR synchronization.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ifkb-open-media-acquisition
+  cancel-in-progress: false
+
+jobs:
+  discover-openverse-candidates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install image dependency
+        run: python -m pip install --disable-pip-version-check pillow==11.3.0
+
+      - name: Discover openly licensed candidates through Openverse API
+        run: |
+          python ifkb/images/discover_openverse_candidates.py \
+            --queries ifkb/images/openverse_unresolved_queries.csv \
+            --output build/ifkb-openverse-unresolved-v0.12 \
+            --max-per-class 6
+
+      - name: Verify candidate output
+        run: |
+          test -s build/ifkb-openverse-unresolved-v0.12/class_summary.csv
+          test -s build/ifkb-openverse-unresolved-v0.12/dataset_manifest.json
+
+      - name: Upload candidate review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-openverse-unresolved-v0.12
+          path: build/ifkb-openverse-unresolved-v0.12
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 30

@@ -1,0 +1,4 @@
+policy_id,criterion,threshold,scope,reason
+SPLIT-POL-001,minimum independent split groups for prototype evaluation,>=3,internal project protocol,Prevent one physical dish/session from appearing across train and test.
+SPLIT-POL-002,minimum independent providers/photographers,>=2,internal project protocol,Reduce provider vessel and photographic-style leakage.
+SPLIT-POL-003,Nutrition Gold,measured serving + locked recipe + consent/licence,hard rule,Internet identity images cannot support exact calorie labels.

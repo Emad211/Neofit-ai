@@ -1,0 +1,291 @@
+#!/usr/bin/env python3
+"""Build a compact app-search layer from official USDA FNDDS 2021-2023 CSV data."""
+from __future__ import annotations
+
+import argparse
+import csv
+import hashlib
+import json
+import sqlite3
+import urllib.request
+import zipfile
+from collections import Counter, defaultdict
+from pathlib import Path
+from typing import Iterable
+
+FNDDS_URL = "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_csv_2024-10-31.zip"
+USER_AGENT = "IFKB-FNDDS-Importer/1.3 (+https://github.com/Emad211/Neofit-ai)"
+OUTPUT_FIELDS = (
+    "calories_kcal", "protein_g", "fat_g", "carbs_g", "fiber_g",
+    "sugars_g", "sodium_mg", "cholesterol_mg", "calcium_mg",
+    "iron_mg", "potassium_mg", "vitamin_c_mg",
+)
+
+# FNDDS 2021-2023 uses legacy nutrient identifiers in food_nutrient.csv,
+# while other FDC data types commonly use the newer 1000-series IDs.
+ID_MAP = {
+    "203": "protein_g", "204": "fat_g", "205": "carbs_g",
+    "291": "fiber_g", "269": "sugars_g", "307": "sodium_mg",
+    "601": "cholesterol_mg", "301": "calcium_mg", "303": "iron_mg",
+    "306": "potassium_mg", "401": "vitamin_c_mg",
+    "1003": "protein_g", "1004": "fat_g", "1005": "carbs_g",
+    "1079": "fiber_g", "2000": "sugars_g", "1093": "sodium_mg",
+    "1253": "cholesterol_mg", "1087": "calcium_mg", "1089": "iron_mg",
+    "1092": "potassium_mg", "1162": "vitamin_c_mg",
+}
+ENERGY_ID_PRIORITY = {"208": 1, "1008": 2, "2047": 3, "2048": 4}
+NAME_MAP = {
+    "protein": "protein_g",
+    "total lipid (fat)": "fat_g",
+    "carbohydrate, by difference": "carbs_g",
+    "fiber, total dietary": "fiber_g",
+    "sugars, total including nlea": "sugars_g",
+    "sodium, na": "sodium_mg",
+    "cholesterol": "cholesterol_mg",
+    "calcium, ca": "calcium_mg",
+    "iron, fe": "iron_mg",
+    "potassium, k": "potassium_mg",
+    "vitamin c, total ascorbic acid": "vitamin_c_mg",
+}
+ENERGY_NAME_PRIORITY = {
+    "energy": 10,
+    "energy (atwater general factors)": 11,
+    "energy (atwater specific factors)": 12,
+}
+
+
+def download(url: str, output: Path) -> None:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(request, timeout=180) as response, output.open("wb") as handle:
+        while chunk := response.read(1024 * 1024):
+            handle.write(chunk)
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def find_member(names: Iterable[str], basename: str) -> str:
+    matches = [name for name in names if Path(name).name.lower() == basename.lower()]
+    if len(matches) != 1:
+        raise RuntimeError(f"Expected exactly one {basename}, found {matches}")
+    return matches[0]
+
+
+def rows_from_zip(archive: zipfile.ZipFile, member: str):
+    with archive.open(member) as raw:
+        text = (line.decode("utf-8-sig") for line in raw)
+        yield from csv.DictReader(text)
+
+
+def as_float(value: str | None) -> float | None:
+    if value in (None, ""):
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        return None
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--archive", type=Path)
+    args = parser.parse_args()
+
+    output = args.output
+    output.mkdir(parents=True, exist_ok=True)
+    archive_path = args.archive or output / "FoodData_Central_survey_food_csv_2024-10-31.zip"
+    if not archive_path.exists():
+        download(FNDDS_URL, archive_path)
+
+    with zipfile.ZipFile(archive_path) as archive:
+        names = archive.namelist()
+        food_member = find_member(names, "food.csv")
+        nutrient_member = find_member(names, "nutrient.csv")
+        food_nutrient_member = find_member(names, "food_nutrient.csv")
+        portion_member = find_member(names, "food_portion.csv")
+        measure_member = find_member(names, "measure_unit.csv")
+        survey_member = find_member(names, "survey_fndds_food.csv")
+
+        nutrient_meta = {
+            row["id"]: {
+                "name": (row.get("name") or "").strip(),
+                "unit": (row.get("unit_name") or "").strip(),
+            }
+            for row in rows_from_zip(archive, nutrient_member)
+        }
+        measure_name_by_id = {
+            row["id"]: row["name"] for row in rows_from_zip(archive, measure_member)
+        }
+        survey_by_fdc = {
+            row["fdc_id"]: row for row in rows_from_zip(archive, survey_member)
+        }
+
+        nutrient_values: dict[str, dict[str, float]] = defaultdict(dict)
+        energy_choice: dict[str, tuple[int, float]] = {}
+        nutrient_id_counts: Counter[str] = Counter()
+        nutrient_name_counts: Counter[str] = Counter()
+        food_nutrient_row_count = 0
+
+        for row in rows_from_zip(archive, food_nutrient_member):
+            food_nutrient_row_count += 1
+            nutrient_id = (row.get("nutrient_id") or "").strip()
+            meta = nutrient_meta.get(nutrient_id, {})
+            name = (meta.get("name") or "").strip()
+            unit = (meta.get("unit") or "").strip().lower()
+            amount = as_float(row.get("amount"))
+            nutrient_id_counts[nutrient_id] += 1
+            nutrient_name_counts[name] += 1
+            if amount is None:
+                continue
+
+            if nutrient_id in ENERGY_ID_PRIORITY:
+                priority = ENERGY_ID_PRIORITY[nutrient_id]
+                current = energy_choice.get(row["fdc_id"])
+                if current is None or priority < current[0]:
+                    energy_choice[row["fdc_id"]] = (priority, amount)
+                continue
+
+            lower_name = name.lower()
+            field = ID_MAP.get(nutrient_id) or NAME_MAP.get(lower_name)
+            if field:
+                nutrient_values[row["fdc_id"]][field] = amount
+                continue
+
+            if unit == "kcal" and lower_name in ENERGY_NAME_PRIORITY:
+                priority = ENERGY_NAME_PRIORITY[lower_name]
+                current = energy_choice.get(row["fdc_id"])
+                if current is None or priority < current[0]:
+                    energy_choice[row["fdc_id"]] = (priority, amount)
+
+        for fdc_id, (_, amount) in energy_choice.items():
+            nutrient_values[fdc_id]["calories_kcal"] = amount
+
+        portions: dict[str, list[dict]] = defaultdict(list)
+        for row in rows_from_zip(archive, portion_member):
+            grams = as_float(row.get("gram_weight"))
+            if grams is None or grams <= 0:
+                continue
+            amount = as_float(row.get("amount")) or 1.0
+            measure = measure_name_by_id.get(row.get("measure_unit_id", ""), "")
+            label = row.get("portion_description") or row.get("modifier") or measure or "portion"
+            portions[row["fdc_id"]].append({
+                "amount": amount, "label": label.strip(), "measureUnit": measure,
+                "gramWeight": grams,
+            })
+
+        foods = []
+        for row in rows_from_zip(archive, food_member):
+            if row.get("data_type") != "survey_fndds_food":
+                continue
+            fdc_id = row["fdc_id"]
+            nutrients = nutrient_values.get(fdc_id, {})
+            survey = survey_by_fdc.get(fdc_id, {})
+            foods.append({
+                "id": f"fndds-{fdc_id}", "fdcId": int(fdc_id),
+                "foodCode": survey.get("food_code"),
+                "nameEn": row.get("description", "").strip(),
+                "dataType": row.get("data_type"),
+                "publicationDate": row.get("publication_date"),
+                "nutrientsPer100g": {field: nutrients.get(field) for field in OUTPUT_FIELDS},
+                "portions": sorted(portions.get(fdc_id, []), key=lambda item: item["gramWeight"]),
+                "source": {"name": "USDA FoodData Central FNDDS 2021-2023", "url": FNDDS_URL},
+            })
+
+    foods.sort(key=lambda item: (item["nameEn"].lower(), item["fdcId"]))
+    field_counts = {
+        field: sum(food["nutrientsPer100g"].get(field) is not None for food in foods)
+        for field in OUTPUT_FIELDS
+    }
+    complete_macro_count = sum(
+        all(food["nutrientsPer100g"].get(field) is not None for field in ("calories_kcal", "protein_g", "fat_g", "carbs_g"))
+        for food in foods
+    )
+
+    diagnostic = {
+        "foodCount": len(foods),
+        "foodNutrientRowCount": food_nutrient_row_count,
+        "nutrientMetaCount": len(nutrient_meta),
+        "fieldCounts": field_counts,
+        "completeMacroCount": complete_macro_count,
+        "topNutrientIds": nutrient_id_counts.most_common(25),
+        "topNutrientNames": nutrient_name_counts.most_common(25),
+        "sampleFoods": foods[:3],
+    }
+    (output / "nutrient_diagnostic.json").write_text(
+        json.dumps(diagnostic, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+
+    json_path = output / "fndds_2021_2023_app_layer.json"
+    json_path.write_text(json.dumps({
+        "format": "ifkb-universal-food-layer", "version": "fndds-2021-2023",
+        "foodCount": len(foods), "foods": foods,
+    }, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+
+    csv_path = output / "fndds_2021_2023_foods.csv"
+    with csv_path.open("w", encoding="utf-8", newline="") as handle:
+        fields = ["id", "fdc_id", "food_code", "name_en", *OUTPUT_FIELDS, "portion_count"]
+        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer.writeheader()
+        for food in foods:
+            writer.writerow({
+                "id": food["id"], "fdc_id": food["fdcId"],
+                "food_code": food["foodCode"], "name_en": food["nameEn"],
+                **food["nutrientsPer100g"], "portion_count": len(food["portions"]),
+            })
+
+    db_path = output / "fndds_2021_2023_app_layer.sqlite"
+    if db_path.exists():
+        db_path.unlink()
+    db = sqlite3.connect(db_path)
+    db.executescript("""
+      CREATE TABLE foods(
+        id TEXT PRIMARY KEY, fdc_id INTEGER UNIQUE NOT NULL, food_code TEXT, name_en TEXT NOT NULL,
+        calories_kcal REAL, protein_g REAL, fat_g REAL, carbs_g REAL, fiber_g REAL,
+        sugars_g REAL, sodium_mg REAL, cholesterol_mg REAL, calcium_mg REAL,
+        iron_mg REAL, potassium_mg REAL, vitamin_c_mg REAL
+      );
+      CREATE TABLE portions(
+        id INTEGER PRIMARY KEY AUTOINCREMENT, food_id TEXT NOT NULL, amount REAL NOT NULL,
+        label TEXT NOT NULL, measure_unit TEXT, gram_weight REAL NOT NULL,
+        FOREIGN KEY(food_id) REFERENCES foods(id)
+      );
+      CREATE INDEX foods_name_idx ON foods(name_en);
+      CREATE INDEX portions_food_idx ON portions(food_id);
+    """)
+    for food in foods:
+        nutrients = food["nutrientsPer100g"]
+        db.execute(
+            f"INSERT INTO foods VALUES ({','.join('?' for _ in range(4 + len(OUTPUT_FIELDS)))})",
+            (food["id"], food["fdcId"], food["foodCode"], food["nameEn"],
+             *(nutrients[field] for field in OUTPUT_FIELDS)),
+        )
+        db.executemany(
+            "INSERT INTO portions(food_id,amount,label,measure_unit,gram_weight) VALUES (?,?,?,?,?)",
+            [(food["id"], p["amount"], p["label"], p["measureUnit"], p["gramWeight"])
+             for p in food["portions"]],
+        )
+    db.commit()
+    db.close()
+
+    manifest = {
+        "releaseId": "IFKB-FNDDS-2021-2023-app-layer",
+        "officialArchiveUrl": FNDDS_URL,
+        "archiveSha256": sha256(archive_path),
+        "foodCount": len(foods), "completeMacroCount": complete_macro_count,
+        "portionCount": sum(len(food["portions"]) for food in foods),
+        "jsonSha256": sha256(json_path), "sqliteSha256": sha256(db_path),
+    }
+    (output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps({"manifest": manifest, "fieldCounts": field_counts}, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,50 @@
+expansion_id,iran_variant_id,name_fa,name_en,category,priority,preferred_authoritative_source,current_source_status,evidence_grade
+IFKB-IRX-0001,IR-RICE-HASHEMI-RAW,برنج هاشمی خام,"Hashemi rice, raw",rice_cultivar,P0,Iran FCT/licensed Iranian lab or peer-reviewed analytical study,source_needed,E
+IFKB-IRX-0002,IR-RICE-TAREM-RAW,برنج طارم خام,"Tarem rice, raw",rice_cultivar,P0,Iran FCT/licensed Iranian lab or peer-reviewed analytical study,source_needed,E
+IFKB-IRX-0003,IR-RICE-SADRI-RAW,برنج صدری خام,"Sadri rice, raw",rice_cultivar,P0,Iran FCT/licensed Iranian lab or peer-reviewed analytical study,source_needed,E
+IFKB-IRX-0004,IR-RICE-DOMSIAH-RAW,برنج دم‌سیاه خام,"Domsiah rice, raw",rice_cultivar,P0,Iran FCT/licensed Iranian lab or peer-reviewed analytical study,source_needed,E
+IFKB-IRX-0005,IR-RICE-ALI-KAZEMI-RAW,برنج علی‌کاظمی خام,"Ali Kazemi rice, raw",rice_cultivar,P1,Iranian analytical source,source_needed,E
+IFKB-IRX-0006,IR-RICE-SHIROODI-RAW,برنج شیرودی خام,"Shiroodi rice, raw",rice_cultivar,P1,Iranian analytical source,source_needed,E
+IFKB-IRX-0007,IR-RICE-FAJR-RAW,برنج فجر خام,"Fajr rice, raw",rice_cultivar,P1,Iranian analytical source,source_needed,E
+IFKB-IRX-0008,IR-RICE-CHAMPAY-RAW,برنج چمپا خام,"Champay rice, raw",rice_cultivar,P1,Iranian analytical source,source_needed,E
+IFKB-IRX-0009,IR-BREAD-SANGAK-PLAIN,نان سنگک ساده,"Sangak bread, plain",bread,P0,Iran FCT + measured bakery sampling,source_needed,E
+IFKB-IRX-0010,IR-BREAD-SANGAK-SESAME,نان سنگک کنجدی,"Sangak bread, sesame",bread,P0,Measured bakery sampling + ingredient calculation,source_needed,E
+IFKB-IRX-0011,IR-BREAD-BARBARI-PLAIN,نان بربری ساده,"Barbari bread, plain",bread,P0,Iran FCT + measured bakery sampling,source_needed,E
+IFKB-IRX-0012,IR-BREAD-BARBARI-SESAME,نان بربری کنجدی,"Barbari bread, sesame",bread,P0,Measured bakery sampling + ingredient calculation,source_needed,E
+IFKB-IRX-0013,IR-BREAD-TAFTOON,نان تافتون,Taftoon bread,bread,P0,Iran FCT + measured bakery sampling,source_needed,E
+IFKB-IRX-0014,IR-BREAD-LAVASH,نان لواش,Lavash bread,bread,P0,Iran FCT + measured bakery sampling,source_needed,E
+IFKB-IRX-0015,IR-DAIRY-DOOGH-PLAIN,دوغ ساده,"Doogh, plain",fermented_dairy,P0,Iran manufacturer labels + laboratory sampling,source_needed,E
+IFKB-IRX-0016,IR-DAIRY-DOOGH-MINT,دوغ نعناعی,"Doogh, mint",fermented_dairy,P1,Manufacturer labels + ingredient calculation,source_needed,E
+IFKB-IRX-0017,IR-DAIRY-KASHK-LIQUID,کشک مایع,"Kashk, liquid",fermented_dairy,P0,Iran FCT/manufacturer label/lab,source_needed,E
+IFKB-IRX-0018,IR-DAIRY-KASHK-DRY,کشک خشک,"Kashk, dried",fermented_dairy,P0,Iranian analytical source,source_needed,E
+IFKB-IRX-0019,IR-DAIRY-YOGURT-WHOLE,ماست پرچرب ایرانی,"Iranian yogurt, whole-fat",fermented_dairy,P0,Iran manufacturer labels + sampling,source_needed,E
+IFKB-IRX-0020,IR-DAIRY-YOGURT-LOWFAT,ماست کم‌چرب ایرانی,"Iranian yogurt, low-fat",fermented_dairy,P0,Iran manufacturer labels + sampling,source_needed,E
+IFKB-IRX-0021,IR-DAIRY-YOGURT-STRAINED,ماست چکیده ایرانی,Iranian strained yogurt,fermented_dairy,P0,Iran manufacturer/lab data,source_needed,E
+IFKB-IRX-0022,IR-CHEESE-WHITE-BRINED,پنیر سفید آب‌نمکی ایرانی,Iranian white brined cheese,cheese,P0,Iran FCT/manufacturer labels/lab,source_needed,E
+IFKB-IRX-0023,IR-CHEESE-LIGHVAN,پنیر لیقوان,Lighvan cheese,cheese,P0,Peer-reviewed Iranian analytical study/lab,source_needed,E
+IFKB-IRX-0024,IR-DAIRY-CREAM-BREAKFAST,خامه صبحانه ایرانی,Iranian breakfast cream,dairy_fat,P0,Manufacturer labels + laboratory sampling,source_needed,E
+IFKB-IRX-0025,IR-BARBERRY-DRIED,زرشک خشک ایرانی,Iranian dried barberry,dried_fruit,P0,Iranian analytical source,source_needed,E
+IFKB-IRX-0026,IR-DRIED-LIME,لیموعمانی خشک,Dried lime (limoo amani),condiment,P0,Iranian analytical source,source_needed,E
+IFKB-IRX-0027,IR-POMEGRANATE-MOLASSES,رب انار ایرانی,Iranian pomegranate molasses,condiment,P0,Manufacturer labels + Brix/acidity/lab,source_needed,E
+IFKB-IRX-0028,IR-SAFFRON-DRY,زعفران خشک ایرانی,"Iranian saffron, dried",spice,P0,Iranian standard/lab; nutrient values secondary importance,source_needed,E
+IFKB-IRX-0029,IR-ROSE-WATER,گلاب,Rose water,flavouring,P1,Manufacturer label/lab,source_needed,E
+IFKB-IRX-0030,IR-VERJUICE,آبغوره,Verjuice,condiment,P0,Iranian manufacturer/lab data,source_needed,E
+IFKB-IRX-0031,IR-SOUR-ORANGE-JUICE,آب نارنج,Sour orange juice,condiment,P1,Iranian analytical source,source_needed,E
+IFKB-IRX-0032,IR-LAMB-LEAN-RAW,گوشت گوسفند ایرانی کم‌چرب خام,"Iranian lamb, lean, raw",meat,P0,Iranian carcass/lab study,source_needed,E
+IFKB-IRX-0033,IR-BEEF-LEAN-RAW,گوشت گوساله ایرانی کم‌چرب خام,"Iranian beef, lean, raw",meat,P0,Iranian carcass/lab study,source_needed,E
+IFKB-IRX-0034,IR-GROUND-MEAT-70-30,گوشت چرخ‌کرده ۷۰/۳۰,"Ground meat, 70/30",meat_mix,P0,Recipe formulation from verified meats/fats,source_needed,E
+IFKB-IRX-0035,IR-GROUND-MEAT-80-20,گوشت چرخ‌کرده ۸۰/۲۰,"Ground meat, 80/20",meat_mix,P0,Recipe formulation from verified meats/fats,source_needed,E
+IFKB-IRX-0036,IR-SHEEP-TAIL-FAT,دنبه گوسفندی,Sheep tail fat,animal_fat,P0,Iranian analytical source,source_needed,E
+IFKB-IRX-0037,IR-LAMB-SHANK-RAW,ماهیچه گوسفندی خام,"Iranian lamb shank, raw",meat,P0,Iranian analytical source,source_needed,E
+IFKB-IRX-0038,IR-SPLIT-PEA-YELLOW,لپه زرد ایرانی,Iranian yellow split pea,legume,P0,Iran FCT/Iranian analytical source,source_needed,E
+IFKB-IRX-0039,IR-KIDNEY-BEAN-RED,لوبیا قرمز ایرانی,Iranian red kidney bean,legume,P0,Iran FCT/Iranian analytical source,source_needed,E
+IFKB-IRX-0040,IR-PINTO-BEAN,لوبیا چیتی ایرانی,Iranian pinto bean,legume,P0,Iran FCT/Iranian analytical source,source_needed,E
+IFKB-IRX-0041,IR-CHICKPEA,نخود ایرانی,Iranian chickpea,legume,P1,Iranian analytical source,source_needed,E
+IFKB-IRX-0042,IR-LENTIL,عدس ایرانی,Iranian lentil,legume,P1,Iranian analytical source,source_needed,E
+IFKB-IRX-0043,IR-WALNUT-KERNEL,مغز گردوی ایرانی,Iranian walnut kernel,nut,P0,Iranian analytical source,source_needed,E
+IFKB-IRX-0044,IR-CASPIAN-WHITE-FISH,ماهی سفید دریای خزر,Caspian white fish,fish,P0,Iranian fisheries analytical study,source_needed,E
+IFKB-IRX-0045,IR-TROUT-FARMED,قزل‌آلای پرورشی ایران,Iranian farmed trout,fish,P0,Iranian fisheries analytical study,source_needed,E
+IFKB-IRX-0046,IR-DATE-MAZAFATI,خرمای مضافتی,Mazafati date,fruit_cultivar,P0,Iranian analytical source,source_needed,E
+IFKB-IRX-0047,IR-DATE-ZAHEDI,خرمای زاهدی,Zahedi date,fruit_cultivar,P1,Iranian analytical source,source_needed,E
+IFKB-IRX-0048,IR-GRAPE-MOLASSES,شیره انگور,Grape molasses,sweetener,P1,Manufacturer/lab data,source_needed,E
+IFKB-IRX-0049,IR-DATE-SYRUP,شیره خرما,Date syrup,sweetener,P1,Manufacturer/lab data,source_needed,E

@@ -1,0 +1,74 @@
+name: IFKB P0 Wave 2 Accepted Originals (Manual Only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ifkb-wikimedia-commons
+  cancel-in-progress: false
+
+jobs:
+  download-reviewed-originals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install image dependency
+        run: python -m pip install --disable-pip-version-check pillow==11.3.0
+
+      - name: Download reviewed Wikimedia originals
+        id: acquire
+        continue-on-error: true
+        run: |
+          echo 'This bulk workflow is retained for controlled diagnostics only.'
+          echo 'For release acquisition, use small rate-limited batches.'
+          python ifkb/images/download_commons_images.py \
+            --manifest ifkb/images/p0_wave2_accepted_manifest.csv \
+            --output build/ifkb-p0-wave2-originals-v0.11.1
+
+      - name: Upload fail-closed diagnostic artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-p0-wave2-originals-diagnostic-v0.11.1
+          path: build/ifkb-p0-wave2-originals-v0.11.1
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 14
+
+      - name: Verify complete resolved output
+        if: steps.acquire.outcome == 'success'
+        run: |
+          test -s build/ifkb-p0-wave2-originals-v0.11.1/resolved_manifest.csv
+          test -s build/ifkb-p0-wave2-originals-v0.11.1/ATTRIBUTION.md
+          test -s build/ifkb-p0-wave2-originals-v0.11.1/dataset_manifest.json
+          test ! -s build/ifkb-p0-wave2-originals-v0.11.1/failures.csv || [ "$(wc -l < build/ifkb-p0-wave2-originals-v0.11.1/failures.csv)" -eq 1 ]
+
+      - name: Upload complete reviewed originals
+        if: steps.acquire.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-p0-wave2-originals-v0.11.1
+          path: build/ifkb-p0-wave2-originals-v0.11.1
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 30
+
+      - name: Preserve fail-closed result
+        if: steps.acquire.outcome != 'success'
+        run: |
+          echo 'Original acquisition remains incomplete. Diagnostic artifact only.'
+          if [ -f build/ifkb-p0-wave2-originals-v0.11.1/failures.csv ]; then
+            cat build/ifkb-p0-wave2-originals-v0.11.1/failures.csv
+          fi
+          exit 1

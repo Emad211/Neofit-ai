@@ -1,3 +1,5 @@
+import { NUTRITION_CORE_MIGRATION_V1 } from '@/nutrition-core/sql';
+
 export type Migration = {
   version: number;
   name: string;
@@ -259,6 +261,55 @@ export const migrations: Migration[] = [
 
       CREATE INDEX IF NOT EXISTS idx_exercise_video_cache_expiry
       ON exercise_video_cache(expires_at);
+    `,
+  },
+  {
+    version: 3,
+    name: 'nutrition-core-concepts-tracker-and-vision-cache',
+    sql: NUTRITION_CORE_MIGRATION_V1,
+  },
+  {
+    version: 4,
+    name: 'canonical-nutrition-diary-and-legacy-meal-import',
+    sql: `
+      CREATE INDEX IF NOT EXISTS idx_nutrition_diary_created_at
+      ON nutrition_diary_entries(created_at DESC);
+
+      INSERT OR IGNORE INTO nutrition_diary_entries (
+        id,
+        local_date,
+        meal_type,
+        label,
+        source_type,
+        source_id,
+        grams,
+        nutrition_center_json,
+        nutrition_range_json,
+        created_at,
+        updated_at
+      )
+      SELECT
+        'legacy-meal:' || id,
+        strftime('%Y-%m-%d', eaten_at, 'localtime'),
+        meal_type,
+        description,
+        CASE source
+          WHEN 'manual' THEN 'custom'
+          WHEN 'plan' THEN 'recipe'
+          ELSE 'food'
+        END,
+        'legacy-meal:' || id,
+        NULL,
+        json_object(
+          'energyKcal', calories,
+          'proteinG', protein_g,
+          'carbsG', carbs_g,
+          'fatG', fat_g
+        ),
+        NULL,
+        eaten_at,
+        created_at
+      FROM meal_logs;
     `,
   },
 ];

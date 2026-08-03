@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - master
+      - agent/mobile-local-first-expo
 
 permissions:
   contents: read
@@ -36,20 +37,198 @@ jobs:
           cache: npm
           cache-dependency-path: mobile/package-lock.json
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Install locked mobile dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund > /tmp/npm-ci.log 2>&1 || { cat /tmp/npm-ci.log; exit 1; }
 
       - name: Run deterministic domain tests
-        run: npm test
+        run: npm test > /tmp/npm-test.log 2>&1 || { cat /tmp/npm-test.log; exit 1; }
+
+      - name: Upload deterministic test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-test-diagnostics
+          path: /tmp/npm-test.log
+          if-no-files-found: ignore
+          retention-days: 2
+
+      - name: Run IFKB Python contract tests
+        working-directory: ifkb/universal
+        run: |
+          python -m unittest -v \
+            test_natural_query_corpus.py \
+            test_iranian_collection_research_plan.py \
+            > /tmp/ifkb-python-tests.log 2>&1 \
+            || { cat /tmp/ifkb-python-tests.log; exit 1; }
+
+      - name: Upload IFKB Python diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-python-test-diagnostics
+          path: /tmp/ifkb-python-tests.log
+          if-no-files-found: ignore
+          retention-days: 2
+
+      - name: Run complete fail-closed DS2 normalization gate
+        working-directory: .
+        run: |
+          python ifkb/digital_v0131/normalization_gate/run_normalization_gate.py \
+            --output-dir build/ds2-normalization \
+            > /tmp/ifkb-ds2-normalization.log 2>&1 \
+            || { cat /tmp/ifkb-ds2-normalization.log; exit 1; }
+
+      - name: Upload DS2 normalization diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-ds2-normalization-diagnostics
+          path: /tmp/ifkb-ds2-normalization.log
+          if-no-files-found: ignore
+          retention-days: 2
+
+      - name: Upload DS2 normalization reports
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-ds2-normalization-gate-report
+          path: build/ds2-normalization
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Generate full nutrition catalog bulk audit
+        run: |
+          npx tsx scripts/audit-full-nutrition-catalog.ts \
+            --output-dir ../build/full-nutrition-catalog-audit \
+            > /tmp/full-nutrition-catalog-audit.log 2>&1 \
+            || { cat /tmp/full-nutrition-catalog-audit.log; exit 1; }
+
+      - name: Upload full catalog audit diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-nutrition-catalog-audit-diagnostics
+          path: /tmp/full-nutrition-catalog-audit.log
+          if-no-files-found: ignore
+          retention-days: 2
+
+      - name: Upload full nutrition catalog bulk audit
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-full-nutrition-catalog-bulk-audit
+          path: build/full-nutrition-catalog-audit
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Generate Iranian source-discovery packs
+        run: |
+          npx tsx scripts/generate-iranian-source-discovery-packs.ts \
+            --batch-plan ../build/full-nutrition-catalog-audit/iranian-batch-plan.json \
+            --output-dir ../build/iranian-source-discovery \
+            > /tmp/iranian-source-discovery.log 2>&1 \
+            || { cat /tmp/iranian-source-discovery.log; exit 1; }
+
+      - name: Generate multi-collection research plan
+        working-directory: .
+        run: |
+          python ifkb/universal/build_iranian_collection_research_plan.py \
+            --discovery-queue build/iranian-source-discovery/all-iranian-source-discovery-queue.csv \
+            --registry ifkb/universal/releases/iranian-bulk-source-registry-v1/source-collections.csv \
+            --output-dir build/iranian-source-discovery/collection-plan \
+            >> /tmp/iranian-source-discovery.log 2>&1 \
+            || { cat /tmp/iranian-source-discovery.log; exit 1; }
+
+      - name: Upload Iranian discovery diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iranian-source-discovery-diagnostics
+          path: /tmp/iranian-source-discovery.log
+          if-no-files-found: ignore
+          retention-days: 2
+
+      - name: Upload Iranian source-discovery packs
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-iranian-source-discovery-packs
+          path: build/iranian-source-discovery
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Build app-ready Iranian nutrition dataset
+        run: |
+          npx tsx scripts/build-iranian-app-dataset-stage6.ts \
+            --output-dir ../build/iranian-app-dataset \
+            > /tmp/iranian-app-dataset.log 2>&1 \
+            || { cat /tmp/iranian-app-dataset.log; exit 1; }
+
+      - name: Upload app-dataset diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iranian-app-dataset-diagnostics
+          path: /tmp/iranian-app-dataset.log
+          if-no-files-found: ignore
+          retention-days: 2
+
+      - name: Upload app-ready Iranian nutrition dataset
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-iranian-app-dataset-stage6
+          path: build/iranian-app-dataset
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Generate schema and ID freeze candidate
+        run: |
+          npx tsx scripts/audit-schema-freeze-candidate.ts \
+            --output ../build/schema-freeze-candidate/manifest.json \
+            > /tmp/schema-freeze-candidate.log 2>&1 \
+            || { cat /tmp/schema-freeze-candidate.log; exit 1; }
+
+      - name: Upload schema freeze diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: schema-freeze-candidate-diagnostics
+          path: /tmp/schema-freeze-candidate.log
+          if-no-files-found: ignore
+          retention-days: 2
+
+      - name: Upload schema and ID freeze candidate
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-schema-id-freeze-candidate
+          path: build/schema-freeze-candidate/manifest.json
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Check Expo package versions
-        run: npx expo install --check
+        run: npx expo install --check > /tmp/expo-check.log 2>&1 || { cat /tmp/expo-check.log; exit 1; }
 
       - name: Expo dependency doctor
-        run: npm run doctor
+        run: npm run doctor > /tmp/expo-doctor.log 2>&1 || { cat /tmp/expo-doctor.log; exit 1; }
 
       - name: Strict TypeScript
-        run: npm run typecheck
+        run: npm run typecheck > /tmp/typecheck.log 2>&1 || { cat /tmp/typecheck.log; exit 1; }
+
+      - name: Upload TypeScript diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-typecheck-diagnostics
+          path: /tmp/typecheck.log
+          if-no-files-found: ignore
+          retention-days: 2
 
       - name: Export Android bundle
-        run: npx expo export --platform android --output-dir dist
+        run: npx expo export --platform android --output-dir dist > /tmp/expo-export.log 2>&1 || { cat /tmp/expo-export.log; exit 1; }

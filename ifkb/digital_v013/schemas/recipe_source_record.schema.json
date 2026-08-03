@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IFKB Digital Recipe Source Record",
+  "type": "object",
+  "required": ["recipe_source_id", "canon_id", "source_url", "source_domain", "identity_review_status"],
+  "properties": {
+    "recipe_source_id": {"type": "string"},
+    "canon_id": {"type": "string"},
+    "variant_label": {"type": ["string", "null"]},
+    "source_url": {"type": "string", "format": "uri"},
+    "source_domain": {"type": "string"},
+    "source_independence_group": {"type": "string"},
+    "reuse_rights": {"type": "string"},
+    "ingredients": {"type": ["array", "null"], "items": {"type": "object"}},
+    "yield_or_servings": {"type": ["number", "null"], "exclusiveMinimum": 0},
+    "identity_review_status": {"enum": ["pending", "accepted", "rejected"]},
+    "normalization_status": {"enum": ["pending", "normalized", "quarantined"]}
+  }
+}

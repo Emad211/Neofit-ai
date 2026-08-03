@@ -1,0 +1,65 @@
+{
+  "format": "ifkb-ds2-ingredient-mapping-audit-spec",
+  "version": "1.0.0",
+  "recipeSourceId": "DS2-KB-03",
+  "canonId": "IFKB-CANON-00028",
+  "foodNameFa": "کباب کوبیده",
+  "policy": {
+    "auditOnly": true,
+    "automaticMappingForbidden": true,
+    "derivedAggregateExcluded": true,
+    "conceptAndVariantEvidenceRequired": true,
+    "independentReviewRequired": true
+  },
+  "ingredients": [
+    {
+      "quantityKey": "lamb_total_g",
+      "namePrefixes": ["lamb, ground"],
+      "requiredCookingTagsAny": ["raw"],
+      "excludedNameTokens": ["cooked", "broiled", "grilled", "patty"],
+      "reviewQuestion": "Does the recipe source support ground raw lamb, and which fat/composition variant is defensible?"
+    },
+    {
+      "quantityKey": "beef_total_g",
+      "namePrefixes": ["beef, ground"],
+      "requiredCookingTagsAny": ["raw"],
+      "excludedNameTokens": ["cooked", "broiled", "grilled", "patty", "crumbles"],
+      "reviewQuestion": "Select or interval-govern the raw ground-beef lean/fat variant; do not average fat classes blindly."
+    },
+    {
+      "quantityKey": "onion_total_g",
+      "namePrefixes": ["onions, raw", "onion, raw"],
+      "requiredCookingTagsAny": ["raw"],
+      "excludedNameTokens": ["spring", "scallion", "dehydrated", "powder"],
+      "reviewQuestion": "Confirm ordinary raw bulb onion and the edible-fraction policy."
+    },
+    {
+      "quantityKey": "salt_total_g",
+      "namePrefixes": ["salt, table"],
+      "requiredCookingTagsAny": [],
+      "excludedNameTokens": ["seasoned", "substitute"],
+      "reviewQuestion": "Confirm plain table salt rather than a seasoning blend or salt substitute."
+    },
+    {
+      "quantityKey": "black_pepper_total_g",
+      "namePrefixes": ["spices, pepper, black"],
+      "requiredCookingTagsAny": [],
+      "excludedNameTokens": [],
+      "reviewQuestion": "Confirm ground/dry black pepper identity and source record."
+    },
+    {
+      "quantityKey": "sumac_total_g",
+      "namePrefixes": ["spices, sumac", "sumac"],
+      "requiredCookingTagsAny": [],
+      "excludedNameTokens": ["beverage", "tea"],
+      "reviewQuestion": "Confirm edible culinary sumac spice; if absent, treat as a catalog gap rather than substituting another spice."
+    },
+    {
+      "quantityKey": "baking_soda_total_g",
+      "namePrefixes": ["leavening agents, baking soda"],
+      "requiredCookingTagsAny": [],
+      "excludedNameTokens": ["baking powder"],
+      "reviewQuestion": "Confirm baking soda; baking powder is not an acceptable substitute."
+    }
+  ]
+}

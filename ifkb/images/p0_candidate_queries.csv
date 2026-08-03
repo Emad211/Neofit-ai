@@ -1,0 +1,49 @@
+canon_id,food_name_fa,food_name_en,category,region,query_primary,query_secondary,negative_terms,candidate_limit
+IFKB-CANON-00002,خورش کرفس,Persian celery stew,stew,Iran,khoresh karafs Persian celery stew,خورش کرفس,celery soup|raw celery,4
+IFKB-CANON-00009,قیمه بادمجان,Gheimeh eggplant stew,stew,Iran,gheimeh bademjan Persian eggplant stew,قیمه بادمجان,eggplant raw|gheymeh only,4
+IFKB-CANON-00012,چلو سفید,Plain Persian rice,rice,Iran,chelo Persian white rice,Persian steamed rice chelo,uncooked rice|rice field,4
+IFKB-CANON-00019,زرشک‌پلو با مرغ,Barberry rice with chicken,rice,Iran,zereshk polo ba morgh,barberry rice chicken Persian,barberry only|raw chicken,4
+IFKB-CANON-00020,ته‌چین مرغ,Chicken tahchin,rice,Iran,tahchin morgh chicken,Persian chicken tahchin,cake dessert,4
+IFKB-CANON-00021,باقالی‌پلو با ماهیچه,Fava bean rice with lamb shank,rice,Iran,baghali polo ba mahicheh,fava bean rice lamb shank Persian,fava beans raw,4
+IFKB-CANON-00024,کباب برگ,Kebab barg,kebab,Iran,kabab barg Persian,kebab barg Iran,doner|shawarma,4
+IFKB-CANON-00025,چنجه,Chenjej kebab,kebab,Iran,chenjeh kebab Persian,chenje kabab Iran,doner|shawarma,4
+IFKB-CANON-00029,شیشلیک,Shishlik,kebab,Iran,shishlik Persian ribs,Iranian shishlik kebab,generic shashlik,4
+IFKB-CANON-00030,چلوکباب کوبیده,Rice with koobideh kebab,kebab,Iran,chelo kabab koobideh,Persian rice koobideh kebab,doner,4
+IFKB-CANON-00033,آش دوغ,Yogurt herb soup,soup,Iran,ash doogh Iranian yogurt soup,آش دوغ,drink doogh only,4
+IFKB-CANON-00037,آبگوشت,Abgoosht / dizi,soup,Iran,abgoosht Persian dizi,Iranian abgoosht,raw meat,4
+IFKB-CANON-00041,نیمرو,Fried eggs,breakfast,Iran,Persian fried eggs breakfast,نیمرو ایرانی,egg carton,4
+IFKB-CANON-00042,عدسی,Lentil stew,breakfast,Iran,adasi Persian lentil stew,Iranian lentil breakfast adasi,dry lentils,4
+IFKB-CANON-00043,املت گوجه,Tomato omelet,breakfast,Iran,Persian tomato omelette,Iranian tomato omelet,raw tomato,4
+IFKB-CANON-00045,کله‌پاچه,Kaleh pacheh,breakfast,Iran,kaleh pacheh Iranian,کله پاچه,animal head raw,4
+IFKB-CANON-00046,کوکو سبزی,Kuku sabzi,street_food,Iran,kuku sabzi Persian,Persian herb frittata,raw herbs,4
+IFKB-CANON-00047,سمبوسه,Samosa,street_food,Iran,Iranian sambuseh,Persian samosa,Indian samosa only,4
+IFKB-CANON-00048,شامی,Shami patty,street_food,Iran,shami kabab Persian patty,Iranian shami patty,Syrian shami,4
+IFKB-CANON-00049,کتلت,Kotlet,street_food,Iran,Persian kotlet,Iranian meat potato cutlet,generic cutlet,4
+IFKB-CANON-00050,دلمه برگ مو,Stuffed grape leaves,street_food,Iran,Persian dolmeh grape leaves,Iranian stuffed grape leaves,raw grape leaves,4
+IFKB-CANON-00051,خوراک لوبیا چیتی,Pinto bean stew,street_food,Iran,Persian pinto bean stew,Iranian loobia chiti,dry beans,4
+IFKB-CANON-00056,کشک بادمجان,Kashk bademjan,street_food,Iran,kashk bademjan Persian,Iranian eggplant kashk,raw eggplant,4
+IFKB-CANON-00059,ماکارونی,Iranian-style macaroni,street_food,Iran,Iranian macaroni Persian,Persian style spaghetti,Italian pasta plate,4
+IFKB-CANON-00060,الویه,Olivieh sandwich,street_food,Iran,salad olivieh Iranian,Persian olivieh sandwich,Russian salad generic,4
+IFKB-CANON-00062,نان لواش,Lavash bread,bread,Iran,Iranian lavash bread,Persian lavash,Armenian lavash,4
+IFKB-CANON-00063,نان تافتون,Taftoon bread,bread,Iran,taftoon bread Iranian,Persian taftun bread,naan generic,4
+IFKB-CANON-00064,نان سنگک,Sangak bread,bread,Iran,sangak bread Iranian,Persian sangak bakery,naan generic,4
+IFKB-CANON-00065,نان بربری,Barbari bread,bread,Iran,barbari bread Iranian,Persian barbari bread,barberry fruit,4
+IFKB-CANON-00077,دوغ,Doogh yogurt drink,dairy_beverage,Iran,doogh Iranian yogurt drink,Persian doogh,yogurt bowl,4
+IFKB-CANON-00078,پنیر,White cheese,dairy_beverage,Iran,Iranian white brined cheese,Persian breakfast cheese,generic cheese board,4
+IFKB-CANON-00079,کشک,Kashk,dairy_beverage,Iran,Iranian kashk dairy,Persian kashk,kashk bademjan dish,4
+IFKB-CANON-00080,ماست,Yogurt,dairy_beverage,Iran,Iranian yogurt bowl,Persian yogurt,fruit yogurt,4
+IFKB-CANON-00083,ماست چکیده,Strained yogurt,dairy_beverage,Iran,Iranian strained yogurt,Persian mast chekideh,Greek yogurt packaging,4
+IFKB-CANON-00101,قلیه ماهی,Ghalieh mahi fish stew,seafood_stew,Khuzestan/Bushehr,ghalieh mahi Iranian fish stew,Persian fish stew ghalieh,raw fish,4
+IFKB-CANON-00108,دیزی سنگی,Stone-pot dizi,abgoosht,Iran,stone pot dizi Iranian,Persian dizi sangi,empty stone pot,4
+IFKB-CANON-00112,اکبرجوجه,Akbar joojeh fried chicken,fried_main,Mazandaran,Akbar joojeh Iranian fried chicken,اکبر جوجه,fried chicken generic,4
+IFKB-CANON-00119,قیمه نثار,Gheimeh nesar,rice,Qazvin,gheimeh nesar Qazvin,Persian jeweled rice gheimeh nesar,gheymeh stew,4
+IFKB-CANON-00120,کلم پلو شیرازی,Shirazi cabbage rice,rice,Fars,kalam polo Shirazi,Shirazi cabbage rice,raw cabbage,4
+IFKB-CANON-00121,سبزی پلو با ماهی,Herb rice with fish,rice,Iran,sabzi polo ba mahi,Persian herb rice fish,raw fish,4
+IFKB-CANON-00122,رشته پلو,Reshteh polo noodle rice,rice,Iran,reshteh polo Persian,Iranian noodle rice,ash reshteh,4
+IFKB-CANON-00150,کباب بناب,Bonab kebab,kebab,East Azerbaijan,Bonab kebab Iranian,kabab Bonab,generic koobideh,4
+IFKB-CANON-00151,دنده کباب,Kermanshahi rib kebab,kebab,Kermanshah,dandeh kabab Kermanshah,Kermanshahi rib kebab,raw ribs,4
+IFKB-CANON-00162,آش شله قلمکار,Ash sholeh ghalamkar,soup,Tehran,ash sholeh ghalamkar,Persian sholeh ghalamkar soup,sholeh zard,4
+IFKB-CANON-00175,شله مشهدی,Sholeh Mashhadi,soup,Razavi Khorasan,sholeh Mashhadi,Mashhad sholeh stew,sholeh zard,4
+IFKB-CANON-00184,کوکو سیب‌زمینی,Potato kuku,kuku,Iran,kuku sibzamini Persian,Persian potato kuku,potato chips,4
+IFKB-CANON-00187,کوفته تبریزی,Tabrizi koofteh,koofteh,East Azerbaijan,koofteh Tabrizi,Persian stuffed meatball Tabriz,generic meatballs,4
+IFKB-CANON-00211,بریانی اصفهان,Isfahan beryani,meat_main,Isfahan,Isfahan beryani Iranian,بریانی اصفهان,biriyani rice,4

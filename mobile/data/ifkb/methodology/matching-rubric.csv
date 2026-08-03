@@ -1,0 +1,6 @@
+match_quality,label,minimum_conditions,allowed_use,evidence_ceiling,required_documentation,decision
+A,Exact food match,"Same species/type, edible part, raw/cooked state, processing, fortification, fat/salt status and basis.",Direct nutrient observation candidate,B unless Iranian laboratory grade A exists,"Source record ID, release, complete description, differences = none",May enter review queue
+B,Recipe calculation / controlled composite,All ingredients matched; weighed recipe; edible portions; cooked yield; retention factors; reproducible equations.,Composite dish estimate,C,"Recipe version, ingredient source IDs, raw weights, yield, retention set",May enter review queue
+C,Documented close match,Minor cultivar/brand/geography difference; no material state or processing difference; impact assessed.,Temporary ingredient substitute,C,Difference statement and expected direction/magnitude,Quarantine until reviewer approval
+D,Weak substitute,"Food group similarity but important identity, processing or composition differences remain.",Exploratory modelling only,D,Explicit uncertainty and reason no better match exists,Not distributable
+U,Unmatched,No defensible match.,Ontology and search only,E,Search log,No nutrient values

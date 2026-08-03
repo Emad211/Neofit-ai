@@ -1,0 +1,18 @@
+canon_id,food_name_fa,recommended_source,required_views,identity_cues,gold_measurements
+IFKB-CANON-00009,قیمه بادمجان,home_kitchen_or_traditional_restaurant,top + 45deg + stew-only bowl + rice side,"eggplant pieces; yellow split peas; tomato stew; meat",weigh stew and rice separately
+IFKB-CANON-00012,چلو سفید,home_kitchen_or_chelo_kabab_restaurant,top plate + side + close grain texture,"plain white separate-grain Persian rice; optional butter separate",weigh cooked rice and butter separately
+IFKB-CANON-00021,باقالی‌پلو با ماهیچه,traditional_restaurant,top + 45deg + lamb-shank side,"dill/fava rice; whole lamb shank; optional saffron","weigh edible shank meat, bone, rice and butter"
+IFKB-CANON-00042,عدسی,breakfast_shop_or_home,bowl top + 45deg + spoon texture,"thick lentil porridge; optional onion/oil/lemon",weigh bowl and toppings
+IFKB-CANON-00045,کله‌پاچه,licensed_breakfast_shop,full tray + component closeups + broth bowl,"head/feet/tongue/brain components; broth; bread","component weights and bread separately; privacy-safe shop capture"
+IFKB-CANON-00047,سمبوسه,Bandari_shop_or_home,whole pieces + cut cross-section + sandwich/plate,"triangular fried pastry; potato/meat/herb filling","count pieces; weigh filling/oil/bread/sauce"
+IFKB-CANON-00048,شامی,Iranian_home_or_regional_restaurant,whole patties + cut section + plate,"Iranian shami patty; meat/legume texture","weigh patties, oil and bread"
+IFKB-CANON-00051,خوراک لوبیا چیتی,breakfast_shop_or_home,bowl top + 45deg + bread side,"pinto beans in tomato sauce; optional mushroom/potato",weigh khorak and bread separately
+IFKB-CANON-00060,الویه,sandwich_shop_or_home,plate + sandwich + cross-section,"Iranian chicken-potato-mayo salad; pickles/peas","weigh salad, mayonnaise and bread separately"
+IFKB-CANON-00080,ماست,Iranian_dairy_or_home,plain bowl + package label + spoon texture,"plain yogurt; fat percentage; no fruit","record brand/fat%, weigh serving"
+IFKB-CANON-00083,ماست چکیده,Iranian_dairy_or_home,bowl + spoon texture + package label,"thick strained yogurt; fat/salt variant","record brand/formulation; weigh serving"
+IFKB-CANON-00105,قلیه ماهی,southern_Iranian_restaurant_or_home,stew bowl + fish closeup + rice side,"dark herb/tamarind stew with fish pieces","weigh stew, fish edible mass and rice"
+IFKB-CANON-00108,دیزی سنگی,traditional_dizi_restaurant,stone pot + broth bowl + mashed solids + bread,"stone vessel; broth; solids; bread","weigh broth, solids, fat and bread separately"
+IFKB-CANON-00112,اکبرجوجه,licensed_Akbar_Joojeh_style_restaurant,chicken plate + rice + sauce + side,"fried chicken half/quarter; saffron rice; pomegranate sauce","weigh edible chicken, bone, rice, sauce and oil"
+IFKB-CANON-00150,دنده کباب,Kermanshah_restaurant,rib rack top + side + edible/bone closeup,"Kermanshahi rib kebab; bone and fat visible","weigh cooked rack, edible meat, bone and accompaniment"
+IFKB-CANON-00162,آش شله قلمکار,ash_shop_or_home,bowl top + 45deg + ladle texture + garnish,"very thick grain/legume/herb/meat ash","weigh bowl, meat and toppings"
+IFKB-CANON-00211,کوکو سیب‌زمینی,home_or_snack_shop,whole kuku + pieces + cross-section,"egg-potato patty; fried surface and internal texture","weigh whole batch, pieces and oil"

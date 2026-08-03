@@ -1,0 +1,28 @@
+canon_id,food_name_fa,food_name_en,category,region,query_primary,query_secondary,negative_terms,candidate_limit
+IFKB-CANON-00009,قیمه بادمجان,Gheimeh eggplant stew,stew,Iran,gheimeh bademjan,قیمه بادمجان,raw eggplant|gheimeh only,6
+IFKB-CANON-00012,چلو سفید,Plain Persian rice,rice,Iran,chelo Persian rice,Persian steamed rice,kebab|chicken|mixed rice,6
+IFKB-CANON-00020,ته‌چین مرغ,Chicken tahchin,rice,Iran,chicken tahchin,ته چین مرغ,dessert cake|plain rice,6
+IFKB-CANON-00021,باقالی‌پلو با ماهیچه,Fava bean rice with lamb shank,rice,Iran,baghali polo lamb shank,باقالی پلو با ماهیچه,raw beans|rice only,6
+IFKB-CANON-00029,شیشلیک,Shishlik,kebab,Iran,Iranian shishlik,شیشلیک شاندیز,generic shashlik|raw ribs,6
+IFKB-CANON-00042,عدسی,Lentil stew,breakfast,Iran,adasi Persian lentil,عدسی,dry lentils|Indian dal,6
+IFKB-CANON-00045,کله‌پاچه,Kaleh pacheh,breakfast,Iran,kaleh pacheh,کله پاچه,raw animal head|khash only,6
+IFKB-CANON-00046,کوکو سبزی,Kuku sabzi,street_food,Iran,kuku sabzi,کوکو سبزی,raw herbs|potato kuku,6
+IFKB-CANON-00047,سمبوسه,Samosa,street_food,Iran,Iranian sambuseh,سمبوسه ایرانی,Indian samosa|logo,6
+IFKB-CANON-00048,شامی,Shami patty,street_food,Iran,shami kabab Persian,شامی کباب,Syrian|Levantine,6
+IFKB-CANON-00050,دلمه برگ مو,Stuffed grape leaves,street_food,Iran,Persian dolmeh grape leaves,دلمه برگ مو,raw leaves|Greek only,6
+IFKB-CANON-00051,خوراک لوبیا چیتی,Pinto bean stew,street_food,Iran,khorak loobia,خوراک لوبیا چیتی,dry beans|chili con carne,6
+IFKB-CANON-00060,الویه,Olivieh sandwich,street_food,Iran,salad olivieh Iran,الویه ساندویچ,Russian salad only|logo,6
+IFKB-CANON-00078,پنیر,White cheese,dairy_beverage,Iran,Iranian white cheese,Lighvan cheese,cheese board|yellow cheese,6
+IFKB-CANON-00080,ماست,Yogurt,dairy_beverage,Iran,Persian yogurt bowl,ماست ایرانی,fruit yogurt|packaging only,6
+IFKB-CANON-00083,ماست چکیده,Strained yogurt,dairy_beverage,Iran,mast chekideh,ماست چکیده,Greek yogurt package,6
+IFKB-CANON-00101,قلیه ماهی,Ghalieh mahi fish stew,seafood_stew,Khuzestan/Bushehr,ghalieh mahi,قلیه ماهی,raw fish|grilled fish,6
+IFKB-CANON-00108,دیزی سنگی,Stone-pot dizi,abgoosht,Iran,dizi sangi,دیزی سنگی,empty pot|restaurant sign,6
+IFKB-CANON-00112,اکبرجوجه,Akbar joojeh fried chicken,fried_main,Mazandaran,Akbar joojeh,اکبر جوجه,historical person|logo|restaurant sign,6
+IFKB-CANON-00119,قیمه نثار,Gheimeh nesar,rice,Qazvin,gheimeh nesar,قیمه نثار,gheimeh stew|plain rice,6
+IFKB-CANON-00120,کلم پلو شیرازی,Shirazi cabbage rice,rice,Fars,kalam polo Shirazi,کلم پلو شیرازی,raw cabbage|plain rice,6
+IFKB-CANON-00121,سبزی پلو با ماهی,Herb rice with fish,rice,Iran,sabzi polo ba mahi,سبزی پلو با ماهی,raw fish|herbs only,6
+IFKB-CANON-00122,رشته پلو,Reshteh polo noodle rice,rice,Iran,reshteh polo,رشته پلو,ash reshteh|noodle soup,6
+IFKB-CANON-00151,دنده کباب,Kermanshahi rib kebab,kebab,Kermanshah,dandeh kabab Kermanshah,دنده کباب کرمانشاه,raw ribs|American barbecue,6
+IFKB-CANON-00162,آش شله قلمکار,Ash sholeh ghalamkar,soup,Tehran,ash sholeh ghalamkar,آش شله قلمکار,sholeh zard,6
+IFKB-CANON-00175,شله مشهدی,Sholeh Mashhadi,soup,Razavi Khorasan,sholeh Mashhadi,شله مشهدی,sholeh zard|dessert,6
+IFKB-CANON-00184,کوکو سیب‌زمینی,Potato kuku,kuku,Iran,kuku sibzamini,کوکو سیب زمینی,potato chips|Spanish tortilla,6

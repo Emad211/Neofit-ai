@@ -1,0 +1,57 @@
+name: IFKB Independent Persian Query Corpus
+
+on:
+  push:
+    branches:
+      - agent/iranian-food-kb-foundation
+    paths:
+      - 'ifkb/universal/natural_query_corpus.py'
+      - 'ifkb/universal/test_natural_query_corpus.py'
+      - 'ifkb/universal/releases/persian-natural-query-corpus-v1/**'
+      - '.github/workflows/ifkb-natural-query-corpus.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ifkb-natural-query-corpus
+  cancel-in-progress: true
+
+jobs:
+  validate-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Test corpus validator and privacy gates
+        working-directory: ifkb/universal
+        run: python -m unittest -v test_natural_query_corpus.py
+
+      - name: Validate frozen corpus when present
+        run: |
+          corpus='ifkb/universal/releases/persian-natural-query-corpus-v1/queries.csv'
+          report='build/persian-natural-query-corpus-v1/validation-report.json'
+          if test -s "$corpus"; then
+            python ifkb/universal/natural_query_corpus.py \
+              --input "$corpus" \
+              --report "$report" \
+              --release \
+              --expected-count 500
+          else
+            echo 'No frozen corpus is committed yet; contract tests only.'
+          fi
+
+      - name: Upload frozen-corpus validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ifkb-persian-natural-query-corpus-validation
+          path: build/persian-natural-query-corpus-v1/validation-report.json
+          if-no-files-found: ignore
+          retention-days: 30

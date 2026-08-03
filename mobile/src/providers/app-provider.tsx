@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { clearExpiredAiCache } from '@/db/ai-repository';
 import { getDatabase, resetLocalDatabase } from '@/db/database';
 import { clearExpiredExerciseVideoCache } from '@/db/exercise-video-repository';
-import { getDailySummary } from '@/db/log-repository';
+import { getDailySummary } from '@/db/nutrition-meal-repository';
 import { getActiveNutritionPlan, getActiveWorkoutPlan } from '@/db/plan-repository';
 import { getProfile, saveProfile as persistProfile } from '@/db/profile-repository';
 import { getSetting, setSetting } from '@/db/settings-repository';

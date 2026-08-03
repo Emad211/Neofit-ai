@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IFKB Digital Recipe Consensus",
+  "type": "object",
+  "required": ["consensus_id", "canon_id", "variant_label", "evidence_tier", "ingredient_profiles"],
+  "properties": {
+    "consensus_id": {"type": "string"},
+    "canon_id": {"type": "string"},
+    "variant_label": {"type": "string"},
+    "independent_source_count": {"type": "integer", "minimum": 0},
+    "evidence_tier": {"enum": ["DS0", "DS1", "DS2", "DS3", "DS4"]},
+    "ingredient_profiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ingredient_id", "presence_probability"],
+        "properties": {
+          "ingredient_id": {"type": "string"},
+          "presence_probability": {"type": "number", "minimum": 0, "maximum": 1},
+          "quantity_p10_g": {"type": ["number", "null"], "minimum": 0},
+          "quantity_p50_g": {"type": ["number", "null"], "minimum": 0},
+          "quantity_p90_g": {"type": ["number", "null"], "minimum": 0}
+        }
+      }
+    },
+    "portion_prior": {"type": ["object", "null"]},
+    "nutrient_interval": {"type": ["object", "null"]}
+  }
+}

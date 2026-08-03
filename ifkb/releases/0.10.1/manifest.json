@@ -1,0 +1,18 @@
+{
+  "releaseId": "IFKB-0.10.1-reviewed-internet-image-seed",
+  "workflowRunId": 30202804000,
+  "githubArtifactId": 8632168008,
+  "requested": 12,
+  "downloaded": 12,
+  "failed": 0,
+  "visualReviewed": 12,
+  "licenseBuckets": {
+    "cc0_pd": 2,
+    "cc_by_sa": 9,
+    "cc_by": 1
+  },
+  "nutritionGold": 0,
+  "artifactDigest": "sha256:47e3dabf076cc06efd763a9012213b56059c6b2801481304b3790cb921730ad3",
+  "datasetUse": "identity and retrieval seed only",
+  "nextGate": "add 2-4 diverse licensed images per Pilot class and curate remaining P0 classes"
+}

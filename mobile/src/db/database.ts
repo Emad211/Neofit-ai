@@ -1,10 +1,19 @@
 import { File } from 'expo-file-system';
 import * as SQLite from 'expo-sqlite';
-import { migrations } from '@/db/migrations';
+import { runDatabaseMigrations } from '@/db/migration-runner';
+import { migrations } from '@/db/migration-plan';
 
 export const DATABASE_NAME = 'neofit.db';
 const FOOD_SEED_SETTING = 'catalog.iranian-foods.seed-version';
-const FOOD_SEED_VERSION = '1';
+const FOOD_SEED_VERSION = '3';
+const NUTRITION_CORE_SEED_SETTING = 'nutrition.core.seed-version';
+const NUTRITION_CORE_SEED_VERSION = '3';
+const SQLITE_OPEN_OPTIONS: SQLite.SQLiteOpenOptions = {
+  // The bundled schema uses FTS. expo-sqlite's close-time orphan cleanup can
+  // finalize an internal FTS statement twice and abort the native process.
+  // Our convenience query methods finalize their statements themselves.
+  finalizeUnusedStatementsBeforeClosing: false,
+};
 const REQUIRED_V1_TABLES = [
   'app_settings',
   'profile',
@@ -18,54 +27,74 @@ const REQUIRED_V1_TABLES = [
   'ai_cache',
 ] as const;
 const REQUIRED_V2_TABLES = ['food_catalog', 'exercise_video_cache'] as const;
+const REQUIRED_V3_TABLES = [
+  'nutrition_food_concepts',
+  'nutrition_food_variants',
+  'nutrition_food_aliases',
+  'nutrition_portions',
+  'nutrition_diary_entries',
+  'nutrition_recipes',
+  'nutrition_recipe_ingredients',
+  'nutrition_goals',
+  'nutrition_vision_cache',
+] as const;
 
 let databasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
-async function runMigrations(database: SQLite.SQLiteDatabase) {
+async function configureDatabase(database: SQLite.SQLiteDatabase): Promise<void> {
   await database.execAsync('PRAGMA journal_mode = WAL;');
   await database.execAsync('PRAGMA foreign_keys = ON;');
   await database.execAsync('PRAGMA busy_timeout = 5000;');
-
-  const row = await database.getFirstAsync<{ user_version: number }>('PRAGMA user_version;');
-  let currentVersion = Number(row?.user_version || 0);
-
-  for (const migration of migrations) {
-    if (migration.version <= currentVersion) continue;
-
-    await database.withExclusiveTransactionAsync(async (transaction) => {
-      await transaction.execAsync(migration.sql);
-      await transaction.execAsync(`PRAGMA user_version = ${migration.version};`);
-    });
-
-    currentVersion = migration.version;
-  }
 }
 
-async function seedLocalCatalogs(database: SQLite.SQLiteDatabase) {
-  const row = await database.getFirstAsync<{ value: string }>(
-    'SELECT value FROM app_settings WHERE key = ?;',
-    FOOD_SEED_SETTING,
-  );
-  if (row?.value === FOOD_SEED_VERSION) return;
-
-  const { seedIranianFoodCatalog } = await import('@/db/food-repository');
-  await seedIranianFoodCatalog(database);
+async function writeSeedVersion(
+  database: SQLite.SQLiteDatabase,
+  key: string,
+  version: string,
+): Promise<void> {
   await database.runAsync(
     `INSERT INTO app_settings (key, value, updated_at)
      VALUES (?, ?, ?)
      ON CONFLICT(key) DO UPDATE SET
        value = excluded.value,
        updated_at = excluded.updated_at;`,
-    FOOD_SEED_SETTING,
-    FOOD_SEED_VERSION,
+    key,
+    version,
     new Date().toISOString(),
   );
 }
 
+async function seedLocalCatalogs(database: SQLite.SQLiteDatabase) {
+  const foodSeed = await database.getFirstAsync<{ value: string }>(
+    'SELECT value FROM app_settings WHERE key = ?;',
+    FOOD_SEED_SETTING,
+  );
+  if (foodSeed?.value !== FOOD_SEED_VERSION) {
+    const { seedIranianFoodCatalog } = await import('@/db/food-repository');
+    await seedIranianFoodCatalog(database);
+    await writeSeedVersion(database, FOOD_SEED_SETTING, FOOD_SEED_VERSION);
+  }
+
+  const nutritionSeed = await database.getFirstAsync<{ value: string }>(
+    'SELECT value FROM app_settings WHERE key = ?;',
+    NUTRITION_CORE_SEED_SETTING,
+  );
+  if (nutritionSeed?.value !== NUTRITION_CORE_SEED_VERSION) {
+    const { seedNutritionCoreFromFoodCatalog } = await import('@/db/nutrition-catalog-seed');
+    await seedNutritionCoreFromFoodCatalog(database);
+    await writeSeedVersion(
+      database,
+      NUTRITION_CORE_SEED_SETTING,
+      NUTRITION_CORE_SEED_VERSION,
+    );
+  }
+}
+
 export async function getDatabase() {
   if (!databasePromise) {
-    databasePromise = SQLite.openDatabaseAsync(DATABASE_NAME).then(async (database) => {
-      await runMigrations(database);
+    databasePromise = SQLite.openDatabaseAsync(DATABASE_NAME, SQLITE_OPEN_OPTIONS).then(async (database) => {
+      await configureDatabase(database);
+      await runDatabaseMigrations(database, migrations);
       await seedLocalCatalogs(database);
       return database;
     }).catch((error) => {
@@ -88,7 +117,10 @@ async function validateBackupBytes(bytes: Uint8Array) {
   if (bytes.byteLength < 512) throw new Error('Backup file is too small to be a valid NeoFit database.');
   if (bytes.byteLength > 250 * 1024 * 1024) throw new Error('Backup file is larger than the supported limit.');
 
-  const memoryDatabase = await SQLite.deserializeDatabaseAsync(bytes);
+  const memoryDatabase = await SQLite.deserializeDatabaseAsync(bytes, {
+    ...SQLITE_OPEN_OPTIONS,
+    useNewConnection: true,
+  });
   try {
     await memoryDatabase.execAsync('PRAGMA foreign_keys = ON;');
     const integrity = await memoryDatabase.getFirstAsync<Record<string, string>>('PRAGMA integrity_check;');
@@ -107,9 +139,11 @@ async function validateBackupBytes(bytes: Uint8Array) {
        WHERE type = 'table' AND name NOT LIKE 'sqlite_%';`,
     );
     const tableNames = new Set(rows.map((row) => row.name));
-    const required = version >= 2
-      ? [...REQUIRED_V1_TABLES, ...REQUIRED_V2_TABLES]
-      : [...REQUIRED_V1_TABLES];
+    const required = version >= 3
+      ? [...REQUIRED_V1_TABLES, ...REQUIRED_V2_TABLES, ...REQUIRED_V3_TABLES]
+      : version >= 2
+        ? [...REQUIRED_V1_TABLES, ...REQUIRED_V2_TABLES]
+        : [...REQUIRED_V1_TABLES];
     const missing = required.filter((table) => !tableNames.has(table));
     if (missing.length > 0) {
       throw new Error(`Backup is missing required tables: ${missing.join(', ')}`);

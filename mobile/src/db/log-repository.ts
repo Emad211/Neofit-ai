@@ -1,36 +1,21 @@
 import {
   ActivityLogInput,
-  MealLogInput,
   WeightLogInput,
   WorkoutSetLogInput,
 } from '@/domain/models';
 import { getDatabase } from '@/db/database';
+import {
+  deleteMealLog,
+  getDailySummary,
+  getRecentMeals,
+  logMeal,
+} from '@/db/nutrition-meal-repository';
 import { createId } from '@/lib/id';
 
-export async function logMeal(input: MealLogInput) {
-  const database = await getDatabase();
-  const id = createId('meal');
-  const createdAt = new Date().toISOString();
-
-  await database.runAsync(
-    `INSERT INTO meal_logs (
-      id, eaten_at, meal_type, description, calories,
-      protein_g, carbs_g, fat_g, source, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-    id,
-    input.eatenAt,
-    input.mealType,
-    input.description.trim(),
-    Math.max(0, Math.round(input.calories)),
-    Math.max(0, input.proteinG),
-    Math.max(0, input.carbsG),
-    Math.max(0, input.fatG),
-    input.source,
-    createdAt,
-  );
-
-  return id;
-}
+// Compatibility exports for older screens and modules. All meal behavior is
+// implemented only in nutrition-meal-repository, so there is one write path and
+// one legacy-migration policy.
+export { deleteMealLog, getDailySummary, getRecentMeals, logMeal };
 
 export async function logActivity(input: ActivityLogInput) {
   const database = await getDatabase();
@@ -146,75 +131,6 @@ export async function logWorkoutSession(input: {
   return { sessionId, totalVolumeKg };
 }
 
-export async function getDailySummary(startIso: string, endIso: string) {
-  const database = await getDatabase();
-  const [meal, activity, workout] = await Promise.all([
-    database.getFirstAsync<{
-      calories: number | null;
-      protein_g: number | null;
-      carbs_g: number | null;
-      fat_g: number | null;
-      count: number;
-    }>(
-      `SELECT
-        SUM(calories) AS calories,
-        SUM(protein_g) AS protein_g,
-        SUM(carbs_g) AS carbs_g,
-        SUM(fat_g) AS fat_g,
-        COUNT(*) AS count
-       FROM meal_logs WHERE eaten_at >= ? AND eaten_at < ?;`,
-      startIso,
-      endIso,
-    ),
-    database.getFirstAsync<{
-      duration_minutes: number | null;
-      calories_burned: number | null;
-      count: number;
-    }>(
-      `SELECT
-        SUM(duration_minutes) AS duration_minutes,
-        SUM(calories_burned) AS calories_burned,
-        COUNT(*) AS count
-       FROM activity_logs WHERE started_at >= ? AND started_at < ?;`,
-      startIso,
-      endIso,
-    ),
-    database.getFirstAsync<{
-      duration_minutes: number | null;
-      total_volume_kg: number | null;
-      count: number;
-    }>(
-      `SELECT
-        SUM(duration_minutes) AS duration_minutes,
-        SUM(total_volume_kg) AS total_volume_kg,
-        COUNT(*) AS count
-       FROM workout_sessions WHERE completed_at >= ? AND completed_at < ?;`,
-      startIso,
-      endIso,
-    ),
-  ]);
-
-  return {
-    nutrition: {
-      calories: Number(meal?.calories || 0),
-      proteinG: Number(meal?.protein_g || 0),
-      carbsG: Number(meal?.carbs_g || 0),
-      fatG: Number(meal?.fat_g || 0),
-      count: Number(meal?.count || 0),
-    },
-    activity: {
-      durationMinutes: Number(activity?.duration_minutes || 0),
-      caloriesBurned: Number(activity?.calories_burned || 0),
-      count: Number(activity?.count || 0),
-    },
-    workout: {
-      durationMinutes: Number(workout?.duration_minutes || 0),
-      totalVolumeKg: Number(workout?.total_volume_kg || 0),
-      count: Number(workout?.count || 0),
-    },
-  };
-}
-
 export async function getWeightHistory(limit = 180) {
   const database = await getDatabase();
   const safeLimit = Math.min(1_000, Math.max(1, Math.round(limit)));
@@ -225,29 +141,6 @@ export async function getWeightHistory(limit = 180) {
   }>(
     `SELECT id, measured_at AS measuredAt, weight_kg AS weightKg
      FROM weight_logs ORDER BY measured_at DESC LIMIT ?;`,
-    safeLimit,
-  );
-}
-
-export async function getRecentMeals(limit = 50) {
-  const database = await getDatabase();
-  const safeLimit = Math.min(500, Math.max(1, Math.round(limit)));
-  return database.getAllAsync<{
-    id: string;
-    eatenAt: string;
-    mealType: string;
-    description: string;
-    calories: number;
-    proteinG: number;
-    carbsG: number;
-    fatG: number;
-    source: string;
-  }>(
-    `SELECT
-      id, eaten_at AS eatenAt, meal_type AS mealType, description,
-      calories, protein_g AS proteinG, carbs_g AS carbsG,
-      fat_g AS fatG, source
-     FROM meal_logs ORDER BY eaten_at DESC LIMIT ?;`,
     safeLimit,
   );
 }
@@ -295,9 +188,12 @@ export async function getRecentWorkoutSessions(limit = 50) {
 }
 
 export async function deleteLog(kind: 'meal' | 'activity' | 'weight' | 'workout', id: string) {
+  if (kind === 'meal') {
+    await deleteMealLog(id);
+    return;
+  }
   const database = await getDatabase();
   const table = {
-    meal: 'meal_logs',
     activity: 'activity_logs',
     weight: 'weight_logs',
     workout: 'workout_sessions',

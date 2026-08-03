@@ -2,12 +2,13 @@ import * as React from 'react';
 import { View } from 'react-native';
 import { router } from 'expo-router';
 import { AppText, Card, InlineNotice, PageTitle, PrimaryButton, Screen } from '@/components/ui';
-import { logMeal } from '@/db/log-repository';
+import { logMeal } from '@/db/nutrition-meal-repository';
 import { saveNutritionPlan } from '@/db/plan-repository';
 import { Meal } from '@/domain/models';
 import { useApp } from '@/providers/app-provider';
 import { generateNutritionPlan } from '@/services/ai-features';
 import { AvalAiError } from '@/services/avalai-client';
+import { isIfkbResolvedNutritionPlan } from '@/services/nutrition-plan-resolution-core';
 
 function dayName(index: number, locale: 'fa' | 'en') {
   const referenceMonday = new Date(2024, 0, 1 + index);
@@ -29,6 +30,7 @@ export default function NutritionScreen() {
   const [notice, setNotice] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const label = (en: string, fa: string) => locale === 'fa' ? fa : en;
+  const nutritionPlanResolved = nutritionPlan ? isIfkbResolvedNutritionPlan(nutritionPlan) : false;
 
   const generate = async () => {
     if (!profile) return;
@@ -53,6 +55,13 @@ export default function NutritionScreen() {
   };
 
   const logPlannedMeal = async (meal: Meal) => {
+    if (meal.nutritionSource !== 'ifkb_resolved') {
+      setError(label(
+        'This is a legacy AI plan whose nutrition was not resolved through IFKB. Regenerate the plan before logging it.',
+        'این برنامهٔ قدیمی هوش مصنوعی است و تغذیهٔ آن از IFKB محاسبه نشده؛ پیش از ثبت، برنامه را دوباره تولید کنید.',
+      ));
+      return;
+    }
     setBusyMealId(meal.id);
     setError(null);
     try {
@@ -83,11 +92,36 @@ export default function NutritionScreen() {
       <Card>
         <AppText size={20} weight="800">{label('Accurate local logging', 'ثبت دقیق‌تر و محلی')}</AppText>
         <AppText muted size={13}>{label(
-          'Start with the offline Iranian-food catalog. It includes serving ranges, custom foods, and does not require AvalAI.',
-          'ابتدا از کاتالوگ آفلاین غذاهای ایرانی استفاده کنید. بازه سهم، غذای سفارشی و ثبت بدون AvalAI در آن وجود دارد.',
+          'Search Iranian foods and 13,225 official USDA records, choose a defensible serving, and save directly to the local diary.',
+          'در غذاهای ایرانی و ۱۳٬۲۲۵ رکورد رسمی USDA جست‌وجو کنید، سهم قابل‌دفاع را انتخاب کنید و مستقیم در دفتر محلی ثبت کنید.',
         )}</AppText>
         <PrimaryButton
-          title={label('Open Iranian food catalog', 'بازکردن کاتالوگ غذاهای ایرانی')}
+          title={label('Open complete food search', 'بازکردن جست‌وجوی جامع غذا')}
+          onPress={() => router.push('/food-search')}
+        />
+        <PrimaryButton
+          title={label('Open today’s diary', 'بازکردن دفتر امروز')}
+          variant="secondary"
+          onPress={() => router.push('/nutrition-diary')}
+        />
+        <PrimaryButton
+          title={label('Open history and exports', 'بازکردن تاریخچه و خروجی‌ها')}
+          variant="secondary"
+          onPress={() => router.push('/nutrition-history')}
+        />
+        <PrimaryButton
+          title={label('Open nutrition goals', 'بازکردن هدف‌های تغذیه')}
+          variant="secondary"
+          onPress={() => router.push('/nutrition-goals')}
+        />
+        <PrimaryButton
+          title={label('Open recipes', 'بازکردن دستورهای غذایی')}
+          variant="secondary"
+          onPress={() => router.push('/recipes')}
+        />
+        <PrimaryButton
+          title={label('Browse Iranian foods only', 'نمای تخصصی غذاهای ایرانی')}
+          variant="secondary"
           onPress={() => router.push('/iranian-foods')}
         />
         <PrimaryButton
@@ -115,6 +149,12 @@ export default function NutritionScreen() {
 
       {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
       {error ? <InlineNotice tone="danger">{error}</InlineNotice> : null}
+      {nutritionPlan && !nutritionPlanResolved ? (
+        <InlineNotice tone="warning">{label(
+          'This saved plan predates local IFKB resolution. It remains readable, but one-tap meal logging is blocked until you regenerate it.',
+          'این برنامه پیش از اتصال کامل به IFKB ذخیره شده است. نمایش آن حفظ می‌شود، اما تا تولید دوباره، ثبت یک‌مرحله‌ای وعده‌ها غیرفعال است.',
+        )}</InlineNotice>
+      ) : null}
 
       {nutritionPlan ? (
         <>

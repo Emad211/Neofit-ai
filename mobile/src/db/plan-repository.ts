@@ -5,6 +5,7 @@ import {
   WorkoutPlanSchema,
 } from '@/domain/models';
 import { getDatabase } from '@/db/database';
+import { assertIfkbResolvedNutritionPlan } from '@/services/nutrition-plan-resolution-core';
 
 export type PlanSource = 'ai' | 'manual' | 'imported';
 
@@ -50,7 +51,9 @@ export async function saveWorkoutPlan(plan: WorkoutPlan, source: PlanSource = 'a
 }
 
 export async function saveNutritionPlan(plan: NutritionPlan, source: PlanSource = 'ai') {
-  return savePlan('nutrition', NutritionPlanSchema.parse(plan), source);
+  const parsed = NutritionPlanSchema.parse(plan);
+  if (source === 'ai') assertIfkbResolvedNutritionPlan(parsed);
+  return savePlan('nutrition', parsed, source);
 }
 
 export async function savePlanBundle(input: {
@@ -61,6 +64,7 @@ export async function savePlanBundle(input: {
   const workoutPlan = WorkoutPlanSchema.parse(input.workoutPlan);
   const nutritionPlan = NutritionPlanSchema.parse(input.nutritionPlan);
   const source = input.source || 'ai';
+  if (source === 'ai') assertIfkbResolvedNutritionPlan(nutritionPlan);
   const database = await getDatabase();
 
   await database.withExclusiveTransactionAsync(async (transaction) => {

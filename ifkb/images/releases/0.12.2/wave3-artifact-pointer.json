@@ -1,0 +1,19 @@
+{
+  "artifactId": 8634114609,
+  "createdAt": "2026-07-26T16:09:56Z",
+  "expired": false,
+  "expiresAt": "2026-08-25T16:09:55Z",
+  "format": "ifkb-stage2-wave3-artifact-pointer",
+  "identityApproval": false,
+  "name": "ifkb-p0-wave3-candidates-v0.11.2",
+  "nutritionGoldApproval": false,
+  "selectionPolicy": "newest non-expired artifact with exact historical workflow artifact name",
+  "sizeInBytes": 8049500,
+  "workflowRun": {
+    "head_branch": "agent/iranian-food-kb-foundation",
+    "head_repository_id": 1310369620,
+    "head_sha": "d96bd9b954ad70dfa6e5ba0e29a026aa6db6a824",
+    "id": 30209762006,
+    "repository_id": 1310369620
+  }
+}

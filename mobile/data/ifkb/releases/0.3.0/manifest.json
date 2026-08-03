@@ -1,0 +1,22 @@
+{
+  "format": "ifkb-release",
+  "schemaVersion": 1,
+  "releaseId": "IFKB-0.3.0-official-coverage-map",
+  "version": "0.3.0",
+  "status": "research",
+  "createdAt": "2026-07-25T21:40:55.607922+00:00",
+  "dependsOn": [
+    "IFKB-0.2.1-ingredient-foundation"
+  ],
+  "counts": {
+    "canonicalIngredients": 91,
+    "officialNameCandidates": 30,
+    "provisionalExactA": 15,
+    "provisionalCloseC": 15,
+    "fdcIdsRetrieved": 0,
+    "nutrientProfilesImported": 0,
+    "verifiedIngredients": 0
+  },
+  "scientificLimit": "Official update-log name coverage is an acquisition map, not nutrient verification.",
+  "nextGate": "Import official April 2026 Foundation data and resolve FDC IDs, units, bases, derivations and analytical metadata."
+}

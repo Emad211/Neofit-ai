@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IFKB Digital Multimodal Inference Output",
+  "type": "object",
+  "required": ["candidates", "identity_confidence", "portion_confidence", "evidence_tier", "nutrition_interval"],
+  "properties": {
+    "candidates": {"type": "array", "maxItems": 3, "items": {"type": "object"}},
+    "typed_name_conflict": {"type": "boolean"},
+    "questions": {"type": "array", "maxItems": 4, "items": {"type": "string"}},
+    "identity_confidence": {"enum": ["low", "medium", "high"]},
+    "recipe_confidence": {"enum": ["low", "medium", "high"]},
+    "portion_confidence": {"enum": ["low", "medium", "high"]},
+    "evidence_tier": {"enum": ["DS0", "DS1", "DS2", "DS3", "DS4"]},
+    "nutrition_interval": {
+      "type": "object",
+      "required": ["p10", "p50", "p90", "unit"],
+      "properties": {
+        "p10": {"type": "number"},
+        "p50": {"type": "number"},
+        "p90": {"type": "number"},
+        "unit": {"type": "string"}
+      }
+    },
+    "abstain_reason": {"type": ["string", "null"]}
+  }
+}
