@@ -50,7 +50,7 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Verify pure-domain boundary
+      - name: Verify golden provenance
         working-directory: .
         shell: bash
         run: |
@@ -59,14 +59,9 @@ jobs:
           test -s packages/nutrition-core/tests/mobile-rc-golden-v1.ts
           grep -q '648b98cdc921beb26ccd0ff05a1f17944bb6f71d' packages/nutrition-core/tests/mobile-rc-golden-v1.ts
           grep -q '2291e1958efe5e17010230c5864c9fadc9bc47ba' packages/nutrition-core/tests/mobile-rc-golden-v1.ts
-          if grep -RInE "from ['\"](react|react-native|expo|expo-|@expo|expo-sqlite|better-sqlite3|sqlite3|next|@supabase|node:fs|node:http|node:https)" packages/nutrition-core/src; then
-            echo 'Forbidden runtime dependency entered nutrition core.' >&2
-            exit 1
-          fi
-          if grep -RInE "(fetch\(|XMLHttpRequest|localStorage|sessionStorage|process\.env)" packages/nutrition-core/src; then
-            echo 'Forbidden I/O or environment access entered nutrition core.' >&2
-            exit 1
-          fi
+
+      - name: Verify pure-domain boundary
+        run: npm run boundary
 
       - name: TypeScript
         run: npm run typecheck
