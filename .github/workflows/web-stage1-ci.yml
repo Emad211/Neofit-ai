@@ -29,10 +29,12 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: web
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
 
     steps:
       - name: Checkout
@@ -64,3 +66,41 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+      - name: Install Chromium for visual QA
+        run: npx playwright install --with-deps chromium
+
+      - name: Capture target mobile widths and critical flows
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- --hostname 127.0.0.1 --port 3000 > /tmp/neofit-web.log 2>&1 &
+          SERVER_PID=$!
+          cleanup() {
+            kill "$SERVER_PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          for attempt in $(seq 1 40); do
+            if curl --fail --silent http://127.0.0.1:3000/ > /dev/null; then
+              break
+            fi
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+              cat /tmp/neofit-web.log
+              exit 1
+            fi
+            sleep 1
+          done
+
+          curl --fail --silent http://127.0.0.1:3000/ > /dev/null
+          npm run visual:capture
+          cat artifacts/stage1-visual/visual-report.json
+
+      - name: Upload Stage 1 visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-stage1-visual-evidence
+          path: web/artifacts/stage1-visual
+          if-no-files-found: error
+          retention-days: 30
