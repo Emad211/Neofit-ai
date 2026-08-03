@@ -3,10 +3,11 @@ name: Nutrition Core CI
 on:
   push:
     branches:
-      - stage3/nutrition-core-parity
+      - 'stage3/**'
     paths:
       - 'packages/nutrition-core/**'
       - 'docs/NEOFIT_NUTRITION_CORE_AUTHORITY_MAP.md'
+      - 'docs/NEOFIT_SEARCH_RANKING_AUTHORITY_MAP.md'
       - 'docs/NEOFIT_MASTER_PLAN.md'
       - 'docs/NEOFIT_PROGRESS_LOG.md'
       - '.github/workflows/nutrition-core-ci.yml'
@@ -16,6 +17,7 @@ on:
     paths:
       - 'packages/nutrition-core/**'
       - 'docs/NEOFIT_NUTRITION_CORE_AUTHORITY_MAP.md'
+      - 'docs/NEOFIT_SEARCH_RANKING_AUTHORITY_MAP.md'
       - 'docs/NEOFIT_MASTER_PLAN.md'
       - 'docs/NEOFIT_PROGRESS_LOG.md'
       - '.github/workflows/nutrition-core-ci.yml'
@@ -56,9 +58,14 @@ jobs:
         run: |
           set -euo pipefail
           test -s docs/NEOFIT_NUTRITION_CORE_AUTHORITY_MAP.md
+          test -s docs/NEOFIT_SEARCH_RANKING_AUTHORITY_MAP.md
           test -s packages/nutrition-core/tests/mobile-rc-golden-v1.ts
+          test -s packages/nutrition-core/tests/search-ranking-golden-v1.ts
           grep -q '648b98cdc921beb26ccd0ff05a1f17944bb6f71d' packages/nutrition-core/tests/mobile-rc-golden-v1.ts
           grep -q '2291e1958efe5e17010230c5864c9fadc9bc47ba' packages/nutrition-core/tests/mobile-rc-golden-v1.ts
+          grep -q '24a1d20effe679b23e4ee4966d0bdb01f2b06ec0' packages/nutrition-core/tests/search-ranking-golden-v1.ts
+          grep -q 'd43931525ade2f1b685b18647d1554cc317f14bd8874ed66fe5c85370454fbde' packages/nutrition-core/tests/search-ranking-golden-v1.ts
+          grep -q 'contract_only_not_released' packages/nutrition-core/tests/search-ranking-golden-v1.ts
 
       - name: Verify pure-domain boundary
         run: npm run boundary
@@ -66,7 +73,7 @@ jobs:
       - name: TypeScript
         run: npm run typecheck
 
-      - name: Mobile RC parity tests
+      - name: Mobile and IFKB parity tests
         shell: bash
         run: |
           set -euo pipefail
@@ -77,7 +84,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          printf '{\n  "package": "@neofit/nutrition-core",\n  "schemaVersion": 1,\n  "commit": "%s",\n  "referenceBranch": "agent/iranian-food-kb-foundation",\n  "referenceHead": "648b98cdc921beb26ccd0ff05a1f17944bb6f71d",\n  "sourceTestBlob": "2291e1958efe5e17010230c5864c9fadc9bc47ba",\n  "generatedAt": "%s"\n}\n' \
+          printf '{\n  "package": "@neofit/nutrition-core",\n  "schemaVersion": 1,\n  "commit": "%s",\n  "referenceBranch": "agent/iranian-food-kb-foundation",\n  "referenceHead": "648b98cdc921beb26ccd0ff05a1f17944bb6f71d",\n  "sourceTestBlob": "2291e1958efe5e17010230c5864c9fadc9bc47ba",\n  "searchBlob": "bb99c934beeed5094da7e0a29a8f53635ace48b3",\n  "rankingBlob": "9b23b1ef7d6817ff2b946e1fdedcad76608279e1",\n  "controlledSearchRelease": "1.1.0",\n  "controlledSearchManifestBlob": "24a1d20effe679b23e4ee4966d0bdb01f2b06ec0",\n  "controlledSearchArtifactDigest": "sha256:d43931525ade2f1b685b18647d1554cc317f14bd8874ed66fe5c85370454fbde",\n  "naturalQueryCorpus": "not_released",\n  "generatedAt": "%s"\n}\n' \
             "$GITHUB_SHA" \
             "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             > artifacts/parity-metadata.json
