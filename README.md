@@ -1,39 +1,44 @@
 # NeoFit AI
 
-NeoFit AI is a personal, bilingual, mobile-only fitness and nutrition application.
+NeoFit AI is a Persian-first fitness and nutrition product built around the versioned IFKB nutrition catalog and deterministic TypeScript nutrition rules.
 
-The active application lives in [`mobile/`](mobile/README.md).
+## Active direction
 
-## Current architecture
+NeoFit is pivoting from its current Expo/React Native application to a mobile-first, installable web application:
 
-- Expo SDK 57 / React Native
-- Persian and English
-- SQLite database on the phone
-- SecureStore for the personal AvalAI API key
-- No Firebase
-- No cloud backend
-- No accounts or sign-in
-- No subscription or billing system
+- Next.js App Router + TypeScript
+- Persian as the default language
+- RTL-first UI architecture
+- PWA installation and required offline behavior
+- Vercel deployment and preview environments
+- Supabase Auth/Postgres/RLS for account and personal data
+- IFKB + USDA SR Legacy + FNDDS as the nutrition source of truth
+- AvalAI/Vision restricted to identity and plan-language assistance; provider nutrition is rejected
 
-All profile data, generated plans, meals, activities, weights, workouts, completed sets, and application settings stay on the device. Only AI requests explicitly started by the user are sent to AvalAI.
+Read the approved roadmap:
 
-## Run
+- [`docs/NEOFIT_WEB_PWA_ROADMAP_V1_FA.md`](docs/NEOFIT_WEB_PWA_ROADMAP_V1_FA.md)
+- [`docs/DEVELOPMENT_HANDOFF.md`](docs/DEVELOPMENT_HANDOFF.md)
 
-```bash
-cd mobile
-npm install
-npx expo start
-```
+## Existing mobile reference
 
-Use Expo Go on an Android phone to scan the QR code.
+The current Expo application remains under [`mobile/`](mobile/README.md) as a frozen release-candidate reference and data-migration source. It is not the active UI/product direction.
 
-## Validate
+The current nutrition and scientific contract remains documented in:
 
-```bash
-cd mobile
-npm run typecheck
-npm run doctor
-npx expo export --platform android
-```
+- [`docs/NEOFIT_NUTRITION_FINAL_SCOPE_V3.md`](docs/NEOFIT_NUTRITION_FINAL_SCOPE_V3.md)
+- [`docs/releases/NEOFIT_NUTRITION_RELEASE_CANDIDATE_FREEZE_V1.md`](docs/releases/NEOFIT_NUTRITION_RELEASE_CANDIDATE_FREEZE_V1.md)
 
-See [`mobile/README.md`](mobile/README.md) for database, backup, and AvalAI setup details.
+## Locked product rules
+
+- Canonical IFKB identifiers and provenance remain versioned.
+- Nutrition calculations remain deterministic.
+- Language and vision models may not invent calories, macronutrients, weights or portions.
+- AI meal-plan ingredients must resolve to IFKB/FNDDS/SR before persistence.
+- Imported and custom user records remain protected from bundled catalog updates.
+
+## Next development stage
+
+The exact next stage is **Stage 1 — Persian Product/UX Foundation**.
+
+The first web batch must build and validate the Today, Food Search, Meal Logging, Weekly Plan and Settings flows in genuine RTL before Supabase backend work begins.
