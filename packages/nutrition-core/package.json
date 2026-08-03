@@ -7,9 +7,10 @@
     "node": ">=22.13.0"
   },
   "scripts": {
+    "boundary": "node scripts/verify-pure-boundary.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
-    "check": "npm run typecheck && npm test"
+    "check": "npm run boundary && npm run typecheck && npm test"
   },
   "devDependencies": {
     "@types/node": "26.1.1",
