@@ -16,7 +16,14 @@ async function openBundledCatalog(): Promise<SQLite.SQLiteDatabase> {
   if (bytes.byteLength !== IFKB_CATALOG_RELEASE.databaseBytes) {
     throw new Error(`Bundled IFKB catalog size mismatch: ${bytes.byteLength} bytes.`);
   }
-  const database = await SQLite.deserializeDatabaseAsync(bytes);
+  const database = await SQLite.deserializeDatabaseAsync(bytes, {
+    // expo-sqlite currently double-finalizes internal FTS statements while
+    // closing when this option is left enabled. Convenience query methods
+    // already finalize their own statements, so disabling close-time cleanup
+    // prevents the native SIGABRT without weakening our statement lifecycle.
+    finalizeUnusedStatementsBeforeClosing: false,
+    useNewConnection: true,
+  });
   await database.execAsync('PRAGMA foreign_keys=ON; PRAGMA query_only=ON;');
   const rows = await database.getAllAsync<{ key: string; value: string }>(
     `SELECT key,value FROM meta WHERE key IN (
