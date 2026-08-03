@@ -1,14 +1,15 @@
 # پلن مادر NeoFit
 
 **وضعیت سند:** مرجع واحد و اجباری پروژه  
-**آخرین بازبینی:** ۳ اوت ۲۰۲۶ — پایان Visual QA و Refinement شمارهٔ ۱ از Stage 1  
+**آخرین بازبینی:** ۴ اوت ۲۰۲۶ — Stage 2، پس از تکمیل PWA/CI و پیش از Vercel Preview  
 **شاخهٔ integration وب:** `web/pwa-foundation`  
-**شاخهٔ فعال:** `stage1/persian-rtl-ux`  
-**PR فعال:** #13  
-**آخرین Head کد تأییدشده:** `489394eceea5b1f6cd9adec5dc8487cc250f1061`  
-**آخرین CI معتبر:** Web Stage 1 CI run `30829629853` — success  
-**مرحلهٔ فعال:** Stage 1 — پایهٔ محصول و UX فارسی/RTL  
-**Gate فعلی:** بازبینی بصری مالک محصول و تصمیم دربارهٔ Merge یا Refinement دوم
+**شاخهٔ فعال:** `stage2/pwa-vercel-foundation`  
+**PR فعال:** #15  
+**Issue فعال:** #14  
+**آخرین Head کد تأییدشده:** `d2330392e9bf8326c55a3ba94cde0a468d124efa`  
+**آخرین CI معتبر:** Web CI run `30851823020` — success  
+**مرحلهٔ فعال:** Stage 2 — PWA و Vercel Foundation  
+**Gate فعلی:** ساخت و اعتبارسنجی Vercel Preview پس از Reset سهمیهٔ API
 
 ## پروتکل اجباری ادامهٔ پروژه
 
@@ -21,9 +22,10 @@
 
 در پایان هر نوبت:
 
-- دفتر پیشرفت با شواهد واقعی، Commitها، Runها، Artifactها، خطاها و قدم بعدی به‌روزرسانی می‌شود.
-- همین پلن با مرحله، Gate، تصمیم‌ها و قدم بعدی همگام می‌شود.
+- دفتر پیشرفت با Commitها، Runها، Artifactها، خطاها، محدودیت‌های خارجی و قدم بعدی به‌روزرسانی می‌شود.
+- همین پلن با مرحله، Gate، تصمیم‌ها و Exact continuation point همگام می‌شود.
 - هیچ مرحله‌ای بدون برآورده‌شدن Definition of Done «تمام‌شده» اعلام نمی‌شود.
+- هیچ Deployment، Preview یا اتصال خارجی بدون شناسه و URL واقعی موفق اعلام نمی‌شود.
 
 ## ۱. مأموریت محصول
 
@@ -73,6 +75,8 @@ NeoFit از UI اصلی Expo/React Native به یک وب‌اپلیکیشن Mobi
 - Supabase service role و Secretهای سروری وارد Browser bundle نمی‌شوند.
 - Raw AvalAI key در Local Storage یا DB plaintext ذخیره نمی‌شود.
 - تصویر خام Vision بدون رضایت و نیاز روشن ذخیره نمی‌شود.
+- Service Worker اجازهٔ Cacheکردن `/api`، `/auth`، درخواست دارای Authorization، Mutation یا Cross-origin را ندارد.
+- App-shell cache جای Offline data/sync Stage 7 را نمی‌گیرد.
 
 ## ۵. معماری ریپو
 
@@ -94,9 +98,9 @@ Neofit-ai/
 
 ## ۶. قواعد UI/UX فارسی
 
-- `html lang="fa" dir="rtl"` از اولین Layout
+- `html lang="fa" dir="rtl"` از Root Layout
 - CSS logical properties به‌جای left/right
-- فونت فارسی Self-hosted؛ در Stage 1 از `@fontsource-variable/vazirmatn` استفاده می‌شود
+- Vazirmatn variable به‌صورت Self-hosted
 - متن پایه حداقل ۱۶px
 - Touch target حداقل ۴۴px
 - Label بالای Input؛ Placeholder جای Label نیست
@@ -118,7 +122,7 @@ Neofit-ai/
 4. پیشرفت
 5. تنظیمات
 
-ثبت سریع غذا از «امروز» و «تغذیه» در دسترس خواهد بود.
+ثبت سریع غذا از «امروز» و «تغذیه» در دسترس است.
 
 ## ۷. نقش Supabase
 
@@ -172,7 +176,7 @@ RC با Email OTP/Magic Link آغاز می‌شود. Catalog عمومی بدون
 
 Offline مرحله‌ای ساخته می‌شود:
 
-- Stage 2: App shell و Installability
+- Stage 2: Manifest، Iconها، App shell، Service Worker، Offline reload و Installability
 - Stage 7: Catalog snapshot، Draft و Mutation queue
 
 به Background Sync به‌تنهایی اتکا نمی‌شود. Queue در Focus، Online و Reload نیز تخلیه می‌شود.
@@ -183,72 +187,88 @@ Offline مرحله‌ای ساخته می‌شود:
 
 **وضعیت: انجام‌شده**
 
-- ثبت معماری جدید
-- Freeze نسخهٔ Mobile به‌عنوان Reference
-- ساخت Handoff
-- ساخت Issue مادر و Issue Stage 1
-- ایجاد شاخهٔ `web/pwa-foundation`
+- PR #12 Merge شد.
+- معماری جدید ثبت شد.
+- Mobile به‌عنوان Frozen reference حفظ شد.
+- Handoff، Roadmap و شاخهٔ `web/pwa-foundation` ساخته شدند.
 
 ### Stage 1 — Product/UX Foundation فارسی
 
-**وضعیت: فعال؛ Batch 1 و Refinement 1 آمادهٔ بازبینی مالک محصول**
+**وضعیت: انجام‌شده و پذیرفته‌شده**
 
-#### ساخته‌شده و اثبات‌شده
+#### شواهد
 
-- `web/` با Next.js App Router
-- TypeScript strict و Production build
+- PR #13 Merge commit: `a458a27a2685bfa7d85ea28686b3182c3167d747`
+- Issue #11: completed
 - Persian root و RTL واقعی
-- Design tokenهای اولیه
-- Vazirmatn variable به‌صورت Self-hosted از Package
+- Design tokens و Vazirmatn Self-hosted
 - Bottom Navigation پنج‌مقصدی
-- Today dashboard
-- Food search و Food picker
-- Meal logging sheet با Portion و Meal type
-- Weekly plan سه‌روزه با IFKB provenance label
-- Settings mock برای Language، Theme و AvalAI key
+- Today، Food Search، Meal Logging، Weekly Plan و Settings
 - Loading/Empty/Error/Offline states
-- IFKB-shaped fixture data؛ بدون Backend
-- Visual QA خودکار در ۳۶۰، ۳۹۰ و ۴۱۲px
-- Screenshot Artifact برای Flowهای Today، Nutrition، Search، Meal sheet، Weekly plan و Settings
-- Zero horizontal overflow در تمام مسیرهای ثبت‌شده
-- Scroll reset هنگام تغییر صفحه از Bottom Navigation
-
-#### Visual QA معتبر
-
-- CI run: `30829629853`
-- Artifact: `8862378720`
-- Artifact digest: `sha256:7c9c86100355743a262d41ae6233e1513c804bd0792b19ff5eff5946c49c98e4`
-- Head: `489394eceea5b1f6cd9adec5dc8487cc250f1061`
-
-#### Gate باقی‌مانده
-
-- بازبینی بصری و تعامل توسط مالک محصول
-- تصمیم صریح: Accept یا Refinement دوم
-- PR #13 تا آن تصمیم Merge نمی‌شود
-
-#### Definition of Done کامل Stage 1
-
-- Persian default و RTL واقعی
-- بدون horizontal overflow
-- ثبت غذای معمولی از Today حداکثر با دو انتقال
-- یک Design System یکپارچه
-- تمام Flowهای بحرانی قابل استفاده
-- Screenshot evidence در عرض‌های هدف
+- Visual QA در ۳۶۰، ۳۹۰ و ۴۱۲px
+- بدون Horizontal overflow
+- Scroll reset regression coverage
 - تأیید صریح مالک محصول
-
-**ممنوع در این Stage:** Supabase schema، Auth واقعی، AI واقعی، Sync کامل، Billing، Social و کپی UI Native.
 
 ### Stage 2 — PWA و Vercel Foundation
 
-شروع فقط پس از تأیید و Merge Stage 1:
+**وضعیت: فعال؛ تمام Gateهای کد/Runtime پاس، Vercel Preview باقی‌مانده**
 
-- Manifest و Iconها
-- Service worker برای App shell
-- Installability Android/iOS
-- Error و Loading boundary
+#### ساخته‌شده
+
+- `web/app/manifest.ts` با `fa`، `rtl` و `standalone`
+- Iconهای 192، 512، Maskable و Apple touch
+- Icon generator deterministic
+- Service Worker نسخه‌دار App shell
+- Exclusion صریح API/Auth/Authorization/Mutation/Cross-origin از Cache
+- Service Worker registration
+- Offline fallback
+- Loading، Route error، Global error و Not-found boundaries
+- Development/Preview/Production environment contract
+- Deployment-aware URL از `VERCEL_URL` و `VERCEL_PROJECT_PRODUCTION_URL`
+- `web/vercel.json`
 - Web CI دائمی
-- ایجاد Vercel Project و Preview برای PRها
-- Environment separation
+- Runtime PWA verification با Playwright
+- Source bundle تمیز و Hash‌شده برای Deployment
+
+#### شواهد معتبر فعلی
+
+- Branch: `stage2/pwa-vercel-foundation`
+- PR: #15
+- Head کد: `d2330392e9bf8326c55a3ba94cde0a468d124efa`
+- Web CI: `30851823020` — success
+- Artifact: `8870912815`
+- Artifact digest: `sha256:52b24dbfe0e08faf6871595139d2908762fc010b0abd527f78cb9c79db212380`
+- TypeScript: pass
+- Production build: pass
+- Manifest: pass
+- Icon dimensions: pass
+- Service Worker: activated و controlling
+- Offline reload: pass
+- API cache exclusion: pass
+- Visual regression: pass
+- Reproducible Vercel source bundle: pass
+
+#### Gate باقیمانده
+
+- ایجاد Project/Preview واقعی Vercel
+- ثبت Project ID، Deployment ID و Preview URL
+- بررسی Build log
+- بررسی `/manifest.webmanifest`، `/sw.js` و Iconها روی HTTPS Preview
+- بررسی Service Worker control و Offline reload روی Preview
+- بررسی Runtime error/log
+- Merge PR #15 فقط پس از شواهد فوق
+
+#### مانع خارجی فعلی
+
+Vercel API در زمان تلاش، سهمیهٔ روزانهٔ Deploy رایگان تیم را تمام‌شده اعلام کرد:
+
+- code: `api-deployments-free-per-day`
+- total: `100`
+- remaining: `0`
+- reset اعلام‌شده: `2026-08-05 00:08:27 +03:30`
+
+این مانع کد یا Build نیست. Stage 2 تا ایجاد Preview واقعی باز می‌ماند.
 
 ### Stage 3 — Nutrition Core Extraction و Parity
 
@@ -260,7 +280,7 @@ Offline مرحله‌ای ساخته می‌شود:
 
 ### Stage 4 — Supabase Foundation
 
-پیش‌شرط: تأیید UX Stage 1 و تأیید Organization/Region/Cost.
+پیش‌شرط: پایان Stage 3 و تأیید Organization/Region/Cost.
 
 - ساخت پروژهٔ جدید NeoFit
 - Auth
@@ -335,7 +355,8 @@ Offline مرحله‌ای ساخته می‌شود:
 
 ## ۱۲. Anti-goalها
 
-- ساخت Backend پیش از تأیید UX
+- شروع Stage 3 پیش از بستن Vercel Gate
+- ساخت Supabase پیش از Core parity
 - انتقال خط‌به‌خط UI Native
 - Generic SaaS template
 - Dashboard پیچیده قبل از Daily flow
@@ -343,31 +364,38 @@ Offline مرحله‌ای ساخته می‌شود:
 - ابزار Monorepo سنگین بدون نیاز واقعی
 - Billing، Social، Coach، Marketplace و Admin در RC اول
 - تغییر IFKB/ID/Schema بدون Migration و Freeze
+- Cacheکردن دادهٔ کاربر در App-shell Service Worker
 
 ## ۱۳. ترتیب ثابت
 
 1. Stage 0 — انجام‌شده
-2. Stage 1 — فعال؛ Gate مالک محصول
-3. Stage 2 — PWA/Vercel
-4. Stage 3 — Core parity
-5. Stage 4 — Supabase
-6. Stage 5 — Vertical slice
-7. Stage 6 — AI/Vision
-8. Stage 7 — Offline
-9. Stage 8 — Recovery
-10. Stage 9 — RC
+2. Stage 1 — انجام‌شده
+3. Stage 2 — فعال؛ Vercel Preview gate
+4. Stage 3 — شروع‌نشده
+5. Stage 4 — شروع‌نشده
+6. Stage 5 — شروع‌نشده
+7. Stage 6 — شروع‌نشده
+8. Stage 7 — شروع‌نشده
+9. Stage 8 — شروع‌نشده
+10. Stage 9 — شروع‌نشده
 
 ## ۱۴. قدم بعدی دقیق
 
-### ورودی لازم
+پس از Reset سهمیهٔ Vercel در `2026-08-05 00:08:27 +03:30`:
 
-مالک محصول Screenshotهای نهایی Stage 1 را بررسی می‌کند و یکی از دو تصمیم زیر را اعلام می‌کند:
+1. این پلن و `docs/NEOFIT_PROGRESS_LOG.md` دوباره خوانده شوند.
+2. PR #15 و Head آن با `d2330392e9bf8326c55a3ba94cde0a468d124efa` یا Head جدیدتر سبز تطبیق داده شوند.
+3. آخرین Web CI و Artifact بررسی شوند.
+4. Source bundle دقیق CI برای Preview پروژهٔ `neofit-ai` Deploy شود.
+5. Project ID، Deployment ID و URL ثبت شوند.
+6. Build log و وضعیت Deployment بررسی شوند.
+7. روی HTTPS Preview، Manifest، Iconها، Service Worker، Offline reload، RTL و Cache boundary بررسی شوند.
+8. در صورت موفقیت، دو سند به‌روزرسانی و PR #15 Merge شود.
+9. در صورت شکست، خطای دقیق ثبت و بدون ادعای موفقیت Fix شود.
 
-1. **Accept:** PR #13 Merge شود و Stage 2 با PWA manifest، Service Worker و Vercel Preview آغاز شود.
-2. **Refine:** ایرادهای UI/UX به‌صورت صفحه و جزء مشخص ثبت شوند و Refinement دوم فقط در همین PR انجام شود.
+تا تکمیل این Gate:
 
-تا اعلام این تصمیم:
-
-- PR #13 باز می‌ماند.
-- Supabase و Vercel Project ساخته نمی‌شوند.
-- Stage 2 آغازشده اعلام نمی‌شود.
+- PR #15 باز می‌ماند.
+- Issue #14 باز می‌ماند.
+- Stage 3 آغاز نمی‌شود.
+- Supabase ساخته نمی‌شود.
