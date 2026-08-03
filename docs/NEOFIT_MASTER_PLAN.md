@@ -1,18 +1,19 @@
 # پلن مادر NeoFit
 
 **وضعیت سند:** مرجع واحد و اجباری پروژه  
-**آخرین بازبینی:** ۴ اوت ۲۰۲۶ — Stage 3 Batch 1، Pure Nutrition Core و Golden parity  
+**آخرین بازبینی:** ۴ اوت ۲۰۲۶ — Stage 3 Batch 1 پس از بستن Reviewها  
 **شاخهٔ integration:** `web/pwa-foundation`  
 **شاخهٔ فعال:** `stage3/nutrition-core-parity`  
 **PR فعال:** #18  
 **Issue Stage 3:** #17  
 **Issue Vercel تعویق‌شده:** #16  
 **مبنای Stage 3:** Stage 2A merge `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b`  
-**Head پیاده‌سازی Batch 1:** `f11b1ec84355d1311ce53d877163ec66b965611f`  
-**CI معتبر Batch 1:** Nutrition Core CI `30856939220` — success  
-**Artifact:** `8872828407`  
+**Head نهایی کد/Review Batch 1:** `af55b7de4382a9a00814628a744393471817bb61`  
+**CI معتبر:** Nutrition Core CI `30857414434` — success  
+**Artifact:** `8872996869`  
+**Artifact digest:** `sha256:3e0705c69767bf2cd69e71c113c8407bf1fccf5ccb35cb130f4a1f3aa3d6f95e`  
 **مرحلهٔ فعال:** Stage 3 — Nutrition Core Extraction و Parity  
-**Gate فعلی:** ثبت نهایی اسناد و Merge Batch 1؛ سپس Search/Ranking/Provenance inventory
+**Gate فعلی:** CI اسناد و Merge PR #18؛ سپس Batch 2 Search/Ranking
 
 ## پروتکل اجباری ادامهٔ پروژه
 
@@ -122,12 +123,13 @@ Neofit-ai/
 - Project ID: `prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG`
 - Deployment count: صفر
 - Preview URL: ندارد
+- `vercel[bot]` روی PR #18 مستقیماً خطای `api-deployments-free-per-day` با پیام «more than 100» ثبت کرد.
 
-این Gate باید پیش از Web RC بسته شود، اما Stage 3 را Block نمی‌کند.
+بنابراین محدودیت روزانه اکنون با شواهد مستقیم Vercel اثبات شده است. هیچ Deployment موفقی ادعا نمی‌شود. این Gate باید پیش از Web RC بسته شود، اما Stage 3 را Block نمی‌کند.
 
 ### Stage 3 — Nutrition Core Extraction و Parity
 
-**فعال — Batch 1 سبز و آمادهٔ Merge در PR #18**
+**فعال — Batch 1 سبز، Reviewها بسته و آمادهٔ Merge در PR #18**
 
 #### Authority
 
@@ -145,7 +147,6 @@ Neofit-ai/
 - `goals.ts`
 - Package مستقل `@neofit/nutrition-core` schema version 1
 - Golden fixtures با Source branch/head/blob provenance
-- Forbidden dependency gate
 - Dedicated Nutrition Core CI
 
 #### Numeric و Missing policy قفل‌شده
@@ -158,13 +159,24 @@ Neofit-ai/
 - Recipe/Diary وزن نامعلوم را `null` propagate می‌کنند
 - Goal progress برای consumed نامعلوم، ratio/remaining را `null` نگه می‌دارد
 
-#### شواهد Batch 1
+#### Boundary gate
 
-- Head: `f11b1ec84355d1311ce53d877163ec66b965611f`
-- CI: `30856939220` — success
-- Artifact: `8872828407`
-- Artifact digest: `sha256:c064cd3d53a1f7b31ad12eeb2f11c54a8a098acce3f768a3ae12c53904ada24a`
-- Pure-boundary gate: pass
+Review P2 نشان داد Regex اولیه side-effect/dynamic import را نمی‌گرفت. Fix نهایی:
+
+- `packages/nutrition-core/scripts/verify-pure-boundary.mjs`
+- TypeScript AST parser برای static import، side-effect import، dynamic `import()`، `require()`, import-equals و re-export
+- ممنوعیت React/React Native/Expo/SQLite/Next/Supabase/Node I/O و Environment access
+
+Review threadهای PR #18 هر دو resolved هستند.
+
+#### شواهد نهایی Batch 1
+
+- Head: `af55b7de4382a9a00814628a744393471817bb61`
+- Nutrition Core CI: `30857414434` — success
+- Artifact: `8872996869`
+- Digest: `sha256:3e0705c69767bf2cd69e71c113c8407bf1fccf5ccb35cb130f4a1f3aa3d6f95e`
+- Web CI پیشین روی اسناد/Package: `30857204944` — success
+- Pure-boundary AST gate: pass
 - TypeScript strict: pass
 - Golden parity: 10 tests، 10 pass، 0 fail، 0 skipped
 
@@ -220,7 +232,7 @@ Device QA، Accessibility، Performance، Security، Privacy، Production و ب�
 
 ## ۸. ترتیب فعلی
 
-1. ثبت نهایی اسناد و Merge PR #18
+1. CI اسناد و Merge PR #18
 2. Batch 2: Search/Ranking authority و Golden corpus
 3. Batch 3: Catalog provenance/release/adapters
 4. Batch 4: Universal SR/FNDDS و SQLite equivalence
@@ -230,9 +242,9 @@ Device QA، Accessibility، Performance، Security، Privacy، Production و ب�
 
 ## ۹. قدم بعدی دقیق
 
-1. CI اسناد روی Head جدید PR #18 پاس شود.
+1. Nutrition Core CI و Web CI روی Head اسناد پاس شوند.
 2. PR #18 با expected head Merge شود.
-3. Issue #17 باز بماند؛ Batch 1 به‌عنوان completed ثبت شود.
+3. Issue #17 باز بماند؛ Batch 1 completed ثبت شود.
 4. Branch Batch 2 از Merge commit ساخته شود.
 5. قبل از استخراج Search، این منابع خوانده و Freeze شوند:
    - `mobile/src/nutrition-core/search.ts`
