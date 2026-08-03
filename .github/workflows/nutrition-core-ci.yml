@@ -1,0 +1,98 @@
+name: Nutrition Core CI
+
+on:
+  push:
+    branches:
+      - stage3/nutrition-core-parity
+    paths:
+      - 'packages/nutrition-core/**'
+      - 'docs/NEOFIT_NUTRITION_CORE_AUTHORITY_MAP.md'
+      - 'docs/NEOFIT_MASTER_PLAN.md'
+      - 'docs/NEOFIT_PROGRESS_LOG.md'
+      - '.github/workflows/nutrition-core-ci.yml'
+  pull_request:
+    branches:
+      - web/pwa-foundation
+    paths:
+      - 'packages/nutrition-core/**'
+      - 'docs/NEOFIT_NUTRITION_CORE_AUTHORITY_MAP.md'
+      - 'docs/NEOFIT_MASTER_PLAN.md'
+      - 'docs/NEOFIT_PROGRESS_LOG.md'
+      - '.github/workflows/nutrition-core-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nutrition-core-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: packages/nutrition-core
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: packages/nutrition-core/package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify pure-domain boundary
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s docs/NEOFIT_NUTRITION_CORE_AUTHORITY_MAP.md
+          test -s packages/nutrition-core/tests/mobile-rc-golden-v1.ts
+          grep -q '648b98cdc921beb26ccd0ff05a1f17944bb6f71d' packages/nutrition-core/tests/mobile-rc-golden-v1.ts
+          grep -q '2291e1958efe5e17010230c5864c9fadc9bc47ba' packages/nutrition-core/tests/mobile-rc-golden-v1.ts
+          if grep -RInE "from ['\"](react|react-native|expo|expo-|@expo|expo-sqlite|better-sqlite3|sqlite3|next|@supabase|node:fs|node:http|node:https)" packages/nutrition-core/src; then
+            echo 'Forbidden runtime dependency entered nutrition core.' >&2
+            exit 1
+          fi
+          if grep -RInE "(fetch\(|XMLHttpRequest|localStorage|sessionStorage|process\.env)" packages/nutrition-core/src; then
+            echo 'Forbidden I/O or environment access entered nutrition core.' >&2
+            exit 1
+          fi
+
+      - name: TypeScript
+        run: npm run typecheck
+
+      - name: Mobile RC parity tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          node --import tsx --test --test-reporter=tap tests/*.test.ts | tee artifacts/parity.tap
+
+      - name: Write parity metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '{\n  "package": "@neofit/nutrition-core",\n  "schemaVersion": 1,\n  "commit": "%s",\n  "referenceBranch": "agent/iranian-food-kb-foundation",\n  "referenceHead": "648b98cdc921beb26ccd0ff05a1f17944bb6f71d",\n  "sourceTestBlob": "2291e1958efe5e17010230c5864c9fadc9bc47ba",\n  "generatedAt": "%s"\n}\n' \
+            "$GITHUB_SHA" \
+            "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            > artifacts/parity-metadata.json
+          cat artifacts/parity-metadata.json
+
+      - name: Upload parity evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-nutrition-core-parity
+          path: packages/nutrition-core/artifacts
+          if-no-files-found: error
+          retention-days: 30
