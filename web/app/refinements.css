@@ -1,0 +1,133 @@
+/* Stage 1 visual refinements applied after real 360/390/412 px captures. */
+
+body {
+  font-family: "Vazirmatn Variable", "Vazirmatn", Tahoma, Arial, sans-serif;
+}
+
+.topbar h1,
+.section-heading h2,
+.plan-preview h2,
+.placeholder-page h2,
+.food-result__title,
+.meal-row h3,
+.day-card h3,
+.settings-group h3 {
+  letter-spacing: 0;
+}
+
+/* The old full-width development warning dominated every product screen.
+   Keep the prototype boundary in Settings/Progress copy instead of the main flow. */
+.offline-note {
+  display: none;
+}
+
+.topbar {
+  margin-block-end: 24px;
+}
+
+.topbar .eyebrow {
+  margin: 0;
+  font-size: 0.82rem;
+  letter-spacing: 0;
+}
+
+.topbar h1 {
+  margin-block-start: 2px;
+  max-inline-size: 270px;
+  font-size: clamp(1.3rem, 5vw, 1.7rem);
+  line-height: 1.45;
+}
+
+/* Internal pages already provide a semantic page heading. Avoid repeating
+   a generic “NeoFit” title above the real heading. */
+.app-frame:not(:has(#today-heading)) .topbar h1 {
+  display: none;
+}
+
+.app-frame:not(:has(#today-heading)) .topbar {
+  min-block-size: 48px;
+  margin-block-end: 18px;
+}
+
+.app-frame:not(:has(#today-heading)) .topbar .eyebrow {
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.screen-content {
+  padding-block-end: 30px;
+  scroll-padding-block-end: calc(112px + env(safe-area-inset-bottom));
+}
+
+.page-stack {
+  gap: 16px;
+}
+
+.hero-card,
+.plan-preview,
+.settings-group,
+.day-card,
+.metric-card {
+  box-shadow: 0 10px 28px rgba(32, 52, 40, 0.065);
+}
+
+.hero-card__copy p,
+.page-intro,
+.plan-preview p,
+.placeholder-page p,
+.metric-card p,
+.settings-group__heading p {
+  line-height: 1.75;
+}
+
+.bottom-nav {
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+
+@media (max-width: 380px) {
+  :root {
+    --content-inline: min(100% - 24px, 680px);
+  }
+
+  .app-frame {
+    padding-block-start: max(14px, env(safe-area-inset-top));
+  }
+
+  .topbar {
+    gap: 12px;
+    margin-block-end: 18px;
+  }
+
+  .topbar h1 {
+    max-inline-size: 250px;
+    font-size: 1.28rem;
+  }
+
+  .hero-card {
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .calorie-ring {
+    inline-size: 100px;
+    block-size: 100px;
+  }
+
+  .calorie-ring__inner {
+    inline-size: 76px;
+    block-size: 76px;
+  }
+
+  .primary-action {
+    grid-template-columns: 44px minmax(0, 1fr) 20px;
+    gap: 10px;
+    padding-inline: 13px;
+  }
+
+  .primary-action__icon {
+    inline-size: 44px;
+    block-size: 44px;
+  }
+}

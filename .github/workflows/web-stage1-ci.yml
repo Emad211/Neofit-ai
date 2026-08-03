@@ -1,0 +1,108 @@
+name: Web Stage 1 CI
+
+on:
+  push:
+    branches:
+      - stage1/persian-rtl-ux
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-stage1-ci.yml'
+      - 'docs/NEOFIT_MASTER_PLAN.md'
+      - 'docs/NEOFIT_PROGRESS_LOG.md'
+  pull_request:
+    branches:
+      - web/pwa-foundation
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-stage1-ci.yml'
+      - 'docs/NEOFIT_MASTER_PLAN.md'
+      - 'docs/NEOFIT_PROGRESS_LOG.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-stage1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: web
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: web/package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify Persian RTL and navigation contracts
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'lang="fa" dir="rtl"' web/app/layout.tsx
+          grep -q '@fontsource-variable/vazirmatn' web/app/layout.tsx
+          grep -q 'font-size: 16px' web/app/globals.css
+          grep -q 'min-block-size: 44px' web/app/globals.css
+          grep -q "'today' | 'nutrition' | 'workout' | 'progress' | 'settings'" web/components/neofit-prototype.tsx
+          grep -q 'window.scrollTo' web/components/neofit-prototype.tsx
+          grep -q 'IFKB' web/components/neofit-prototype.tsx
+
+      - name: TypeScript
+        run: npm run typecheck
+
+      - name: Production build
+        run: npm run build
+
+      - name: Install Chromium for visual QA
+        run: npx playwright install --with-deps chromium
+
+      - name: Capture target mobile widths and critical flows
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- --hostname 127.0.0.1 --port 3000 > /tmp/neofit-web.log 2>&1 &
+          SERVER_PID=$!
+          cleanup() {
+            kill "$SERVER_PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          for attempt in $(seq 1 40); do
+            if curl --fail --silent http://127.0.0.1:3000/ > /dev/null; then
+              break
+            fi
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+              cat /tmp/neofit-web.log
+              exit 1
+            fi
+            sleep 1
+          done
+
+          curl --fail --silent http://127.0.0.1:3000/ > /dev/null
+          npm run visual:capture
+          cat artifacts/stage1-visual/visual-report.json
+
+      - name: Upload Stage 1 visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-stage1-visual-evidence
+          path: web/artifacts/stage1-visual
+          if-no-files-found: error
+          retention-days: 30

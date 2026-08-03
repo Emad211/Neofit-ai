@@ -1,42 +1,45 @@
 # پلن مادر NeoFit
 
-**وضعیت سند:** مرجع الزامی و واحد تصمیم‌های پروژه  
-**آخرین بازبینی:** ۳ اوت ۲۰۲۶  
-**شاخهٔ فعال:** `web/pwa-foundation`  
-**Head مبنای این نسخه:** `151de2c0d5c9b02602c2f89eb4df808653cdd74e`  
-**مرحلهٔ فعال:** Stage 1 — پایهٔ محصول و UX فارسی/RTL
+**وضعیت سند:** مرجع واحد و اجباری پروژه  
+**آخرین بازبینی:** ۳ اوت ۲۰۲۶ — پایان Visual QA و Refinement شمارهٔ ۱ از Stage 1  
+**شاخهٔ integration وب:** `web/pwa-foundation`  
+**شاخهٔ فعال:** `stage1/persian-rtl-ux`  
+**PR فعال:** #13  
+**آخرین Head کد تأییدشده:** `489394eceea5b1f6cd9adec5dc8487cc250f1061`  
+**آخرین CI معتبر:** Web Stage 1 CI run `30829629853` — success  
+**مرحلهٔ فعال:** Stage 1 — پایهٔ محصول و UX فارسی/RTL  
+**Gate فعلی:** بازبینی بصری مالک محصول و تصمیم دربارهٔ Merge یا Refinement دوم
 
 ## پروتکل اجباری ادامهٔ پروژه
 
-در ابتدای هر نوبت توسعه، پیش از هر تغییر کد یا زیرساخت، این دو فایل باید کامل خوانده شوند:
+پیش از هر تغییر کد، داده یا زیرساخت، این دو فایل باید کامل خوانده شوند:
 
 1. `docs/NEOFIT_MASTER_PLAN.md`
 2. `docs/NEOFIT_PROGRESS_LOG.md`
 
-در پایان همان نوبت:
+سپس وضعیت واقعی branch، HEAD، PR، CI، Vercel و Supabase بررسی می‌شود. گزارش مکالمه یا حافظهٔ قبلی جای شواهد ریپو را نمی‌گیرد.
 
-- دفتر پیشرفت باید با شواهد واقعی، Commitها، تست‌ها، مشکلات و قدم بعدی به‌روزرسانی شود.
-- پلن مادر نیز باید بازبینی و با Head، مرحلهٔ فعال، تصمیم‌های جدید و قدم بعدی همگام شود؛ حتی اگر تصمیم معماری عوض نشده باشد.
-- هیچ گزارش مکالمه‌ای جای این دو فایل را نمی‌گیرد.
-- وضعیت ادعاشده باید از ریپو، PR، CI، Vercel و Supabase قابل اثبات باشد.
+در پایان هر نوبت:
+
+- دفتر پیشرفت با شواهد واقعی، Commitها، Runها، Artifactها، خطاها و قدم بعدی به‌روزرسانی می‌شود.
+- همین پلن با مرحله، Gate، تصمیم‌ها و قدم بعدی همگام می‌شود.
+- هیچ مرحله‌ای بدون برآورده‌شدن Definition of Done «تمام‌شده» اعلام نمی‌شود.
 
 ## ۱. مأموریت محصول
 
-NeoFit یک محصول فارسی‌محور برای برنامه‌ریزی و ثبت تغذیه و تمرین است که باید روی موبایل ساده، سریع، قابل نصب و قابل اعتماد باشد.
+NeoFit یک محصول فارسی‌محور برای برنامه‌ریزی و ثبت تغذیه و تمرین است که باید روی موبایل سریع، ساده، نصب‌شونده و قابل اعتماد باشد.
 
-هدف اصلی RC وب:
+هدف RC وب:
 
 > کاربر فارسی‌زبان بتواند وضعیت امروز را ببیند، غذا یا تمرین را سریع ثبت کند، برنامه را دنبال کند و داده‌اش بین دستگاه‌ها امن و قابل بازیابی باشد.
 
 ## ۲. تصمیم معماری قفل‌شده
 
-NeoFit از UI اصلی Expo/React Native به یک **وب‌اپلیکیشن Mobile-first و PWA** مهاجرت می‌کند.
-
-معماری هدف:
+NeoFit از UI اصلی Expo/React Native به یک وب‌اپلیکیشن Mobile-first و PWA مهاجرت می‌کند.
 
 - Frontend و Server routes: Next.js App Router + TypeScript strict
 - Hosting و Preview: Vercel
-- Auth، PostgreSQL، RLS و Sync دادهٔ کاربر: Supabase
+- Auth، PostgreSQL، RLS و Sync: Supabase
 - PWA و Offline: Service Worker + IndexedDB
 - زبان پیش‌فرض: فارسی
 - جهت پیش‌فرض: RTL واقعی از ریشهٔ HTML
@@ -47,31 +50,29 @@ NeoFit از UI اصلی Expo/React Native به یک **وب‌اپلیکیشن Mo
 
 ## ۳. دارایی‌های حفظ‌شونده
 
-نسخهٔ وب نباید دستاوردهای علمی و داده‌ای فعلی را دور بریزد یا از صفر بسازد:
-
 - ۱۳٬۲۲۵ رکورد عمومی USDA/FNDDS/SR
 - ۹٬۲۷۹ Concept عمومی
 - ۳۶٬۴۹۴ Portion رسمی
 - ۲۶۱ هویت Canonical غذای ایرانی
 - Canonical IDها، mappingها و fingerprintها
 - provenance و evidence tierها
-- موتور محاسبهٔ کالری، ماکرو، Portion، Recipe، Diary و Goal
-- قرارداد Resolveشدن همهٔ Ingredientهای برنامهٔ AI در IFKB/FNDDS/SR
+- موتور کالری، ماکرو، Portion، Recipe، Diary و Goal
+- Resolve کامل Ingredientهای برنامهٔ AI در IFKB/FNDDS/SR
 - تصاویر دارای Attribution و مجوز
 - تست‌های Schema، ID، arithmetic، migration و catalog audit
 
-پوشهٔ `mobile/` تا اثبات کامل مهاجرت وب، مرجع فریز‌شده و منبع مقایسه و مهاجرت باقی می‌ماند.
+پوشهٔ `mobile/` تا اثبات مهاجرت وب، مرجع فریز‌شده و منبع مقایسه و انتقال داده باقی می‌ماند.
 
 ## ۴. قراردادهای غیرقابل نقض
 
-- مدل زبانی یا Vision اجازهٔ ساخت یا اصلاح کالری، ماکرو، وزن و Portion ندارد.
-- Nutrition نهایی فقط از رکوردهای محلی/نسخه‌دار محاسبه می‌شود.
-- اگر حتی یک Ingredient برنامهٔ AI Resolve نشود، کل برنامه ذخیره نمی‌شود.
-- Imported و Custom user data با Seed جدید overwrite یا downgrade نمی‌شوند.
+- مدل زبانی یا Vision اجازهٔ ساخت کالری، ماکرو، وزن یا Portion ندارد.
+- Nutrition نهایی فقط از رکوردهای نسخه‌دار محاسبه می‌شود.
+- Ingredient حل‌نشده باعث رد کامل برنامهٔ AI می‌شود.
+- Imported و Custom user data با Seed overwrite یا downgrade نمی‌شوند.
 - تغییر Canonical ID یا Schema فقط با Migration نسخه‌دار و Freeze جدید مجاز است.
-- Secretهای سروری و Supabase service role هرگز وارد Browser bundle نمی‌شوند.
+- Supabase service role و Secretهای سروری وارد Browser bundle نمی‌شوند.
 - Raw AvalAI key در Local Storage یا DB plaintext ذخیره نمی‌شود.
-- تصویر خام Vision بدون رضایت صریح و نیاز محصول ذخیره نمی‌شود.
+- تصویر خام Vision بدون رضایت و نیاز روشن ذخیره نمی‌شود.
 
 ## ۵. معماری ریپو
 
@@ -91,21 +92,21 @@ Neofit-ai/
 
 تا وجود نیاز واقعی، Turborepo، Nx و ابزار Monorepo سنگین اضافه نمی‌شود.
 
-## ۶. معماری UX فارسی
-
-### قواعد پایه
+## ۶. قواعد UI/UX فارسی
 
 - `html lang="fa" dir="rtl"` از اولین Layout
-- استفاده از CSS logical properties به‌جای left/right
-- فونت فارسی مناسب؛ هدف Vazirmatn
+- CSS logical properties به‌جای left/right
+- فونت فارسی Self-hosted؛ در Stage 1 از `@fontsource-variable/vazirmatn` استفاده می‌شود
 - متن پایه حداقل ۱۶px
 - Touch target حداقل ۴۴px
 - Label بالای Input؛ Placeholder جای Label نیست
 - هر صفحه فقط یک CTA اصلی
 - Cardهای تودرتو محدود
-- Loading، Empty، Error و Offline برای هر Flow
+- Loading، Empty، Error و Offline برای Flowهای اصلی
 - اعداد و واحدهای تغذیه خوانا و tabular
-- ترتیب Icon، متن، Navigation و Gesture برای RTL طراحی می‌شود
+- ترتیب Icon، متن، Navigation و Gesture برای RTL
+- تغییر صفحه از Bottom Navigation باید Scroll را به ابتدای صفحه بازگرداند
+- عرض‌های اجباری Visual QA: ۳۶۰، ۳۹۰ و ۴۱۲ پیکسل
 
 ### Navigation موبایل
 
@@ -117,7 +118,7 @@ Neofit-ai/
 4. پیشرفت
 5. تنظیمات
 
-ثبت سریع غذا باید از امروز و تغذیه در دسترس باشد.
+ثبت سریع غذا از «امروز» و «تغذیه» در دسترس خواهد بود.
 
 ## ۷. نقش Supabase
 
@@ -190,43 +191,63 @@ Offline مرحله‌ای ساخته می‌شود:
 
 ### Stage 1 — Product/UX Foundation فارسی
 
-**وضعیت: فعال**
+**وضعیت: فعال؛ Batch 1 و Refinement 1 آمادهٔ بازبینی مالک محصول**
 
-دامنه:
+#### ساخته‌شده و اثبات‌شده
 
-- ایجاد `web/`
-- Next.js shell با TypeScript strict
-- Design tokens
-- RTL root
-- Bottom navigation
-- صفحهٔ امروز
-- Food search و picker
-- Meal logging با grams/portion
-- Weekly plan
-- Settings شامل language/theme/AvalAI state
+- `web/` با Next.js App Router
+- TypeScript strict و Production build
+- Persian root و RTL واقعی
+- Design tokenهای اولیه
+- Vazirmatn variable به‌صورت Self-hosted از Package
+- Bottom Navigation پنج‌مقصدی
+- Today dashboard
+- Food search و Food picker
+- Meal logging sheet با Portion و Meal type
+- Weekly plan سه‌روزه با IFKB provenance label
+- Settings mock برای Language، Theme و AvalAI key
 - Loading/Empty/Error/Offline states
 - IFKB-shaped fixture data؛ بدون Backend
-- Visual QA در ۳۶۰، ۳۹۰ و ۴۱۲px
+- Visual QA خودکار در ۳۶۰، ۳۹۰ و ۴۱۲px
+- Screenshot Artifact برای Flowهای Today، Nutrition، Search، Meal sheet، Weekly plan و Settings
+- Zero horizontal overflow در تمام مسیرهای ثبت‌شده
+- Scroll reset هنگام تغییر صفحه از Bottom Navigation
 
-Definition of Done:
+#### Visual QA معتبر
+
+- CI run: `30829629853`
+- Artifact: `8862378720`
+- Artifact digest: `sha256:7c9c86100355743a262d41ae6233e1513c804bd0792b19ff5eff5946c49c98e4`
+- Head: `489394eceea5b1f6cd9adec5dc8487cc250f1061`
+
+#### Gate باقی‌مانده
+
+- بازبینی بصری و تعامل توسط مالک محصول
+- تصمیم صریح: Accept یا Refinement دوم
+- PR #13 تا آن تصمیم Merge نمی‌شود
+
+#### Definition of Done کامل Stage 1
 
 - Persian default و RTL واقعی
 - بدون horizontal overflow
 - ثبت غذای معمولی از Today حداکثر با دو انتقال
 - یک Design System یکپارچه
 - تمام Flowهای بحرانی قابل استفاده
+- Screenshot evidence در عرض‌های هدف
 - تأیید صریح مالک محصول
 
 **ممنوع در این Stage:** Supabase schema، Auth واقعی، AI واقعی، Sync کامل، Billing، Social و کپی UI Native.
 
 ### Stage 2 — PWA و Vercel Foundation
 
+شروع فقط پس از تأیید و Merge Stage 1:
+
 - Manifest و Iconها
 - Service worker برای App shell
 - Installability Android/iOS
 - Error و Loading boundary
-- Web CI
-- Vercel Project و Preview برای هر PR
+- Web CI دائمی
+- ایجاد Vercel Project و Preview برای PRها
 - Environment separation
 
 ### Stage 3 — Nutrition Core Extraction و Parity
@@ -312,32 +333,41 @@ Definition of Done:
 - بدون RLS finding بحرانی
 - Startup، Search، Log، AI، Backup و Offline روی دستگاه واقعی پاس شوند
 
-## ۱۲. Anti-goalهای RC اول
+## ۱۲. Anti-goalها
 
-- پنل مربی
-- شبکهٔ اجتماعی
-- Marketplace
-- Billing/Subscription
-- Admin platform گسترده
-- Full native parity قبل از اثبات نیاز
-- Edge Function غیرضروری
-- Generic SaaS dashboard template
+- ساخت Backend پیش از تأیید UX
+- انتقال خط‌به‌خط UI Native
+- Generic SaaS template
+- Dashboard پیچیده قبل از Daily flow
+- Edge Function وقتی Route Handler کافی است
+- ابزار Monorepo سنگین بدون نیاز واقعی
+- Billing، Social، Coach، Marketplace و Admin در RC اول
+- تغییر IFKB/ID/Schema بدون Migration و Freeze
 
-## ۱۳. استراتژی Branch و PR
+## ۱۳. ترتیب ثابت
 
-- `web/pwa-foundation`: شاخهٔ integration وب
-- هر Stage/Batch: شاخه و PR جدا
-- PR #3: تاریخچهٔ Mobile/IFKB، نه محل توسعهٔ وب
-- هر PR باید Scope محدود، DoD، Evidence و قدم بعدی داشته باشد
-- PR چندصد Commit جدید ممنوع است
+1. Stage 0 — انجام‌شده
+2. Stage 1 — فعال؛ Gate مالک محصول
+3. Stage 2 — PWA/Vercel
+4. Stage 3 — Core parity
+5. Stage 4 — Supabase
+6. Stage 5 — Vertical slice
+7. Stage 6 — AI/Vision
+8. Stage 7 — Offline
+9. Stage 8 — Recovery
+10. Stage 9 — RC
 
-## ۱۴. وضعیت و قدم بعدی فعلی
+## ۱۴. قدم بعدی دقیق
 
-**وضعیت در شروع این نوبت:**
+### ورودی لازم
 
-- Stage 0 بسته است.
-- Stage 1 آغاز می‌شود.
-- Supabase و Vercel project هنوز ایجاد نشده‌اند.
-- قدم بعدی: ایجاد شاخهٔ Stage 1، ساخت Next.js RTL shell، Today و Food logging prototype با fixtureهای IFKB.
+مالک محصول Screenshotهای نهایی Stage 1 را بررسی می‌کند و یکی از دو تصمیم زیر را اعلام می‌کند:
 
-در پایان این نوبت، این بخش باید با Head واقعی و نتیجهٔ تست‌ها به‌روزرسانی شود.
+1. **Accept:** PR #13 Merge شود و Stage 2 با PWA manifest، Service Worker و Vercel Preview آغاز شود.
+2. **Refine:** ایرادهای UI/UX به‌صورت صفحه و جزء مشخص ثبت شوند و Refinement دوم فقط در همین PR انجام شود.
+
+تا اعلام این تصمیم:
+
+- PR #13 باز می‌ماند.
+- Supabase و Vercel Project ساخته نمی‌شوند.
+- Stage 2 آغازشده اعلام نمی‌شود.
