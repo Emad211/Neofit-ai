@@ -26,7 +26,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download and verify the exact published QA APK
+      - name: Download and verify the fixed QA APK
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -37,12 +37,12 @@ jobs:
             -H "Authorization: Bearer ${GH_TOKEN}" \
             -H 'Accept: application/vnd.github+json' \
             -H 'X-GitHub-Api-Version: 2022-11-28' \
-            'https://api.github.com/repos/Emad211/Neofit-ai/actions/artifacts/8842306739/zip' \
+            'https://api.github.com/repos/Emad211/Neofit-ai/actions/artifacts/8843370288/zip' \
             -o build/qa-apk-artifact.zip
-          echo 'a73db4f6d139748b57f2c5c71a7f23cb56aeaeb87755c6a69acac6633cdd7f9c  build/qa-apk-artifact.zip' | sha256sum --check --strict
+          echo '42a3dcccae6d2bc1d45a52cf5d8eebd18266675b49c212128de6a7a061d0424a  build/qa-apk-artifact.zip' | sha256sum --check --strict
           unzip -q build/qa-apk-artifact.zip -d build/qa-apk
           test -s build/qa-apk/neofit-stage9-qa.apk
-          echo 'b3d2d5cabf607eeafdc16d75cdfab62a9d266ce66cc831ae665c3b0e26da32f3  build/qa-apk/neofit-stage9-qa.apk' | sha256sum --check --strict
+          echo '8711291002099979bcd7fa1609cfc00daf9f60032880e118ed5a37803d080b5d  build/qa-apk/neofit-stage9-qa.apk' | sha256sum --check --strict
           grep -q '^javascriptBundle=embedded$' build/qa-apk/build-metadata.txt
           unzip -l build/qa-apk/neofit-stage9-qa.apk | grep -q 'assets/index.android.bundle'
 
@@ -67,7 +67,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: neofit-android-startup-smoke
+          name: neofit-android-startup-smoke-fixed
           path: build/startup-smoke
           if-no-files-found: error
           retention-days: 30
