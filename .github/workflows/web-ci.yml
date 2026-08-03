@@ -72,6 +72,7 @@ jobs:
           test -s web/app/global-error.tsx
           test -s web/app/loading.tsx
           test -s web/app/not-found.tsx
+          test -s web/vercel.json
 
       - name: TypeScript
         run: npm run typecheck
@@ -119,6 +120,24 @@ jobs:
           npm run pwa:verify
           cat artifacts/stage1-visual/visual-report.json
           cat artifacts/pwa/pwa-report.json
+
+      - name: Prepare reproducible Vercel source bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/vercel
+          tar \
+            --exclude='./node_modules' \
+            --exclude='./.next' \
+            --exclude='./artifacts' \
+            --exclude='./.env*' \
+            -czf artifacts/vercel/neofit-web-source.tar.gz .
+          sha256sum artifacts/vercel/neofit-web-source.tar.gz | tee artifacts/vercel/neofit-web-source.sha256
+          printf '{"commit":"%s","branch":"%s","generatedAt":"%s"}\n' \
+            "$GITHUB_SHA" \
+            "$GITHUB_HEAD_REF" \
+            "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            > artifacts/vercel/source-metadata.json
 
       - name: Upload web evidence
         if: always()
