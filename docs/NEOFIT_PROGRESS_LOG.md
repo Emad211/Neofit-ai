@@ -2,7 +2,7 @@
 
 **نقش سند:** حافظهٔ عملیاتی و شواهد توسعه  
 **همراه اجباری:** `docs/NEOFIT_MASTER_PLAN.md`  
-**آخرین به‌روزرسانی:** ۴ اوت ۲۰۲۶ — تصمیم تفکیک Stage 2A/2B
+**آخرین به‌روزرسانی:** ۴ اوت ۲۰۲۶ — Stage 3 Batch 1 پس از Review fixes
 
 ## روش اجباری استفاده
 
@@ -10,10 +10,10 @@
 
 1. پلن مادر کامل خوانده شود.
 2. این دفتر کامل خوانده شود.
-3. وضعیت واقعی Branch، HEAD، PR، Issue، CI، Review، Vercel و Supabase بررسی شود.
-4. فقط قدم بعدی ثبت‌شده اجرا شود.
+3. Branch، HEAD، PR، Issue، CI، Review، Vercel و Supabase از ابزارهای واقعی بررسی شوند.
+4. فقط Exact continuation point ثبت‌شده اجرا شود.
 
-در پایان هر نوبت، Entry جدید باید هدف، شواهد، Commitها، تست‌ها، مشکلات، تصمیم‌ها و Exact continuation point را ثبت کند.
+در پایان هر نوبت، Entry جدید باید هدف، شواهد، Commitها، تست‌ها، مشکلات، تصمیم‌ها و نقطهٔ ادامه را ثبت کند.
 
 ---
 
@@ -23,10 +23,10 @@
 |---|---|---|---|
 | 0 | Pivot و Freeze | انجام‌شده | PR #12، `151de2c0d5c9b02602c2f89eb4df808653cdd74e` |
 | 1 | UX فارسی/RTL | انجام‌شده و پذیرفته‌شده | PR #13، `a458a27a2685bfa7d85ea28686b3182c3167d747` |
-| 2A | PWA Code Foundation | آمادهٔ Merge | PR #15، CI `30853827867` |
-| 2B | Vercel Preview/HTTPS validation | تعویق‌شده و باز | Issue #16 |
-| 3 | Nutrition Core parity | مرحلهٔ بعد | پس از Merge PR #15 |
-| 4 | Supabase Foundation | شروع‌نشده | منتظر Core parity و تأیید هزینه |
+| 2A | PWA Code Foundation | انجام‌شده | PR #15، `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b` |
+| 2B | Vercel Preview/HTTPS | تعویق‌شده و باز | Issue #16؛ محدودیت روزانه با Vercel bot تأیید شد |
+| 3 | Nutrition Core parity | فعال؛ Batch 1 آمادهٔ Merge | Issue #17، PR #18، CI `30857414434` |
+| 4 | Supabase Foundation | شروع‌نشده | منتظر پایان Stage 3 و تأیید هزینه |
 | 5 | Nutrition vertical slice | شروع‌نشده | — |
 | 6 | AvalAI/Vision | شروع‌نشده | — |
 | 7 | Offline catalog/Sync | شروع‌نشده | — |
@@ -44,7 +44,7 @@
 - IFKB و Nutrition RC به‌عنوان دارایی علمی حفظ شدند.
 - UX Native از سوی مالک محصول رد شد.
 - مهاجرت به Next.js PWA، Vercel و Supabase ثبت شد.
-- PR #12 مسیر جدید را با Merge `151de2c0d5c9b02602c2f89eb4df808653cdd74e` تثبیت کرد.
+- PR #12 مسیر جدید را تثبیت کرد.
 
 ---
 
@@ -56,14 +56,14 @@
 - دو سند دائمی ساخته شدند.
 - `web/` با Next.js App Router و TypeScript strict ساخته شد.
 - Today، Nutrition Search، Meal Sheet، Weekly Plan و Settings ساخته شدند.
-- TypeScript روی نسخهٔ سازگار `6.0.3` قفل شد.
+- TypeScript روی `6.0.3` قفل شد.
 - CI `30827034439` پاس شد.
 
 ---
 
 ## Entry 002 — Visual QA و پذیرش Stage 1
 
-مشکلات کشف‌شده:
+مشکلات واقعی:
 
 - Banner توسعهٔ برجسته
 - عنوان تکراری
@@ -75,7 +75,7 @@ Fixها:
 
 - Playwright Visual QA
 - Vazirmatn Self-hosted
-- hierarchy و spacing اصلاح‌شده
+- hierarchy/spacing اصلاح‌شده
 - Screenshotهای viewport-based
 - Scroll reset و Regression test
 
@@ -86,7 +86,7 @@ Fixها:
 - Digest `sha256:7c9c86100355743a262d41ae6233e1513c804bd0792b19ff5eff5946c49c98e4`
 - Visual QA در ۳۶۰/۳۹۰/۴۱۲px بدون Overflow
 
-مالک محصول Stage 1 را پذیرفت و PR #13 با Merge `a458a27a2685bfa7d85ea28686b3182c3167d747` بسته شد.
+Stage 1 پذیرفته و PR #13 با Merge `a458a27a2685bfa7d85ea28686b3182c3167d747` بسته شد.
 
 ---
 
@@ -100,138 +100,236 @@ Fixها:
 ساخته‌شده:
 
 - Manifest فارسی/RTL و Standalone
-- Icon generator و Iconهای 192/512/Maskable/Apple
-- Service Worker App shell
+- Icon generator و Iconهای PWA
+- Service Worker app shell
 - API/Auth/Authorization/Mutation/Cross-origin exclusion
-- Offline fallback و system boundaries
+- Offline/system boundaries
 - Environment contract و `vercel.json`
-- Web CI و PWA Runtime verification
-- Source bundle Hash‌شده
+- Web CI، PWA Runtime verification و Source bundle
 
 Validation اولیه:
 
 - CI `30849445243` — success
 - Artifact `8870015510`
 
-در پایان این Entry یک خطای سهمیهٔ Vercel به‌صورت قطعی ثبت شد؛ Entry 004 آن را بازبینی و اصلاح کرد.
-
 ---
 
 ## Entry 004 — Correction Vercel و بستن P1 Offline
 
-**تاریخ:** ۴ اوت ۲۰۲۶  
-**Head شروع:** `4f5cf90513d1a71869474eba81eeba640068ab6c`
+**تاریخ:** ۴ اوت ۲۰۲۶
 
-وضعیت واقعی Vercel:
+وضعیت مستقیم Vercel:
 
-- اتصال برقرار
 - Team: `Emad's projects`
-- Team ID: `team_BsUv0VprkU4YjdFbQi2hZCEm`
 - Project: `neofit-ai`
 - Project ID: `prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG`
-- Framework: `null`
-- `latestDeployment`: `null`
-- Deployment count: `0`
-- Domain: ندارد
+- Deployment count: صفر
+- `latestDeployment`: null
 
-Correction:
+در این مقطع، خطای سهمیه در ابزار مستقیم قابل‌بازتولید نبود و به‌درستی از حالت ادعای قطعی خارج شد. در Entry 006، Vercel bot بعداً شواهد مستقیم محدودیت را ثبت کرد.
 
-- خطای سهمیه در بررسی مجدد قابل‌بازتولید نبود و ادعای قطعی آن بازپس گرفته شد.
-- مانع قابل‌بازتولید، ناسازگاری Schema در `deploy_to_vercel` بود.
-- Automation مبتنی بر Reset سهمیه غیرفعال شد.
+P1 Offline:
 
-P1 Review:
-
-تست قبلی می‌توانست به HTTP cache مرورگر متکی باشد و Assetهای Build را در Fresh install واقعاً Precache نکند.
-
-Fixها:
-
-- `40d07107da46f239da9c95404b0f02b5fe662b94`: Service Worker v2، استخراج و Precache گراف HTML/JS/CSS/Font
-- `0bb0278f50312819029445c20dd5823ee8c719ed`: حذف Reload آنلاین واسط، پاک‌کردن HTTP cache و تست مستقیم Offline React
+- `40d07107da46f239da9c95404b0f02b5fe662b94`: Precache گراف HTML/JS/CSS/Font
+- `0bb0278f50312819029445c20dd5823ee8c719ed`: تست مستقیم Fresh-install Offline با HTTP cache خالی
 
 شواهد:
 
 - Web CI `30853438059` — success
 - Artifact `8871529505`
 - Digest `sha256:7f50f89a15c37871bbafda95d3cea6e105ab5c0a344f9f408b5f5fe787823c77`
-- JS/CSS/Font precache: pass
-- Fresh-install Offline: pass
 - Offline React navigation: pass
 - Cached `/api`: zero
-- Review thread `PRRT_kwDOThqnVM6WHFMC`: resolved
-
-آخرین CI روی Head مستندات پیش از تصمیم جدید:
-
-- Head: `351ee467c8dac026b3166f05b0996ec4bfe3aa39`
-- Web CI: `30853827867` — success
+- Review P1: resolved
 
 ---
 
-## Entry 005 — تفکیک Stage 2 و آزادکردن مسیر Stage 3
+## Entry 005 — تفکیک Stage 2A/2B و Merge PWA
 
-**تاریخ/زمان:** ۴ اوت ۲۰۲۶، حدود ۰۱:۱۱ ایران  
-**Branch:** `stage2/pwa-vercel-foundation`  
-**PR:** #15  
-**Head شروع:** `351ee467c8dac026b3166f05b0996ec4bfe3aa39`
+**تاریخ:** ۴ اوت ۲۰۲۶  
+**درخواست مالک:** Vercel فعلاً کنار گذاشته شود و توسعهٔ مستقل ادامه پیدا کند.
 
-### درخواست و تصمیم مالک
+تصمیم:
 
-مالک محصول خواست Vercel فعلاً کنار گذاشته شود و توسعهٔ باقی بخش‌ها ادامه پیدا کند، با الزام ثبت دقیق تمام تصمیم‌ها و شواهد.
+- Stage 2A: PWA Code Foundation
+- Stage 2B: Vercel Preview/HTTPS validation
 
-### بازسازی واقعی پیش از تصمیم
+اقدام‌ها:
 
-- هر دو سند کامل خوانده شدند.
-- PR #15 باز، Mergeable و غیر Draft بود.
-- Head: `351ee467c8dac026b3166f05b0996ec4bfe3aa39`
-- Web CI `30853827867`: success
-- تنها Review thread موجود resolved و outdated بود.
-- هیچ Deployment واقعی Vercel وجود نداشت.
+- Issue #16 برای Stage 2B ساخته شد و باز ماند.
+- Final Stage 2A CI `30856060076` پاس شد.
+- PR #15 با Merge commit `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b` وارد `web/pwa-foundation` شد.
+- Issue #14 completed بسته شد.
+- Stage 2B دیگر Stage 3 را Block نمی‌کند، ولی پیش از Web RC اجباری است.
 
-### تصمیم معماری/فرآیندی
+---
 
-Stage 2 به دو بخش تقسیم شد:
+## Entry 006 — Stage 3 Batch 1: Pure Core و Golden parity
 
-1. **Stage 2A — PWA Code Foundation**
-   - مستقل از Hosting
-   - تمام تست‌های کد و Runtime محلی پاس شده‌اند
-   - PR #15 می‌تواند Merge شود
+**تاریخ/زمان:** ۴ اوت ۲۰۲۶، حدود ۰۱:۲۰ تا ۰۱:۴۰ ایران  
+**Issue:** #17  
+**Branch:** `stage3/nutrition-core-parity`  
+**PR:** #18  
+**Branch base:** `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b`
 
-2. **Stage 2B — Vercel Preview و HTTPS validation**
-   - در Issue #16 مستقل و باز ثبت شد
-   - هیچ Deployment موفقی ادعا نمی‌شود
-   - باید پیش از Web RC بسته شود
-   - دیگر Stage 3 را Block نمی‌کند
+### هدف
 
-### Issue جدید
+1. Inventory واقعی Mobile/IFKB قبل از Extraction.
+2. تعیین Pure-domain boundary.
+3. ساخت Package مستقل بدون ابزار Monorepo سنگین.
+4. قفل‌کردن Golden behavior و numeric/missing policy.
+5. اثبات Parity در CI.
 
-- Issue #16: `Deferred: Vercel Preview deployment and HTTPS PWA validation`
-- Vercel Project ID، وضعیت صفر Deployment و شواهد لازم برای بستن Gate در آن ثبت شد.
+### Authority خوانده‌شده
 
-### تغییر پلن مادر
+- `docs/NEOFIT_NUTRITION_FINAL_SCOPE_V3.md`
+- `mobile/README.md`
+- `mobile/tsconfig.json`
+- `mobile/src/nutrition-core/index.ts`
+- `types.ts`, `nutrition.ts`, `recipe.ts`, `diary.ts`, `goals.ts`
+- `search.ts`, `catalog-release.ts`, `catalog-provenance.ts`
+- `legacy-catalog-adapter.ts`
+- `universal-catalog-ranking.ts`
+- `universal-food-estimate.ts`
+- `mobile/tests/nutrition-core.test.ts`
 
-- Anti-goal «شروع Stage 3 پیش از Vercel» حذف شد.
-- Stage 2A/2B به‌صورت مستقل تعریف شدند.
-- Stage 3 به‌عنوان قدم بعدی فعال ثبت شد.
-- Supabase همچنان تا پایان Core parity ممنوع ماند.
+### یافتهٔ معماری
 
-### کارهای باقیماندهٔ همین Entry
+Mobile از قبل `mobile/src/nutrition-core/` دارد. بنابراین Stage 3 بازنویسی نیست؛ Extraction کنترل‌شده و اثبات Parity است.
 
-- اجرای CI روی Commitهای مستندات جدید
-- Merge PR #15
-- بستن Issue #14 به‌عنوان Stage 2A completed
-- باز نگه‌داشتن Issue #16
-- ساخت Issue و Branch Stage 3
-- Inventory واقعی Nutrition Core از Mobile/IFKB
+ماژول‌های Batch 1 بدون React، React Native، Expo، SQLite، UI، فایل‌سیستم یا شبکه هستند:
+
+- `types`
+- `nutrition`
+- `recipe`
+- `diary`
+- `goals`
+
+Search، ranking، provenance، release، legacy adapter و Universal estimate برای جلوگیری از PR بزرگ به Batchهای بعد منتقل شدند.
+
+### Numeric policy
+
+- canonicalization: ۱۵ رقم معنادار
+- display rounding جداگانه
+- `-0` به صفر
+- per-100g basis دقیقاً 100g
+- Gram calculation با وزن نامعلوم fail-closed
+
+### Missing policy
+
+- absence یعنی unknown، نه zero
+- وزن نامعلوم `null`
+- strict aggregate با nutrient ناقص آن nutrient را حذف می‌کند
+- Recipe/Diary وزن نامعلوم را propagate می‌کنند
+- Goal progress برای consumed نامعلوم ratio/remaining را null نگه می‌دارد
+
+### فایل‌های ساخته‌شده
+
+- `docs/NEOFIT_NUTRITION_CORE_AUTHORITY_MAP.md`
+- `packages/nutrition-core/package.json`
+- `packages/nutrition-core/tsconfig.json`
+- `packages/nutrition-core/README.md`
+- `packages/nutrition-core/src/index.ts`
+- `packages/nutrition-core/src/types.ts`
+- `packages/nutrition-core/src/nutrition.ts`
+- `packages/nutrition-core/src/recipe.ts`
+- `packages/nutrition-core/src/diary.ts`
+- `packages/nutrition-core/src/goals.ts`
+- `packages/nutrition-core/tests/mobile-rc-golden-v1.ts`
+- `packages/nutrition-core/tests/parity.test.ts`
+- `packages/nutrition-core/scripts/verify-pure-boundary.mjs`
+- `.github/workflows/nutrition-core-ci.yml`
+
+### Source provenance
+
+- Frozen reference head: `648b98cdc921beb26ccd0ff05a1f17944bb6f71d`
+- Mobile golden test Blob: `2291e1958efe5e17010230c5864c9fadc9bc47ba`
+- Types Blob: `55e0100964e32b392493dd604a12e0f845b7e5e7`
+- Nutrition Blob: `53ac392d69f351e145f51db140dd5701cdcbaeab`
+- Recipe Blob: `51784eb1a522eda8bee5b4ba394b67844c04db6c`
+- Diary Blob: `e297eed728a7457b9b46529a761e450bd647e97d`
+- Goals Blob: `16a2d91dfa173f88f3d56b26ce58aa679df25cf3`
+
+### CI و Parity اولیه
+
+- Implementation head: `f11b1ec84355d1311ce53d877163ec66b965611f`
+- Run: `30856939220` — success
+- Artifact: `8872828407`
+- Digest: `sha256:c064cd3d53a1f7b31ad12eeb2f11c54a8a098acce3f768a3ae12c53904ada24a`
+- Tests: 10، Pass: 10، Fail: 0، Skip: 0
+
+### Review findings و Fixها
+
+#### P2 — Boundary Regex ناقص
+
+Review نشان داد `import 'node:fs'` و `await import('node:https')` از Regex اولیه عبور می‌کنند.
+
+Fix:
+
+- Commit `2aa93ab03384bcb839ef57615870f6af448b55ba`: AST-based boundary verifier
+- Commit `dee683d9c6467dd35be6cd50d8138bbc7962b6d5`: Package boundary script
+- Commit `af55b7de4382a9a00814628a744393471817bb61`: CI استفاده از Parser
+
+Parser این فرم‌ها را بررسی می‌کند:
+
+- static imports
+- side-effect imports
+- dynamic `import()`
+- `require()`
+- import-equals
+- re-exports
+
+و Moduleهای React/Expo/SQLite/Next/Supabase/Node I/O و Runtime accessهای Network/Storage/Environment را رد می‌کند.
+
+#### P2 — Handoff اسناد stale
+
+- `docs/NEOFIT_MASTER_PLAN.md` و `docs/NEOFIT_PROGRESS_LOG.md` با Stage 2A merge، Stage 3 state، Batch 1 evidence و Search/Ranking continuation به‌روزرسانی شدند.
+
+هر دو Review thread resolved شدند.
+
+### CI نهایی Review fix
+
+- Head: `af55b7de4382a9a00814628a744393471817bb61`
+- Nutrition Core CI: `30857414434` — success
+- Artifact: `8872996869`
+- Digest: `sha256:3e0705c69767bf2cd69e71c113c8407bf1fccf5ccb35cb130f4a1f3aa3d6f95e`
+- AST boundary: pass
+- TypeScript: pass
+- Golden tests: 10/10 pass
+
+### شواهد قطعی جدید Vercel
+
+`vercel[bot]` روی PR #18 گزارش داد:
+
+`Resource is limited - try again in 24 hours (more than 100, code: "api-deployments-free-per-day").`
+
+بنابراین محدودیت روزانه اکنون با منبع مستقیم Vercel اثبات شده است. در Issue #16 ثبت شد. هیچ Preview موفقی ادعا نمی‌شود و Stage 3 متوقف نمی‌شود.
+
+### مشکلات/محدودیت‌ها
+
+- Sparse checkout محلی به‌دلیل DNS محیط اجرا نشد؛ Inventory از GitHub Contents API متصل انجام شد.
+- Search/ranking و SQLite equivalence هنوز Extract نشده‌اند.
+- Web هنوز از Package جدید استفاده نمی‌کند.
+- Stage 3 کامل نشده و Issue #17 باز می‌ماند.
+- Supabase، Auth و AI واقعی شروع نشده‌اند.
+
+### تصمیم‌ها
+
+- Batchهای Stage 3 کوچک و مستقل Merge می‌شوند.
+- اختلاف با Mobile باید Fail/Parity report شود؛ silent fix ممنوع است.
+- Search/Ranking بدون Golden corpus وارد Package نمی‌شود.
+- Web adapter فقط پس از تکمیل Pure Core ساخته می‌شود.
+- Issue #16 پیش از Web RC اجباری است، نه پیش از Batchهای Core.
 
 ### Exact continuation point
 
-1. CI آخرین Head اسناد بررسی شود.
-2. PR #15 با expected head Merge شود.
-3. Issue #14 با شواهد PWA Foundation بسته شود.
-4. Branch جدید Stage 3 از Merge commit ساخته شود.
-5. Issue Stage 3 با Definition of Done و Non-goal روشن ساخته شود.
-6. قبل از هر extraction، فایل‌ها، توابع، تست‌ها، precision policy و وابستگی‌های Mobile/IFKB Inventory شوند.
-7. Batch اول Stage 3 فقط Boundary، types، Golden fixtures و parity harness باشد.
-8. در پایان همان نوبت هر دو سند با Merge SHA و وضعیت Stage 3 دوباره Update شوند.
+1. CI اسناد روی Head نهایی بررسی شود.
+2. PR #18 با expected head Merge شود.
+3. Issue #17 باز بماند و Batch 1 completed ثبت شود.
+4. Branch Batch 2 از Merge commit ساخته شود.
+5. Persian Search authority و benchmark manifests خوانده شوند.
+6. Golden corpus برای normalization، modifiers، aliases و SR/FNDDS ranking ساخته شود.
+7. `search.ts` و `universal-catalog-ranking.ts` فقط پس از سبزشدن Golden parity منتقل شوند.
+8. هر دو سند در پایان Batch 2 دوباره Update شوند.
 
-**Supabase، Auth و AI واقعی هنوز شروع نمی‌شوند.**
+**Issue #16 باز است. Supabase، Auth و AI واقعی هنوز ممنوع‌اند.**
