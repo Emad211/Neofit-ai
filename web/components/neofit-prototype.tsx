@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   dailyTargets,
   foodFixtures,
@@ -149,6 +149,10 @@ export function NeoFitPrototype() {
   const [diary, setDiary] = useState<DiaryFixture[]>([...initialDiary]);
   const [language, setLanguage] = useState<'fa' | 'en'>('fa');
   const [theme, setTheme] = useState<'light' | 'system'>('light');
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [screen]);
 
   const filteredFoods = useMemo(() => {
     const normalized = query.trim().replaceAll('ي', 'ی').replaceAll('ك', 'ک').toLocaleLowerCase('fa');
