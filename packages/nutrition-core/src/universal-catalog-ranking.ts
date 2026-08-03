@@ -1,0 +1,234 @@
+import { normalizePersianText, parseFoodQuery } from './search';
+
+export type UniversalSourceType = 'sr_legacy' | 'fndds';
+export type PersianAliasTargetType = 'generic' | 'iranian_canon';
+
+export interface PersianAliasRecord {
+  readonly aliasFa: string;
+  readonly target: string;
+  readonly targetType: PersianAliasTargetType;
+}
+
+export interface PersianAliasIndex {
+  readonly exact: ReadonlyMap<string, readonly PersianAliasRecord[]>;
+  readonly compactExact: ReadonlyMap<string, readonly PersianAliasRecord[]>;
+  readonly longestFirst: readonly (readonly [string, readonly PersianAliasRecord[]])[];
+}
+
+export interface UniversalCatalogCandidate {
+  readonly id: string;
+  readonly sourceType: UniversalSourceType;
+  readonly nameEn: string;
+  readonly caloriesKcal: number | null;
+  readonly proteinG: number | null;
+  readonly fatG: number | null;
+  readonly carbsG: number | null;
+  readonly fiberG: number | null;
+  readonly sugarsG: number | null;
+  readonly sodiumMg: number | null;
+  readonly cholesterolMg: number | null;
+  readonly calciumMg: number | null;
+  readonly ironMg: number | null;
+  readonly potassiumMg: number | null;
+  readonly vitaminCMg: number | null;
+  readonly macroComplete: boolean;
+  readonly portionCount: number;
+  readonly bm25: number;
+}
+
+export interface RankedUniversalCatalogCandidate extends UniversalCatalogCandidate {
+  readonly score: number;
+  readonly reasons: readonly string[];
+}
+
+const PREPARED_TERMS = new Set([
+  'boiled', 'poached', 'cooked', 'fried', 'grilled', 'roasted', 'baked', 'salad',
+  'sandwich', 'pizza', 'soup', 'stew', 'burger', 'omelet', 'omelette', 'with',
+]);
+const ATOMIC_TERMS = new Set(['raw', 'fresh', 'whole', 'white', 'yolk']);
+const UNCOMMON_PROCESS_TERMS = [
+  'dried', 'dehydrated', 'frozen', 'pasteurized', 'powder', 'powdered', 'sugared',
+  'canned with syrup', 'restaurant', 'fast food', 'school lunch',
+];
+const GENERIC_TARGET_VOCABULARY: Readonly<Record<string, string>> = {
+  'sweet pepper': 'peppers, sweet',
+  pistachios: 'pistachio nuts',
+};
+
+export function sanitizeFtsQuery(value: string): string {
+  const tokens = value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((token) => token.length > 0)
+    .slice(0, 10);
+  return tokens.map((token) => `"${token.replaceAll('"', '""')}"`).join(' AND ');
+}
+
+function normalizedEnglish(value: string): string {
+  return value
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function phraseTokens(value: string): string[] {
+  return normalizedEnglish(value).split(' ').filter(Boolean);
+}
+
+function tokenCoverage(query: readonly string[], candidate: readonly string[]): number {
+  if (query.length === 0) return 0;
+  const set = new Set(candidate);
+  return query.filter((token) => set.has(token)).length / query.length;
+}
+
+function compactAliasKey(value: string): string {
+  return normalizePersianText(value).replace(/\s+/g, '');
+}
+
+export function resolveGenericAliasTarget(target: string, originalQuery: string): string {
+  const modifiers = new Set(parseFoodQuery(originalQuery).modifiers);
+  const canonical = GENERIC_TARGET_VOCABULARY[target.trim().toLowerCase()] ?? target.trim();
+  let resolved = canonical;
+  if (modifiers.has('egg_white') || modifiers.has('without_yolk')) {
+    resolved = /\begg\b.*\bwhite\b/i.test(resolved) ? resolved : 'egg, white';
+  }
+  const lower = () => resolved.toLowerCase();
+  if (modifiers.has('boiled') && !/\b(boiled|poached)\b/.test(lower())) {
+    resolved += ', boiled';
+  } else if (modifiers.has('fried') && !/\bfried\b/.test(lower())) {
+    resolved += ', fried';
+  } else if (modifiers.has('grilled') && !/\bgrilled\b/.test(lower())) {
+    resolved += ', grilled';
+  }
+  if (modifiers.has('without_added_fat') && !/(?:no|without) added fat/.test(lower())) {
+    resolved += ', no added fat';
+  }
+  return resolved;
+}
+
+export function rankUniversalCatalogCandidates(
+  query: string,
+  rows: readonly UniversalCatalogCandidate[],
+  limit = 20,
+): RankedUniversalCatalogCandidate[] {
+  if (!Number.isInteger(limit) || limit <= 0) {
+    throw new RangeError('limit must be a positive integer');
+  }
+  const normalizedQuery = normalizedEnglish(query);
+  const queryTokens = phraseTokens(normalizedQuery);
+  const parsed = parseFoodQuery(query);
+  const querySuggestsPrepared = queryTokens.some((token) => PREPARED_TERMS.has(token))
+    || parsed.modifiers.some((modifier) => ['boiled', 'fried', 'grilled', 'with_oil'].includes(modifier));
+  const querySuggestsAtomic = queryTokens.some((token) => ATOMIC_TERMS.has(token));
+
+  return rows
+    .filter((row) => row.macroComplete)
+    .map((row): RankedUniversalCatalogCandidate => {
+      const name = normalizedEnglish(row.nameEn);
+      const nameTokens = phraseTokens(name);
+      const reasons: string[] = [];
+      let score = 0;
+      if (name === normalizedQuery) {
+        score += 1_000;
+        reasons.push('exact_name');
+      } else if (name.startsWith(normalizedQuery)) {
+        score += 760;
+        reasons.push('prefix_name');
+      } else if (name.includes(normalizedQuery)) {
+        score += 600;
+        reasons.push('contains_phrase');
+      } else {
+        const coverage = tokenCoverage(queryTokens, nameTokens);
+        score += coverage * 420;
+        if (coverage > 0) reasons.push(`token_coverage:${coverage.toFixed(2)}`);
+      }
+
+      score += Math.min(150, Math.max(0, -row.bm25 * 8));
+      score += 18;
+      reasons.push('complete_macros');
+      if (row.portionCount > 0) {
+        score += Math.min(12, row.portionCount * 2);
+        reasons.push('has_portions');
+      }
+      if (querySuggestsPrepared && row.sourceType === 'fndds') {
+        score += 35;
+        reasons.push('consumed_food_source');
+      }
+      if (querySuggestsAtomic && row.sourceType === 'sr_legacy') {
+        score += 25;
+        reasons.push('atomic_food_source');
+      }
+      if (!querySuggestsPrepared && row.sourceType === 'fndds' && /\b(raw|cooked|fried|boiled|grilled)\b/.test(name)) {
+        score += 8;
+      }
+      for (const term of UNCOMMON_PROCESS_TERMS) {
+        if (name.includes(term) && !normalizedQuery.includes(term)) {
+          score -= 45;
+          reasons.push(`unrequested_process:${term}`);
+        }
+      }
+      if (/\b(raw|fresh)\b/.test(name) && !/\b(dried|frozen|pasteurized)\b/.test(name)) {
+        score += 12;
+        reasons.push('common_fresh_form');
+      }
+      score -= Math.max(0, name.length - normalizedQuery.length) * 0.08;
+      return { ...row, score: Math.round(Math.max(0, score) * 100) / 100, reasons };
+    })
+    .filter((row) => row.score > 0)
+    .sort((left, right) =>
+      right.score - left.score
+      || left.nameEn.length - right.nameEn.length
+      || left.id.localeCompare(right.id),
+    )
+    .slice(0, limit);
+}
+
+export function normalizedAliasKey(value: string): string {
+  return normalizePersianText(value);
+}
+
+export function containsNormalizedAlias(normalizedQuery: string, normalizedAlias: string): boolean {
+  if (!normalizedAlias) return false;
+  const query = ` ${normalizePersianText(normalizedQuery)} `;
+  const alias = ` ${normalizePersianText(normalizedAlias)} `;
+  return query.includes(alias);
+}
+
+export function buildPersianAliasIndex(rows: readonly PersianAliasRecord[]): PersianAliasIndex {
+  const exact = new Map<string, PersianAliasRecord[]>();
+  const compactExact = new Map<string, PersianAliasRecord[]>();
+  for (const row of rows) {
+    const key = normalizedAliasKey(row.aliasFa);
+    if (!key) continue;
+    const values = exact.get(key) ?? [];
+    values.push(row);
+    exact.set(key, values);
+
+    const compactKey = compactAliasKey(row.aliasFa);
+    if (compactKey.length >= 4) {
+      const compactValues = compactExact.get(compactKey) ?? [];
+      compactValues.push(row);
+      compactExact.set(compactKey, compactValues);
+    }
+  }
+  const longestFirst = [...exact.entries()]
+    .sort((left, right) => right[0].length - left[0].length || left[0].localeCompare(right[0]));
+  return { exact, compactExact, longestFirst };
+}
+
+export function matchPersianAliasRecords(
+  query: string,
+  index: PersianAliasIndex,
+): readonly PersianAliasRecord[] {
+  const normalizedQuery = normalizedAliasKey(query);
+  if (!normalizedQuery) return [];
+  const exact = index.exact.get(normalizedQuery);
+  if (exact?.length) return exact;
+  const contained = index.longestFirst.find(([key]) => containsNormalizedAlias(normalizedQuery, key));
+  if (contained?.[1].length) return contained[1];
+  const compact = index.compactExact.get(compactAliasKey(query));
+  return compact ?? [];
+}
