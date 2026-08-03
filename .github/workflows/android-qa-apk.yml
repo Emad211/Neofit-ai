@@ -52,7 +52,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
 
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
