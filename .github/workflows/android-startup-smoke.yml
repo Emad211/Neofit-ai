@@ -1,0 +1,155 @@
+name: Android Release Startup Smoke
+
+on:
+  pull_request:
+    branches:
+      - agent/iranian-food-kb-foundation
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/android-startup-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-startup-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  startup-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      CI: '1'
+      EXPO_NO_TELEMETRY: '1'
+      GRADLE_OPTS: '-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx4g'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install locked dependencies
+        working-directory: mobile
+        run: npm ci --no-audit --no-fund
+
+      - name: Validate before native build
+        working-directory: mobile
+        run: |
+          npm test
+          npm run typecheck
+          npm run doctor
+
+      - name: Generate Android native project
+        working-directory: mobile
+        run: npx expo prebuild --platform android --clean --no-install
+
+      - name: Build standalone release APK
+        working-directory: mobile
+        run: |
+          chmod +x android/gradlew
+          android/gradlew -p android assembleRelease --no-daemon --stacktrace
+          test -s android/app/build/outputs/apk/release/app-release.apk
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Launch release APK and capture startup evidence
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back emulated
+          disable-animations: true
+          script: |
+            set +e
+            OUT="$GITHUB_WORKSPACE/build/startup-smoke"
+            APK="$GITHUB_WORKSPACE/mobile/android/app/build/outputs/apk/release/app-release.apk"
+            PACKAGE='com.emad211.neofit'
+            mkdir -p "$OUT"
+            adb wait-for-device
+            adb logcat -c
+            adb install -r "$APK" > "$OUT/install.txt" 2>&1
+            INSTALL_STATUS=$?
+            echo "installStatus=$INSTALL_STATUS" > "$OUT/result.txt"
+            adb shell am force-stop "$PACKAGE"
+            adb shell monkey -p "$PACKAGE" -c android.intent.category.LAUNCHER 1 > "$OUT/launch.txt" 2>&1
+            LAUNCH_STATUS=$?
+            echo "launchStatus=$LAUNCH_STATUS" >> "$OUT/result.txt"
+
+            SEEN=0
+            DIED=0
+            FINAL_PID=''
+            for SECOND in $(seq 1 60); do
+              PID="$(adb shell pidof "$PACKAGE" 2>/dev/null | tr -d '\r')"
+              printf '%s\t%s\n' "$SECOND" "${PID:-none}" >> "$OUT/process-timeline.tsv"
+              if [ -n "$PID" ]; then
+                SEEN=1
+                FINAL_PID="$PID"
+              elif [ "$SEEN" -eq 1 ]; then
+                DIED=1
+                break
+              fi
+              sleep 1
+            done
+
+            adb shell dumpsys activity activities > "$OUT/activities.txt" 2>&1
+            adb shell dumpsys activity top > "$OUT/activity-top.txt" 2>&1
+            adb shell dumpsys meminfo "$PACKAGE" > "$OUT/meminfo.txt" 2>&1
+            adb shell dumpsys package "$PACKAGE" > "$OUT/package.txt" 2>&1
+            adb shell dumpsys dropbox --print data_app_crash > "$OUT/dropbox-data-app-crash.txt" 2>&1
+            adb shell dumpsys dropbox --print system_app_crash > "$OUT/dropbox-system-app-crash.txt" 2>&1
+            adb logcat -d -v threadtime > "$OUT/logcat-full.txt" 2>&1
+            grep -E 'AndroidRuntime|FATAL EXCEPTION|ReactNativeJS|libc|DEBUG|OutOfMemory|ANR|com\.emad211\.neofit|Application initialization failed' "$OUT/logcat-full.txt" > "$OUT/logcat-focused.txt" 2>/dev/null || true
+            adb exec-out screencap -p > "$OUT/screenshot.png" 2>/dev/null || true
+            adb shell uiautomator dump /sdcard/neofit-window.xml > "$OUT/uiautomator-command.txt" 2>&1 || true
+            adb pull /sdcard/neofit-window.xml "$OUT/window.xml" > "$OUT/uiautomator-pull.txt" 2>&1 || true
+
+            echo "seen=$SEEN" >> "$OUT/result.txt"
+            echo "died=$DIED" >> "$OUT/result.txt"
+            echo "finalPid=${FINAL_PID:-none}" >> "$OUT/result.txt"
+            if [ "$INSTALL_STATUS" -ne 0 ]; then
+              echo 'status=install_failed' >> "$OUT/result.txt"
+            elif [ "$SEEN" -eq 0 ]; then
+              echo 'status=never_started' >> "$OUT/result.txt"
+            elif [ "$DIED" -eq 1 ]; then
+              echo 'status=crashed' >> "$OUT/result.txt"
+            else
+              echo 'status=alive_after_60s' >> "$OUT/result.txt"
+            fi
+            cat "$OUT/result.txt"
+
+      - name: Upload startup diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-android-startup-smoke
+          path: build/startup-smoke
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce startup survival
+        if: always()
+        shell: bash
+        run: |
+          test -s build/startup-smoke/result.txt
+          cat build/startup-smoke/result.txt
+          grep -q '^status=alive_after_60s$' build/startup-smoke/result.txt
