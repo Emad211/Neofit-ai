@@ -30,11 +30,12 @@ The `Android QA APK` workflow must pass all of the following before an APK is ac
 - Expo Doctor;
 - strict TypeScript;
 - clean Expo Android prebuild;
-- Gradle `assembleDebug`;
+- Gradle `assembleRelease`;
+- embedded JavaScript/assets so the app starts without Metro;
 - non-empty installable APK;
-- SHA-256 and build metadata generation.
+- directly usable SHA-256 file and build metadata.
 
-The QA artifact is a universal debug-signed APK intended only for testing. It is not a Play Store production binary.
+The QA artifact uses the Android release variant so JavaScript and assets are embedded, but it is signed with the generated development/debug keystore. It is intended only for direct device testing and is not a Play Store production binary.
 
 ## Required physical devices
 
@@ -51,7 +52,7 @@ Prefer one mid-range Samsung-class phone and one device from another vendor or A
 
 ### 1. Install and startup
 
-- Install the APK without development tools.
+- Install the APK directly, without Metro or development tools.
 - Verify first launch, language selection, profile creation, and database seeding.
 - Close and reopen the app twice; no duplicate seed or migration records may appear.
 
@@ -123,8 +124,8 @@ Use one deliberately invalid backup and verify rollback leaves the existing data
 
 Stage 9 is complete only when:
 
-- the APK workflow is green;
-- the APK SHA-256 is recorded;
+- the standalone APK workflow is green;
+- the APK SHA-256 is recorded and verifies with `sha256sum -c neofit-stage9-qa.apk.sha256` from the artifact directory;
 - both physical-device rows are completed;
 - no release-blocking issue remains in AvalAI key handling, Vision/LLM, backup/restore, migration, RTL, accessibility, or performance.
 
