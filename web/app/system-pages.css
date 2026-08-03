@@ -1,0 +1,108 @@
+.system-page {
+  display: grid;
+  place-items: center;
+  min-block-size: 100svh;
+  padding: 32px 20px;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(217, 164, 65, 0.14), transparent 34%),
+    linear-gradient(180deg, #f7faf5, #edf2eb);
+  color: #172019;
+}
+
+.system-card {
+  display: grid;
+  justify-items: center;
+  inline-size: min(100%, 430px);
+  padding: 32px 24px;
+  border: 1px solid #dce4da;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 55px rgba(20, 35, 27, 0.12);
+  text-align: center;
+}
+
+.system-mark {
+  display: grid;
+  place-items: center;
+  inline-size: 64px;
+  block-size: 64px;
+  margin-block-end: 16px;
+  border-radius: 20px;
+  background: #dceee4;
+  color: #176b47;
+  font-size: 1.6rem;
+  font-weight: 900;
+}
+
+.system-card h1 {
+  margin: 0;
+  font-size: 1.45rem;
+  line-height: 1.45;
+}
+
+.system-card p {
+  margin: 10px 0 22px;
+  color: #637068;
+  font-size: 0.93rem;
+}
+
+.system-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 48px;
+  padding-inline: 22px;
+  border: 0;
+  border-radius: 16px;
+  background: #176b47;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.system-secondary {
+  margin-block-start: 12px;
+  color: #176b47;
+  font-size: 0.85rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.loading-card {
+  align-content: center;
+  gap: 14px;
+  min-block-size: 260px;
+}
+
+.loading-bar {
+  inline-size: 100%;
+  block-size: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e7eee4;
+}
+
+.loading-bar::after {
+  content: '';
+  display: block;
+  inline-size: 42%;
+  block-size: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, #8dbba0, transparent);
+  animation: system-loading 1.15s ease-in-out infinite;
+}
+
+.loading-bar.is-short {
+  inline-size: 62%;
+}
+
+@keyframes system-loading {
+  from { transform: translateX(180%); }
+  to { transform: translateX(-260%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-bar::after { animation: none; }
+}
