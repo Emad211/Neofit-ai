@@ -2,60 +2,50 @@
 
 **نقش سند:** حافظهٔ عملیاتی و شواهد توسعه  
 **همراه اجباری:** `docs/NEOFIT_MASTER_PLAN.md`  
-**آخرین به‌روزرسانی:** ۴ اوت ۲۰۲۶ — Stage 3 Batch 1 پس از Review fixes
+**آخرین به‌روزرسانی:** ۴ اوت ۲۰۲۶ — Stage 3 Batch 2 initial parity
 
-## روش اجباری استفاده
+## پروتکل
 
 در شروع هر نوبت:
 
 1. پلن مادر کامل خوانده شود.
 2. این دفتر کامل خوانده شود.
-3. Branch، HEAD، PR، Issue، CI، Review، Vercel و Supabase از ابزارهای واقعی بررسی شوند.
-4. فقط Exact continuation point ثبت‌شده اجرا شود.
+3. Branch/HEAD/PR/Issue/CI/Review/Vercel/Supabase از منبع واقعی بررسی شود.
+4. فقط Exact continuation point اجرا شود.
 
-در پایان هر نوبت، Entry جدید باید هدف، شواهد، Commitها، تست‌ها، مشکلات، تصمیم‌ها و نقطهٔ ادامه را ثبت کند.
-
----
-
-## نمای کلی مراحل
-
-| Stage | عنوان | وضعیت | شواهد اصلی |
-|---|---|---|---|
-| 0 | Pivot و Freeze | انجام‌شده | PR #12، `151de2c0d5c9b02602c2f89eb4df808653cdd74e` |
-| 1 | UX فارسی/RTL | انجام‌شده و پذیرفته‌شده | PR #13، `a458a27a2685bfa7d85ea28686b3182c3167d747` |
-| 2A | PWA Code Foundation | انجام‌شده | PR #15، `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b` |
-| 2B | Vercel Preview/HTTPS | تعویق‌شده و باز | Issue #16؛ محدودیت روزانه با Vercel bot تأیید شد |
-| 3 | Nutrition Core parity | فعال؛ Batch 1 آمادهٔ Merge | Issue #17، PR #18، CI `30857414434` |
-| 4 | Supabase Foundation | شروع‌نشده | منتظر پایان Stage 3 و تأیید هزینه |
-| 5 | Nutrition vertical slice | شروع‌نشده | — |
-| 6 | AvalAI/Vision | شروع‌نشده | — |
-| 7 | Offline catalog/Sync | شروع‌نشده | — |
-| 8 | Migration/Recovery | شروع‌نشده | — |
-| 9 | Web RC | شروع‌نشده | Issue #16 باید قبل از RC بسته شود |
+در پایان هر نوبت باید هدف، شواهد، Commitها، تست‌ها، مشکلات، تصمیم‌ها و نقطهٔ ادامه ثبت شود.
 
 ---
 
-## Entry 000 — بازسازی وضعیت پیش از وب
+## نمای کلی
+
+| Stage | وضعیت | شواهد |
+|---|---|---|
+| 0 — Pivot/Freeze | انجام‌شده | PR #12، Merge `151de2c0d5c9b02602c2f89eb4df808653cdd74e` |
+| 1 — Persian RTL UX | انجام‌شده و پذیرفته‌شده | PR #13، Merge `a458a27a2685bfa7d85ea28686b3182c3167d747` |
+| 2A — PWA code | انجام‌شده | PR #15، Merge `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b` |
+| 2B — Vercel HTTPS | تعویق‌شده | Issue #16؛ محدودیت روزانه با Vercel bot تأیید شده |
+| 3 — Nutrition Core parity | فعال؛ Batch 1 merged، Batch 2 سبز | Issue #17، PR #19 |
+| 4 — Supabase | شروع‌نشده | منتظر پایان Stage 3 و تأیید هزینه |
+| 5–9 | شروع‌نشده | طبق پلن مادر |
+
+---
+
+## Entry 000 — بازسازی Native/IFKB و Pivot
 
 **تاریخ:** ۳ اوت ۲۰۲۶  
-**مرجع Native/IFKB:** `648b98cdc921beb26ccd0ff05a1f17944bb6f71d`
+**مرجع:** `agent/iranian-food-kb-foundation` @ `648b98cdc921beb26ccd0ff05a1f17944bb6f71d`
 
-- Android پس از Fixهای SQLite/Seed اجرا شد.
-- IFKB و Nutrition RC به‌عنوان دارایی علمی حفظ شدند.
-- UX Native از سوی مالک محصول رد شد.
-- مهاجرت به Next.js PWA، Vercel و Supabase ثبت شد.
-- PR #12 مسیر جدید را تثبیت کرد.
+- Nutrition RC و IFKB حفظ شدند.
+- UX Native رد شد و Web/PWA pivot ثبت شد.
+- PR #12 مسیر جدید را Merge کرد.
 
 ---
 
-## Entry 001 — Batch اول Stage 1
-
-**تاریخ:** ۳ اوت ۲۰۲۶  
-**Branch:** `stage1/persian-rtl-ux`
+## Entry 001 — Stage 1 Batch 1
 
 - دو سند دائمی ساخته شدند.
-- `web/` با Next.js App Router و TypeScript strict ساخته شد.
-- Today، Nutrition Search، Meal Sheet، Weekly Plan و Settings ساخته شدند.
+- Next.js App Router، TypeScript strict، Today، Search، Meal sheet، Plan و Settings ساخته شدند.
 - TypeScript روی `6.0.3` قفل شد.
 - CI `30827034439` پاس شد.
 
@@ -63,273 +53,253 @@
 
 ## Entry 002 — Visual QA و پذیرش Stage 1
 
-مشکلات واقعی:
+Fixهای واقعی:
 
-- Banner توسعهٔ برجسته
-- عنوان تکراری
-- فونت fallback
-- Screenshot گمراه‌کننده
-- حفظ Scroll هنگام Navigation
-
-Fixها:
-
-- Playwright Visual QA
-- Vazirmatn Self-hosted
-- hierarchy/spacing اصلاح‌شده
-- Screenshotهای viewport-based
+- حذف Banner توسعه و عنوان تکراری
+- Vazirmatn self-hosted
+- viewport screenshots
 - Scroll reset و Regression test
 
 شواهد:
 
-- CI `30829629853` — success
+- CI `30829629853`
 - Artifact `8862378720`
 - Digest `sha256:7c9c86100355743a262d41ae6233e1513c804bd0792b19ff5eff5946c49c98e4`
-- Visual QA در ۳۶۰/۳۹۰/۴۱۲px بدون Overflow
-
-Stage 1 پذیرفته و PR #13 با Merge `a458a27a2685bfa7d85ea28686b3182c3167d747` بسته شد.
+- 360/390/412px بدون overflow
+- Merge Stage 1: `a458a27a2685bfa7d85ea28686b3182c3167d747`
 
 ---
 
-## Entry 003 — ساخت Stage 2 PWA Foundation
-
-**تاریخ:** ۳ تا ۴ اوت ۲۰۲۶  
-**Branch:** `stage2/pwa-vercel-foundation`  
-**Issue:** #14  
-**PR:** #15
+## Entry 003 — Stage 2 PWA Foundation
 
 ساخته‌شده:
 
-- Manifest فارسی/RTL و Standalone
-- Icon generator و Iconهای PWA
-- Service Worker app shell
-- API/Auth/Authorization/Mutation/Cross-origin exclusion
-- Offline/system boundaries
-- Environment contract و `vercel.json`
-- Web CI، PWA Runtime verification و Source bundle
+- Persian RTL manifest
+- deterministic icons
+- Service Worker
+- offline/system boundaries
+- environment contract و `vercel.json`
+- Web CI و PWA runtime verification
 
-Validation اولیه:
-
-- CI `30849445243` — success
-- Artifact `8870015510`
+Initial CI `30849445243` پاس شد.
 
 ---
 
-## Entry 004 — Correction Vercel و بستن P1 Offline
+## Entry 004 — Offline P1 و Vercel correction
 
-**تاریخ:** ۴ اوت ۲۰۲۶
+Vercel state:
 
-وضعیت مستقیم Vercel:
+- Team `Emad's projects`
+- Project `neofit-ai`
+- ID `prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG`
+- Deployment count صفر
 
-- Team: `Emad's projects`
-- Project: `neofit-ai`
-- Project ID: `prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG`
-- Deployment count: صفر
-- `latestDeployment`: null
+P1 Service Worker:
 
-در این مقطع، خطای سهمیه در ابزار مستقیم قابل‌بازتولید نبود و به‌درستی از حالت ادعای قطعی خارج شد. در Entry 006، Vercel bot بعداً شواهد مستقیم محدودیت را ثبت کرد.
-
-P1 Offline:
-
-- `40d07107da46f239da9c95404b0f02b5fe662b94`: Precache گراف HTML/JS/CSS/Font
-- `0bb0278f50312819029445c20dd5823ee8c719ed`: تست مستقیم Fresh-install Offline با HTTP cache خالی
+- Build asset graph در Install precache شد.
+- Browser HTTP cache قبل از Offline test پاک شد.
+- Offline React navigation تست شد.
 
 شواهد:
 
-- Web CI `30853438059` — success
+- Web CI `30853438059`
 - Artifact `8871529505`
 - Digest `sha256:7f50f89a15c37871bbafda95d3cea6e105ab5c0a344f9f408b5f5fe787823c77`
-- Offline React navigation: pass
-- Cached `/api`: zero
-- Review P1: resolved
+
+بعداً `vercel[bot]` مستقیماً خطای `api-deployments-free-per-day` با «more than 100» را ثبت کرد؛ این مدرک در Issue #16 نگه‌داری می‌شود.
 
 ---
 
-## Entry 005 — تفکیک Stage 2A/2B و Merge PWA
+## Entry 005 — تفکیک Stage 2A/2B
 
-**تاریخ:** ۴ اوت ۲۰۲۶  
-**درخواست مالک:** Vercel فعلاً کنار گذاشته شود و توسعهٔ مستقل ادامه پیدا کند.
+درخواست مالک: Vercel فعلاً مانع سایر توسعه نباشد.
 
-تصمیم:
-
-- Stage 2A: PWA Code Foundation
-- Stage 2B: Vercel Preview/HTTPS validation
-
-اقدام‌ها:
-
-- Issue #16 برای Stage 2B ساخته شد و باز ماند.
-- Final Stage 2A CI `30856060076` پاس شد.
-- PR #15 با Merge commit `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b` وارد `web/pwa-foundation` شد.
-- Issue #14 completed بسته شد.
-- Stage 2B دیگر Stage 3 را Block نمی‌کند، ولی پیش از Web RC اجباری است.
+- Stage 2A PWA code با PR #15 و Merge `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b` بسته شد.
+- Issue #14 بسته شد.
+- Stage 2B در Issue #16 باز ماند و پیش‌شرط Web RC است.
 
 ---
 
-## Entry 006 — Stage 3 Batch 1: Pure Core و Golden parity
+## Entry 006 — Stage 3 Batch 1: Pure arithmetic/domain
 
-**تاریخ/زمان:** ۴ اوت ۲۰۲۶، حدود ۰۱:۲۰ تا ۰۱:۴۰ ایران  
 **Issue:** #17  
 **Branch:** `stage3/nutrition-core-parity`  
-**PR:** #18  
-**Branch base:** `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b`
+**PR:** #18
+
+Authority:
+
+- Frozen Mobile head `648b98cdc921beb26ccd0ff05a1f17944bb6f71d`
+- Mobile test Blob `2291e1958efe5e17010230c5864c9fadc9bc47ba`
+
+Extracted:
+
+- types
+- nutrition arithmetic
+- recipe
+- diary
+- goals
+- schema version 1
+- AST pure-boundary verifier
+
+Policies:
+
+- 15-significant-digit canonicalization
+- display rounding separate
+- missing != zero
+- unknown grams = null
+- fail-closed gram basis
+
+Review fixes:
+
+- Regex boundary replaced by TypeScript AST parser covering static/side-effect/dynamic/CommonJS/re-export imports.
+- stale handoff documents corrected.
+
+Final evidence:
+
+- final head `7861c4f56f0474b61d8dd9b3a7101e6b616b524d`
+- Nutrition Core CI `30857715438`
+- Artifact `8873108322`
+- Digest `sha256:de0197b9ae9762a921a32c13071701064863aef8e77e612fb2e35bd49893d25f`
+- Web CI `30857715413`
+- 10/10 tests pass
+- PR #18 Merge `c9599c4905f9fc1d28ba7e9086edf20376991740`
+
+---
+
+## Entry 007 — Stage 3 Batch 2: Controlled Persian Search/Ranking
+
+**تاریخ/زمان:** ۴ اوت ۲۰۲۶، حدود ۰۱:۵۰ ایران  
+**Branch:** `stage3/search-ranking-parity`  
+**PR:** #19  
+**Base:** `c9599c4905f9fc1d28ba7e9086edf20376991740`  
+**Initial green head:** `a7807a212315feca656c4ed88dd746cb6be752ce`
 
 ### هدف
 
-1. Inventory واقعی Mobile/IFKB قبل از Extraction.
-2. تعیین Pure-domain boundary.
-3. ساخت Package مستقل بدون ابزار Monorepo سنگین.
-4. قفل‌کردن Golden behavior و numeric/missing policy.
-5. اثبات Parity در CI.
+1. استخراج دقیق Persian normalization، modifiers و local search.
+2. استخراج Alias routing و Universal SR/FNDDS ranking.
+3. Freeze کردن ادعای Controlled benchmark و جلوگیری از ادعای Natural NLU.
+4. ساخت Golden subset نماینده از Release رسمی.
 
 ### Authority خوانده‌شده
 
-- `docs/NEOFIT_NUTRITION_FINAL_SCOPE_V3.md`
-- `mobile/README.md`
-- `mobile/tsconfig.json`
-- `mobile/src/nutrition-core/index.ts`
-- `types.ts`, `nutrition.ts`, `recipe.ts`, `diary.ts`, `goals.ts`
-- `search.ts`, `catalog-release.ts`, `catalog-provenance.ts`
-- `legacy-catalog-adapter.ts`
-- `universal-catalog-ranking.ts`
-- `universal-food-estimate.ts`
+- `mobile/src/nutrition-core/search.ts`
+  - Blob `bb99c934beeed5094da7e0a29a8f53635ace48b3`
+- `mobile/src/nutrition-core/universal-catalog-ranking.ts`
+  - Blob `9b23b1ef7d6817ff2b946e1fdedcad76608279e1`
 - `mobile/tests/nutrition-core.test.ts`
+  - Blob `2291e1958efe5e17010230c5864c9fadc9bc47ba`
+- Alias registry
+  - Blob `94429b1937edc6234b23fc8398531b531a891cc2`
+- Search workflow
+  - Blob `a398cfe3feb493c17721bbf6ea59e1f81f2a6857`
+- evaluator
+  - Blob `54cdb9857d4412e43991045a3b6d76fe8abdc549`
+- generator
+  - Blob `e8683a1fcb88d4578a2b4e5adca8692534bec9f6`
+- SQLite candidate preparer
+  - Blob `b75de4558100e87a31fa4fc9181a54f51f335702`
+- benchmark manifest
+  - Blob `24a1d20effe679b23e4ee4966d0bdb01f2b06ec0`
+- Natural corpus validator
+  - Blob `221de26f9e6ba99a5f76014ee85957092baacdc5`
+- Natural release README
+  - Blob `143be5c17c409ba42c25b65c51eb016c320199ea`
 
-### یافتهٔ معماری
+### مرز ادعا
 
-Mobile از قبل `mobile/src/nutrition-core/` دارد. بنابراین Stage 3 بازنویسی نیست؛ Extraction کنترل‌شده و اثبات Parity است.
+Controlled Release رسمی:
 
-ماژول‌های Batch 1 بدون React، React Native، Expo، SQLite، UI، فایل‌سیستم یا شبکه هستند:
+- version `1.1.0`
+- catalog `1.2.0`
+- database SHA `0164cb344c22eeec2556f9decdf13931e700078a9566bd884609edee78667247`
+- aliases 218
+- cases 500
+- Route/Top-1/Top-5 = 1.0
+- failures 0
+- Artifact `8660666147`
+- Digest `sha256:d43931525ade2f1b685b18647d1554cc317f14bd8874ed66fe5c85370454fbde`
 
-- `types`
-- `nutrition`
-- `recipe`
-- `diary`
-- `goals`
+این Corpus از Alias registry تولید شده است و Natural Query evidence نیست.
 
-Search، ranking، provenance، release، legacy adapter و Universal estimate برای جلوگیری از PR بزرگ به Batchهای بعد منتقل شدند.
+Independent Natural Query corpus هنوز Release نشده است. Generated aliases/model paraphrases قابل‌قبول نیستند و Release آینده نیازمند privacy review، دو annotator و adjudicator است.
 
-### Numeric policy
+### Extracted files
 
-- canonicalization: ۱۵ رقم معنادار
-- display rounding جداگانه
-- `-0` به صفر
-- per-100g basis دقیقاً 100g
-- Gram calculation با وزن نامعلوم fail-closed
+- `packages/nutrition-core/src/search.ts`
+- `packages/nutrition-core/src/universal-catalog-ranking.ts`
+- exportهای Package
+- `docs/NEOFIT_SEARCH_RANKING_AUTHORITY_MAP.md`
+- `packages/nutrition-core/tests/search-ranking-golden-v1.ts`
+- `packages/nutrition-core/tests/search-ranking-parity.test.ts`
+- CI provenance metadata برای Search Release
+- README Package به‌روز شد.
 
-### Missing policy
+### Golden coverage
 
-- absence یعنی unknown، نه zero
-- وزن نامعلوم `null`
-- strict aggregate با nutrient ناقص آن nutrient را حذف می‌کند
-- Recipe/Diary وزن نامعلوم را propagate می‌کنند
-- Goal progress برای consumed نامعلوم ratio/remaining را null نگه می‌دارد
+تمام ۹ variation رسمی:
 
-### فایل‌های ساخته‌شده
+1. exact alias
+2. quantity context
+3. Arabic characters
+4. context sentence
+5. extra spacing
+6. half-space
+7. punctuation
+8. joined spacing
+9. trailing serving
 
-- `docs/NEOFIT_NUTRITION_CORE_AUTHORITY_MAP.md`
-- `packages/nutrition-core/package.json`
-- `packages/nutrition-core/tsconfig.json`
-- `packages/nutrition-core/README.md`
-- `packages/nutrition-core/src/index.ts`
-- `packages/nutrition-core/src/types.ts`
-- `packages/nutrition-core/src/nutrition.ts`
-- `packages/nutrition-core/src/recipe.ts`
-- `packages/nutrition-core/src/diary.ts`
-- `packages/nutrition-core/src/goals.ts`
-- `packages/nutrition-core/tests/mobile-rc-golden-v1.ts`
-- `packages/nutrition-core/tests/parity.test.ts`
-- `packages/nutrition-core/scripts/verify-pure-boundary.mjs`
-- `.github/workflows/nutrition-core-ci.yml`
+همچنین:
 
-### Source provenance
+- longest alias match
+- Iranian canonical precedence
+- modifier-aware local search
+- Generic target resolution
+- FTS sanitization
+- prepared query → FNDDS preference
+- atomic/raw query → SR Legacy preference
+- unrequested process penalty
+- macro-incomplete exclusion
+- stable ties
+- fail-closed invalid limits
 
-- Frozen reference head: `648b98cdc921beb26ccd0ff05a1f17944bb6f71d`
-- Mobile golden test Blob: `2291e1958efe5e17010230c5864c9fadc9bc47ba`
-- Types Blob: `55e0100964e32b392493dd604a12e0f845b7e5e7`
-- Nutrition Blob: `53ac392d69f351e145f51db140dd5701cdcbaeab`
-- Recipe Blob: `51784eb1a522eda8bee5b4ba394b67844c04db6c`
-- Diary Blob: `e297eed728a7457b9b46529a761e450bd647e97d`
-- Goals Blob: `16a2d91dfa173f88f3d56b26ce58aa679df25cf3`
+### Initial validation
 
-### CI و Parity اولیه
-
-- Implementation head: `f11b1ec84355d1311ce53d877163ec66b965611f`
-- Run: `30856939220` — success
-- Artifact: `8872828407`
-- Digest: `sha256:c064cd3d53a1f7b31ad12eeb2f11c54a8a098acce3f768a3ae12c53904ada24a`
-- Tests: 10، Pass: 10، Fail: 0، Skip: 0
-
-### Review findings و Fixها
-
-#### P2 — Boundary Regex ناقص
-
-Review نشان داد `import 'node:fs'` و `await import('node:https')` از Regex اولیه عبور می‌کنند.
-
-Fix:
-
-- Commit `2aa93ab03384bcb839ef57615870f6af448b55ba`: AST-based boundary verifier
-- Commit `dee683d9c6467dd35be6cd50d8138bbc7962b6d5`: Package boundary script
-- Commit `af55b7de4382a9a00814628a744393471817bb61`: CI استفاده از Parser
-
-Parser این فرم‌ها را بررسی می‌کند:
-
-- static imports
-- side-effect imports
-- dynamic `import()`
-- `require()`
-- import-equals
-- re-exports
-
-و Moduleهای React/Expo/SQLite/Next/Supabase/Node I/O و Runtime accessهای Network/Storage/Environment را رد می‌کند.
-
-#### P2 — Handoff اسناد stale
-
-- `docs/NEOFIT_MASTER_PLAN.md` و `docs/NEOFIT_PROGRESS_LOG.md` با Stage 2A merge، Stage 3 state، Batch 1 evidence و Search/Ranking continuation به‌روزرسانی شدند.
-
-هر دو Review thread resolved شدند.
-
-### CI نهایی Review fix
-
-- Head: `af55b7de4382a9a00814628a744393471817bb61`
-- Nutrition Core CI: `30857414434` — success
-- Artifact: `8872996869`
-- Digest: `sha256:3e0705c69767bf2cd69e71c113c8407bf1fccf5ccb35cb130f4a1f3aa3d6f95e`
-- AST boundary: pass
+- Nutrition Core CI `30858434028` — success
+- Artifact `8873368541`
+- Digest `sha256:3fed8d5c491184280437d34f135fdc1323f3c68998a0cebeccebf911ac28ad9c`
+- AST boundary: 8 source files pass
 - TypeScript: pass
-- Golden tests: 10/10 pass
+- total tests: 25
+- pass: 25
+- fail/skipped: 0
+- Review thread در زمان ثبت: ندارد
 
-### شواهد قطعی جدید Vercel
+### محدودیت‌ها
 
-`vercel[bot]` روی PR #18 گزارش داد:
-
-`Resource is limited - try again in 24 hours (more than 100, code: "api-deployments-free-per-day").`
-
-بنابراین محدودیت روزانه اکنون با منبع مستقیم Vercel اثبات شده است. در Issue #16 ثبت شد. هیچ Preview موفقی ادعا نمی‌شود و Stage 3 متوقف نمی‌شود.
-
-### مشکلات/محدودیت‌ها
-
-- Sparse checkout محلی به‌دلیل DNS محیط اجرا نشد؛ Inventory از GitHub Contents API متصل انجام شد.
-- Search/ranking و SQLite equivalence هنوز Extract نشده‌اند.
-- Web هنوز از Package جدید استفاده نمی‌کند.
-- Stage 3 کامل نشده و Issue #17 باز می‌ماند.
-- Supabase، Auth و AI واقعی شروع نشده‌اند.
+- Full 500-query benchmark در این Package اجرا نشد؛ Authority آن Pipeline واقعی IFKB + SQLite است.
+- Natural Query accuracy اثبات نشده است.
+- typo/colloquial/regional/ambiguity/abstention metrics نداریم.
+- Catalog release/provenance و Universal estimate هنوز منتقل نشده‌اند.
+- Web هنوز از Package استفاده نمی‌کند.
+- Supabase/Auth/AI شروع نشده‌اند.
 
 ### تصمیم‌ها
 
-- Batchهای Stage 3 کوچک و مستقل Merge می‌شوند.
-- اختلاف با Mobile باید Fail/Parity report شود؛ silent fix ممنوع است.
-- Search/Ranking بدون Golden corpus وارد Package نمی‌شود.
-- Web adapter فقط پس از تکمیل Pure Core ساخته می‌شود.
-- Issue #16 پیش از Web RC اجباری است، نه پیش از Batchهای Core.
+- Representative Golden tests مکمل Full benchmark هستند، نه جایگزین آن.
+- هر تغییر Alias/Catalog/normalization/ranking باید Full IFKB benchmark را دوباره اجرا کند.
+- Natural Query claim فقط با Corpus مستقل و privacy-reviewed مجاز است.
+- Batch 3 قبل از extraction باید manifest/fingerprint/legacy adapter authority را Freeze کند.
 
 ### Exact continuation point
 
-1. CI اسناد روی Head نهایی بررسی شود.
-2. PR #18 با expected head Merge شود.
-3. Issue #17 باز بماند و Batch 1 completed ثبت شود.
-4. Branch Batch 2 از Merge commit ساخته شود.
-5. Persian Search authority و benchmark manifests خوانده شوند.
-6. Golden corpus برای normalization، modifiers، aliases و SR/FNDDS ranking ساخته شود.
-7. `search.ts` و `universal-catalog-ranking.ts` فقط پس از سبزشدن Golden parity منتقل شوند.
-8. هر دو سند در پایان Batch 2 دوباره Update شوند.
+1. Nutrition Core CI و Web CI روی Head اسناد نهایی پاس شوند.
+2. Reviewهای PR #19 بررسی و رفع شوند.
+3. PR #19 با expected head Merge شود.
+4. Issue #17 باز بماند و Batch 2 completed ثبت شود.
+5. Branch Batch 3 از Merge commit ساخته شود.
+6. `catalog-release.ts`, `catalog-provenance.ts`, `legacy-catalog-adapter.ts` و تست‌های release/fingerprint/migration Inventory شوند.
+7. Golden fixtureهای Batch 3 پیش از کد ساخته شوند.
+8. هر دو سند بعد از Batch 3 دوباره Update شوند.
 
-**Issue #16 باز است. Supabase، Auth و AI واقعی هنوز ممنوع‌اند.**
+**Issue #16 باز است. Supabase، Auth، AI واقعی و Web adapter هنوز ممنوع‌اند.**
