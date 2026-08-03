@@ -1,6 +1,8 @@
+import '@fontsource-variable/vazirmatn/wght.css';
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
+import './refinements.css';
 
 export const metadata: Metadata = {
   title: 'NeoFit | نئوفیت',
