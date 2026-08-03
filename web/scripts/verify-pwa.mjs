@@ -30,6 +30,8 @@ try {
     reducedMotion: 'reduce',
   });
   const page = await context.newPage();
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('Network.enable');
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
 
   const manifestResponse = await page.request.get(`${baseUrl}/manifest.webmanifest`);
@@ -69,37 +71,53 @@ try {
   });
   assert(registration.scope === `${baseUrl}/`, `Unexpected service-worker scope: ${registration.scope}`);
 
-  await page.reload({ waitUntil: 'networkidle' });
   await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
-  const controlled = await page.evaluate(() => Boolean(navigator.serviceWorker.controller));
-  assert(controlled, 'The page is not controlled by the service worker after reload.');
+  const controlledBeforeReload = await page.evaluate(() => Boolean(navigator.serviceWorker.controller));
+  assert(controlledBeforeReload, 'The initial client was not claimed by the installed service worker.');
 
   await page.evaluate(async () => {
     await fetch('/api/pwa-cache-probe').catch(() => undefined);
   });
-  const cachedRequests = await page.evaluate(async () => {
+  const cacheSnapshot = await page.evaluate(async () => {
     const result = [];
     for (const cacheName of await caches.keys()) {
       const cache = await caches.open(cacheName);
       for (const request of await cache.keys()) result.push(request.url);
     }
-    return result;
+    return result.sort();
   });
-  assert(!cachedRequests.some((url) => new URL(url).pathname.startsWith('/api/')), 'An API response entered the app-shell cache.');
+  assert(!cacheSnapshot.some((url) => new URL(url).pathname.startsWith('/api/')), 'An API response entered the app-shell cache.');
+  assert(cacheSnapshot.some((url) => new URL(url).pathname.endsWith('.js')), 'No JavaScript build asset was precached.');
+  assert(cacheSnapshot.some((url) => new URL(url).pathname.endsWith('.css')), 'No CSS build asset was precached.');
+  assert(
+    cacheSnapshot.some((url) => /\.(woff2?|ttf|otf)$/.test(new URL(url).pathname)),
+    'No font build asset was precached.',
+  );
 
+  await cdp.send('Network.clearBrowserCache');
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.getByRole('heading', { name: 'سلام عماد، روزت چطوره؟' }).waitFor({ state: 'visible' });
+
+  await page.getByRole('button', { name: 'تغذیه' }).click();
+  await page.getByRole('heading', { name: 'چه چیزی خوردی؟' }).waitFor({ state: 'visible' });
+  await page.getByRole('button', { name: 'امروز' }).click();
+  await page.getByRole('heading', { name: 'خلاصهٔ امروز' }).waitFor({ state: 'visible' });
+
   const offlineState = await page.evaluate(() => ({
     online: navigator.onLine,
     controlled: Boolean(navigator.serviceWorker.controller),
     lang: document.documentElement.lang,
     dir: document.documentElement.dir,
+    styleSheetCount: document.styleSheets.length,
+    scriptCount: document.scripts.length,
   }));
   assert(offlineState.online === false, 'Browser did not enter offline mode.');
   assert(offlineState.controlled, 'Offline page lost service-worker control.');
   assert(offlineState.lang === 'fa' && offlineState.dir === 'rtl', 'Offline shell lost Persian RTL metadata.');
-  await page.screenshot({ path: path.join(outputDir, 'offline-shell-390.png'), fullPage: false });
+  assert(offlineState.styleSheetCount > 0, 'Offline shell loaded without stylesheets.');
+  assert(offlineState.scriptCount > 0, 'Offline shell loaded without scripts.');
+  await page.screenshot({ path: path.join(outputDir, 'fresh-install-offline-shell-390.png'), fullPage: false });
 
   const report = {
     baseUrl,
@@ -113,10 +131,19 @@ try {
       iconCount: manifest.icons?.length ?? 0,
     },
     icons: iconReport,
-    serviceWorker: registration,
-    cachedRequestCount: cachedRequests.length,
-    cachedRequests,
-    offline: offlineState,
+    serviceWorker: {
+      ...registration,
+      controlledBeforeReload,
+    },
+    cache: {
+      requestCount: cacheSnapshot.length,
+      requests: cacheSnapshot,
+      hasJavaScript: cacheSnapshot.some((url) => new URL(url).pathname.endsWith('.js')),
+      hasCss: cacheSnapshot.some((url) => new URL(url).pathname.endsWith('.css')),
+      hasFont: cacheSnapshot.some((url) => /\.(woff2?|ttf|otf)$/.test(new URL(url).pathname)),
+      apiRequestCount: cacheSnapshot.filter((url) => new URL(url).pathname.startsWith('/api/')).length,
+    },
+    freshInstallOffline: offlineState,
   };
   await writeFile(path.join(outputDir, 'pwa-report.json'), `${JSON.stringify(report, null, 2)}\n`, 'utf8');
   console.log(JSON.stringify(report, null, 2));
