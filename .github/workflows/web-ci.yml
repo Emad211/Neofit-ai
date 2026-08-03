@@ -1,0 +1,130 @@
+name: Web CI
+
+on:
+  push:
+    branches:
+      - web/pwa-foundation
+      - stage2/pwa-vercel-foundation
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-ci.yml'
+      - 'docs/NEOFIT_MASTER_PLAN.md'
+      - 'docs/NEOFIT_PROGRESS_LOG.md'
+  pull_request:
+    branches:
+      - web/pwa-foundation
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-ci.yml'
+      - 'docs/NEOFIT_MASTER_PLAN.md'
+      - 'docs/NEOFIT_PROGRESS_LOG.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: web
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_VERCEL_ENV: preview
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: web/package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify product and PWA contracts
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'lang="fa" dir="rtl"' web/app/layout.tsx
+          grep -q '@fontsource-variable/vazirmatn' web/app/layout.tsx
+          grep -q 'manifest.webmanifest' web/app/layout.tsx
+          grep -q 'PwaRegister' web/app/layout.tsx
+          grep -q "url.pathname.startsWith('/api/')" web/public/sw.js
+          grep -q "request.headers.has('authorization')" web/public/sw.js
+          grep -q 'window.scrollTo' web/components/neofit-prototype.tsx
+          grep -q 'NEXT_PUBLIC_VERCEL_ENV' web/lib/environment.ts
+          test -s web/app/manifest.ts
+          test -s web/app/offline/page.tsx
+          test -s web/app/error.tsx
+          test -s web/app/global-error.tsx
+          test -s web/app/loading.tsx
+          test -s web/app/not-found.tsx
+
+      - name: TypeScript
+        run: npm run typecheck
+
+      - name: Production build
+        run: npm run build
+
+      - name: Verify generated icon files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s public/icons/icon-192.png
+          test -s public/icons/icon-512.png
+          test -s public/icons/icon-maskable-512.png
+          test -s public/icons/apple-touch-icon.png
+          file public/icons/*.png
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run visual and PWA runtime gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- --hostname 127.0.0.1 --port 3000 > /tmp/neofit-web.log 2>&1 &
+          SERVER_PID=$!
+          cleanup() {
+            kill "$SERVER_PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          for attempt in $(seq 1 40); do
+            if curl --fail --silent http://127.0.0.1:3000/ > /dev/null; then
+              break
+            fi
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+              cat /tmp/neofit-web.log
+              exit 1
+            fi
+            sleep 1
+          done
+
+          curl --fail --silent http://127.0.0.1:3000/ > /dev/null
+          npm run visual:capture
+          npm run pwa:verify
+          cat artifacts/stage1-visual/visual-report.json
+          cat artifacts/pwa/pwa-report.json
+
+      - name: Upload web evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-web-ci-evidence
+          path: web/artifacts
+          if-no-files-found: error
+          retention-days: 30
