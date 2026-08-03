@@ -79,26 +79,31 @@ jobs:
       - name: Generate Android native project
         run: npx expo prebuild --platform android --clean --no-install
 
-      - name: Build universal debug APK
+      - name: Build standalone release QA APK
         run: |
           chmod +x android/gradlew
-          android/gradlew -p android assembleDebug --no-daemon --stacktrace
+          android/gradlew -p android assembleRelease --no-daemon --stacktrace
 
       - name: Verify APK and generate metadata
         shell: bash
         run: |
           set -euo pipefail
-          APK='android/app/build/outputs/apk/debug/app-debug.apk'
+          APK='android/app/build/outputs/apk/release/app-release.apk'
           test -s "$APK"
           mkdir -p qa-artifact
           cp "$APK" qa-artifact/neofit-stage9-qa.apk
-          sha256sum qa-artifact/neofit-stage9-qa.apk | tee qa-artifact/neofit-stage9-qa.apk.sha256
+          (
+            cd qa-artifact
+            sha256sum neofit-stage9-qa.apk | tee neofit-stage9-qa.apk.sha256
+          )
           {
             echo "commit=${GITHUB_SHA}"
             echo "package=com.emad211.neofit"
             echo "version=0.1.0"
             echo "versionCode=1"
-            echo "buildType=debug"
+            echo "variant=release"
+            echo "signing=generated development/debug keystore; QA only"
+            echo "javascriptBundle=embedded"
             echo "builtAt=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo "sizeBytes=$(stat -c%s qa-artifact/neofit-stage9-qa.apk)"
           } > qa-artifact/build-metadata.txt
