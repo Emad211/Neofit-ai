@@ -2,7 +2,7 @@
 
 **نقش سند:** حافظهٔ عملیاتی و شواهد توسعه  
 **همراه اجباری:** `docs/NEOFIT_MASTER_PLAN.md`  
-**آخرین به‌روزرسانی:** ۳ اوت ۲۰۲۶ — پایان Batch 1 از Stage 1
+**آخرین به‌روزرسانی:** ۳ اوت ۲۰۲۶ — پایان Visual QA و Refinement شمارهٔ ۱ از Stage 1
 
 ## روش استفاده
 
@@ -24,7 +24,7 @@
 - مشکلات و Fixها
 - کارهای انجام‌نشده
 - تصمیم‌ها
-- Head پایان
+- Head کد پایان
 - قدم بعدی دقیق
 
 هیچ موردی بدون شواهد «تمام‌شده» علامت نمی‌خورد.
@@ -36,8 +36,8 @@
 | Stage | عنوان | وضعیت | شواهد اصلی |
 |---|---|---|---|
 | 0 | Pivot و Freeze نسخهٔ Native | انجام‌شده | PR #12، commit `151de2c0d5c9b02602c2f89eb4df808653cdd74e` |
-| 1 | پایهٔ محصول و UX فارسی/RTL | فعال؛ Batch 1 آمادهٔ بازبینی | PR #13، CI `30826619384` |
-| 2 | PWA و Vercel foundation | شروع‌نشده | — |
+| 1 | پایهٔ محصول و UX فارسی/RTL | فعال؛ Refinement 1 آمادهٔ بازبینی | PR #13، CI `30829629853`، Artifact `8862378720` |
+| 2 | PWA و Vercel foundation | شروع‌نشده | منتظر Accept Stage 1 |
 | 3 | استخراج Nutrition Core و parity | شروع‌نشده | — |
 | 4 | Supabase foundation | شروع‌نشده | — |
 | 5 | Nutrition vertical slice | شروع‌نشده | — |
@@ -56,8 +56,8 @@
 
 ### وضعیت اثبات‌شده
 
-- APK Android نصب و Startup آن پس از رفع دو مشکل SQLite/Seed موفق شد.
-- Mobile CI run 573 روی Head مرجع پاس شد.
+- APK Android پس از رفع دو مشکل SQLite/Seed نصب و اجرا شد.
+- Mobile CI run 573 پاس شد.
 - Nutrition RC، IFKB، Stage 7، Stage 8 و Schema/ID freeze در شاخهٔ مرجع حضور دارند.
 - UI/UX نسخهٔ Native و تجربهٔ فارسی/RTL از سوی مالک محصول رد شد.
 
@@ -67,12 +67,6 @@
 - Mobile حذف نمی‌شود و Frozen reference می‌ماند.
 - Supabase برای Auth/Postgres/RLS/Sync استفاده خواهد شد، نه برای جایگزینی Nutrition Core.
 - Vercel میزبان Web و Route Handlerهای امن خواهد بود.
-
-### زیرساخت موجود
-
-- دسترسی ابزار به Vercel و Supabase برقرار است.
-- NeoFit هنوز Project اختصاصی در Vercel یا Supabase ندارد.
-- پروژه‌های موجود بدون تصمیم صریح reuse نمی‌شوند.
 
 ### شواهد ثبت مسیر
 
@@ -84,152 +78,186 @@
 
 ### قدم بعدی ثبت‌شده
 
-ساخت دو سند دائمی و آغاز Stage 1.
+ساخت دو سند دائمی، سپس شروع Stage 1 با Next.js shell، RTL root، Design tokens، Today و Food logging prototype.
 
 ---
 
-## Entry 001 — Stage 1 / Batch 1: Persian RTL UX prototype
+## Entry 001 — ایجاد دو سند دائمی و Batch اول Stage 1
 
 **تاریخ/زمان شروع:** ۳ اوت ۲۰۲۶، ۱۸:۲۷ ایران  
 **شاخهٔ شروع:** `web/pwa-foundation`  
-**Head شروع:** `151de2c0d5c9b02602c2f89eb4df808653cdd74e`  
-**شاخهٔ اجرا:** `stage1/persian-rtl-ux`
+**Head شروع:** `151de2c0d5c9b02602c2f89eb4df808653cdd74e`
 
-### هدف نوبت
+### هدف
 
-1. ساخت پلن مادر و دفتر پیشرفت دائمی.
-2. ساخت شاخه و PR محدود Stage 1.
-3. ایجاد اولین Vertical prototype فارسی و RTL.
-4. ساخت Today، Search، Meal logging، Weekly plan و Settings.
-5. اجرای TypeScript و Production build.
-6. ثبت وضعیت در هر دو سند مرجع.
+1. ایجاد پلن مادر و دفتر پیشرفت.
+2. ایجاد شاخهٔ متمرکز Stage 1.
+3. ساخت اولین Vertical prototype فارسی/RTL.
+4. اجرای TypeScript و Production build.
 
-### کارهای انجام‌شده
+### انجام‌شده
 
-#### اسناد دائمی
+- `docs/NEOFIT_MASTER_PLAN.md` ساخته شد.
+- `docs/NEOFIT_PROGRESS_LOG.md` ساخته شد.
+- شاخهٔ `stage1/persian-rtl-ux` ایجاد شد.
+- PR #13 باز شد.
+- `web/` با Next.js App Router و TypeScript strict ساخته شد.
+- Today، Nutrition search، Meal sheet، Weekly plan، Settings و حالت‌های Loading/Empty/Error/Offline ساخته شدند.
+- fixtureهای غذا از کاتالوگ نسخه‌دار موجود برداشت شدند.
+- Supabase، Auth، AI واقعی و Sync وارد نشدند.
 
-- `docs/NEOFIT_MASTER_PLAN.md` ایجاد و در پایان به‌روزرسانی شد.
-- `docs/NEOFIT_PROGRESS_LOG.md` ایجاد و در پایان به‌روزرسانی شد.
-- پروتکل خواندن و نوشتن این دو فایل در هر نوبت ثبت شد.
+### مشکل Build و Fix
 
-#### Web foundation
+- Build اول با TypeScript 7 شکست خورد، چون Next.js 16.2.12 Compiler API مورد نیاز را دریافت نمی‌کرد.
+- TypeScript به نسخهٔ سازگار `6.0.3` قفل شد.
+- CI run `30827034439` پاس شد.
 
-- `web/package.json`
-- `web/tsconfig.json`
-- `web/next-env.d.ts`
-- `web/next.config.ts`
-- `web/app/layout.tsx`
-- `web/app/page.tsx`
-- `web/app/globals.css`
-- `web/components/neofit-prototype.tsx`
-- `web/data/fixtures.ts`
-- `web/README.md`
-- `.github/workflows/web-stage1-ci.yml`
+### Head کد پایان Batch 1
 
-#### UX پیاده‌شده
+`0833131c64fd284ac52106ee2ff0f22644fb6de9`
 
-- Root فارسی با `lang="fa"` و `dir="rtl"`
-- Design tokenها و CSS Mobile-first
-- Bottom navigation با امروز، تغذیه، تمرین، پیشرفت و تنظیمات
-- Today dashboard با Calorie progress، Macro bars و Timeline وعده‌ها
-- Quick action ثبت غذا
-- Persian food search با Fixtureهای واقعی‌شکل IFKB
-- Search empty state
-- Meal logging bottom sheet
-- Portion stepper و Meal type selection
-- افزودن غذا به State امروز و محاسبهٔ جدید UI
-- Weekly plan با برچسب IFKB
-- Settings mock برای Language، Theme و AvalAI key
-- Loading، Empty، Error و Offline visual states
-- Responsive rules برای ۳۶۰، ۳۹۰ و ۴۱۲px
+### قدم بعدی ثبت‌شده
 
-### منبع Fixtureها
-
-مقادیر نمونه از کاتالوگ نسخه‌دار موجود در:
-
-`mobile/src/data/iranian-food-seed.ts`
-
-نمونه‌ها شامل قورمه‌سبزی، چلو سفید، کباب کوبیده، جوجه کباب، آش رشته و تخم‌مرغ آب‌پز هستند. هیچ Nutrition از مدل AI ساخته نشده است.
-
-### Branch و PR
-
-- Branch: `stage1/persian-rtl-ux`
-- PR: #13 — `Stage 1: Persian RTL NeoFit UX prototype`
-- Product code head پیش از آپدیت اسناد: `ad9620419b79eecf08068400a6df8f90b902d5c4`
-- Commit آپدیت پلن مادر: `c63e24ad840006cb9cf8fad0af0cf344ad28284b`
-- Head پایان این Entry: Commit همین فایل
-
-### تست و CI
-
-Workflow:
-
-- `Web Stage 1 CI`
-- Run ID: `30826619384`
-
-نتیجه:
-
-- Install dependencies: پاس
-- Persian RTL contract: پاس
-- TypeScript strict: پاس
-- Next.js production build: پاس
-
-### مشکل پیدا‌شده و Fix
-
-#### ناسازگاری TypeScript 7 با Next.js Build
-
-اولین CI:
-
-- Run ID: `30826514546`
-- RTL contract: پاس
-- TypeScript CLI: پاس
-- Production build: شکست
-
-علت:
-
-- Next.js 16.2.12 هنوز Compiler API موردنیاز را از TypeScript 7.0.2 دریافت نمی‌کند.
-
-تصمیم:
-
-- گزینهٔ آزمایشی `experimental.useTypeScriptCli` فعال نشد.
-- TypeScript روی نسخهٔ سازگار `6.0.3` قفل شد.
-- CI دوم کامل پاس شد.
-
-### کارهای انجام‌نشده
-
-- Screenshot واقعی در عرض‌های ۳۶۰، ۳۹۰ و ۴۱۲px ثبت نشده است.
-- مالک محصول هنوز UX را تأیید یا رد نکرده است.
-- Vazirmatn هنوز به‌صورت self-hosted بسته‌بندی نشده است.
-- Vercel Preview ساخته نشده است.
-- Supabase، Auth و Backend عمداً ساخته نشده‌اند.
-- AvalAI فقط Mock UI است و کلید ذخیره نمی‌شود.
-- Workout و Progress در این Batch ساختاری/Placeholder هستند.
-- PWA manifest و Service Worker مربوط به Stage 2 هستند.
-
-### تصمیم‌های نوبت
-
-- PR #13 پیش از تأیید مالک محصول Merge نمی‌شود.
-- Supabase پیش از بسته‌شدن Gate UX Stage 1 ساخته نمی‌شود.
-- Nutrition fixtureها باید همچنان از Source موجود بیایند.
-- TypeScript 6.0.3 تا پشتیبانی استاندارد Next.js از TypeScript 7 حفظ می‌شود.
-
-### وضعیت پایان نوبت
-
-- Stage 1 همچنان فعال است.
-- Batch 1 از نظر کد و Build آمادهٔ بازبینی است.
-- PR #13 باز است.
-- هیچ زیرساخت خارجی جدیدی ایجاد نشده است.
-
-### قدم بعدی دقیق
-
-1. مالک محصول ظاهر و Flowهای PR #13 را بررسی کند.
-2. بازخوردهای UI/UX در همان PR اعمال شوند.
-3. Screenshotهای سه عرض هدف تولید و ثبت شوند.
-4. Vazirmatn self-hosted اضافه شود.
-5. بعد از تأیید، PR #13 به `web/pwa-foundation` Merge شود.
-6. Stage 2 با Manifest، Service Worker و Vercel Preview آغاز شود.
+Visual QA واقعی در عرض‌های ۳۶۰، ۳۹۰ و ۴۱۲ پیکسل، اصلاح ظاهر و تعامل، سپس بازبینی مالک محصول.
 
 ---
 
-## آخرین نقطهٔ قابل ادامه
+## Entry 002 — Visual QA واقعی و Refinement شمارهٔ ۱
 
-در نوبت بعد، ابتدا این فایل و پلن مادر خوانده شوند؛ سپس PR #13 و آخرین Head بررسی شود. اگر بازخورد مالک محصول وجود داشت، همان بازخورد اولویت مطلق است. اگر بازخورد جدیدی نبود، قدم بعدی ثبت Screenshot/visual QA و self-hosted font است، نه Supabase.
+**تاریخ/زمان شروع:** ۳ اوت ۲۰۲۶، حدود ۱۹:۰۵ ایران  
+**شاخه:** `stage1/persian-rtl-ux`  
+**PR:** #13  
+**Head شروع:** `0833131c64fd284ac52106ee2ff0f22644fb6de9`
+
+### هدف نوبت
+
+1. خواندن کامل پلن مادر و دفتر پیشرفت.
+2. اجرای قدم بعدی ثبت‌شده به‌جای شروع Stage یا Backend جدید.
+3. تولید Screenshot واقعی از Build در عرض‌های هدف.
+4. بازبینی بصری، رفع نقص‌های قابل مشاهده و قفل‌کردن Regressionها.
+5. به‌روزرسانی دوبارهٔ همین دو فایل.
+
+### Visual QA Baseline
+
+CI به Playwright مجهز شد و موارد زیر را ثبت کرد:
+
+- Today در عرض ۳۶۰px
+- Today در عرض ۳۹۰px
+- Today در عرض ۴۱۲px
+- Nutrition در ۳۹۰px
+- Search نتیجهٔ «قورمه»
+- Meal logging sheet
+- Weekly plan
+- Settings
+
+#### Run و Artifact پایه
+
+- Run: `30828652896`
+- Artifact: `8861979601`
+- Artifact digest: `sha256:c63346d505f7d9e52755aa67ad87847d6d13011ae1aed5affb5ebf6979c0cdfb`
+
+### مشکلاتی که از تصویر واقعی پیدا شدند
+
+1. Banner توسعهٔ «بدون Backend» در همهٔ صفحه‌ها بیش از حد برجسته بود و سلسله‌مراتب محصول را خراب می‌کرد.
+2. صفحات داخلی عنوان واقعی خود را داشتند، اما Topbar دوباره عنوان عمومی/تکراری نشان می‌داد.
+3. CSS نام Vazirmatn را داشت، ولی فونت واقعاً Self-host نشده بود و Browser از fallback استفاده می‌کرد.
+4. Full-page screenshot با Bottom Navigation ثابت تصویر گمراه‌کننده تولید می‌کرد.
+5. مهم‌ترین باگ: پس از Scroll در Weekly plan و ورود به Settings از Bottom Navigation، موقعیت Scroll حفظ می‌شد و Settings ظاهراً خالی دیده می‌شد.
+
+### Fixهای اعمال‌شده
+
+#### Visual evidence pipeline
+
+- `@playwright/test` نسخهٔ `1.61.1` اضافه شد.
+- `web/scripts/capture-stage1.mjs` ساخته شد.
+- CI Chromium نصب و Screenshot Artifact تولید می‌کند.
+- عرض سند و Body با viewport مقایسه می‌شوند.
+- `lang=fa` و `dir=rtl` در Runtime بررسی می‌شوند.
+- Screenshotها از viewport واقعی گرفته می‌شوند، نه Full page گمراه‌کننده.
+- Weekly plan lower state و AvalAI settings section جداگانه ثبت می‌شوند.
+
+#### Typography و hierarchy
+
+- `@fontsource-variable/vazirmatn` نسخهٔ `5.3.0` به‌صورت Self-hosted اضافه شد.
+- Layout فایل فونت را مستقیم import می‌کند.
+- `web/app/refinements.css` ساخته شد.
+- Banner توسعه از مسیر اصلی UI حذف شد.
+- عنوان تکراری Topbar در صفحات داخلی پنهان شد.
+- فاصله‌ها، Shadow، خط‌ارتفاع و عرض ۳۶۰px اصلاح شدند.
+- فضای پایین محتوا برای Bottom Navigation تقویت شد.
+
+#### Navigation bug
+
+- با `useEffect` روی تغییر `screen`، `window.scrollTo({top: 0})` اجرا می‌شود.
+- Visual test پس از ورود به Settings منتظر `scrollY === 0` می‌ماند.
+- CI قرارداد وجود Scroll reset را نیز بررسی می‌کند.
+
+### Commitهای مهم این نوبت
+
+- `36cd12b71b56991dff238ad9b98521e0e72445c4` — افزودن Playwright visual capture
+- `5b79cabaf48f768a551a92568c93f308e549baf5` — Script ثبت Screenshotها
+- `d6040dbf86c16308ef18da692215f43699598a09` — Visual QA در CI
+- `73fb924af3b9514e0371a63c5d16f0c7f7c19b00` — Self-hosted Vazirmatn dependency
+- `89070fc4322c6b5a871f4c8534f81d2adb481112` — Font و refinements import
+- `be3f97f88ce324c812e9d2b9857b5b537f9c8a54` — Persian visual refinements
+- `19b419e21b221043385d1e567dba239366fb7e2b` — realistic viewport captures
+- `b987db40a9378c6fb09a728b347e2cb17360c2a5` — Scroll reset fix
+- `dcebb969e7f91685eda4c84f3b0d753a3892cadd` — Scroll regression test
+- `489394eceea5b1f6cd9adec5dc8487cc250f1061` — CI contracts for font/navigation
+
+### Validation نهایی
+
+#### CI
+
+- Run: `30829629853`
+- Status: success
+- RTL/navigation contract: pass
+- TypeScript strict: pass
+- Next.js Production build: pass
+- Chromium install: pass
+- Visual capture: pass
+- Artifact upload: pass
+
+#### Visual Artifact
+
+- Artifact ID: `8862378720`
+- Digest: `sha256:7c9c86100355743a262d41ae6233e1513c804bd0792b19ff5eff5946c49c98e4`
+
+#### Runtime results
+
+- ۳۶۰px: document/body width = viewport؛ overflow ندارد
+- ۳۹۰px: document/body width = viewport؛ overflow ندارد
+- ۴۱۲px: document/body width = viewport؛ overflow ندارد
+- Nutrition/Search/Meal sheet/Weekly plan/Settings: overflow ندارند
+- Root locale در همهٔ Captureها `fa` و `rtl` است
+- Settings پس از Navigation با `scrollY = 0` نمایش داده می‌شود
+
+### کارهای انجام‌نشده
+
+- PR #13 هنوز Merge نشده است.
+- تأیید بصری مالک محصول هنوز ثبت نشده است.
+- Vercel Project/Preview هنوز ساخته نشده است.
+- PWA Manifest و Service Worker هنوز ساخته نشده‌اند.
+- Supabase، Auth، AI واقعی و Sync هنوز شروع نشده‌اند.
+- صفحهٔ تمرین و Progress هنوز در سطح Placeholder/UX state هستند.
+
+### تصمیم‌های این نوبت
+
+- Visual QA بخشی دائمی از Web CI باقی می‌ماند.
+- Font فارسی باید داخل Build باشد و به Font نصب‌شدهٔ سیستم وابسته نباشد.
+- تغییر Bottom Navigation باید Scroll reset داشته باشد.
+- Stage 1 بدون تأیید مالک محصول تمام نمی‌شود.
+- PR #13 پیش از آن Merge نمی‌شود.
+
+### Head کد تأییدشدهٔ پایان نوبت
+
+`489394eceea5b1f6cd9adec5dc8487cc250f1061`
+
+### قدم بعدی دقیق
+
+مالک محصول Screenshotهای نهایی Stage 1 را بررسی می‌کند:
+
+- Accept → PR #13 Merge و Stage 2 آغاز می‌شود.
+- Refine → ایرادها به‌صورت صفحه/جزء مشخص ثبت و Refinement دوم در همین PR انجام می‌شود.
+
+تا این تصمیم، Supabase و Vercel Project ساخته نمی‌شوند.
