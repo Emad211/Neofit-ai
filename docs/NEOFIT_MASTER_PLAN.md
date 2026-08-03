@@ -1,31 +1,33 @@
 # پلن مادر NeoFit
 
 **وضعیت سند:** مرجع واحد و اجباری پروژه  
-**آخرین بازبینی:** ۴ اوت ۲۰۲۶ — تفکیک Stage 2A از Vercel Stage 2B  
-**شاخهٔ integration وب:** `web/pwa-foundation`  
-**شاخهٔ فعال هنگام ثبت این تصمیم:** `stage2/pwa-vercel-foundation`  
-**PR فعال:** #15  
-**Issue پیاده‌سازی PWA:** #14  
-**Issue استقرار تعویق‌شده:** #16  
-**آخرین Head شاخه پیش از این سند:** `351ee467c8dac026b3166f05b0996ec4bfe3aa39`  
-**آخرین CI معتبر شاخه:** Web CI `30853827867` — success  
-**مرحلهٔ اجرایی بعد از Merge:** Stage 3 — Nutrition Core Extraction و Parity  
-**Gate خارجی تعویق‌شده:** Vercel Preview/HTTPS validation در Issue #16
+**آخرین بازبینی:** ۴ اوت ۲۰۲۶ — Stage 3 Batch 1، Pure Nutrition Core و Golden parity  
+**شاخهٔ integration:** `web/pwa-foundation`  
+**شاخهٔ فعال:** `stage3/nutrition-core-parity`  
+**PR فعال:** #18  
+**Issue Stage 3:** #17  
+**Issue Vercel تعویق‌شده:** #16  
+**مبنای Stage 3:** Stage 2A merge `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b`  
+**Head پیاده‌سازی Batch 1:** `f11b1ec84355d1311ce53d877163ec66b965611f`  
+**CI معتبر Batch 1:** Nutrition Core CI `30856939220` — success  
+**Artifact:** `8872828407`  
+**مرحلهٔ فعال:** Stage 3 — Nutrition Core Extraction و Parity  
+**Gate فعلی:** ثبت نهایی اسناد و Merge Batch 1؛ سپس Search/Ranking/Provenance inventory
 
 ## پروتکل اجباری ادامهٔ پروژه
 
 پیش از هر تغییر کد، داده یا زیرساخت:
 
-1. `docs/NEOFIT_MASTER_PLAN.md` کامل خوانده شود.
+1. این فایل کامل خوانده شود.
 2. `docs/NEOFIT_PROGRESS_LOG.md` کامل خوانده شود.
-3. Branch، HEAD، PRها، Issueها، CI، Review threadها، Vercel و Supabase از ابزارهای واقعی بررسی شوند.
-4. فقط قدم بعدی ثبت‌شده و اثبات‌پذیر اجرا شود.
+3. Branch، HEAD، PR، Issue، CI، Review، Vercel و Supabase از ابزارهای واقعی بررسی شوند.
+4. فقط Exact continuation point ثبت‌شده اجرا شود.
 
 در پایان هر نوبت:
 
-- هر دو سند با Commitها، Runها، Artifactها، خطاها، تصمیم‌ها و Exact continuation point به‌روزرسانی شوند.
-- هیچ Build، Deployment، Preview، سهمیه، Parity یا Migration بدون شواهد «تمام‌شده» اعلام نشود.
-- گزارش مکالمه جای وضعیت واقعی ریپو را نمی‌گیرد.
+- هر دو سند با Commitها، Runها، Artifactها، خطاها، تصمیم‌ها و قدم بعدی به‌روزرسانی شوند.
+- هیچ Build، Deployment، Preview، Parity، Migration یا Coverage بدون شواهد «تمام‌شده» اعلام نشود.
+- گزارش مکالمه یا حافظه جای وضعیت واقعی ریپو را نمی‌گیرد.
 
 ## ۱. مأموریت محصول
 
@@ -38,19 +40,18 @@ NeoFit یک محصول فارسی‌محور، Mobile-first و قابل نصب �
 ## ۲. معماری قفل‌شده
 
 - Web و Server routes: Next.js App Router + TypeScript strict
+- Nutrition domain: Package خالص و deterministic TypeScript
 - Hosting نهایی: Vercel
 - Auth، PostgreSQL، RLS و Sync: Supabase از Stage 4
 - App-shell Offline: Service Worker
 - Catalog snapshot و mutation queue: IndexedDB از Stage 7
-- زبان پیش‌فرض: فارسی
-- جهت پیش‌فرض: RTL از Root HTML
+- زبان پیش‌فرض: فارسی و RTL از Root HTML
 - دادهٔ تغذیه: IFKB + USDA SR Legacy + FNDDS
-- محاسبات تغذیه: deterministic TypeScript
 - AvalAI/Vision: فقط Server-side و بدون اجازهٔ ساخت Nutrition
 
-تا وجود نیاز اثبات‌شده، Turborepo، Nx یا ابزار Monorepo سنگین اضافه نمی‌شود.
+Turborepo، Nx یا ابزار Monorepo سنگین تا وجود نیاز واقعی ممنوع است.
 
-## ۳. دارایی‌های علمی و داده‌ای غیرقابل حذف
+## ۳. دارایی‌های علمی غیرقابل حذف
 
 - ۱۳٬۲۲۵ رکورد عمومی USDA/FNDDS/SR
 - ۹٬۲۷۹ Concept عمومی
@@ -58,144 +59,134 @@ NeoFit یک محصول فارسی‌محور، Mobile-first و قابل نصب �
 - ۲۶۱ هویت Canonical غذای ایرانی
 - Canonical IDها، mappingها و fingerprintها
 - provenance و evidence tierها
-- منطق کالری، ماکرو، Portion، Recipe، Diary و Goal
-- Resolve کامل Ingredientهای برنامهٔ AI در IFKB/FNDDS/SR
-- تصاویر دارای Attribution و مجوز
+- منطق calorie/macros/portion/recipe/diary/goals
+- Resolve کامل Ingredientهای برنامهٔ AI
 - تست‌های Schema، ID، arithmetic، migration و catalog audit
 
-`mobile/` تا اثبات Parity وب، Frozen reference و Oracle مقایسه باقی می‌ماند.
+`mobile/` تا پایان Stage 3، Frozen reference و Parity oracle باقی می‌ماند.
 
 ## ۴. قراردادهای غیرقابل نقض
 
-- مدل زبانی یا Vision اجازهٔ ساخت کالری، ماکرو، وزن یا Portion ندارد.
+- AI/Vision اجازهٔ ساخت یا اصلاح کالری، مواد مغذی، وزن یا Portion ندارد.
 - Nutrition نهایی فقط از رکوردهای نسخه‌دار محاسبه می‌شود.
 - Ingredient حل‌نشده باعث رد کامل برنامهٔ AI می‌شود.
+- Missing nutrient با صفر برابر نیست.
+- وزن نامعلوم `null` باقی می‌ماند.
 - Imported و Custom user data با Seed overwrite یا downgrade نمی‌شوند.
 - Canonical ID و Schema فقط با Migration نسخه‌دار تغییر می‌کنند.
 - Secretهای سروری و Supabase service role وارد Browser bundle نمی‌شوند.
 - Raw AvalAI key در Local Storage یا DB plaintext ذخیره نمی‌شود.
-- Service Worker دادهٔ کاربر، `/api`، `/auth`، Authorization، Mutation یا Cross-origin را Cache نمی‌کند.
-- Fresh-install Offline باید بدون Browser HTTP cache پوستهٔ کامل و تعاملی را اجرا کند.
+- Service Worker دادهٔ کاربر، API/Auth، Authorization، Mutation یا Cross-origin را Cache نمی‌کند.
 
 ## ۵. معماری ریپو
 
 ```text
 Neofit-ai/
-├── web/                         # محصول فعال Next.js/PWA
+├── web/                         # Next.js/PWA
 ├── packages/
-│   └── nutrition-core/          # منطق خالص TypeScript؛ Stage 3
-├── ifkb/                        # منبع داده، QA و Release
+│   └── nutrition-core/          # Pure deterministic TypeScript
+├── ifkb/                        # داده، QA و Release governance
 ├── mobile/                      # Frozen reference و parity oracle
 ├── supabase/                    # از Stage 4
 └── docs/
 ```
 
-## ۶. قواعد UI/UX فارسی
-
-- `html lang="fa" dir="rtl"`
-- CSS logical properties
-- Vazirmatn variable به‌صورت Self-hosted
-- متن پایه حداقل ۱۶px
-- Touch target حداقل ۴۴px
-- Label مستقل از Placeholder
-- یک CTA اصلی در هر صفحه
-- Loading، Empty، Error و Offline state
-- Scroll reset در Bottom Navigation
-- Visual QA اجباری در ۳۶۰، ۳۹۰ و ۴۱۲px
-
-Navigation موبایل حداکثر پنج مقصد دارد: امروز، تغذیه، تمرین، پیشرفت و تنظیمات.
-
-## ۷. تصمیم جدید دربارهٔ Stage 2
-
-Stage 2 به دو بخش مستقل تقسیم شد تا یک اتصال خارجی، توسعهٔ Core را متوقف نکند.
-
-### Stage 2A — PWA Code Foundation
-
-**وضعیت: پیاده‌سازی و CI کامل؛ آمادهٔ Merge در PR #15**
-
-شواهد اصلی:
-
-- Manifest فارسی/RTL و `standalone`
-- Iconهای 192، 512، Maskable و Apple touch
-- Icon generator deterministic
-- Service Worker app-shell نسخهٔ `v2`
-- Precache گراف JS/CSS/Font در Install اولیه
-- API/Auth/Authorization/Mutation/Cross-origin exclusion
-- Fresh-install Offline با HTTP cache خالی
-- Offline React navigation
-- Loading/Error/Global error/404/Offline boundaries
-- Environment contract و `web/vercel.json`
-- Web CI دائمی و Visual regression
-- P1 Review thread بسته‌شده
-
-کد اثبات‌شده:
-
-- Code head: `0bb0278f50312819029445c20dd5823ee8c719ed`
-- CI کد: `30853438059` — success
-- Artifact: `8871529505`
-- Digest: `sha256:7f50f89a15c37871bbafda95d3cea6e105ab5c0a344f9f408b5f5fe787823c77`
-- Final branch CI پیش از تصمیم: `30853827867` — success
-
-### Stage 2B — Vercel Preview و HTTPS Validation
-
-**وضعیت: تعویق‌شده، باز و مستقل در Issue #16**
-
-وضعیت واقعی ثبت‌شده:
-
-- Team: `Emad's projects`
-- Team ID: `team_BsUv0VprkU4YjdFbQi2hZCEm`
-- Project: `neofit-ai`
-- Project ID: `prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG`
-- Deployment count: `0`
-- `latestDeployment`: `null`
-- Preview URL و Domain: نداریم
-
-هیچ Deployment یا Preview موفقی ادعا نمی‌شود. Issue #16 باید پیش از Web RC بسته شود، اما دیگر Stage 3 را Block نمی‌کند.
-
-## ۸. مراحل اجرایی
+## ۶. وضعیت مراحل
 
 ### Stage 0 — Pivot و Freeze
 
-**انجام‌شده** — PR #12 و Merge `151de2c0d5c9b02602c2f89eb4df808653cdd74e`.
+**انجام‌شده** — PR #12، Merge `151de2c0d5c9b02602c2f89eb4df808653cdd74e`.
 
 ### Stage 1 — Product/UX Foundation فارسی
 
-**انجام‌شده و پذیرفته‌شده** — PR #13 و Merge `a458a27a2685bfa7d85ea28686b3182c3167d747`.
+**انجام‌شده و پذیرفته‌شده** — PR #13، Merge `a458a27a2685bfa7d85ea28686b3182c3167d747`.
 
 ### Stage 2A — PWA Code Foundation
 
-**آمادهٔ Merge** — PR #15. پس از Merge، Issue #14 بسته می‌شود.
+**انجام‌شده** — PR #15، Merge `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b`.
 
-### Stage 2B — Vercel Preview Validation
+اثبات‌شده:
 
-**تعویق‌شده** — Issue #16. پیش‌شرط Web RC است، نه Stage 3.
+- Manifest فارسی/RTL و standalone
+- Iconهای deterministic
+- Service Worker privacy-safe
+- Precache JS/CSS/Font در Fresh install
+- Offline React interaction با HTTP cache خالی
+- Web CI و Visual regression
+
+### Stage 2B — Vercel Preview و HTTPS Validation
+
+**تعویق‌شده و باز در Issue #16**.
+
+- Project: `neofit-ai`
+- Project ID: `prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG`
+- Deployment count: صفر
+- Preview URL: ندارد
+
+این Gate باید پیش از Web RC بسته شود، اما Stage 3 را Block نمی‌کند.
 
 ### Stage 3 — Nutrition Core Extraction و Parity
 
-**قدم بعدی فعال**
+**فعال — Batch 1 سبز و آمادهٔ Merge در PR #18**
 
-هدف‌ها:
+#### Authority
 
-- بازسازی Inventory واقعی منطق Nutrition از `mobile/` و IFKB
-- تعیین Pure-domain boundary
-- ایجاد `packages/nutrition-core` بدون Monorepo tooling سنگین
-- انتقال مرحله‌ای types، arithmetic، portion و recipe logic
-- ساخت Golden fixtures از Mobile RC
-- اجرای parity test برای calorie/macros/portion/recipe/goal
-- حفظ Canonical ID، fingerprint و provenance
-- Adapter وب فقط پس از Pure core
+- Native/IFKB branch: `agent/iranian-food-kb-foundation`
+- Frozen reference head: `648b98cdc921beb26ccd0ff05a1f17944bb6f71d`
+- Authority map: `docs/NEOFIT_NUTRITION_CORE_AUTHORITY_MAP.md`
+- Mobile golden test Blob: `2291e1958efe5e17010230c5864c9fadc9bc47ba`
 
-Definition of Done:
+#### Batch 1 استخراج‌شده
 
-- هیچ وابستگی React Native، Expo، SQLite یا UI در Core وجود نداشته باشد.
-- ورودی/خروجی Core کاملاً Type-safe و versioned باشد.
-- نتایج Golden fixtures با Mobile RC برابر باشند.
-- Round/precision policy صریح و تست‌شده باشد.
-- هیچ AI یا Provider nutrition وارد محاسبات نشود.
+- `types.ts`
+- `nutrition.ts`
+- `recipe.ts`
+- `diary.ts`
+- `goals.ts`
+- Package مستقل `@neofit/nutrition-core` schema version 1
+- Golden fixtures با Source branch/head/blob provenance
+- Forbidden dependency gate
+- Dedicated Nutrition Core CI
+
+#### Numeric و Missing policy قفل‌شده
+
+- canonicalization داخلی: ۱۵ رقم معنادار
+- display rounding جداگانه و صریح
+- per-100g basis باید دقیقاً 100g باشد
+- Gram calculation با وزن basis نامعلوم fail-closed است
+- Strict aggregate در صورت غیبت nutrient، آن nutrient را حذف می‌کند
+- Recipe/Diary وزن نامعلوم را `null` propagate می‌کنند
+- Goal progress برای consumed نامعلوم، ratio/remaining را `null` نگه می‌دارد
+
+#### شواهد Batch 1
+
+- Head: `f11b1ec84355d1311ce53d877163ec66b965611f`
+- CI: `30856939220` — success
+- Artifact: `8872828407`
+- Artifact digest: `sha256:c064cd3d53a1f7b31ad12eeb2f11c54a8a098acce3f768a3ae12c53904ada24a`
+- Pure-boundary gate: pass
+- TypeScript strict: pass
+- Golden parity: 10 tests، 10 pass، 0 fail، 0 skipped
+
+#### Batchهای باقی‌مانده Stage 3
+
+1. Persian search، query parsing و universal ranking
+2. Catalog release/provenance و legacy adapter
+3. SR Legacy/FNDDS universal estimates و SQLite↔TypeScript fixtures
+4. Canonical ID، fingerprint و release parity
+5. Web adapter بدون duplication arithmetic
+
+Definition of Done Stage 3:
+
+- Core هیچ React Native، Expo، SQLite، UI، Network یا Environment dependency نداشته باشد.
+- همهٔ قراردادهای عمومی Type-safe و versioned باشند.
+- Golden/SQLite parity برای arithmetic، portions، recipes، diary، goals، search و universal records پاس شود.
+- Canonical IDs و fingerprints ثابت بمانند.
+- Web مصرف‌کنندهٔ Core باشد و محاسبه را تکرار نکند.
 
 ### Stage 4 — Supabase Foundation
 
-پیش‌شرط: پایان Stage 3 و تأیید Organization/Region/Cost.
+شروع فقط پس از پایان Stage 3 و تأیید Organization/Region/Cost.
 
 ### Stage 5 — Nutrition Vertical Slice
 
@@ -215,40 +206,41 @@ Export/import نسخه‌دار، rollback و تست دادهٔ حجیم.
 
 ### Stage 9 — Web RC
 
-Device QA، Accessibility، Performance، Security، Privacy، Vercel Production و بستن Issue #16.
+Device QA، Accessibility، Performance، Security، Privacy، Production و بستن Issue #16.
 
-## ۹. Anti-goalها
+## ۷. Anti-goalها
 
-- متوقف‌کردن Nutrition Core به‌دلیل اتصال خارجی تعویق‌شده
-- بستن Issue #16 بدون Preview واقعی
-- ساخت Supabase پیش از Core parity
-- انتقال خط‌به‌خط UI Native
-- Generic SaaS template
-- ابزار Monorepo سنگین بدون نیاز
-- تغییر IFKB/ID/Schema بدون Migration و Freeze
-- Cacheکردن دادهٔ کاربر در App-shell Service Worker
+- شروع Supabase پیش از Core parity
+- بازنویسی Core از روی حدس یا UI وب
+- silent fix رفتار Mobile به‌جای ثبت اختلاف Parity
+- انتقال SQLite/Expo/React Native به Package خالص
+- انتقال تمام ماژول‌ها در یک PR
+- تغییر IFKB/Canonical ID/Schema بدون Migration و Freeze
+- Generic SaaS template و Monorepo tooling بدون نیاز
 
-## ۱۰. ترتیب فعلی
+## ۸. ترتیب فعلی
 
-1. Merge PR #15 و بستن Issue #14
-2. Stage 3 — Nutrition Core و parity
-3. Stage 4 — Supabase
-4. Stage 5 — Nutrition vertical slice
-5. Stage 6 — AI/Vision
-6. Stage 7 — Offline data/sync
-7. Stage 8 — Recovery
-8. بستن Stage 2B / Issue #16 پیش از Web RC
-9. Stage 9 — Web RC
+1. ثبت نهایی اسناد و Merge PR #18
+2. Batch 2: Search/Ranking authority و Golden corpus
+3. Batch 3: Catalog provenance/release/adapters
+4. Batch 4: Universal SR/FNDDS و SQLite equivalence
+5. Batch 5: ID/fingerprint parity و Web adapter
+6. Stage 4 Supabase پس از پایان Stage 3
+7. Issue #16 پیش از Web RC
 
-## ۱۱. قدم بعدی دقیق
+## ۹. قدم بعدی دقیق
 
-1. `docs/NEOFIT_PROGRESS_LOG.md` با تصمیم تفکیک Stage 2 ثبت شود.
-2. PR #15 با آخرین Head و CI دوباره بررسی شود.
-3. PR #15 به `web/pwa-foundation` Merge شود.
-4. Issue #14 با شواهد Stage 2A بسته شود؛ Issue #16 باز بماند.
-5. یک Issue و Branch متمرکز برای Stage 3 ساخته شود.
-6. پیش از نوشتن Core، Inventory واقعی فایل‌ها، توابع، تست‌ها و قراردادهای Mobile/IFKB ثبت شود.
-7. اولین Batch فقط Boundary، types، Golden fixtures و parity harness باشد؛ نه بازنویسی کامل.
-8. در پایان نوبت هر دو سند دوباره با Merge SHA، Stage 3 branch و Exact continuation point به‌روزرسانی شوند.
+1. CI اسناد روی Head جدید PR #18 پاس شود.
+2. PR #18 با expected head Merge شود.
+3. Issue #17 باز بماند؛ Batch 1 به‌عنوان completed ثبت شود.
+4. Branch Batch 2 از Merge commit ساخته شود.
+5. قبل از استخراج Search، این منابع خوانده و Freeze شوند:
+   - `mobile/src/nutrition-core/search.ts`
+   - `mobile/src/nutrition-core/universal-catalog-ranking.ts`
+   - Persian search benchmark manifests/corpus
+   - تست‌های ranking/search و exact alias behavior
+6. Golden corpus کوچک و provenance-backed برای normalization، modifiers، Persian aliases و SR/FNDDS ranking ساخته شود.
+7. فقط پس از سبزشدن Golden search parity، ماژول‌های Search/Ranking منتقل شوند.
+8. هر دو سند در پایان Batch 2 دوباره Update شوند.
 
-Supabase، Auth و AI واقعی هنوز ممنوع‌اند.
+Supabase، Auth، AI واقعی و Web arithmetic migration هنوز شروع نمی‌شوند.
