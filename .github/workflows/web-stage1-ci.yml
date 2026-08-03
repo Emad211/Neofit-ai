@@ -1,0 +1,66 @@
+name: Web Stage 1 CI
+
+on:
+  push:
+    branches:
+      - stage1/persian-rtl-ux
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-stage1-ci.yml'
+      - 'docs/NEOFIT_MASTER_PLAN.md'
+      - 'docs/NEOFIT_PROGRESS_LOG.md'
+  pull_request:
+    branches:
+      - web/pwa-foundation
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-stage1-ci.yml'
+      - 'docs/NEOFIT_MASTER_PLAN.md'
+      - 'docs/NEOFIT_PROGRESS_LOG.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-stage1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: web/package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify Persian RTL contract
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'lang="fa" dir="rtl"' web/app/layout.tsx
+          grep -q 'font-size: 16px' web/app/globals.css
+          grep -q 'min-block-size: 44px' web/app/globals.css
+          grep -q "'today' | 'nutrition' | 'workout' | 'progress' | 'settings'" web/components/neofit-prototype.tsx
+          grep -q 'IFKB' web/components/neofit-prototype.tsx
+
+      - name: TypeScript
+        run: npm run typecheck
+
+      - name: Production build
+        run: npm run build
