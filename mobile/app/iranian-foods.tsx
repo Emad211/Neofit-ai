@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { Alert, View } from 'react-native';
+import { Alert, Linking, View } from 'react-native';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import {
   AppText,
@@ -22,6 +23,7 @@ import {
 import { logMeal } from '@/db/nutrition-meal-repository';
 import { FoodCatalogItem, Meal } from '@/domain/models';
 import { useApp } from '@/providers/app-provider';
+import { getIranianFoodImage } from '@/data/iranian-food-image-catalog';
 
 const categories: Array<FoodCatalogItem['category'] | 'all'> = [
   'all',
@@ -104,6 +106,7 @@ export default function IranianFoodsScreen() {
   }, []);
 
   const selectedScale = selected ? scaleFood(selected, Number(multiplier)) : null;
+  const selectedImage = selected ? getIranianFoodImage(selected) : null;
 
   const logSelected = async () => {
     if (!selected || !selectedScale) return;
@@ -251,6 +254,32 @@ export default function IranianFoodsScreen() {
 
       {selected && selectedScale ? (
         <Card>
+          {selectedImage ? (
+            <View style={{ gap: 8 }}>
+              <Image
+                source={selectedImage.source}
+                style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: 14 }}
+                contentFit="cover"
+                transition={120}
+              />
+              {selectedImage.kind === 'licensed_primary' ? (
+                <>
+                  <AppText muted size={11}>
+                    {label('Photo', 'عکس')}: {selectedImage.creator} · {selectedImage.license}
+                  </AppText>
+                  <PrimaryButton
+                    title={label('Open image source and licence', 'مشاهده منبع و مجوز تصویر')}
+                    variant="ghost"
+                    onPress={() => void Linking.openURL(selectedImage.sourcePageUrl)}
+                  />
+                </>
+              ) : (
+                <AppText muted size={11}>
+                  {label('Category placeholder — food photo pending', 'تصویر دسته‌ای — عکس غذا در انتظار')}
+                </AppText>
+              )}
+            </View>
+          ) : null}
           <AppText size={23} weight="800">{locale === 'fa' ? selected.nameFa : selected.nameEn}</AppText>
           <AppText muted>{locale === 'fa' ? selected.portionLabelFa : selected.portionLabelEn}</AppText>
           <ChoiceGrid
@@ -288,9 +317,18 @@ export default function IranianFoodsScreen() {
         {foods.map((item) => {
           const scaled = scaleFood(item, 1);
           const active = selected?.id === item.id;
+          const image = getIranianFoodImage(item);
           return (
             <Card key={item.id} style={active ? { borderWidth: 2 } : undefined}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+                {image ? (
+                  <Image
+                    source={image.source}
+                    style={{ width: 82, height: 62, borderRadius: 12 }}
+                    contentFit="cover"
+                    transition={90}
+                  />
+                ) : null}
                 <View style={{ flex: 1, gap: 2 }}>
                   <AppText weight="800" size={17}>{locale === 'fa' ? item.nameFa : item.nameEn}</AppText>
                   <AppText muted size={12}>{locale === 'fa' ? item.portionLabelFa : item.portionLabelEn}</AppText>
