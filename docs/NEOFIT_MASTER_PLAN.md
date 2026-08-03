@@ -1,227 +1,258 @@
 # پلن مادر NeoFit
 
-**وضعیت سند:** مرجع واحد و اجباری پروژه  
-**آخرین بازبینی:** ۴ اوت ۲۰۲۶ — Stage 3 Batch 2 Search/Ranking  
-**شاخهٔ integration:** `web/pwa-foundation`  
-**شاخهٔ فعال:** `stage3/search-ranking-parity`  
-**PR فعال:** #19  
-**Issue Stage 3:** #17  
-**Issue Vercel تعویق‌شده:** #16  
-**مبنای Batch 2:** Batch 1 merge `c9599c4905f9fc1d28ba7e9086edf20376991740`  
-**Head اولیهٔ سبز Batch 2:** `a7807a212315feca656c4ed88dd746cb6be752ce`  
-**CI اولیهٔ معتبر:** Nutrition Core CI `30858434028` — success  
-**Artifact:** `8873368541`  
-**Artifact digest:** `sha256:3fed8d5c491184280437d34f135fdc1323f3c68998a0cebeccebf911ac28ad9c`  
+**وضعیت:** مرجع واحد و اجباری پروژه  
+**آخرین بازبینی:** ۴ اوت ۲۰۲۶ — Stage 3 Batch 3 implementation parity  
+**Integration branch:** `web/pwa-foundation`  
+**Active branch:** `stage3/catalog-provenance-parity`  
+**Active PR:** #20  
+**Stage 3 Issue:** #17  
+**Deferred Vercel Issue:** #16  
+**Batch 3 base:** Batch 2 merge `917f04e319a924dda7dfb16d079453a5e5686541`  
+**Validated implementation head:** `03eb666cc7a864598b8ceb416df9bb35cd53896c`  
+**Nutrition Core CI:** `30860892868` — success  
+**Nutrition artifact:** `8874284638`  
+**Nutrition digest:** `sha256:1f25275a79fe6d4766b1839512f9159875b8dfc07b18eefacadc2460b50b8908`  
+**Web CI:** `30860892878` — success  
+**Web artifact:** `8874311104`  
+**Web digest:** `sha256:6b1f59acc0800f0ebd2805173c3b08b4d0afd2cd41a98214644a87aecf209cfa`  
 **مرحلهٔ فعال:** Stage 3 — Nutrition Core Extraction و Parity  
-**Gate فعلی:** CI نهایی اسناد/Review و Merge PR #19؛ سپس Batch 3 Catalog Release/Provenance
+**Gate فعلی:** CI اسناد، Review نهایی، Ready/Merge PR #20؛ سپس Batch 4 Universal estimates + SQLite equivalence
 
-## پروتکل اجباری ادامهٔ پروژه
+## ۱. پروتکل اجباری ادامه
 
-پیش از هر تغییر کد، داده یا زیرساخت:
+پیش از هر تغییر:
 
 1. این فایل کامل خوانده شود.
 2. `docs/NEOFIT_PROGRESS_LOG.md` کامل خوانده شود.
-3. Branch، HEAD، PR، Issue، CI، Review، Vercel و Supabase از ابزارهای واقعی بررسی شوند.
-4. فقط Exact continuation point ثبت‌شده اجرا شود.
+3. Branch، HEAD، PR، Issue، CI، Review، Vercel و Supabase از ابزار واقعی بررسی شوند.
+4. فقط Exact continuation point این سند اجرا شود.
 
 در پایان هر نوبت:
 
-- هر دو سند با Commitها، Runها، Artifactها، خطاها، تصمیم‌ها و قدم بعدی به‌روزرسانی شوند.
-- هیچ Build، Deployment، Preview، Parity، Migration، Coverage یا Accuracy بدون شواهد اعلام نشود.
-- گزارش مکالمه یا حافظه جای وضعیت واقعی ریپو را نمی‌گیرد.
+- هر دو سند با Commit، Run، Artifact، خطا، Correction، تصمیم و نقطهٔ ادامه همگام شوند.
+- هیچ Build، Deployment، Preview، Parity، Freeze، Migration، Coverage یا Accuracy بدون شواهد اعلام نشود.
+- حافظهٔ مکالمه جای ریپو و CI را نمی‌گیرد.
 
-## ۱. مأموریت محصول
+## ۲. مأموریت و معماری قفل‌شده
 
-NeoFit یک محصول فارسی‌محور، Mobile-first و قابل نصب برای ثبت و برنامه‌ریزی تغذیه و تمرین است.
+NeoFit یک محصول فارسی‌محور و Mobile-first برای ثبت و برنامه‌ریزی تغذیه و تمرین است.
 
-> کاربر فارسی‌زبان باید بتواند وضعیت امروز را ببیند، غذا یا تمرین را سریع ثبت کند، برنامه را دنبال کند و دادهٔ خود را امن و قابل بازیابی نگه دارد.
-
-## ۲. معماری قفل‌شده
-
-- Web و Server routes: Next.js App Router + TypeScript strict
-- Nutrition domain: `packages/nutrition-core`، خالص و deterministic
+- Web: Next.js App Router + TypeScript strict
+- Pure nutrition domain: `packages/nutrition-core`
+- Data authority: IFKB + USDA SR Legacy + FNDDS
 - Hosting نهایی: Vercel
-- Auth/Postgres/RLS/Sync: Supabase پس از Stage 3
+- Supabase فقط بعد از پایان Stage 3 و تأیید Organization/Region/Cost
 - App-shell Offline: Service Worker
 - Catalog snapshot/mutation queue: IndexedDB در Stage 7
 - زبان پیش‌فرض: فارسی و RTL
-- دادهٔ تغذیه: IFKB + USDA SR Legacy + FNDDS
-- AI/Vision: فقط Server-side و بدون اختیار تولید Nutrition
-- Monorepo tooling سنگین تا اثبات نیاز ممنوع است.
+- AI/Vision فقط identity/structure؛ بدون اختیار ساخت Nutrition
+- Monorepo tooling سنگین تا نیاز اثبات‌شده ممنوع
 
-## ۳. قراردادهای غیرقابل نقض
+قراردادهای غیرقابل نقض:
 
-- AI/Vision کالری، مواد مغذی، وزن یا Portion تولید یا اصلاح نمی‌کند.
-- Nutrition نهایی فقط از رکوردهای نسخه‌دار محاسبه می‌شود.
-- Ingredient حل‌نشده کل برنامهٔ AI را رد می‌کند.
+- AI/Vision کالری، nutrient، وزن یا Portion تولید یا اصلاح نمی‌کند.
+- Nutrition فقط از رکوردهای نسخه‌دار محاسبه می‌شود.
 - Missing nutrient صفر نیست؛ وزن نامعلوم `null` است.
-- Provider nutrition نادیده گرفته می‌شود.
-- Imported/Custom user data با Seed overwrite یا downgrade نمی‌شود.
-- Canonical ID، fingerprint و Schema فقط با Migration/Freeze نسخه‌دار تغییر می‌کند.
-- Secretهای سروری وارد Browser bundle نمی‌شوند.
-- Core هیچ UI، React Native، Expo، SQLite driver، Network، filesystem یا environment access ندارد.
+- Ingredient حل‌نشده کل برنامهٔ AI را رد می‌کند.
+- Imported/Custom با Seed overwrite یا downgrade نمی‌شوند.
+- Canonical ID، fingerprint و Schema فقط با Migration/Freeze نسخه‌دار تغییر می‌کنند.
+- Pure Core هیچ UI، React Native، Expo، SQLite driver، Network، filesystem یا environment access ندارد.
+- Catalog Generator/Asset/Manifest Authority اصلی‌اند؛ Runtime projection مستقل و دستی تغییر نمی‌کند.
 
-## ۴. دارایی‌های علمی غیرقابل حذف
+## ۳. وضعیت مراحل
 
-- ۱۳٬۲۲۵ رکورد عمومی SR/FNDDS
-- ۹٬۲۷۹ Concept عمومی
-- ۳۶٬۴۹۴ Portion رسمی
-- ۲۶۱ هویت Canonical ایرانی
-- Canonical IDs، mappings، fingerprints و provenance
-- arithmetic، portion، recipe، diary، goals، search و ranking behavior
-- Schema/ID/arithmetic/migration/catalog audits
+### Stage 0 — Pivot/Freeze
 
-`mobile/` تا پایان Stage 3 Frozen parity oracle می‌ماند.
+انجام‌شده — PR #12، Merge `151de2c0d5c9b02602c2f89eb4df808653cdd74e`.
 
-## ۵. وضعیت مراحل
+### Stage 1 — Persian RTL UX
 
-### Stage 0 — Pivot و Freeze
-
-**انجام‌شده** — PR #12، Merge `151de2c0d5c9b02602c2f89eb4df808653cdd74e`.
-
-### Stage 1 — UX فارسی/RTL
-
-**انجام‌شده و پذیرفته‌شده** — PR #13، Merge `a458a27a2685bfa7d85ea28686b3182c3167d747`.
+انجام‌شده و پذیرفته‌شده — PR #13، Merge `a458a27a2685bfa7d85ea28686b3182c3167d747`.
 
 ### Stage 2A — PWA Code Foundation
 
-**انجام‌شده** — PR #15، Merge `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b`.
+انجام‌شده — PR #15، Merge `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b`.
 
 ### Stage 2B — Vercel Preview/HTTPS
 
-**تعویق‌شده در Issue #16**.
+تعویق‌شده در Issue #16.
 
 - Project: `neofit-ai`
 - Project ID: `prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG`
-- Deployment/Preview: ندارد
-- `vercel[bot]` محدودیت `api-deployments-free-per-day` را با پیام «more than 100» مستقیماً ثبت کرده است.
+- Preview/Deployment: ندارد
+- `vercel[bot]` محدودیت `api-deployments-free-per-day` با «more than 100» ثبت کرده است.
 
-این Gate پیش از Web RC اجباری است، اما Stage 3 را متوقف نمی‌کند.
+این Gate پیش از Web RC اجباری است، اما Stage 3 را Block نمی‌کند.
 
-### Stage 3 — Nutrition Core Extraction و Parity
+## ۴. Stage 3 — Nutrition Core Extraction و Parity
 
-**فعال**
+### Batch 1 — Arithmetic/domain
 
-#### Batch 1 — Pure arithmetic/domain
+انجام‌شده — PR #18، Merge `c9599c4905f9fc1d28ba7e9086edf20376991740`.
 
-**انجام‌شده** — PR #18، Merge `c9599c4905f9fc1d28ba7e9086edf20376991740`.
-
-استخراج‌شده:
-
-- types
-- nutrition arithmetic
-- recipes
-- diary
-- goals
+- types، nutrition، recipe، diary، goals
 - AST pure-boundary verifier
-- Mobile RC Golden fixtures
-
-شواهد نهایی:
-
-- Head `7861c4f56f0474b61d8dd9b3a7101e6b616b524d`
-- Nutrition Core CI `30857715438`
+- CI `30857715438`
 - Artifact `8873108322`
-- Digest `sha256:de0197b9ae9762a921a32c13071701064863aef8e77e612fb2e35bd49893d25f`
 - 10/10 pass
-- Web CI `30857715413` pass
+- Web CI `30857715413`
 
-#### Batch 2 — Controlled Persian Search و Universal Ranking
+### Batch 2 — Controlled Persian Search/Ranking
 
-**فعال؛ پیاده‌سازی اولیه سبز در PR #19**
+انجام‌شده — PR #19، Merge `917f04e319a924dda7dfb16d079453a5e5686541`.
+
+- normalization/modifiers/local search
+- Alias routing
+- Generic target resolution
+- SR/FNDDS ranking
+- CI `30858722741`
+- Artifact `8873475224`
+- 25/25 pass
+- Web CI `30858722681`
+
+مرز ادعا: Benchmark 500تایی Controlled Alias است؛ Independent Natural Query frozen corpus هنوز منتشر نشده است.
+
+### Batch 3 — Catalog Release/Provenance/Legacy Adapter
+
+**پیاده‌سازی و Parity سبز؛ PR #20 در Gate نهایی.**
 
 Authority:
 
-- `docs/NEOFIT_SEARCH_RANKING_AUTHORITY_MAP.md`
-- Search Blob `bb99c934beeed5094da7e0a29a8f53635ace48b3`
-- Ranking Blob `9b23b1ef7d6817ff2b946e1fdedcad76608279e1`
-- Alias registry Blob `94429b1937edc6234b23fc8398531b531a891cc2`
-- Benchmark manifest Blob `24a1d20effe679b23e4ee4966d0bdb01f2b06ec0`
+- `docs/NEOFIT_CATALOG_PROVENANCE_AUTHORITY_MAP.md`
+- Catalog workflow Blob `1012754613cf99bd3c73de49830731e9cc52adcf`
+- Catalog builder Blob `597180d6bd540bc9b8bf0fc931c030d534289f5c`
+- Concept augmenter Blob `b0ed12152b8a0001fedfa0c35e52ddf2fc81fcc0`
+- Generated Manifest Blob `f6bcc7bbeeed078b2798b625591b08a11bce0b78`
+- Mobile Release projection Blob `1afb7266b7d456530febb5c1c49c109e3d1f3ef7`
+- Provenance Blob `1edb7e8eed151305075e634a84596db2211dffaf`
+- Legacy adapter Blob `30fcc0d774a43f0f0608bd29c342c3e20d339f58`
+- Schema audit Blob `ddcf4cfceefcecf2d1f9d8ad922e4472c212bc1c`
 
-Extracted:
+Extracted/implemented:
 
-- Persian Unicode/digit/half-space normalization
-- modifier parsing
-- local deterministic food search
-- Alias index، exact/longest/compact matching
-- Iranian-vs-Generic evaluator precedence
-- Generic target resolution
-- SR/FNDDS ranking and tie policy
+- `src/catalog-release.ts`
+  - typed `CatalogReleaseContract`
+  - full frozen Manifest projection for Catalog `1.2.0`
+  - release invariant validation
+  - typed Schema/ID candidate comparison baseline
+  - explicit `candidate-not-final` validation
+- `src/catalog-provenance.ts`
+  - conservative Evidence-tier resolver
+  - Imported evidence allowlist
+- `src/legacy-catalog-adapter.ts`
+  - Legacy food → Concept/Variant conversion
+  - per-serving basis
+  - unknown weight preservation
+  - uncertainty clamp `0..0.8`
+  - source metadata normalization
+- Package exports and README
+- CI provenance metadata and always-retained preflight evidence
 
-Official controlled benchmark:
+Intentional projection decision:
 
-- Release `1.1.0`
-- Catalog `1.2.0`
-- 218 aliases
-- 500 deterministic cases
-- Route/Top-1/Top-5 = 1.0
-- failures = 0
-- Artifact digest `sha256:d43931525ade2f1b685b18647d1554cc317f14bd8874ed66fe5c85370454fbde`
+Mobile `catalog-release.ts` یک Projection کوتاه بود. Package جدید، بدون تغییر Nutrition behavior، تمام فیلدهای ثابت Manifest موردنیاز مصرف‌کننده را شامل می‌شود؛ Generator/Manifest همچنان Authority اصلی‌اند. این توسعهٔ Metadata در Golden tests و Authority map صریح ثبت شده و silent change نیست.
 
-Claim boundary:
+Frozen Catalog `1.2.0`:
 
-- این Benchmark از Alias registry تولید شده و Natural-language benchmark نیست.
-- Independent Natural Query validator آماده است، اما Frozen corpus منتشر نشده است.
-- typo/colloquial/regional/ambiguity/abstention accuracy هنوز اثبات نشده است.
+- DB bytes `13,885,440`
+- DB SHA `0164cb344c22eeec2556f9decdf13931e700078a9566bd884609edee78667247`
+- foods `13,225`
+- concepts `9,279`
+- portions `36,494`
+- Canon IDs `261`
+- aliases `218`
+- mappings `13,225`
+- coverage `1.0`
 
-Initial Batch 2 validation:
+Freeze distinction:
 
-- Head `a7807a212315feca656c4ed88dd746cb6be752ce`
-- CI `30858434028` — success
-- Artifact `8873368541`
-- Digest `sha256:3fed8d5c491184280437d34f135fdc1323f3c68998a0cebeccebf911ac28ad9c`
-- AST boundary: 8 source files pass
-- TypeScript: pass
-- tests: 25/25 pass
-- all 9 official controlled-query variation types represented
+- Nutrition RC/Catalog `1.2.0` frozen است.
+- Schema/ID `1.1.0` فقط `candidate-not-final` و auditable baseline است، نه public stable compatibility.
 
-#### Batchهای باقی‌ماندهٔ Stage 3
+Test-first evidence:
 
-1. Catalog release/provenance و legacy adapter
-2. Universal SR/FNDDS estimates و SQLite equivalence
-3. Canonical ID/fingerprint/release parity
-4. Web adapter بدون تکرار arithmetic
+1. Test commit `0d0be7ed7afc24404ebae46ea852970928259f87`
+   - Run `30860579622` — expected failure
+   - TypeScript فقط به‌علت نبود APIهای Batch 3 شکست خورد.
+2. Implementation/export head `589a504666a97c174fac3f6481599118c59a80d4`
+   - Run `30860691909` — 33/34
+   - تنها Failure متعلق به انتظار خام floating-point در تست بود؛ Domain مقدار canonical `84` را درست تولید کرد.
+3. Test correction `52934ab172beea7d939b3024344de8f20f529b3a`
+   - Run `30860781048` — success
+   - 34/34 pass
+   - Artifact `8874244557`
+   - Digest `sha256:a39d6f61096b4e7f535d9cba20beda184dbebcd902ad031b4d538d674d444580`
+4. Final README/CI metadata head `03eb666cc7a864598b8ceb416df9bb35cd53896c`
+   - Nutrition CI `30860892868` — success
+   - Artifact `8874284638`
+   - Digest `sha256:1f25275a79fe6d4766b1839512f9159875b8dfc07b18eefacadc2460b50b8908`
+   - Web CI `30860892878` — success
+   - Web Artifact `8874311104`
+   - Web digest `sha256:6b1f59acc0800f0ebd2805173c3b08b4d0afd2cd41a98214644a87aecf209cfa`
 
-Stage 3 زمانی کامل است که Pure Core و Adapterهای ضروری، Golden/SQLite parity را پاس کنند و Web هیچ محاسبهٔ موازی نداشته باشد.
+Final proven behavior:
 
-### Stage 4 — Supabase Foundation
+- 11 Pure TypeScript source files pass AST boundary.
+- TypeScript strict passes.
+- 34/34 tests pass؛ 0 fail، 0 skipped.
+- Runtime Release projection exactly equals Golden Manifest fields.
+- Invalid SHA، mapping coverage و mapping policy totals fail closed.
+- Candidate cannot be promoted silently to Final.
+- Custom → `user_entered`.
+- DS0/broad fallback → `broad_fallback`.
+- Imported allowlist فقط verified/digital-consensus/legacy است.
+- Legacy unknown grams remains `null`.
+- variability clamps to `0..0.8`.
+- blank source record falls back to Food ID.
+- blank source version is omitted.
+- Web/PWA regression remains green.
 
-شروع فقط پس از پایان Stage 3 و تأیید Organization/Region/Cost.
+Batch 3 exclusions remain:
 
-### Stage 5 تا 9
+- SQLite execution/build/audit
+- filesystem hashing
+- migrations/repositories/persistence precedence
+- Supabase/Auth/AI/Vision
+- Web adapter
 
+### Remaining Stage 3
+
+1. Batch 4 — Universal SR/FNDDS estimates + SQLite↔TypeScript equivalence
+2. Batch 5 — Canonical ID/fingerprint/release parity
+3. Batch 6 — Web adapter بدون duplicated arithmetic
+
+## ۵. Stage 4–9
+
+- Stage 4: Supabase بعد از Stage 3 و تأیید هزینه
 - Stage 5: Nutrition vertical slice
 - Stage 6: AvalAI/Vision
-- Stage 7: Offline catalog/sync
-- Stage 8: Migration/recovery
+- Stage 7: Offline Catalog/Sync
+- Stage 8: Migration/Recovery
 - Stage 9: Web RC و بستن Issue #16
 
 ## ۶. Anti-goalها
 
-- شروع Supabase پیش از Stage 3 parity
-- بازنویسی از روی حدس یا UI وب
-- silent fix به‌جای Parity failure
-- واردکردن SQLite/Expo/Network به Pure Core
-- معرفی Alias benchmark به‌عنوان Natural Query evidence
-- تغییر IFKB/Canonical ID بدون Migration و Freeze
-- PRهای بزرگ چندمرحله‌ای
+- Supabase پیش از Stage 3 parity
+- بازنویسی از روی UI یا حدس
+- silent fix به‌جای parity failure
+- انتقال Generator/SQLite/filesystem/hash execution به Pure Core
+- ویرایش دستی Release snapshot مستقل از Manifest
+- معرفی Schema/ID candidate به‌عنوان Final
+- ادعای Natural Query accuracy از Controlled Alias benchmark
+- PRهای چندمرحله‌ای بزرگ
 
-## ۷. ترتیب فعلی
+## ۷. Exact continuation point
 
-1. CI نهایی و Merge PR #19
-2. Batch 3: Catalog release/provenance/legacy adapter
-3. Batch 4: Universal estimates و SQLite equivalence
-4. Batch 5: ID/fingerprint و Web adapter
-5. Stage 4 Supabase
-6. Issue #16 پیش از Web RC
-
-## ۸. Exact continuation point
-
-1. `docs/NEOFIT_PROGRESS_LOG.md` با Entry Batch 2 همگام شود.
-2. Nutrition Core CI و Web CI روی Head اسناد پاس شوند.
-3. Reviewهای PR #19 بررسی و رفع شوند.
-4. PR #19 با `expected_head` Merge شود.
-5. Issue #17 باز بماند و Batch 2 completed ثبت شود.
-6. Branch Batch 3 از Merge commit ساخته شود.
-7. پیش از استخراج، `catalog-release.ts`, `catalog-provenance.ts`, `legacy-catalog-adapter.ts` و تست‌های manifest/fingerprint/migration Inventory شوند.
-8. Golden fixtures و Authority map Batch 3 قبل از کد ساخته شوند.
-9. Supabase، Auth، AI واقعی و Web adapter هنوز شروع نشوند.
+1. Nutrition Core CI و Web CI روی Commitهای اسناد پاس شوند.
+2. PR #20 و تمام Review threadها دوباره بررسی شوند.
+3. PR #20 فقط پس از شواهد کامل Ready for Review شود.
+4. در صورت سبز ماندن CI و نبود Review باز، PR #20 با expected head Merge شود.
+5. Issue #17 باز بماند و Batch 3 completed ثبت شود.
+6. Branch متمرکز Batch 4 از Merge commit ساخته شود.
+7. پیش از کد Batch 4 این Authorityها خوانده شوند:
+   - `mobile/src/nutrition-core/universal-food-estimate.ts`
+   - Universal SR/FNDDS repository mappings
+   - SQLite↔TypeScript equivalence tests
+   - source uncertainty policy
+8. Golden fixtures Batch 4 پیش از implementation ساخته شوند.
+9. Supabase، Auth، AI، repositories و Web adapter خارج از Scope بمانند.

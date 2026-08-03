@@ -8,6 +8,7 @@ on:
       - 'packages/nutrition-core/**'
       - 'docs/NEOFIT_NUTRITION_CORE_AUTHORITY_MAP.md'
       - 'docs/NEOFIT_SEARCH_RANKING_AUTHORITY_MAP.md'
+      - 'docs/NEOFIT_CATALOG_PROVENANCE_AUTHORITY_MAP.md'
       - 'docs/NEOFIT_MASTER_PLAN.md'
       - 'docs/NEOFIT_PROGRESS_LOG.md'
       - '.github/workflows/nutrition-core-ci.yml'
@@ -18,6 +19,7 @@ on:
       - 'packages/nutrition-core/**'
       - 'docs/NEOFIT_NUTRITION_CORE_AUTHORITY_MAP.md'
       - 'docs/NEOFIT_SEARCH_RANKING_AUTHORITY_MAP.md'
+      - 'docs/NEOFIT_CATALOG_PROVENANCE_AUTHORITY_MAP.md'
       - 'docs/NEOFIT_MASTER_PLAN.md'
       - 'docs/NEOFIT_PROGRESS_LOG.md'
       - '.github/workflows/nutrition-core-ci.yml'
@@ -52,6 +54,13 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Initialize evidence directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          printf '{"commit":"%s","status":"preflight"}\n' "$GITHUB_SHA" > artifacts/preflight.json
+
       - name: Verify golden provenance
         working-directory: .
         shell: bash
@@ -59,13 +68,21 @@ jobs:
           set -euo pipefail
           test -s docs/NEOFIT_NUTRITION_CORE_AUTHORITY_MAP.md
           test -s docs/NEOFIT_SEARCH_RANKING_AUTHORITY_MAP.md
+          test -s docs/NEOFIT_CATALOG_PROVENANCE_AUTHORITY_MAP.md
           test -s packages/nutrition-core/tests/mobile-rc-golden-v1.ts
           test -s packages/nutrition-core/tests/search-ranking-golden-v1.ts
+          test -s packages/nutrition-core/tests/catalog-provenance-golden-v1.ts
+          test -s packages/nutrition-core/tests/catalog-provenance-parity.test.ts
           grep -q '648b98cdc921beb26ccd0ff05a1f17944bb6f71d' packages/nutrition-core/tests/mobile-rc-golden-v1.ts
           grep -q '2291e1958efe5e17010230c5864c9fadc9bc47ba' packages/nutrition-core/tests/mobile-rc-golden-v1.ts
           grep -q '24a1d20effe679b23e4ee4966d0bdb01f2b06ec0' packages/nutrition-core/tests/search-ranking-golden-v1.ts
           grep -q 'd43931525ade2f1b685b18647d1554cc317f14bd8874ed66fe5c85370454fbde' packages/nutrition-core/tests/search-ranking-golden-v1.ts
           grep -q 'contract_only_not_released' packages/nutrition-core/tests/search-ranking-golden-v1.ts
+          grep -q 'f6bcc7bbeeed078b2798b625591b08a11bce0b78' packages/nutrition-core/tests/catalog-provenance-golden-v1.ts
+          grep -q '1afb7266b7d456530febb5c1c49c109e3d1f3ef7' packages/nutrition-core/tests/catalog-provenance-golden-v1.ts
+          grep -q '1edb7e8eed151305075e634a84596db2211dffaf' packages/nutrition-core/tests/catalog-provenance-golden-v1.ts
+          grep -q '30fcc0d774a43f0f0608bd29c342c3e20d339f58' packages/nutrition-core/tests/catalog-provenance-golden-v1.ts
+          grep -q 'candidate-not-final' packages/nutrition-core/tests/catalog-provenance-golden-v1.ts
 
       - name: Verify pure-domain boundary
         run: npm run boundary
@@ -77,14 +94,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p artifacts
           node --import tsx --test --test-reporter=tap tests/*.test.ts | tee artifacts/parity.tap
 
       - name: Write parity metadata
         shell: bash
         run: |
           set -euo pipefail
-          printf '{\n  "package": "@neofit/nutrition-core",\n  "schemaVersion": 1,\n  "commit": "%s",\n  "referenceBranch": "agent/iranian-food-kb-foundation",\n  "referenceHead": "648b98cdc921beb26ccd0ff05a1f17944bb6f71d",\n  "sourceTestBlob": "2291e1958efe5e17010230c5864c9fadc9bc47ba",\n  "searchBlob": "bb99c934beeed5094da7e0a29a8f53635ace48b3",\n  "rankingBlob": "9b23b1ef7d6817ff2b946e1fdedcad76608279e1",\n  "controlledSearchRelease": "1.1.0",\n  "controlledSearchManifestBlob": "24a1d20effe679b23e4ee4966d0bdb01f2b06ec0",\n  "controlledSearchArtifactDigest": "sha256:d43931525ade2f1b685b18647d1554cc317f14bd8874ed66fe5c85370454fbde",\n  "naturalQueryCorpus": "not_released",\n  "generatedAt": "%s"\n}\n' \
+          printf '{\n  "package": "@neofit/nutrition-core",\n  "schemaVersion": 1,\n  "commit": "%s",\n  "referenceBranch": "agent/iranian-food-kb-foundation",\n  "referenceHead": "648b98cdc921beb26ccd0ff05a1f17944bb6f71d",\n  "sourceTestBlob": "2291e1958efe5e17010230c5864c9fadc9bc47ba",\n  "searchBlob": "bb99c934beeed5094da7e0a29a8f53635ace48b3",\n  "rankingBlob": "9b23b1ef7d6817ff2b946e1fdedcad76608279e1",\n  "controlledSearchRelease": "1.1.0",\n  "controlledSearchManifestBlob": "24a1d20effe679b23e4ee4966d0bdb01f2b06ec0",\n  "controlledSearchArtifactDigest": "sha256:d43931525ade2f1b685b18647d1554cc317f14bd8874ed66fe5c85370454fbde",\n  "naturalQueryCorpus": "not_released",\n  "catalogReleaseVersion": "1.2.0",\n  "catalogManifestBlob": "f6bcc7bbeeed078b2798b625591b08a11bce0b78",\n  "catalogWorkflowBlob": "1012754613cf99bd3c73de49830731e9cc52adcf",\n  "catalogBuilderBlob": "597180d6bd540bc9b8bf0fc931c030d534289f5c",\n  "catalogReleaseProjectionBlob": "1afb7266b7d456530febb5c1c49c109e3d1f3ef7",\n  "catalogProvenanceBlob": "1edb7e8eed151305075e634a84596db2211dffaf",\n  "legacyCatalogAdapterBlob": "30fcc0d774a43f0f0608bd29c342c3e20d339f58",\n  "schemaIdCandidateStatus": "candidate-not-final",\n  "schemaIdCandidateDocumentBlob": "0f372496cbad2ecf5cca72a6fdf7604255179be0",\n  "nutritionRcFreezeDocumentBlob": "3c0601f469c6d15618fcadd1179c16c581da6f6e",\n  "generatedAt": "%s"\n}\n' \
             "$GITHUB_SHA" \
             "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             > artifacts/parity-metadata.json
