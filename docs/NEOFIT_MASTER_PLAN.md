@@ -1,16 +1,22 @@
 # پلن مادر NeoFit
 
 **وضعیت:** مرجع واحد و اجباری پروژه  
-**آخرین بازبینی:** ۴ اوت ۲۰۲۶ — Stage 3 Batch 4 Authority/Golden checkpoint  
+**آخرین بازبینی:** ۴ اوت ۲۰۲۶ — Stage 3 Batch 4 Universal Estimate/SQLite parity  
 **Integration branch:** `web/pwa-foundation`  
 **Active branch:** `stage3/universal-estimate-sqlite-parity`  
-**Active PR:** هنوز ساخته نشده؛ Draft authority PR قدم بعدی است  
+**Active PR:** #21 — Draft تا Gate نهایی اسناد/Review  
 **Stage 3 Issue:** #17  
 **Deferred Vercel Issue:** #16  
 **Batch 4 base:** Batch 3 merge `02c1bcf0b301a920b12abcff4f653575cb97bf7f`  
-**آخرین Head قبل از این سند:** `56dd449fb9aa169c00b60057aa26dff594d1e0d0`  
+**Validated implementation/metadata head:** `9a405cdb625e2b479f9d4ef0bfe566de9eb57bb4`  
+**Nutrition Core CI:** `30862265021` — success  
+**Nutrition artifact:** `8874767798`  
+**Nutrition digest:** `sha256:cb54c5d2c0968a98949ac834c7c81c575c040a7f814e08a9829c7bdd3b006033`  
+**Web CI:** `30862264999` — success  
+**Web artifact:** `8874785715`  
+**Web digest:** `sha256:7f5eedb931be548cb80bff75a0924061f51503a56ef050e6d10c5116b4087800`  
 **مرحلهٔ فعال:** Stage 3 — Nutrition Core Extraction و Parity  
-**Gate فعلی:** اعتبارسنجی Authority/Golden Batch 4؛ سپس test-first extraction از Universal estimator
+**Gate فعلی:** CI اسناد، Review نهایی، Ready/Merge PR #21؛ سپس Batch 5 ID/Fingerprint/Release parity
 
 ## ۱. پروتکل اجباری ادامه
 
@@ -23,7 +29,7 @@
 
 در پایان هر نوبت:
 
-- هر دو سند با Commit، Run، Artifact، خطا، Correction، تصمیم و نقطهٔ ادامه همگام شوند.
+- هر دو سند با Commit، Run، Artifact، Failure، Correction، تصمیم و نقطهٔ ادامه همگام شوند.
 - هیچ Build، Deployment، Preview، Parity، Freeze، Migration، Coverage یا Accuracy بدون شواهد اعلام نشود.
 - حافظهٔ مکالمه جای وضعیت واقعی ریپو و CI را نمی‌گیرد.
 
@@ -51,7 +57,7 @@ NeoFit محصولی فارسی‌محور و Mobile-first برای ثبت و ب�
 - Imported/Custom با Seed overwrite یا downgrade نمی‌شوند.
 - Canonical ID، fingerprint و Schema فقط با Migration/Freeze نسخه‌دار تغییر می‌کنند.
 - Pure Core هیچ UI، React Native، Expo، SQLite driver، Network، filesystem یا environment access ندارد.
-- SQLite و `node:sqlite` فقط در Test/Adapter layer مجازند؛ نه در `packages/nutrition-core/src`.
+- `node:sqlite` و SQL execution فقط در Test/Adapter layer مجازند.
 - Catalog Generator/Asset/Manifest Authority اصلی‌اند؛ Runtime projection مستقل و دستی تغییر نمی‌کند.
 
 ## ۳. وضعیت مراحل
@@ -86,7 +92,6 @@ NeoFit محصولی فارسی‌محور و Mobile-first برای ثبت و ب�
 انجام‌شده — PR #18، Merge `c9599c4905f9fc1d28ba7e9086edf20376991740`.
 
 - types، nutrition، recipe، diary، goals
-- AST pure-boundary verifier
 - CI `30857715438`
 - Artifact `8873108322`
 - 10/10 pass
@@ -97,9 +102,7 @@ NeoFit محصولی فارسی‌محور و Mobile-first برای ثبت و ب�
 انجام‌شده — PR #19، Merge `917f04e319a924dda7dfb16d079453a5e5686541`.
 
 - normalization/modifiers/local search
-- Alias routing
-- Generic target resolution
-- SR/FNDDS ranking
+- Alias routing و SR/FNDDS ranking
 - CI `30858722741`
 - Artifact `8873475224`
 - 25/25 pass
@@ -111,122 +114,153 @@ NeoFit محصولی فارسی‌محور و Mobile-first برای ثبت و ب�
 
 انجام‌شده — PR #20، Merge `02c1bcf0b301a920b12abcff4f653575cb97bf7f`.
 
-Final branch head:
-
-- `d8a46185c8e777fccc4526cba16a1f7451c22f41`
-
-Final evidence:
-
-- Nutrition Core CI `30861155760` — success
-- Nutrition Artifact `8874374046`
-- Digest `sha256:f827e27bb2dee03f16de991c51d723cf7a5a9dd6aa009ed2d7efe45796023425`
-- Web CI `30861155825` — success
-- Web Artifact `8874391849`
-- Digest `sha256:fa62dbfe383a21becab2856856587412f8218be117e842d43056053e0747c412`
-- 34/34 tests pass
-- 11 Pure TypeScript files pass AST boundary
-- Review thread باز پیش از Merge: صفر
-
-Extracted surface:
-
-- Catalog `1.2.0` consumer projection and invariants
+- Catalog `1.2.0` consumer projection/invariants
 - Schema/ID `candidate-not-final` baseline
-- Evidence resolver and Imported allowlist
+- Evidence resolver و Imported allowlist
 - Legacy per-serving/null-weight adapter
-- bounded uncertainty and source metadata normalization
-
-Authority distinction:
-
-- Nutrition RC/Catalog `1.2.0` frozen است.
-- Schema/ID `1.1.0` فقط auditable `candidate-not-final` baseline است.
-- Generator/Manifest Source of Truth باقی می‌مانند.
+- CI `30861155760`
+- Artifact `8874374046`
+- 34/34 pass
+- Web CI `30861155825`
 
 ### Batch 4 — Universal SR/FNDDS Estimate + SQLite Equivalence
 
-**فعال؛ Authority و Golden fixture ساخته شده‌اند، implementation هنوز شروع نشده است.**
+**پیاده‌سازی و Parity سبز؛ PR #21 در Gate نهایی.**
 
-Branch:
-
-- `stage3/universal-estimate-sqlite-parity`
-- Base: `02c1bcf0b301a920b12abcff4f653575cb97bf7f`
-
-Authority document:
+#### Authority
 
 - `docs/NEOFIT_UNIVERSAL_ESTIMATE_SQLITE_AUTHORITY_MAP.md`
+- Estimator Blob `7f54426e0b6838700f09b831c7df5a94afef8361`
+- Repository Blob `cdfacc1eafba4267cdc793284462bbabd7ca93b5`
+- Expo DB Adapter Blob `687d7b41dac26e1821a141c181fa13cdd81b2186`
+- Consumer Blob `df367a5d598925fa56eb3b2c36e47da8df504415`
+- SQLite equivalence Blob `80538220517f8b4f0bc80117469b16f6a82c7bdf`
+- SQLite helper Blob `d03caf85ccfbb68b245101d0646956fd9c32e045`
+- Nutrition SQL Blob `35ecdbd1f5baec8ee1b5845cfd994f15b5ff769d`
+- Macro guard Blob `3f16b43a37f98b807c3b95577102bf682bff905d`
+- Range Blob `2fd1f7f3c601c2ae48931f50a7ca1552ff45a2a2`
 
-Golden fixture:
+#### Extracted Pure surface
 
-- `packages/nutrition-core/tests/universal-estimate-golden-v1.ts`
+- `UniversalNutrientRecord`
+- `universalNutritionVector`
+- `universalSourceUncertainty`
+- `calculateUniversalFoodEstimate`
 
-Authority Blobها:
+Implementation:
 
-- Universal estimator `7f54426e0b6838700f09b831c7df5a94afef8361`
-- Universal Repository `cdfacc1eafba4267cdc793284462bbabd7ca93b5`
-- Expo Catalog DB adapter `687d7b41dac26e1821a141c181fa13cdd81b2186`
-- Food Search consumer `df367a5d598925fa56eb3b2c36e47da8df504415`
-- SQLite equivalence test `80538220517f8b4f0bc80117469b16f6a82c7bdf`
-- SQLite test helper `d03caf85ccfbb68b245101d0646956fd9c32e045`
-- Nutrition SQL contract `35ecdbd1f5baec8ee1b5845cfd994f15b5ff769d`
-- Macro guard test `3f16b43a37f98b807c3b95577102bf682bff905d`
-- Range test `2fd1f7f3c601c2ae48931f50a7ca1552ff45a2a2`
+- `packages/nutrition-core/src/universal-food-estimate.ts`
+- exact semantic extraction from Mobile RC
+- Package export added
 
-Pure/Core boundary:
+#### Boundary
 
-- وارد Core:
-  - `UniversalNutrientRecord`
-  - `universalNutritionVector`
-  - `universalSourceUncertainty`
-  - `calculateUniversalFoodEstimate`
-- فقط Test layer:
-  - `node:sqlite`
-  - SQL row/center equivalence
-  - portable test schema
-- خارج از Core:
-  - Expo Asset/FileSystem/SQLite
-  - Repository lifecycle/query/cache
-  - UI و Diary persistence
+Pure Core contains no SQLite runtime.
 
-Source uncertainty:
+Test-only:
+
+- `node:sqlite`
+- SQL fixture and direct center arithmetic comparison
+
+Excluded:
+
+- Expo Asset/FileSystem/SQLite
+- database lifecycle/query/cache
+- Repository runtime/persistence
+- UI/Diary
+- Supabase/Auth/AI/Vision/Web adapter
+
+#### Source uncertainty
 
 - FNDDS: `0.15`
 - SR Legacy: `0.08`
 
-Input contract:
+This is App-level uncertainty, not laboratory confidence interval.
 
-- grams finite، `> 0` و `<= 100_000`
-- invalid values fail-closed
-- `null` nutrient به absent vector field تبدیل می‌شود، نه صفر
+#### Input and missing-data behavior
 
-Selectability contract:
+- grams must be finite، `> 0` و `<= 100_000`
+- zero/negative/NaN/Infinity/>100000 reject
+- SQLite `NULL` becomes absent TypeScript nutrient field, not zero
+- nutrient order follows `NUTRIENT_KEYS`
+- center and range preserve Batch 1 canonical precision
 
-- `macroComplete=false`: در Ranker غیرقابل انتخاب
-- macro-complete بدون Portion: با grams قابل استفاده
-- estimator خودش Macro completeness را اختراع یا تکرار نمی‌کند
+#### Selectability boundary
 
-SQLite equivalence contract:
+- macro-incomplete exclusion remains in Ranker/Repository
+- estimator does not duplicate that gate
+- macro-complete record without official portions remains grams-usable
 
-- SQL center = nutrient × grams / 100
-- tolerance = `max(1e-10, abs(expected) * 1e-12)`
-- SQL `NULL` با TypeScript absent مقایسه می‌شود
-- uncertainty Range در TypeScript Golden می‌شود
+#### Test-first evidence
 
-Golden scenarios فعلی:
+Authority/Golden checkpoint:
 
-- FNDDS 150g و ±15% range
-- SR Legacy 50g و ±8% range
-- missing nutrient preservation
-- full snake_case row mapping fixture
-- grams boundary cases
-- fractional SQLite equivalence grams
-- macro-incomplete exclusion / grams-only record
+- Authority commit `200f60e02f8503e418e04ec6d79f4d3e087d2d37`
+- Golden commit `56dd449fb9aa169c00b60057aa26dff594d1e0d0`
+- Docs checkpoint head `4d2b8856747a20a98a367fde178ee5508b2594e0`
+- Nutrition CI `30861878272` — success
+- Artifact `8874629427`
+- Digest `sha256:aa75ab81bc0595ee45440af9c01c0dfbe99095b5b09abab5e5559b0786891a3b`
+- Web CI `30861878306` — success
 
-**هیچ Batch 4 Parity، CI یا implementation success هنوز ادعا نمی‌شود.**
+Expected Red:
+
+- Test commit `58552cb7c8a586aa064b676096d23cfa77f26137`
+- Nutrition CI `30861996867` — expected failure
+- Golden provenance: pass
+- AST boundary: pass
+- TypeScript failed only because four estimator APIs did not exist
+- preflight Artifact `8874670235`
+- Digest `sha256:45fd21c208b11f1772a2514ba1fcd852cc23c5bf40b538e5f0da35054c31fe50`
+
+Implementation:
+
+- estimator commit `19b0fdc8f47a76996450e5a829113cc001bf036b`
+- export head `7128badbda60a581f860067aae28f24fd0d7cfb3`
+
+First Green:
+
+- Nutrition CI `30862069748` — success
+- Artifact `8874698782`
+- Digest `sha256:0d5e80453e5b52137143464e8c23417701451147da28edeba9b54b338d226899`
+- Web CI `30862069747` — success
+- Web Artifact `8874722004`
+- Web digest `sha256:9963c9454b44212a493ba8b83ba44a5acaa4e0bb9b727f0f1b6f79cbe0a9e206`
+
+Final README/CI metadata:
+
+- README commit `a526e8040b7fe3bd27207ccfce574c993de5f779`
+- CI metadata head `9a405cdb625e2b479f9d4ef0bfe566de9eb57bb4`
+- Nutrition CI `30862265021` — success
+- Artifact `8874767798`
+- Digest `sha256:cb54c5d2c0968a98949ac834c7c81c575c040a7f814e08a9829c7bdd3b006033`
+- Web CI `30862264999` — success
+- Web Artifact `8874785715`
+- Web digest `sha256:7f5eedb931be548cb80bff75a0924061f51503a56ef050e6d10c5116b4087800`
+
+#### Proven behavior
+
+- 12 Pure TypeScript source files pass AST boundary
+- strict TypeScript pass
+- 43/43 tests pass؛ 0 fail، 0 skipped
+- FNDDS 150g + ±15% range
+- SR Legacy 50g + ±8% range
+- all-null/partial nutrients remain missing-aware
+- grams boundaries fail closed
+- snake_case Repository fixture maps without invented values
+- direct SQLite center arithmetic matches TypeScript at 1، 50.5، 83.3، 100، 175.25 و 999.9g
+- macro-incomplete record remains excluded
+- macro-complete no-portion record remains grams-usable
+- Web/PWA regression remains green
+
+#### Claim boundary
+
+Batch 4 proves Pure estimator parity and Golden-row direct SQLite equivalence. It does not claim that the complete 13,225-record Catalog audit was rerun.
 
 ### Remaining Stage 3
 
-1. تکمیل Batch 4 implementation/parity
-2. Batch 5 — Canonical ID/fingerprint/release parity
-3. Batch 6 — Web adapter بدون duplicated arithmetic
+1. Batch 5 — Canonical ID/fingerprint/release parity
+2. Batch 6 — Web adapter بدون duplicated arithmetic
 
 ## ۵. Stage 4–9
 
@@ -245,26 +279,23 @@ Golden scenarios فعلی:
 - انتقال Expo/SQLite/filesystem/network به Pure Core
 - تبدیل SQL query به API عمومی Domain
 - تکرار Macro-completeness gate داخل estimator
-- ویرایش Nutrition value یا uncertainty بدون Authority/Golden update
-- ادعای کل-Catalog audit از روی چند Golden row
+- تغییر uncertainty بدون Authority/Golden update
+- ادعای کل-Catalog audit از روی Golden rows
 - PRهای چندمرحله‌ای بزرگ
 
 ## ۷. Exact continuation point
 
-1. این سند و `docs/NEOFIT_PROGRESS_LOG.md` دوباره خوانده شوند.
-2. CI Commitهای Authority/Golden و Branch head بررسی شود.
-3. Draft PR Batch 4 از همین Branch باز شود.
-4. PR صریحاً Authority/Golden-only و no-parity باشد.
-5. parity testها قبل از implementation نوشته شوند:
-   - source uncertainty
-   - vector mapping/missing fields
-   - grams boundaries
-   - SQLite center equivalence
-   - macro guard continuity
-6. Red CI ناشی از نبود estimator ثبت شود.
-7. `universal-food-estimate.ts` بدون تغییر معنایی استخراج شود.
-8. `node:sqlite` فقط در tests استفاده شود.
-9. Package exports، README و CI metadata به‌روزرسانی شوند.
-10. Nutrition Core CI و Web CI پاس شوند.
-11. Reviewها رفع و هر دو سند اجباری به‌روزرسانی شوند.
-12. Supabase، Auth، AI، Repository runtime و Web adapter خارج از Scope بمانند.
+1. Nutrition Core CI و Web CI روی Commitهای این اسناد پاس شوند.
+2. PR #21 و تمام Review threadها دوباره بررسی شوند.
+3. PR #21 فقط پس از سبز ماندن CI، از Draft به Ready تبدیل شود.
+4. Reviewهای جدید رفع شوند.
+5. PR #21 با expected head Merge شود.
+6. Issue #17 باز بماند و Batch 4 completed ثبت شود.
+7. Branch متمرکز Batch 5 از Merge commit ساخته شود.
+8. پیش از کد Batch 5 این Authorityها خوانده شوند:
+   - `mobile/scripts/audit-schema-freeze-candidate.ts`
+   - `docs/releases/NEOFIT_SCHEMA_ID_FREEZE_CANDIDATE_V1.md`
+   - `docs/releases/NEOFIT_NUTRITION_RELEASE_CANDIDATE_FREEZE_V1.md`
+   - Catalog release contract tests و ID/mapping fingerprint sources
+9. Authority Map و Golden fixture Batch 5 پیش از implementation ساخته شوند.
+10. Supabase، Auth، AI، Repository runtime و Web adapter خارج از Scope بمانند.
