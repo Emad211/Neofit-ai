@@ -5,3 +5,6 @@ export * from './diary';
 export * from './goals';
 export * from './search';
 export * from './universal-catalog-ranking';
+export * from './catalog-release';
+export * from './catalog-provenance';
+export * from './legacy-catalog-adapter';
