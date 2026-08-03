@@ -1,9 +1,8 @@
 const CACHE_PREFIX = 'neofit-app-shell-';
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const SHELL_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}`;
-const APP_SHELL = [
-  '/',
-  '/offline',
+const SHELL_DOCUMENTS = ['/', '/offline'];
+const STATIC_SHELL = [
   '/manifest.webmanifest',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
@@ -35,6 +34,81 @@ function responseCanBeCached(response) {
   return !/no-store|private/i.test(cacheControl);
 }
 
+function toSameOriginAsset(candidate, baseUrl) {
+  if (!candidate || candidate.startsWith('data:') || candidate.startsWith('blob:')) return null;
+  try {
+    const url = new URL(candidate, baseUrl);
+    return url.origin === self.location.origin && isStaticAsset(url) ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+function extractHtmlAssets(html, baseUrl) {
+  const assets = new Set();
+  const attributePattern = /(?:src|href)=["']([^"'#]+)["']/gi;
+  for (const match of html.matchAll(attributePattern)) {
+    const asset = toSameOriginAsset(match[1], baseUrl);
+    if (asset) assets.add(asset);
+  }
+  return assets;
+}
+
+function extractCssAssets(css, baseUrl) {
+  const assets = new Set();
+  const urlPattern = /url\(\s*["']?([^"')]+)["']?\s*\)/gi;
+  for (const match of css.matchAll(urlPattern)) {
+    const asset = toSameOriginAsset(match[1], baseUrl);
+    if (asset) assets.add(asset);
+  }
+  return assets;
+}
+
+async function fetchAndCache(cache, input) {
+  const request = new Request(input, { cache: 'reload', credentials: 'same-origin' });
+  const response = await fetch(request);
+  if (!responseCanBeCached(response)) {
+    throw new Error(`NeoFit app-shell resource is not cacheable: ${request.url}`);
+  }
+  await cache.put(request, response.clone());
+  return response;
+}
+
+async function precacheAssetGraph(cache, initialAssets) {
+  const queue = [...initialAssets];
+  const visited = new Set();
+
+  while (queue.length > 0) {
+    const assetUrl = queue.shift();
+    if (!assetUrl || visited.has(assetUrl)) continue;
+    visited.add(assetUrl);
+
+    const response = await fetchAndCache(cache, assetUrl);
+    const contentType = response.headers.get('content-type') ?? '';
+    if (contentType.includes('text/css')) {
+      const css = await response.text();
+      for (const dependency of extractCssAssets(css, assetUrl)) {
+        if (!visited.has(dependency)) queue.push(dependency);
+      }
+    }
+  }
+}
+
+async function precacheDocumentAndAssets(cache, pathname) {
+  const documentUrl = new URL(pathname, self.location.origin).href;
+  const response = await fetchAndCache(cache, documentUrl);
+  const html = await response.text();
+  await precacheAssetGraph(cache, extractHtmlAssets(html, documentUrl));
+}
+
+async function installAppShell() {
+  const cache = await caches.open(SHELL_CACHE);
+  await Promise.all(STATIC_SHELL.map((asset) => fetchAndCache(cache, asset)));
+  for (const documentPath of SHELL_DOCUMENTS) {
+    await precacheDocumentAndAssets(cache, documentPath);
+  }
+}
+
 async function cacheFirst(request) {
   const cached = await caches.match(request);
   if (cached) return cached;
@@ -52,27 +126,22 @@ async function navigationResponse(request) {
     const response = await fetch(request);
     if (responseCanBeCached(response) && (url.pathname === '/' || url.pathname === '/offline')) {
       const cache = await caches.open(SHELL_CACHE);
-      await cache.put(url.pathname, response.clone());
+      await cache.put(request, response.clone());
     }
     return response;
   } catch {
     return (
       (await caches.match(request)) ||
-      (await caches.match(url.pathname)) ||
-      (await caches.match('/')) ||
-      (await caches.match('/offline')) ||
+      (await caches.match(url.href)) ||
+      (await caches.match(new URL('/', self.location.origin).href)) ||
+      (await caches.match(new URL('/offline', self.location.origin).href)) ||
       Response.error()
     );
   }
 }
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches
-      .open(SHELL_CACHE)
-      .then((cache) => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting()),
-  );
+  event.waitUntil(installAppShell().then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {
