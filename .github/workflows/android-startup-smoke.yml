@@ -5,12 +5,12 @@ on:
     branches:
       - agent/iranian-food-kb-foundation
     paths:
-      - 'mobile/**'
       - '.github/workflows/android-startup-smoke.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: android-startup-smoke-${{ github.ref }}
@@ -19,50 +19,31 @@ concurrency:
 jobs:
   startup-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
-    env:
-      CI: '1'
-      EXPO_NO_TELEMETRY: '1'
-      GRADLE_OPTS: '-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx4g'
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22.13.1
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Install locked dependencies
-        working-directory: mobile
-        run: npm ci --no-audit --no-fund
-
-      - name: Validate before native build
-        working-directory: mobile
+      - name: Download and verify the exact published QA APK
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          npm test
-          npm run typecheck
-          npm run doctor
-
-      - name: Generate Android native project
-        working-directory: mobile
-        run: npx expo prebuild --platform android --clean --no-install
-
-      - name: Build standalone release APK
-        working-directory: mobile
-        run: |
-          chmod +x android/gradlew
-          android/gradlew -p android assembleRelease --no-daemon --stacktrace
-          test -s android/app/build/outputs/apk/release/app-release.apk
+          set -euo pipefail
+          mkdir -p build/qa-apk
+          curl --fail --location --retry 3 \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            'https://api.github.com/repos/Emad211/Neofit-ai/actions/artifacts/8842306739/zip' \
+            -o build/qa-apk-artifact.zip
+          echo 'a73db4f6d139748b57f2c5c71a7f23cb56aeaeb87755c6a69acac6633cdd7f9c  build/qa-apk-artifact.zip' | sha256sum --check --strict
+          unzip -q build/qa-apk-artifact.zip -d build/qa-apk
+          test -s build/qa-apk/neofit-stage9-qa.apk
+          echo 'b3d2d5cabf607eeafdc16d75cdfab62a9d266ce66cc831ae665c3b0e26da32f3  build/qa-apk/neofit-stage9-qa.apk' | sha256sum --check --strict
+          grep -q '^javascriptBundle=embedded$' build/qa-apk/build-metadata.txt
+          unzip -l build/qa-apk/neofit-stage9-qa.apk | grep -q 'assets/index.android.bundle'
 
       - name: Enable KVM
         run: |
@@ -70,7 +51,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Launch release APK and capture startup evidence
+      - name: Launch exact release APK and capture startup evidence
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -82,7 +63,7 @@ jobs:
           script: |
             set +e
             OUT="$GITHUB_WORKSPACE/build/startup-smoke"
-            APK="$GITHUB_WORKSPACE/mobile/android/app/build/outputs/apk/release/app-release.apk"
+            APK="$GITHUB_WORKSPACE/build/qa-apk/neofit-stage9-qa.apk"
             PACKAGE='com.emad211.neofit'
             mkdir -p "$OUT"
             adb wait-for-device
