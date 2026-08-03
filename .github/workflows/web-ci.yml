@@ -131,6 +131,7 @@ jobs:
             --exclude='./.next' \
             --exclude='./artifacts' \
             --exclude='./.env*' \
+            --exclude='./tsconfig.tsbuildinfo' \
             -czf artifacts/vercel/neofit-web-source.tar.gz .
           sha256sum artifacts/vercel/neofit-web-source.tar.gz | tee artifacts/vercel/neofit-web-source.sha256
           printf '{"commit":"%s","branch":"%s","generatedAt":"%s"}\n' \
