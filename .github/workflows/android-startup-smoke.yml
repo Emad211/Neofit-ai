@@ -104,8 +104,11 @@ jobs:
             adb shell uiautomator dump /sdcard/neofit-window.xml > "$OUT/uiautomator-command.txt" 2>&1 || true
             adb pull /sdcard/neofit-window.xml "$OUT/window.xml" > "$OUT/uiautomator-pull.txt" 2>&1 || true
 
+            INIT_ERROR=0
+            grep -q 'Application initialization failed' "$OUT/logcat-full.txt" && INIT_ERROR=1
             echo "seen=$SEEN" >> "$OUT/result.txt"
             echo "died=$DIED" >> "$OUT/result.txt"
+            echo "initializationError=$INIT_ERROR" >> "$OUT/result.txt"
             echo "finalPid=${FINAL_PID:-none}" >> "$OUT/result.txt"
             if [ "$INSTALL_STATUS" -ne 0 ]; then
               echo 'status=install_failed' >> "$OUT/result.txt"
@@ -113,6 +116,8 @@ jobs:
               echo 'status=never_started' >> "$OUT/result.txt"
             elif [ "$DIED" -eq 1 ]; then
               echo 'status=crashed' >> "$OUT/result.txt"
+            elif [ "$INIT_ERROR" -eq 1 ]; then
+              echo 'status=initialization_error' >> "$OUT/result.txt"
             else
               echo 'status=alive_after_60s' >> "$OUT/result.txt"
             fi
@@ -127,7 +132,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Enforce startup survival
+      - name: Enforce startup usability
         if: always()
         shell: bash
         run: |
