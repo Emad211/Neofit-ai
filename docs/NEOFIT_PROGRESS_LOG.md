@@ -2,7 +2,7 @@
 
 **نقش سند:** حافظهٔ عملیاتی و شواهد توسعه  
 **همراه اجباری:** `docs/NEOFIT_MASTER_PLAN.md`  
-**آخرین به‌روزرسانی:** ۴ اوت ۲۰۲۶ — Stage 3 Batch 1 Golden parity
+**آخرین به‌روزرسانی:** ۴ اوت ۲۰۲۶ — Stage 3 Batch 1 پس از Review fixes
 
 ## روش اجباری استفاده
 
@@ -24,8 +24,8 @@
 | 0 | Pivot و Freeze | انجام‌شده | PR #12، `151de2c0d5c9b02602c2f89eb4df808653cdd74e` |
 | 1 | UX فارسی/RTL | انجام‌شده و پذیرفته‌شده | PR #13، `a458a27a2685bfa7d85ea28686b3182c3167d747` |
 | 2A | PWA Code Foundation | انجام‌شده | PR #15، `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b` |
-| 2B | Vercel Preview/HTTPS | تعویق‌شده و باز | Issue #16 |
-| 3 | Nutrition Core parity | فعال؛ Batch 1 سبز | Issue #17، PR #18، CI `30856939220` |
+| 2B | Vercel Preview/HTTPS | تعویق‌شده و باز | Issue #16؛ محدودیت روزانه با Vercel bot تأیید شد |
+| 3 | Nutrition Core parity | فعال؛ Batch 1 آمادهٔ Merge | Issue #17، PR #18، CI `30857414434` |
 | 4 | Supabase Foundation | شروع‌نشده | منتظر پایان Stage 3 و تأیید هزینه |
 | 5 | Nutrition vertical slice | شروع‌نشده | — |
 | 6 | AvalAI/Vision | شروع‌نشده | — |
@@ -112,8 +112,6 @@ Validation اولیه:
 - CI `30849445243` — success
 - Artifact `8870015510`
 
-یک خطای سهمیهٔ Vercel به‌صورت قطعی ثبت شد که Entry 004 آن را اصلاح کرد.
-
 ---
 
 ## Entry 004 — Correction Vercel و بستن P1 Offline
@@ -128,11 +126,7 @@ Validation اولیه:
 - Deployment count: صفر
 - `latestDeployment`: null
 
-Correction:
-
-- خطای سهمیه در بررسی مجدد قابل‌بازتولید نبود و ادعای قطعی آن بازپس گرفته شد.
-- مانع قابل‌بازتولید، ناسازگاری Schema در `deploy_to_vercel` بود.
-- Automation مربوط به Reset غیرفعال شد.
+در این مقطع، خطای سهمیه در ابزار مستقیم قابل‌بازتولید نبود و به‌درستی از حالت ادعای قطعی خارج شد. در Entry 006، Vercel bot بعداً شواهد مستقیم محدودیت را ثبت کرد.
 
 P1 Offline:
 
@@ -172,12 +166,11 @@ P1 Offline:
 
 ## Entry 006 — Stage 3 Batch 1: Pure Core و Golden parity
 
-**تاریخ/زمان:** ۴ اوت ۲۰۲۶، حدود ۰۱:۲۰ تا ۰۱:۳۰ ایران  
+**تاریخ/زمان:** ۴ اوت ۲۰۲۶، حدود ۰۱:۲۰ تا ۰۱:۴۰ ایران  
 **Issue:** #17  
 **Branch:** `stage3/nutrition-core-parity`  
 **PR:** #18  
-**Branch base:** `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b`  
-**Head پیاده‌سازی پیش از اسناد:** `f11b1ec84355d1311ce53d877163ec66b965611f`
+**Branch base:** `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b`
 
 ### هدف
 
@@ -200,11 +193,11 @@ P1 Offline:
 - `universal-food-estimate.ts`
 - `mobile/tests/nutrition-core.test.ts`
 
-### یافتهٔ معماری مهم
+### یافتهٔ معماری
 
 Mobile از قبل `mobile/src/nutrition-core/` دارد. بنابراین Stage 3 بازنویسی نیست؛ Extraction کنترل‌شده و اثبات Parity است.
 
-ماژول‌های Batch 1 هیچ وابستگی به React، React Native، Expo، SQLite، UI، فایل‌سیستم یا شبکه ندارند:
+ماژول‌های Batch 1 بدون React، React Native، Expo، SQLite، UI، فایل‌سیستم یا شبکه هستند:
 
 - `types`
 - `nutrition`
@@ -212,9 +205,9 @@ Mobile از قبل `mobile/src/nutrition-core/` دارد. بنابراین Stage
 - `diary`
 - `goals`
 
-Search، ranking، provenance، release، legacy adapter و Universal estimate خالص‌اند، اما برای جلوگیری از PR بزرگ به Batchهای بعد منتقل شدند.
+Search، ranking، provenance، release، legacy adapter و Universal estimate برای جلوگیری از PR بزرگ به Batchهای بعد منتقل شدند.
 
-### Numeric policy ثبت‌شده
+### Numeric policy
 
 - canonicalization: ۱۵ رقم معنادار
 - display rounding جداگانه
@@ -222,7 +215,7 @@ Search، ranking، provenance، release، legacy adapter و Universal estimate �
 - per-100g basis دقیقاً 100g
 - Gram calculation با وزن نامعلوم fail-closed
 
-### Missing policy ثبت‌شده
+### Missing policy
 
 - absence یعنی unknown، نه zero
 - وزن نامعلوم `null`
@@ -244,9 +237,10 @@ Search، ranking، provenance، release، legacy adapter و Universal estimate �
 - `packages/nutrition-core/src/goals.ts`
 - `packages/nutrition-core/tests/mobile-rc-golden-v1.ts`
 - `packages/nutrition-core/tests/parity.test.ts`
+- `packages/nutrition-core/scripts/verify-pure-boundary.mjs`
 - `.github/workflows/nutrition-core-ci.yml`
 
-### Source provenance قفل‌شده
+### Source provenance
 
 - Frozen reference head: `648b98cdc921beb26ccd0ff05a1f17944bb6f71d`
 - Mobile golden test Blob: `2291e1958efe5e17010230c5864c9fadc9bc47ba`
@@ -256,20 +250,60 @@ Search، ranking، provenance، release، legacy adapter و Universal estimate �
 - Diary Blob: `e297eed728a7457b9b46529a761e450bd647e97d`
 - Goals Blob: `16a2d91dfa173f88f3d56b26ce58aa679df25cf3`
 
-### CI و Parity
+### CI و Parity اولیه
 
-- Run: `30856939220`
-- Status: success
+- Implementation head: `f11b1ec84355d1311ce53d877163ec66b965611f`
+- Run: `30856939220` — success
 - Artifact: `8872828407`
 - Digest: `sha256:c064cd3d53a1f7b31ad12eeb2f11c54a8a098acce3f768a3ae12c53904ada24a`
-- Pure dependency boundary: pass
-- TypeScript strict: pass
-- Tests: 10
-- Pass: 10
-- Fail: 0
-- Skip: 0
+- Tests: 10، Pass: 10، Fail: 0، Skip: 0
 
-Golden scenarios شامل Portion/modifier، وزن نامعلوم، fail-closed grams، recipe، diary، missing nutrients، goal modes و ۱۵-digit canonicalization هستند.
+### Review findings و Fixها
+
+#### P2 — Boundary Regex ناقص
+
+Review نشان داد `import 'node:fs'` و `await import('node:https')` از Regex اولیه عبور می‌کنند.
+
+Fix:
+
+- Commit `2aa93ab03384bcb839ef57615870f6af448b55ba`: AST-based boundary verifier
+- Commit `dee683d9c6467dd35be6cd50d8138bbc7962b6d5`: Package boundary script
+- Commit `af55b7de4382a9a00814628a744393471817bb61`: CI استفاده از Parser
+
+Parser این فرم‌ها را بررسی می‌کند:
+
+- static imports
+- side-effect imports
+- dynamic `import()`
+- `require()`
+- import-equals
+- re-exports
+
+و Moduleهای React/Expo/SQLite/Next/Supabase/Node I/O و Runtime accessهای Network/Storage/Environment را رد می‌کند.
+
+#### P2 — Handoff اسناد stale
+
+- `docs/NEOFIT_MASTER_PLAN.md` و `docs/NEOFIT_PROGRESS_LOG.md` با Stage 2A merge، Stage 3 state، Batch 1 evidence و Search/Ranking continuation به‌روزرسانی شدند.
+
+هر دو Review thread resolved شدند.
+
+### CI نهایی Review fix
+
+- Head: `af55b7de4382a9a00814628a744393471817bb61`
+- Nutrition Core CI: `30857414434` — success
+- Artifact: `8872996869`
+- Digest: `sha256:3e0705c69767bf2cd69e71c113c8407bf1fccf5ccb35cb130f4a1f3aa3d6f95e`
+- AST boundary: pass
+- TypeScript: pass
+- Golden tests: 10/10 pass
+
+### شواهد قطعی جدید Vercel
+
+`vercel[bot]` روی PR #18 گزارش داد:
+
+`Resource is limited - try again in 24 hours (more than 100, code: "api-deployments-free-per-day").`
+
+بنابراین محدودیت روزانه اکنون با منبع مستقیم Vercel اثبات شده است. در Issue #16 ثبت شد. هیچ Preview موفقی ادعا نمی‌شود و Stage 3 متوقف نمی‌شود.
 
 ### مشکلات/محدودیت‌ها
 
@@ -285,10 +319,11 @@ Golden scenarios شامل Portion/modifier، وزن نامعلوم، fail-closed
 - اختلاف با Mobile باید Fail/Parity report شود؛ silent fix ممنوع است.
 - Search/Ranking بدون Golden corpus وارد Package نمی‌شود.
 - Web adapter فقط پس از تکمیل Pure Core ساخته می‌شود.
+- Issue #16 پیش از Web RC اجباری است، نه پیش از Batchهای Core.
 
 ### Exact continuation point
 
-1. CI اسناد روی Head جدید PR #18 بررسی شود.
+1. CI اسناد روی Head نهایی بررسی شود.
 2. PR #18 با expected head Merge شود.
 3. Issue #17 باز بماند و Batch 1 completed ثبت شود.
 4. Branch Batch 2 از Merge commit ساخته شود.
