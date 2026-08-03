@@ -2,12 +2,13 @@ import '@fontsource-variable/vazirmatn/wght.css';
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { PwaRegister } from '@/components/pwa-register';
-import { deploymentEnvironment } from '@/lib/environment';
+import { deploymentEnvironment, publicAppUrl } from '@/lib/environment';
 import './globals.css';
 import './refinements.css';
 import './system-pages.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(publicAppUrl),
   title: 'NeoFit | نئوفیت',
   description: 'وب‌اپلیکیشن فارسی و راست‌به‌چپ ثبت تغذیه و تمرین نئوفیت',
   applicationName: 'نئوفیت',
