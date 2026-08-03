@@ -27,6 +27,10 @@ function legacyCase(overrides: Partial<LegacyCatalogFood> = {}): LegacyCatalogFo
   };
 }
 
+function canonicalExpected(value: number): number {
+  return Number(value.toPrecision(15));
+}
+
 test('Batch 3 fixtures identify the exact Catalog, Manifest, audit and Mobile authorities', () => {
   assert.match(CATALOG_PROVENANCE_GOLDEN_PROVENANCE.referenceHead, /^[a-f0-9]{40}$/);
   for (const [key, value] of Object.entries(CATALOG_PROVENANCE_GOLDEN_PROVENANCE)) {
@@ -145,10 +149,22 @@ test('Legacy uncertainty is clamped to zero and eighty percent', () => {
   const highFraction = LEGACY_CATALOG_ADAPTER_CASES.variabilityClamp.expectedFraction;
   const lowFraction = LEGACY_CATALOG_ADAPTER_CASES.negativeVariabilityClamp.expectedFraction;
 
-  assert.equal(high.variant.nutrientRangePerBasis?.p10.energyKcal, center * (1 - highFraction));
-  assert.equal(high.variant.nutrientRangePerBasis?.p90.energyKcal, center * (1 + highFraction));
-  assert.equal(low.variant.nutrientRangePerBasis?.p10.energyKcal, center * (1 - lowFraction));
-  assert.equal(low.variant.nutrientRangePerBasis?.p90.energyKcal, center * (1 + lowFraction));
+  assert.equal(
+    high.variant.nutrientRangePerBasis?.p10.energyKcal,
+    canonicalExpected(center * (1 - highFraction)),
+  );
+  assert.equal(
+    high.variant.nutrientRangePerBasis?.p90.energyKcal,
+    canonicalExpected(center * (1 + highFraction)),
+  );
+  assert.equal(
+    low.variant.nutrientRangePerBasis?.p10.energyKcal,
+    canonicalExpected(center * (1 - lowFraction)),
+  );
+  assert.equal(
+    low.variant.nutrientRangePerBasis?.p90.energyKcal,
+    canonicalExpected(center * (1 + lowFraction)),
+  );
 });
 
 test('Legacy adapter trims source metadata and omits a blank source version', () => {
