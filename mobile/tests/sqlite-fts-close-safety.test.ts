@@ -26,3 +26,16 @@ test('all runtime SQLite connections disable unsafe close-time FTS finalization'
     'The in-memory universal catalog must not share a pooled connection.',
   );
 });
+
+test('nutrition document reseeding removes portions before replacing variants', () => {
+  const repository = source('../src/db/nutrition-food-repository.ts');
+  const portionDelete = repository.indexOf('DELETE FROM nutrition_portions');
+  const variantDelete = repository.indexOf('DELETE FROM nutrition_food_variants');
+
+  assert.notEqual(portionDelete, -1, 'The nutrition upsert must explicitly remove existing portions.');
+  assert.notEqual(variantDelete, -1, 'The nutrition upsert must replace existing variants.');
+  assert.ok(
+    portionDelete < variantDelete,
+    'Existing portions must be deleted before their variants so repeated seed synchronization is idempotent.',
+  );
+});
