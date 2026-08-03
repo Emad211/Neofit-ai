@@ -8,3 +8,4 @@ export * from './universal-catalog-ranking';
 export * from './catalog-release';
 export * from './catalog-provenance';
 export * from './legacy-catalog-adapter';
+export * from './universal-food-estimate';
