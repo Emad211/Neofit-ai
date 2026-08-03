@@ -14,6 +14,7 @@ async function inspectLayout(page, screen, width) {
     viewportWidth: document.documentElement.clientWidth,
     documentWidth: document.documentElement.scrollWidth,
     bodyWidth: document.body.scrollWidth,
+    scrollY: window.scrollY,
     lang: document.documentElement.lang,
     dir: document.documentElement.dir,
   }));
@@ -32,6 +33,7 @@ async function inspectLayout(page, screen, width) {
   if (dimensions.lang !== 'fa' || dimensions.dir !== 'rtl') {
     throw new Error(`Root locale contract failed on ${screen} at ${width}px.`);
   }
+  return result;
 }
 
 const browser = await chromium.launch({ headless: true });
@@ -60,6 +62,7 @@ try {
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
 
   await page.getByRole('button', { name: 'تغذیه' }).click();
+  await page.getByRole('heading', { name: 'چه چیزی خوردی؟' }).waitFor();
   await page.screenshot({ path: path.join(outputDir, 'nutrition-390.png') });
   await inspectLayout(page, 'nutrition', 390);
 
@@ -74,14 +77,20 @@ try {
   await page.getByRole('button', { name: 'بستن' }).click();
 
   await page.getByRole('button', { name: 'برنامهٔ هفته' }).click();
+  await page.getByRole('heading', { name: 'برنامهٔ سه روز آینده' }).waitFor();
   await page.screenshot({ path: path.join(outputDir, 'weekly-plan-390.png') });
   await inspectLayout(page, 'weekly-plan', 390);
   await page.locator('.week-list article').last().scrollIntoViewIfNeeded();
   await page.screenshot({ path: path.join(outputDir, 'weekly-plan-lower-390.png') });
 
   await page.getByRole('button', { name: 'تنظیمات' }).click();
+  await page.getByRole('heading', { name: 'تنظیمات' }).waitFor();
+  await page.waitForFunction(() => window.scrollY === 0);
   await page.screenshot({ path: path.join(outputDir, 'settings-390.png') });
-  await inspectLayout(page, 'settings', 390);
+  const settingsResult = await inspectLayout(page, 'settings', 390);
+  if (settingsResult.scrollY !== 0) {
+    throw new Error(`Bottom navigation did not reset scroll: settings scrollY=${settingsResult.scrollY}`);
+  }
   await page.locator('.settings-group--key').scrollIntoViewIfNeeded();
   await page.screenshot({ path: path.join(outputDir, 'settings-key-390.png') });
 
