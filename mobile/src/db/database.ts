@@ -8,6 +8,12 @@ const FOOD_SEED_SETTING = 'catalog.iranian-foods.seed-version';
 const FOOD_SEED_VERSION = '3';
 const NUTRITION_CORE_SEED_SETTING = 'nutrition.core.seed-version';
 const NUTRITION_CORE_SEED_VERSION = '3';
+const SQLITE_OPEN_OPTIONS: SQLite.SQLiteOpenOptions = {
+  // The bundled schema uses FTS. expo-sqlite's close-time orphan cleanup can
+  // finalize an internal FTS statement twice and abort the native process.
+  // Our convenience query methods finalize their statements themselves.
+  finalizeUnusedStatementsBeforeClosing: false,
+};
 const REQUIRED_V1_TABLES = [
   'app_settings',
   'profile',
@@ -86,7 +92,7 @@ async function seedLocalCatalogs(database: SQLite.SQLiteDatabase) {
 
 export async function getDatabase() {
   if (!databasePromise) {
-    databasePromise = SQLite.openDatabaseAsync(DATABASE_NAME).then(async (database) => {
+    databasePromise = SQLite.openDatabaseAsync(DATABASE_NAME, SQLITE_OPEN_OPTIONS).then(async (database) => {
       await configureDatabase(database);
       await runDatabaseMigrations(database, migrations);
       await seedLocalCatalogs(database);
@@ -111,7 +117,10 @@ async function validateBackupBytes(bytes: Uint8Array) {
   if (bytes.byteLength < 512) throw new Error('Backup file is too small to be a valid NeoFit database.');
   if (bytes.byteLength > 250 * 1024 * 1024) throw new Error('Backup file is larger than the supported limit.');
 
-  const memoryDatabase = await SQLite.deserializeDatabaseAsync(bytes);
+  const memoryDatabase = await SQLite.deserializeDatabaseAsync(bytes, {
+    ...SQLITE_OPEN_OPTIONS,
+    useNewConnection: true,
+  });
   try {
     await memoryDatabase.execAsync('PRAGMA foreign_keys = ON;');
     const integrity = await memoryDatabase.getFirstAsync<Record<string, string>>('PRAGMA integrity_check;');

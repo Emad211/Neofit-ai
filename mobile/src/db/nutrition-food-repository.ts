@@ -180,6 +180,13 @@ async function upsertDocument(
 
   await database.runAsync('DELETE FROM nutrition_search_fts WHERE concept_id = ?;', document.concept.id);
   await database.runAsync('DELETE FROM nutrition_food_aliases WHERE concept_id = ?;', document.concept.id);
+  await database.runAsync(
+    `DELETE FROM nutrition_portions
+     WHERE variant_id IN (
+       SELECT id FROM nutrition_food_variants WHERE concept_id = ?
+     );`,
+    document.concept.id,
+  );
   await database.runAsync('DELETE FROM nutrition_food_variants WHERE concept_id = ?;', document.concept.id);
 
   for (const alias of document.concept.aliasesFa) {
