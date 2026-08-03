@@ -2,7 +2,7 @@
 
 **نقش سند:** حافظهٔ عملیاتی و شواهد توسعه  
 **همراه اجباری:** `docs/NEOFIT_MASTER_PLAN.md`  
-**آخرین به‌روزرسانی:** ۴ اوت ۲۰۲۶ — Stage 2، پیش از Vercel Preview
+**آخرین به‌روزرسانی:** ۴ اوت ۲۰۲۶ — اصلاح وضعیت Vercel و بستن P1 Fresh-install Offline
 
 ## روش استفاده
 
@@ -13,20 +13,7 @@
 3. وضعیت واقعی branch، HEAD، PR، CI، Vercel و Supabase بررسی شود.
 4. فقط قدم بعدی اثبات‌شده اجرا شود.
 
-در پایان هر نوبت یک Entry جدید باید شامل موارد زیر افزوده شود:
-
-- تاریخ و زمان
-- شاخه و Head شروع
-- هدف نوبت
-- کارهای انجام‌شده
-- فایل‌ها و Commitها
-- تست‌ها و CI
-- مشکلات و Fixها
-- محدودیت‌های خارجی
-- کارهای انجام‌نشده
-- تصمیم‌ها
-- Head کد پایان
-- قدم بعدی دقیق
+در پایان هر نوبت یک Entry شامل تاریخ، هدف، Commitها، تست‌ها، مشکلات، Correctionها، Head پایان و Exact continuation point اضافه می‌شود.
 
 هیچ موردی بدون شواهد «تمام‌شده» علامت نمی‌خورد.
 
@@ -36,306 +23,220 @@
 
 | Stage | عنوان | وضعیت | شواهد اصلی |
 |---|---|---|---|
-| 0 | Pivot و Freeze نسخهٔ Native | انجام‌شده | PR #12، commit `151de2c0d5c9b02602c2f89eb4df808653cdd74e` |
-| 1 | پایهٔ محصول و UX فارسی/RTL | انجام‌شده و پذیرفته‌شده | PR #13، merge `a458a27a2685bfa7d85ea28686b3182c3167d747` |
-| 2 | PWA و Vercel foundation | فعال؛ کد و CI سبز، Preview منتظر Reset سهمیه | PR #15، CI `30851823020`, Artifact `8870912815` |
-| 3 | استخراج Nutrition Core و parity | شروع‌نشده | منتظر پایان Stage 2 |
-| 4 | Supabase foundation | شروع‌نشده | — |
+| 0 | Pivot و Freeze نسخهٔ Native | انجام‌شده | PR #12، `151de2c0d5c9b02602c2f89eb4df808653cdd74e` |
+| 1 | پایهٔ محصول و UX فارسی/RTL | انجام‌شده و پذیرفته‌شده | PR #13، `a458a27a2685bfa7d85ea28686b3182c3167d747` |
+| 2 | PWA و Vercel Foundation | فعال؛ PWA سبز، Preview باقی‌مانده | PR #15، CI `30853438059`، Artifact `8871529505` |
+| 3 | Nutrition Core parity | شروع‌نشده | منتظر پایان Stage 2 |
+| 4 | Supabase Foundation | شروع‌نشده | — |
 | 5 | Nutrition vertical slice | شروع‌نشده | — |
-| 6 | AvalAI، Vision و Plan generation | شروع‌نشده | — |
-| 7 | Offline catalog و Sync | شروع‌نشده | — |
-| 8 | Migration، Backup و Recovery | شروع‌نشده | — |
-| 9 | Web Release Candidate | شروع‌نشده | — |
+| 6 | AvalAI/Vision | شروع‌نشده | — |
+| 7 | Offline catalog/Sync | شروع‌نشده | — |
+| 8 | Migration/Recovery | شروع‌نشده | — |
+| 9 | Web RC | شروع‌نشده | — |
 
 ---
 
-## Entry 000 — بازسازی وضعیت پیش از شروع توسعهٔ وب
+## Entry 000 — بازسازی وضعیت پیش از وب
 
 **تاریخ:** ۳ اوت ۲۰۲۶  
-**شاخهٔ مرجع:** `agent/iranian-food-kb-foundation`  
-**Head Native/IFKB:** `648b98cdc921beb26ccd0ff05a1f17944bb6f71d`
+**مرجع Native/IFKB:** `648b98cdc921beb26ccd0ff05a1f17944bb6f71d`
 
-### وضعیت اثبات‌شده
-
-- APK Android پس از Fixهای SQLite/Seed نصب و اجرا شد.
-- Mobile CI run 573 پاس شد.
-- Nutrition RC، IFKB، Stage 7، Stage 8 و Schema/ID freeze وجود داشتند.
-- UI/UX Native و فارسی/RTL از سوی مالک محصول رد شد.
-
-### تصمیم
-
-- UI اصلی به Next.js PWA مهاجرت می‌کند.
-- Mobile به‌عنوان Frozen reference باقی می‌ماند.
-- Supabase برای Auth/Postgres/RLS/Sync خواهد بود، نه جایگزین Nutrition Core.
-- Vercel میزبان Web و Route Handlerهای امن خواهد بود.
-
-### شواهد
-
-- PR #12
-- Merge: `151de2c0d5c9b02602c2f89eb4df808653cdd74e`
-- Issue #10
-- Issue #11
-- Branch: `web/pwa-foundation`
-
-### قدم بعدی ثبت‌شده
-
-ساخت پلن مادر و دفتر پیشرفت، سپس Stage 1 فارسی/RTL.
+- Android پس از Fixهای SQLite/Seed اجرا شد.
+- IFKB/Nutrition RC حفظ شد.
+- UI Native از سوی مالک محصول رد شد.
+- تصمیم مهاجرت به Next.js PWA، Vercel و Supabase ثبت شد.
+- PR #12 با Merge `151de2c0d5c9b02602c2f89eb4df808653cdd74e` مسیر جدید را تثبیت کرد.
 
 ---
 
 ## Entry 001 — Batch اول Stage 1
 
 **تاریخ:** ۳ اوت ۲۰۲۶  
-**شاخه:** `stage1/persian-rtl-ux`  
-**Head شروع:** `151de2c0d5c9b02602c2f89eb4df808653cdd74e`
+**Branch:** `stage1/persian-rtl-ux`
 
-### انجام‌شده
-
-- دو سند دائمی ایجاد شدند.
-- PR #13 باز شد.
-- `web/` با Next.js App Router و TypeScript strict ساخته شد.
-- Today، Nutrition Search، Meal Sheet، Weekly Plan، Settings و stateهای اصلی ساخته شدند.
-- Fixtureهای تغذیه از کاتالوگ نسخه‌دار گرفته شدند.
-- Supabase/Auth/AI واقعی وارد نشدند.
-
-### مشکل و Fix
-
-- TypeScript 7 با Compiler API مورد نیاز Next.js 16.2.12 ناسازگار بود.
-- TypeScript روی `6.0.3` قفل شد.
-- CI run `30827034439` پاس شد.
-
-### Head پایان
-
-`0833131c64fd284ac52106ee2ff0f22644fb6de9`
-
-### قدم بعدی
-
-Visual QA در ۳۶۰، ۳۹۰ و ۴۱۲px و اصلاح مبتنی بر تصویر واقعی.
+- دو سند دائمی ساخته شدند.
+- `web/` با Next.js App Router و TypeScript strict ایجاد شد.
+- Today، Nutrition Search، Meal Sheet، Weekly Plan و Settings ساخته شدند.
+- TypeScript 7 با Next.js ناسازگار بود؛ روی `6.0.3` قفل شد.
+- CI `30827034439` پاس شد.
 
 ---
 
-## Entry 002 — Visual QA و Refinement شمارهٔ ۱
+## Entry 002 — Visual QA و Refinement Stage 1
 
-**تاریخ:** ۳ اوت ۲۰۲۶  
-**شاخه:** `stage1/persian-rtl-ux`  
-**PR:** #13  
-**Head شروع:** `0833131c64fd284ac52106ee2ff0f22644fb6de9`
+**تاریخ:** ۳ اوت ۲۰۲۶
 
-### مشکلات کشف‌شده از Screenshot واقعی
+مشکلات واقعی Screenshot:
 
-1. Banner توسعه بیش از حد برجسته بود.
-2. Topbar در صفحات داخلی عنوان تکراری داشت.
-3. Vazirmatn فقط در CSS نام برده شده بود و Self-hosted نبود.
-4. Full-page Screenshot با Bottom Navigation ثابت گمراه‌کننده بود.
-5. Scroll از Weekly Plan هنگام ورود به Settings حفظ می‌شد و صفحه خالی به نظر می‌رسید.
+- Banner توسعهٔ برجسته
+- عنوان تکراری Topbar
+- Vazirmatn غیرواقعی/fallback
+- Full-page Screenshot گمراه‌کننده
+- حفظ Scroll هنگام Navigation
 
-### Fixها
+Fixها:
 
-- Playwright Visual QA اضافه شد.
-- Vazirmatn variable Self-hosted شد.
-- hierarchy و spacing اصلاح شدند.
-- Screenshotها viewport-based شدند.
-- Scroll reset روی تغییر Screen اضافه و Regression-tested شد.
+- Playwright Visual QA
+- Vazirmatn Self-hosted
+- اصلاح hierarchy/spacing
+- Screenshotهای viewport-based
+- Scroll reset و Regression test
 
-### Commitهای مهم
+شواهد:
 
-- `36cd12b71b56991dff238ad9b98521e0e72445c4`
-- `5b79cabaf48f768a551a92568c93f308e549baf5`
-- `d6040dbf86c16308ef18da692215f43699598a09`
-- `73fb924af3b9514e0371a63c5d16f0c7f7c19b00`
-- `89070fc4322c6b5a871f4c8534f81d2adb481112`
-- `be3f97f88ce324c812e9d2b9857b5b537f9c8a54`
-- `19b419e21b221043385d1e567dba239366fb7e2b`
-- `b987db40a9378c6fb09a728b347e2cb17360c2a5`
-- `dcebb969e7f91685eda4c84f3b0d753a3892cadd`
-- `489394eceea5b1f6cd9adec5dc8487cc250f1061`
-
-### Validation
-
-- CI: `30829629853` — success
-- Artifact: `8862378720`
-- Digest: `sha256:7c9c86100355743a262d41ae6233e1513c804bd0792b19ff5eff5946c49c98e4`
-- همهٔ مسیرهای ثبت‌شده بدون Horizontal overflow
-- Root locale: `fa` و `rtl`
-- Settings بعد از Navigation: `scrollY = 0`
-
-### نتیجه
+- CI `30829629853` — success
+- Artifact `8862378720`
+- Digest `sha256:7c9c86100355743a262d41ae6233e1513c804bd0792b19ff5eff5946c49c98e4`
+- Visual QA در ۳۶۰/۳۹۰/۴۱۲px بدون Overflow
 
 مالک محصول Stage 1 را پذیرفت.
 
 ---
 
-## Entry 003 — پذیرش Stage 1 و آغاز Stage 2
+## Entry 003 — Merge Stage 1 و ساخت PWA Foundation
 
-**تاریخ/زمان شروع:** ۳ اوت ۲۰۲۶، حدود ۲۳:۳۰ ایران  
-**شاخهٔ شروع:** `stage1/persian-rtl-ux`  
-**Head شروع:** `e18855d69f8cffeb8703c08a99687c1dddb735f2`
+**تاریخ:** ۳ تا ۴ اوت ۲۰۲۶  
+**Merge Stage 1:** `a458a27a2685bfa7d85ea28686b3182c3167d747`  
+**Branch:** `stage2/pwa-vercel-foundation`  
+**Issue:** #14  
+**PR:** #15
+
+### ساخته‌شده
+
+- Manifest فارسی/RTL و Standalone
+- Icon generator و Iconهای 192/512/Maskable/Apple
+- Service Worker App shell
+- API/Auth/Authorization/Mutation/Cross-origin exclusion
+- Offline fallback
+- Loading/Error/Global error/404
+- Environment contract
+- `vercel.json`
+- Web CI دائمی
+- PWA Runtime verification
+- Source bundle Hash‌شده
+
+### Validation اولیه
+
+- CI `30849445243` — success
+- Artifact `8870015510`
+- Manifest/Icon/Service Worker/Offline/API exclusion پاس شدند.
+
+### ادعای نادرست ثبت‌شده در این Entry
+
+در پایان این نوبت، پاسخ `api-deployments-free-per-day` با اعداد 100/0 و زمان Reset به‌عنوان مانع Vercel ثبت شد. این ادعا در Entry 004 بازبینی و بازپس گرفته شد، زیرا در بررسی مجدد از پاسخ خام Vercel قابل‌بازتولید نبود.
+
+---
+
+## Entry 004 — Correction وضعیت Vercel و بستن P1 Offline
+
+**تاریخ/زمان:** ۴ اوت ۲۰۲۶، حدود ۰۰:۳۲ تا ۰۰:۴۵ ایران  
+**Branch:** `stage2/pwa-vercel-foundation`  
+**PR:** #15  
+**Head شروع:** `4f5cf90513d1a71869474eba81eeba640068ab6c`
 
 ### هدف
 
-1. ثبت Accept مالک محصول.
-2. Merge Stage 1.
-3. ایجاد Stage 2 مستقل.
-4. ساخت PWA foundation و Web CI دائمی.
-5. ایجاد Preview واقعی Vercel پیش از Merge.
+1. پاسخ دقیق به تردید مالک دربارهٔ سهمیه و اتصال Vercel.
+2. بازتولید مستقیم وضعیت اتصال و Deploy.
+3. اصلاح تمام ادعاهای اثبات‌نشده.
+4. بررسی و رفع Review P1 قبل از Deploy.
+5. به‌روزرسانی دو سند اجباری.
 
-### Stage 1 بسته شد
+### وضعیت واقعی Vercel که مستقیم اثبات شد
 
-- PR #13 Squash Merge شد.
-- Merge commit: `a458a27a2685bfa7d85ea28686b3182c3167d747`
-- Issue #11 با state reason `completed` بسته شد.
+- اتصال Connector برقرار است.
+- Team: `Emad's projects`
+- Team ID: `team_BsUv0VprkU4YjdFbQi2hZCEm`
+- Project: `neofit-ai`
+- Project ID: `prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG`
+- Framework: `null`
+- `latestDeployment`: `null`
+- Deployment count: `0`
+- Domain: ندارد
 
-### Stage 2 ایجاد شد
+بنابراین عبارت قبلی «Project هنوز ساخته نشده» نادرست بود.
 
-- Branch: `stage2/pwa-vercel-foundation`
-- Issue: #14
-- PR: #15
-- Base: `web/pwa-foundation`
+### Correction سهمیه
 
-### قابلیت‌های ساخته‌شده
+فراخوانی قابل‌بازتولید `deploy_to_vercel` این خطا را برگرداند:
 
-#### Manifest و Iconها
+- Action در Schema عمومی بدون Argument است.
+- Runtime ورودی‌های `target`، `name` و `files` را اجباری می‌داند.
 
-- `web/app/manifest.ts`
-- `web/scripts/generate-icons.mjs`
-- Iconهای 192، 512، Maskable و Apple touch
-- تولید deterministic PNG بدون وابستگی خارجی Runtime
+خطای سهمیهٔ روزانه در بررسی مجدد بازتولید نشد. در نتیجه:
 
-#### Service Worker و Offline
+- ادعای سهمیه بازپس گرفته شد.
+- PR #15 اصلاح شد.
+- Issue #14 Correction دریافت کرد.
+- Automation مبتنی بر Reset سهمیه غیرفعال شد.
+- مانع فعلی به‌عنوان **Connector schema mismatch** ثبت شد.
 
-- `web/public/sw.js`
-- `web/components/pwa-register.tsx`
-- App-shell cache نسخه‌دار
-- Offline reload
-- Offline fallback route
-- Exclusion صریح:
-  - `/api/*`
-  - `/auth/*`
-  - درخواست غیر-GET
-  - Cross-origin
-  - Authorization header
+### P1 کشف‌شده در Review
 
-#### Boundaries و UX سیستمی
+Review خودکار نشان داد تست قبلی Offline پس از یک Reload آنلاین اجرا می‌شد و می‌توانست نبودن JS/CSS/Font در Precache را با HTTP cache مرورگر پنهان کند.
 
-- `web/app/loading.tsx`
-- `web/app/error.tsx`
-- `web/app/global-error.tsx`
-- `web/app/not-found.tsx`
-- `web/app/offline/page.tsx`
-- `web/app/system-pages.css`
+### Fix فنی
 
-#### Environment و Vercel
+Commit `40d07107da46f239da9c95404b0f02b5fe662b94`:
 
-- `web/lib/environment.ts`
-- `web/.env.example`
-- `web/vercel.json`
-- URL واقعی از `NEXT_PUBLIC_APP_URL`، `VERCEL_PROJECT_PRODUCTION_URL` یا `VERCEL_URL`
-- `metadataBase` متصل به URL Deployment
+- Service Worker cache version به `v2` ارتقا یافت.
+- هنگام Install، `/` و `/offline` Fetch می‌شوند.
+- Assetهای `/_next/static/` از HTML استخراج می‌شوند.
+- Dependencyهای Font/Media از CSS recursively استخراج و Cache می‌شوند.
+- JS، CSS و Font پیش از اولین Offline reload در Cache Storage قرار می‌گیرند.
 
-#### CI و QA
+Commit `0bb0278f50312819029445c20dd5823ee8c719ed`:
 
-- Workflow موقت Stage 1 حذف شد.
-- `.github/workflows/web-ci.yml` ساخته شد.
-- `web/scripts/verify-pwa.mjs` ساخته شد.
-- Visual regression Stage 1 حفظ شد.
-- Runtime PWA gate اضافه شد.
-- Source bundle تمیز و Hash‌شده برای Vercel تولید می‌شود.
+- Reload آنلاین واسط حذف شد.
+- تست منتظر `clients.claim()` و controller روی Client اولیه می‌ماند.
+- وجود JS/CSS/Font در Cache assert می‌شود.
+- HTTP cache Chromium با CDP پاک می‌شود.
+- Browser مستقیم Offline و Reload می‌شود.
+- تعامل React در حالت Offline با مسیر Today → Nutrition → Today تست می‌شود.
+- API cache count باید صفر بماند.
 
-### CIهای مهم
+### شواهد نهایی این Correction
 
-#### اولین PWA validation
-
-- Run: `30849445243`
-- Head: `7ab2d6b5e58bea3cae90cc2fac01a308e74044db`
-- Artifact: `8870015510`
+- Web CI run: `30853438059`
 - Status: success
+- Artifact: `8871529505`
+- Digest: `sha256:7f50f89a15c37871bbafda95d3cea6e105ab5c0a344f9f408b5f5fe787823c77`
+- TypeScript: pass
+- Production build: pass
+- JS/CSS/Font precache: pass
+- Fresh-install Offline با HTTP cache خالی: pass
+- Offline React navigation: pass
+- Cached `/api`: zero
+- Review thread `PRRT_kwDOThqnVM6WHFMC`: resolved
 
-#### Environment/Vercel URL validation
+### وضعیت انجام‌نشده
 
-- Run: `30851310543`
-- Head: `6ab9d61b58bbdf6bdf12d929cab171d28579d866`
-- Status: success
-
-#### Final source-bundle validation
-
-- Run: `30851823020`
-- Head: `d2330392e9bf8326c55a3ba94cde0a468d124efa`
-- Status: success
-- Artifact: `8870912815`
-- Artifact digest: `sha256:52b24dbfe0e08faf6871595139d2908762fc010b0abd527f78cb9c79db212380`
-
-### Runtime PWA result
-
-- Manifest name: `نئوفیت — تغذیه و تمرین`
-- Manifest: `standalone`, `fa`, `rtl`
-- Icon 192: valid
-- Icon 512: valid
-- Maskable 512: valid
-- Apple touch 180: valid
-- Service Worker: `activated`
-- Scope: `/`
-- Page controlled after reload: yes
-- Offline reload: pass
-- Offline root locale: `fa`, `rtl`
-- Cached request count: 19 App-shell/static requests
-- Cached `/api` requests: zero
-- Visual regression 360/390/412: pass
-
-### Reproducible deployment source
-
-CI یک Source bundle تمیز تولید می‌کند و موارد زیر را حذف می‌کند:
-
-- `node_modules`
-- `.next`
-- `artifacts`
-- `.env*`
-- `tsconfig.tsbuildinfo`
-
-بسته با SHA-256 داخل Artifact ذخیره می‌شود تا Vercel از همان Source سبز Deploy شود.
-
-### مانع Vercel
-
-فراخوانی واقعی Vercel Deployment انجام شد، اما Vercel پاسخ `402 payment_required` داد؛ علت، پایان سهمیهٔ روزانهٔ API Deployment پلن رایگان بود:
-
-- code: `api-deployments-free-per-day`
-- total: `100`
-- remaining: `0`
-- reset timestamp: `1785875907001`
-- زمان تبدیل‌شده: `2026-08-05 00:08:27 +03:30`
-
-این خطا قبل از Build Vercel رخ داد و نشانهٔ شکست کد نیست. هیچ Project ID، Deployment ID یا Preview URL ساخته نشد.
-
-### کارهای انجام‌نشده
-
-- Vercel Project/Preview هنوز ساخته نشده است.
-- Build روی Vercel هنوز اجرا نشده است.
-- HTTPS Preview PWA verification هنوز انجام نشده است.
+- هیچ Deployment واقعی Vercel وجود ندارد.
+- Deployment ID و Preview URL نداریم.
+- Framework پروژهٔ Vercel هنوز configure نشده است.
 - PR #15 Merge نشده است.
 - Issue #14 باز است.
-- Stage 3 شروع نشده است.
-- Supabase ساخته نشده است.
+- Stage 3 و Supabase آغاز نشده‌اند.
 
 ### تصمیم‌ها
 
-- Stage 2 بدون URL و Deployment ID واقعی بسته نمی‌شود.
-- PR #15 تا Preview verification Merge نمی‌شود.
-- Stage 3 و Supabase جلو نمی‌افتند.
-- Retry باید پس از Reset سهمیه و از Source bundle سبز انجام شود.
+- سهمیهٔ Vercel بدون پاسخ خام قابل‌بازتولید دوباره ادعا نمی‌شود.
+- اتصال Vercel برقرار است؛ مشکل فعلی Deploy action Schema است.
+- Stage 2 بدون Preview واقعی بسته نمی‌شود.
+- P1 Offline قبل از Deploy بسته شد.
 
-### Head کد تأییدشدهٔ پایان نوبت
+### Head کد تأییدشده
 
-`d2330392e9bf8326c55a3ba94cde0a468d124efa`
+`0bb0278f50312819029445c20dd5823ee8c719ed`
 
-### قدم بعدی دقیق
+### Exact continuation point
 
-پس از `2026-08-05 00:08:27 +03:30`:
-
-1. دو سند اجباری دوباره خوانده شوند.
-2. PR #15 و Head سبز بررسی شوند.
-3. آخرین Artifact و Source bundle دریافت شوند.
-4. Preview پروژهٔ `neofit-ai` روی Vercel ساخته شود.
-5. Project ID، Deployment ID و URL ثبت شوند.
-6. Build log بررسی شود.
-7. Manifest، Iconها، Service Worker، Offline reload، RTL و Cache boundary روی HTTPS Preview تست شوند.
-8. در صورت موفقیت، دو سند Update، PR #15 Merge و Issue #14 بسته شود.
-9. در صورت شکست، خطای دقیق ثبت و Fix شود.
+1. پلن مادر و این دفتر خوانده شوند.
+2. PR #15 و آخرین Web CI بررسی شوند.
+3. Project `prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG` و Deployment count دوباره خوانده شوند.
+4. Schema صحیح Action Deploy یا یک مسیر رسمی دیگر که Connector واقعاً پشتیبانی می‌کند کشف شود.
+5. آخرین Source bundle سبز به Preview Deploy شود.
+6. Deployment ID، URL، Build/Runtime logs ثبت شوند.
+7. HTTPS Manifest، Iconها، Service Worker، Fresh-install Offline و Cache boundary تست شوند.
+8. فقط در صورت پاس کامل، دو سند Update، PR #15 Merge و Issue #14 بسته شود.
+9. Stage 3 و Supabase پیش از آن شروع نشوند.
