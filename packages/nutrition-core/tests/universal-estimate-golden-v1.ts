@@ -1,0 +1,186 @@
+import type { UniversalCatalogCandidate } from '../src/universal-catalog-ranking';
+
+export const UNIVERSAL_ESTIMATE_GOLDEN_PROVENANCE = {
+  referenceBranch: 'agent/iranian-food-kb-foundation',
+  referenceHead: '648b98cdc921beb26ccd0ff05a1f17944bb6f71d',
+  universalEstimateBlob: '7f54426e0b6838700f09b831c7df5a94afef8361',
+  repositoryBlob: 'cdfacc1eafba4267cdc793284462bbabd7ca93b5',
+  databaseAdapterBlob: '687d7b41dac26e1821a141c181fa13cdd81b2186',
+  sqliteEquivalenceTestBlob: '80538220517f8b4f0bc80117469b16f6a82c7bdf',
+  sqliteTestHelpersBlob: 'd03caf85ccfbb68b245101d0646956fd9c32e045',
+  nutritionSqlBlob: '35ecdbd1f5baec8ee1b5845cfd994f15b5ff769d',
+  macroGuardTestBlob: '3f16b43a37f98b807c3b95577102bf682bff905d',
+  nutritionRangeTestBlob: '2fd1f7f3c601c2ae48931f50a7ca1552ff45a2a2',
+  foodSearchConsumerBlob: 'df367a5d598925fa56eb3b2c36e47da8df504415',
+} as const;
+
+export const UNIVERSAL_SOURCE_UNCERTAINTY_GOLDEN = {
+  fndds: 0.15,
+  sr_legacy: 0.08,
+} as const;
+
+export const FNDDS_150G_GOLDEN = {
+  record: {
+    sourceType: 'fndds',
+    caloriesKcal: 200,
+    proteinG: 10,
+    fatG: 5,
+    carbsG: 20,
+    fiberG: null,
+    sugarsG: 8,
+    sodiumMg: 100,
+    cholesterolMg: null,
+    calciumMg: 40,
+    ironMg: null,
+    potassiumMg: 300,
+    vitaminCMg: 12,
+  },
+  grams: 150,
+  expected: {
+    grams: 150,
+    center: {
+      energyKcal: 300,
+      proteinG: 15,
+      carbsG: 30,
+      fatG: 7.5,
+      sugarsG: 12,
+      sodiumMg: 150,
+      calciumMg: 60,
+      potassiumMg: 450,
+      vitaminCMg: 18,
+    },
+    p10: {
+      energyKcal: 255,
+      proteinG: 12.75,
+      carbsG: 25.5,
+      fatG: 6.375,
+      sugarsG: 10.2,
+      sodiumMg: 127.5,
+      calciumMg: 51,
+      potassiumMg: 382.5,
+      vitaminCMg: 15.3,
+    },
+    p50: {
+      energyKcal: 300,
+      proteinG: 15,
+      carbsG: 30,
+      fatG: 7.5,
+      sugarsG: 12,
+      sodiumMg: 150,
+      calciumMg: 60,
+      potassiumMg: 450,
+      vitaminCMg: 18,
+    },
+    p90: {
+      energyKcal: 345,
+      proteinG: 17.25,
+      carbsG: 34.5,
+      fatG: 8.625,
+      sugarsG: 13.8,
+      sodiumMg: 172.5,
+      calciumMg: 69,
+      potassiumMg: 517.5,
+      vitaminCMg: 20.7,
+    },
+    absent: ['fiberG', 'cholesterolMg', 'ironMg'],
+  },
+} as const;
+
+export const SR_LEGACY_50G_GOLDEN = {
+  record: {
+    sourceType: 'sr_legacy',
+    caloriesKcal: 100,
+    proteinG: 20,
+    fatG: 4,
+    carbsG: 2,
+    fiberG: 1,
+    sugarsG: null,
+    sodiumMg: 30,
+    cholesterolMg: 60,
+    calciumMg: null,
+    ironMg: 2,
+    potassiumMg: 400,
+    vitaminCMg: null,
+  },
+  grams: 50,
+  expected: {
+    grams: 50,
+    center: {
+      energyKcal: 50,
+      proteinG: 10,
+      carbsG: 1,
+      fatG: 2,
+      fiberG: 0.5,
+      sodiumMg: 15,
+      cholesterolMg: 30,
+      ironMg: 1,
+      potassiumMg: 200,
+    },
+    p10EnergyKcal: 46,
+    p50EnergyKcal: 50,
+    p90EnergyKcal: 54,
+    absent: ['sugarsG', 'calciumMg', 'vitaminCMg'],
+  },
+} as const;
+
+export const UNIVERSAL_SQLITE_ROW_GOLDEN = {
+  sqlite: {
+    id: 'fndds:test-001',
+    source_type: 'fndds',
+    name_en: 'Golden prepared food',
+    calories_kcal: 200,
+    protein_g: 10,
+    fat_g: 5,
+    carbs_g: 20,
+    fiber_g: null,
+    sugars_g: 8,
+    sodium_mg: 100,
+    cholesterol_mg: null,
+    calcium_mg: 40,
+    iron_mg: null,
+    potassium_mg: 300,
+    vitamin_c_mg: 12,
+    macro_completeness: 1,
+    portion_count: 0,
+    bm25_score: -10,
+  },
+  candidate: {
+    id: 'fndds:test-001',
+    sourceType: 'fndds',
+    nameEn: 'Golden prepared food',
+    caloriesKcal: 200,
+    proteinG: 10,
+    fatG: 5,
+    carbsG: 20,
+    fiberG: null,
+    sugarsG: 8,
+    sodiumMg: 100,
+    cholesterolMg: null,
+    calciumMg: 40,
+    ironMg: null,
+    potassiumMg: 300,
+    vitaminCMg: 12,
+    macroComplete: true,
+    portionCount: 0,
+    bm25: -10,
+  } satisfies UniversalCatalogCandidate,
+} as const;
+
+export const UNIVERSAL_GRAMS_BOUNDARY_GOLDEN = {
+  accepted: [0.001, 1, 50.5, 100, 999.9, 100_000],
+  rejected: [0, -1, 100_000.0001, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY],
+} as const;
+
+export const SQLITE_EQUIVALENCE_GRAMS_GOLDEN = [
+  1,
+  50.5,
+  83.3,
+  100,
+  175.25,
+  999.9,
+] as const;
+
+export const UNIVERSAL_MACRO_GUARD_GOLDEN = {
+  incompleteId: 'macro-incomplete',
+  completeGramsOnlyId: 'macro-complete-grams-only',
+} as const;
