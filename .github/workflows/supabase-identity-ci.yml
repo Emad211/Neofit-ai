@@ -1,0 +1,111 @@
+name: Supabase Identity Schema CI
+
+on:
+  push:
+    branches:
+      - 'stage4c/**'
+    paths:
+      - 'supabase/migrations/**'
+      - 'web/lib/supabase/database.types.ts'
+      - 'web/tests/supabase-identity-schema.test.ts'
+      - 'web/package.json'
+      - '.github/workflows/supabase-identity-ci.yml'
+      - 'docs/NEOFIT_MASTER_PLAN.md'
+      - 'docs/NEOFIT_PROGRESS_LOG.md'
+      - 'docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md'
+  pull_request:
+    branches:
+      - web/pwa-foundation
+    paths:
+      - 'supabase/migrations/**'
+      - 'web/lib/supabase/database.types.ts'
+      - 'web/tests/supabase-identity-schema.test.ts'
+      - 'web/package.json'
+      - '.github/workflows/supabase-identity-ci.yml'
+      - 'docs/NEOFIT_MASTER_PLAN.md'
+      - 'docs/NEOFIT_PROGRESS_LOG.md'
+      - 'docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-identity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: web/package.json
+
+      - name: Install Web dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+
+      - name: Initialize evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p web/artifacts/supabase-identity
+          printf '{"commit":"%s","status":"preflight","remoteMigrationApplied":false}\n' \
+            "$GITHUB_SHA" > web/artifacts/supabase-identity/preflight.json
+
+      - name: Identity migration and RLS contracts
+        working-directory: web
+        run: npm run test:supabase-identity
+
+      - name: Web TypeScript
+        working-directory: web
+        run: npm run typecheck
+
+      - name: Existing Supabase foundation regression
+        working-directory: web
+        run: npm run test:supabase-foundation
+
+      - name: Shared Nutrition Core regression
+        working-directory: packages/nutrition-core
+        run: npm run check
+
+      - name: Reject migration key material and permissive policies
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE \
+            '(SUPABASE_SERVICE_ROLE_KEY|sb_secret_|sb_publishable_|eyJ[A-Za-z0-9_-]+\.|using[[:space:]]*\([[:space:]]*true[[:space:]]*\)|with check[[:space:]]*\([[:space:]]*true[[:space:]]*\))' \
+            supabase/migrations; then
+            echo 'Forbidden key material or permissive RLS policy found.' >&2
+            exit 1
+          fi
+
+      - name: Write identity evidence metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '{\n  "commit": "%s",\n  "projectRef": "rjwrobltmjodfarnltal",\n  "migration": "20260805000100_identity_foundation.sql",\n  "tables": ["profiles", "user_settings"],\n  "rlsRequired": true,\n  "nutritionArithmetic": false,\n  "generatedAt": "%s"\n}\n' \
+            "$GITHUB_SHA" \
+            "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            > web/artifacts/supabase-identity/metadata.json
+          cat web/artifacts/supabase-identity/metadata.json
+
+      - name: Upload identity evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-supabase-identity-evidence
+          path: web/artifacts/supabase-identity
+          if-no-files-found: error
+          retention-days: 30
