@@ -9,3 +9,4 @@ export * from './catalog-release';
 export * from './catalog-provenance';
 export * from './legacy-catalog-adapter';
 export * from './universal-food-estimate';
+export * from './id-fingerprint-release';
