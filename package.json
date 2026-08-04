@@ -19,6 +19,7 @@
     "build:web": "npm --workspace @neofit/web run build",
     "typecheck:web": "npm --workspace @neofit/web run typecheck",
     "test:web": "npm --workspace @neofit/web run test:adapter",
+    "qa:vercel-preview": "npm --workspace @neofit/web run qa:vercel-preview",
     "check:nutrition-core": "npm --workspace @neofit/nutrition-core run check"
   },
   "dependencies": {
