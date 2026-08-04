@@ -2,7 +2,7 @@
 
 **نقش:** حافظهٔ عملیاتی و شواهد توسعه  
 **همراه اجباری:** `docs/NEOFIT_MASTER_PLAN.md`  
-**آخرین به‌روزرسانی:** ۴ اوت ۲۰۲۶ — Batch 5 ID/Fingerprint Golden checkpoint
+**آخرین به‌روزرسانی:** ۴ اوت ۲۰۲۶ — Batch 5 implementation parity
 
 ## پروتکل
 
@@ -25,7 +25,7 @@
 | 1 | انجام‌شده | PR #13، Merge `a458a27a2685bfa7d85ea28686b3182c3167d747` |
 | 2A | انجام‌شده | PR #15، Merge `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b` |
 | 2B | تعویق‌شده | Issue #16؛ Vercel daily API limit ثبت شده |
-| 3 | فعال | Batch 1–4 merged، Batch 5 Draft PR #22 |
+| 3 | فعال | Batch 1–4 merged، Batch 5 PR #22 در Gate نهایی |
 | 4 | شروع‌نشده | منتظر پایان Stage 3 و تأیید هزینه |
 | 5–9 | شروع‌نشده | مطابق پلن مادر |
 
@@ -43,17 +43,17 @@
 ### Stage 3 Batch 1
 
 - PR #18 Merge `c9599c4905f9fc1d28ba7e9086edf20376991740`
-- 10/10 pass
+- `10/10` pass
 
 ### Stage 3 Batch 2
 
 - PR #19 Merge `917f04e319a924dda7dfb16d079453a5e5686541`
-- 25/25 pass
+- `25/25` pass
 
 ### Stage 3 Batch 3
 
 - PR #20 Merge `02c1bcf0b301a920b12abcff4f653575cb97bf7f`
-- 34/34 pass
+- `34/34` pass
 
 ### Stage 3 Batch 4
 
@@ -61,11 +61,9 @@
 - Final head `036207aaf722253a66aaffb1949949c3002296af`
 - Nutrition CI `30862460190`
 - Artifact `8874842655`
-- Digest `sha256:10e1b877cf7e26f2ebdf7e55cfa97ea547d82db99a0b8144638651e9098741c0`
 - Web CI `30862460176`
 - Artifact `8874859573`
-- Digest `sha256:796468a9f3b83c57289ab03c5f5e872a30bf0ab881aff2a3ce0d56e8245e8fc8`
-- 43/43 pass، 12 Pure source files
+- `43/43` pass، 12 Pure source files
 
 ---
 
@@ -96,113 +94,191 @@ No Implementation/Parity was claimed.
 **تاریخ/زمان:** ۴ اوت ۲۰۲۶، حدود ۰۳:۱۵ ایران  
 **Branch:** `stage3/id-fingerprint-release-parity`  
 **PR:** #22 — Draft  
-**Issue:** #17  
-**Checkpoint head:** `f02848dbffc9945793b21b4e4f9da8c6a56f6e23`
+**Issue:** #17
 
-### هدف
+Authority/Golden checkpoint:
 
-1. Freeze کردن Authority و Golden contract قبل از code.
-2. ردیابی checkpoint در PR/CI/Review.
-3. جلوگیری از معرفی Candidate به‌عنوان Final.
-4. قفل‌کردن Mapping precedence، canonical payload و replacement matrix.
+- initial head `f02848dbffc9945793b21b4e4f9da8c6a56f6e23`
+- Nutrition CI `30863067237` — success
+- Artifact `8875067557`
+- Web CI `30863067246` — success
+- Artifact `8875083961`
+- final handoff head `707a16f91158e465f3571d683de91d0fefe7be62`
+- Nutrition CI `30863247927` — success
+- Artifact `8875133688`
+- Web CI `30863247923` — success
+- Artifact `8875149780`
 
-### Draft PR
+Checkpoint ثابت کرد Authority/Golden سالم است؛ Implementation، parity test و Full Hash recomputation هنوز وجود نداشت.
 
-- PR #22 ساخته شد.
-- Title: `Draft Stage 3 Batch 5: freeze ID fingerprint and release authority`
-- Base: `web/pwa-foundation`
-- Head: `stage3/id-fingerprint-release-parity`
-- Draft: true
-- Body صریحاً اعلام می‌کند:
-  - mapping resolver وجود ندارد؛
-  - fingerprint payload API وجود ندارد؛
-  - source precedence API وجود ندارد؛
-  - parity `.test.ts` وجود ندارد؛
-  - Full Hash recomputation اجرا نشده است.
+---
 
-### Authority chain
+## Entry 014 — Batch 5 Test-first implementation
 
-- Audit generator `ddcf4cfceefcecf2d1f9d8ad922e4472c212bc1c`
-- Schema/ID candidate doc `0f372496cbad2ecf5cca72a6fdf7604255179be0`
-- Nutrition RC freeze doc `3c0601f469c6d15618fcadd1179c16c581da6f6e`
-- Release contract test `73d61f35383f3acb7298ec2fa5e0c5dd2989c457`
-- Catalog Manifest `f6bcc7bbeeed078b2798b625591b08a11bce0b78`
-- Canon CSV `175b8754c1afd4f6bcd2303d8b1113f3bf211ed5`
-- Alias CSV `94429b1937edc6234b23fc8398531b531a891cc2`
-- Legacy profiles `6810dffaf51afdf8b7161d3c9eb8028ae5add4be`
-- Fallback profiles `62be2ae9ebb1f5bf448b848bf0e502a6d1870aa0`
-- Base migrations `e6c9eede66f2bfe4c32a726ff010d0f96033dc02`
-- Migration v5 `1176a7084784822ed012511b2b3e49ca11dd1fa4`
-- Source precedence `b68655faba8ba8f526f6c358ffd1ff06aa532edd`
-- Promotion test `740432a8568f2f3f70aed69f41ec19d0da109845`
+**تاریخ/زمان:** ۴ اوت ۲۰۲۶، حدود ۰۴:۱۰ تا ۰۴:۲۰ ایران  
+**Branch:** `stage3/id-fingerprint-release-parity`  
+**PR:** #22  
+**Issue:** #17
 
-### Golden contract
+### وضعیت شروع
 
-`id-fingerprint-release-golden-v1.ts` شامل:
+- هر دو سند اجباری دوباره کامل خوانده شدند.
+- PR #22 باز، Draft و Mergeable بود.
+- Head شروع `707a16f91158e465f3571d683de91d0fefe7be62`.
+- Nutrition CI `30863247927` success.
+- Web CI `30863247923` success.
+- Review thread باز: صفر.
 
-- Schema/ID `candidate-not-final` status
-- تمام counts و frozen comparison hashes
-- ID Namespace counts
-- canonical sorted-line payload نمونه
-- expected test-only SHA-256
-- fallback encoded mapping
+### Test-first Red
+
+Commit:
+
+- `8214f2780d0c15d890097ba8081c123b53f90947`
+- فایل `packages/nutrition-core/tests/id-fingerprint-release-parity.test.ts`
+
+Tests قبل از Implementation این قراردادها را قفل کردند:
+
+- Authority Blob provenance
+- Snapshot کامل `candidate-not-final`
+- silent Final promotion rejection
+- count/coverage/one-to-one invariants
+- canonical sorted/newline/final-newline payload
+- test-only SHA-256 sample parity
+- Persian identity normalization
+- encoded fallback mapping
 - exact primary before Alias
 - alias-only mapping
-- unresolved and ambiguous fail-closed cases
-- 9-case source replacement matrix
+- unresolved/ambiguous fail-closed
+- deterministic sorted mapping output
+- complete 3×3 source replacement matrix
 
-### Checkpoint CI
+Red evidence:
 
-Nutrition Core:
+- Nutrition CI `30866441913` — expected failure
+- Golden provenance pass
+- AST pure-boundary pass روی 12 فایل قبلی
+- TypeScript فقط به‌علت نبود APIهای Batch 5 شکست خورد:
+  - `IDENTITY_FREEZE_CANDIDATE`
+  - `canonicalFingerprintPayload`
+  - `normalizeIdentityPersian`
+  - `resolveAppProfilesToCanon`
+  - `canFoodCatalogSourceReplace`
+  - validator/type exports
+- Test execution skipped شد.
+- preflight Artifact `8876268829`
+- Digest `sha256:b2bb9914efd8f5e974506a0908a5df2b272e017bdd250eb3be3292f54e682eac`
 
-- Run `30863067237` — success
-- Artifact `8875067557`
-- Digest `sha256:85036aeaf6c55156ab0dafb0592706b60dbd153cf410f778cdf8db7201ce691a`
-- Existing 43 tests pass
-- Existing 12-source AST boundary pass
-- Golden fixture compiles
+### Pure implementation
+
+Commit:
+
+- `039eb52f944bd253cff0fa24f15f9af3a2c4d0ee`
+- فایل `packages/nutrition-core/src/id-fingerprint-release.ts`
+
+Implemented:
+
+- `IdentityFreezeCandidate`
+- `IDENTITY_FREEZE_CANDIDATE`
+- `validateIdentityFreezeCandidate`
+- `canonicalFingerprintPayload`
+- `normalizeIdentityPersian`
+- `resolveAppProfilesToCanon`
+- `FoodCatalogSourceType`
+- `canFoodCatalogSourceReplace`
+
+Export commit:
+
+- `44f0b6cb265186704ea845db183b36292fd65955`
+
+### Boundary decisions
+
+- Snapshot counts و Hashes از Catalog/Schema constants قبلی compose می‌شوند؛ Authority مستقل جدید اختراع نشده است.
+- `canonicalFingerprintPayload` Crypto اجرا نمی‌کند.
+- `node:crypto` فقط در Test layer باقی ماند.
+- Resolver عین ترتیب Audit generator است.
+- SQLite، filesystem، migrations و Repository runtime وارد Pure Core نشدند.
+
+### First Green
+
+- Nutrition CI `30866552575` — success
+- AST boundary: 13 Pure TypeScript files pass
+- strict TypeScript pass
+- tests `52/52` pass
+- 0 fail، 0 skipped
+- Artifact `8876307563`
+- Digest `sha256:38aa76624560e187da5e5d79b0832d171778da51ca23bc9310f04e155b363a32`
+
+### README و CI evidence
+
+- README commit `c5765d104ec25c727f10ba5635fd61dec9731186`
+- CI provenance/metadata commit `37315232c222001f9cb9fcaf56eb4993208335db`
+
+CI metadata اکنون ثبت می‌کند:
+
+- Audit generator/source precedence/promotion-test Blobs
+- Freeze version/status
+- mapping/unresolved/ambiguous counts
+- Resolver precedence
+- fingerprint payload format
+- crypto boundary = test-only
+
+### Final implementation validation
+
+Nutrition:
+
+- Run `30866657790` — success
+- Artifact `8876345516`
+- Digest `sha256:02ab4e012a346eec96152ab7906aae50b898d09d2143d565d61f0dd7853f503b`
 
 Web/PWA:
 
-- Run `30863067246` — success
-- Artifact `8875083961`
-- Digest `sha256:7d0f58570a4c8d258f59c2b0fae24b46c3ed1ae7697a4ff45d989df9158c1a85`
-- Build/visual/PWA runtime gates pass
+- Run `30866657781` — success
+- Artifact `8876366702`
+- Digest `sha256:330ede033ce3a6856497f217fbfbe82a04e69a1e968aab050b7ba0dd7491aad9`
+
+### رفتار اثبات‌شده
+
+- complete candidate Snapshot equals Golden baseline
+- `candidate-not-final` cannot silently become Final
+- broken profile sum، mapping coverage و one-to-one mapping reject می‌شوند
+- sample ID/mapping/Alias payload hashes match with test-only crypto
+- Persian normalization matches Audit algorithm
+- encoded fallback mapping wins without relying on display names
+- exact primary name wins before Alias
+- Alias route works only when primary route absent است
+- unresolved and ambiguous remain explicit
+- output independent of input order است
+- all 9 source replacement cases match frozen precedence
+- Web/PWA regression remains green
 
 ### Claim boundary
 
-این checkpoint فقط ثابت می‌کند:
+این Batch Pure contract parity را ثابت می‌کند. Full production Asset/Schema Hash recomputation داخل runtime Core اجرا نشده و Schema/ID Candidate به Final ارتقا نیافته است.
 
-- Authority/Golden files سالم‌اند؛
-- Regression قبلی وجود ندارد؛
-- Draft PR قابل Review است.
+### عمداً خارج از Scope
 
-این checkpoint اثبات نمی‌کند:
+- crypto runtime
+- SQLite/filesystem/migrations
+- Repository restore/synchronize
+- Supabase/Auth/RLS
+- AI/Vision
+- Web adapter
 
-- Batch 5 parity انجام شده؛
-- Full 261/13,225 set Hashها در این Branch recompute شده‌اند؛
-- Schema/ID Candidate Final شده؛
-- APIهای mapping/payload/precedence ساخته شده‌اند.
+### Gate پایان Entry
 
-### وضعیت پایان Entry
-
-- PR #22 Draft و باز است.
-- Implementation وجود ندارد.
-- parity `.test.ts` وجود ندارد.
-- Red CI ثبت نشده است.
-- Supabase/Auth/AI/Repository/Web adapter شروع نشده‌اند.
+- Master Plan و Progress Log با Implementation evidence به‌روزرسانی شدند.
+- PR #22 تا CI اسناد و Review نهایی Draft باقی می‌ماند.
 
 ### Exact continuation point
 
-1. هر دو سند اجباری و PR #22 دوباره خوانده شوند.
-2. Review threadها و Head/CI بررسی شوند.
-3. parity tests قبل از implementation نوشته شوند.
-4. Red CI ناشی از نبود mapping/payload/precedence APIs ثبت شود.
-5. Pure implementation اضافه شود.
-6. `node:crypto` فقط در Test layer استفاده شود.
-7. Package exports، README و CI metadata به‌روزرسانی شوند.
-8. Nutrition Core CI و Web CI پاس شوند.
-9. Reviewها رفع و اسناد دوباره Update شوند.
-10. PR #22 تا آن زمان Draft باقی بماند.
+1. CI روی Commitهای اسناد بررسی شود.
+2. PR #22 و Review threadها دوباره خوانده شوند.
+3. PR فقط پس از سبز ماندن Nutrition/Web CI از Draft به Ready تبدیل شود.
+4. Findingهای جدید رفع شوند.
+5. PR #22 با expected head Merge شود.
+6. Issue #17 باز بماند و Batch 5 completed ثبت شود.
+7. Branch Batch 6 از Merge commit ساخته شود.
+8. Web adapter، fixture/model layer و هر arithmetic تکراری داخل `web/` Inventory شود.
+9. Golden adapter tests قبل از implementation ساخته شوند.
 
-**Issue #16 و #17 باز هستند. Supabase، Auth، AI، Repository runtime و Web adapter خارج از Scope باقی می‌مانند.**
+**Issue #16 و #17 باز هستند. Supabase، Auth، AI، Repository runtime و sync خارج از Scope باقی می‌مانند.**
