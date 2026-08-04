@@ -2,7 +2,7 @@
 
 **نقش:** حافظهٔ عملیاتی و شواهد توسعه  
 **همراه اجباری:** `docs/NEOFIT_MASTER_PLAN.md`  
-**آخرین به‌روزرسانی:** ۵ اوت ۲۰۲۶ — Stage 4A project provisioning complete
+**آخرین به‌روزرسانی:** ۵ اوت ۲۰۲۶ — Stage 4B implementation candidate green
 
 ## پروتکل
 
@@ -11,7 +11,7 @@
 1. Master Plan کامل خوانده شود.
 2. این دفتر کامل خوانده شود.
 3. `docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md` کامل خوانده شود.
-4. `docs/NEOFIT_STAGE4A_PROJECT_PROVISIONING_EVIDENCE.md` خوانده شود.
+4. Stage 4A/4B Evidenceها خوانده شوند.
 5. Branch، HEAD، PR، Issue، CI، Review، Vercel و Supabase از منبع واقعی بررسی شوند.
 6. فقط Exact continuation point اجرا شود.
 
@@ -23,13 +23,13 @@
 
 | Stage | وضعیت | شواهد |
 |---|---|---|
-| 0 | complete | PR #12، `151de2c0d5c9b02602c2f89eb4df808653cdd74e` |
-| 1 | complete/accepted | PR #13، `a458a27a2685bfa7d85ea28686b3182c3167d747` |
-| 2A | complete | PR #15، `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b` |
+| 0 | complete | PR #12 |
+| 1 | complete/accepted | PR #13 |
+| 2A | complete | PR #15 |
 | 2B | active/parallel | Issue #16، Draft PR #28 |
-| 3 | complete | PR #18–#24، Issue #17 closed |
+| 3 | complete | PR #18–#24، Core `52/52`، Web `9/9` |
 | 4A | complete | Project `rjwrobltmjodfarnltal` ACTIVE_HEALTHY |
-| 4B | next | Supabase CLI/config + SSR clients |
+| 4B | candidate green | Draft PR #30، سه CI سبز |
 | 4C–4D | not started | Schema/RLS سپس Nutrition persistence |
 | 5–9 | not started | مطابق Master Plan |
 
@@ -45,44 +45,22 @@
 
 ---
 
-## Entry 020–024 — Stage 4 planning history
-
-### Account reconstruction
-
-```text
-Organization: Emad's Org
-Organization ID: yzymkjsfqoohxbqkhzhs
-Existing project region: eu-central-1
-NeoFit project at planning time: none
-Cost: 0 monthly
-```
-
-### Planning records
+## Entry 020–024 — Stage 4 planning
 
 - Issue #25 created.
-- `docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md` created.
 - Planning PR #26 merged: `094fc099f624b0349d6ed3bd1485bad6f11fdf14`.
 - Handoff PR #27 merged: `e79df1b20b1769f4c2b4b2084510664d76bd0d72`.
-- Planning established Browser/Server separation، `getClaims()`، versioned migrations، RLS fail-closed، generated types and Shared Core authority.
-
-At the end of Entry 024:
-
-- Project did not exist.
-- `confirm_cost` had not run.
-- Auth/Schema/RLS had not started.
-- Explicit Organization/Region/Cost acceptance was the hard gate.
+- Browser/Server separation، `getClaims()`، migration authority، RLS fail-closed و Shared Core authority قفل شدند.
+- در پایان این بازه Project وجود نداشت و explicit cost/region/org acceptance Gate بود.
 
 ---
 
-## Entry 025 — Stage 4A explicit decision and project creation
+## Entry 025 — Stage 4A Project provisioning
 
 **Date:** 5 Aug 2026  
-**Issue:** #25  
-**Integration branch:** `web/pwa-foundation`
+**Issue:** #25
 
-### Accepted values
-
-The user explicitly accepted:
+Accepted:
 
 ```text
 Organization: Emad's Org (yzymkjsfqoohxbqkhzhs)
@@ -91,112 +69,193 @@ Cost: 0 monthly
 Project name: neofit
 ```
 
-### Cost recheck and confirmation
+Executed:
 
-Supabase Connector returned:
+- `get_cost` → `0 monthly`.
+- `confirm_cost`.
+- `create_project`.
 
-```text
-type: project
-recurrence: monthly
-amount: 0
-```
-
-`confirm_cost` was executed only after that explicit acceptance.
-
-### Project creation result
+Result:
 
 ```text
-name: neofit
-project id/ref: rjwrobltmjodfarnltal
-organization id: yzymkjsfqoohxbqkhzhs
+project ref: rjwrobltmjodfarnltal
 region: eu-central-1
 status: ACTIVE_HEALTHY
-created at: 2026-08-04T20:45:48.830422Z
 api url: https://rjwrobltmjodfarnltal.supabase.co
+public schema tables: 0
 ```
 
-Connector checks:
+Evidence:
 
-- modern publishable key enabled؛ value not committed or documented.
-- legacy anon key exists for compatibility؛ value not committed.
-- Service Role was not requested or exposed.
-- `public` schema baseline: zero Application tables.
+- `docs/NEOFIT_STAGE4A_PROJECT_PROVISIONING_EVIDENCE.md`.
+- publishable key value وارد Git نشد.
+- privileged key درخواست یا افشا نشد.
 
-### Evidence file
+Process correction مربوط به direct Integration writes و حذف فایل‌های موقت در Stage 4A Evidence ثبت شده است؛ هیچ App/Schema/Secret/Runtime impact نداشت.
 
-- `docs/NEOFIT_STAGE4A_PROJECT_PROVISIONING_EVIDENCE.md`
+---
 
-### Direct-integration process correction
+## Entry 026 — Stage 4B Supabase SSR foundation
 
-The intended action was to create a focused Stage 4A evidence branch. Tool routing caused direct Integration writes instead:
+**Date:** 5 Aug 2026  
+**Issue:** #25  
+**PR:** #30  
+**Branch:** `stage4b/supabase-ssr-foundation`
+
+### 026.1 Test-first red checkpoint
+
+Commits:
 
 ```text
-3f23d1e569d22de4d2cc93eb399be68e416e56e8  placeholder evidence created
-4345d9509c525873ffc20073690af78d89d5905a  placeholder replaced by verified evidence
-f48698a723386d01bd7387c3390b8e732d39519b  accidental docs/.tmp created
-f824b83c98bfb90bafd39c90abf9cbacfc76f7b3  docs/.tmp removed
-364948a57bace2e93c424bdbf7c6a4a98a0a7656  initial correction record
-b310925e5183c3fb01711a1c7f23870366e3e4b1  accidental root file x created
-53352a5e70200a73565e15b71f88fb2fc58fe766  root file x removed
-944acc79a60f91421ede46a9bbcee5ca910355f7  complete correction record
+1c7983f61dd88e8e9f9019310901ecc8492f8586  contracts
+29bdd0eded785ea6cba002f1bb0e470851732484  test command
+dc8e718d4a95f0cdf271840578157bf599de3183  focused CI
 ```
 
-Impact boundary:
+Red runs:
 
-- no Application code changed؛
-- no database schema or Auth config changed؛
-- no key entered Git؛
-- no migration ran؛
-- no runtime behavior changed.
+```text
+Web CI 30957552355 — failure
+Supabase Foundation CI 30957552028 — failure
+```
 
-Correction decision:
+Exact first failure:
 
-- preserve transparent history instead of rewriting it؛
-- synchronize all mandatory docs immediately؛
-- enforce normal Branch/PR workflow again from Stage 4B.
+```text
+TS2307: Cannot find module '../lib/supabase/env.ts'
+```
 
-### Mandatory document updates
+این Failure ثابت کرد تست قبل از implementation فعال بود.
 
-- Master Plan: `bf6432da85443390ade497c05bc3449ac014cd22`.
-- Stage 4 Plan: `e438fbd7a21232eecec0e5e8650182c6cc6e094f`.
-- README: `bf3c0e4f61bd34b3e26f84602836660037744342`.
-- Development Handoff: `6e8d087c76d17c11e83bea8acf616e3ecfd5a4b2`.
-- Issue #25 body synchronized with Project evidence.
+### 026.2 Implementation
 
-### Claim boundaries
+Added:
 
-Proven:
+```text
+supabase/config.toml
+web/lib/supabase/env.ts
+web/lib/supabase/client.ts
+web/lib/supabase/server.ts
+web/lib/supabase/proxy.ts
+web/proxy.ts
+web/.env.example
+web/tests/supabase-foundation.test.ts
+.github/workflows/supabase-foundation-ci.yml
+```
 
-- explicit decision accepted.
-- Cost confirmation executed.
-- independent Project exists and is healthy.
-- Project ref/region/status/URL verified.
-- baseline public schema is empty.
+Dependencies:
 
-Not proven:
+```text
+@supabase/supabase-js 2.110.9
+@supabase/ssr 0.12.3
+```
 
-- Web client or SSR client works.
-- Auth session works.
-- migrations or user tables exist.
-- RLS exists.
-- generated database types exist.
-- Vercel environment variables are configured.
+Contracts implemented:
+
+- fail-closed public env parser.
+- Browser `createBrowserClient`.
+- server-only cookie-aware `createServerClient`.
+- request/response cookie synchronization.
+- `auth.getClaims()` identity refresh.
+- no `getSession()` authorization.
+- `Cache-Control: private, no-store`.
+- scoped `/auth/*` and `/account/*` Proxy.
+- blank Supabase values in `.env.example`.
+- no remote migration/table/RLS.
+
+### 026.3 Corrections
+
+1. Existing `.env.example` App/Vercel assignments were preserved; test now checks blank Supabase values instead of replacing prior contract.
+2. Dynamic test import changed from `.ts` suffix to extensionless resolution after `TS5097`; Assertions unchanged.
+3. Secret scanner narrowed from security docs to runtime/config after docs produced explanatory false positives; Browser-file test remains case-insensitive.
+
+### 026.4 Green candidate
+
+Candidate head:
+
+```text
+d796ff66469be062602cc08c11be4f7da6e9279f
+```
+
+Supabase Foundation CI:
+
+```text
+Run: 30958021239 — success
+Artifact: 8911823269
+Digest: sha256:72ea57192d121d72474611a65d3a50ea31975336f76f45c6bbdc0f6471d772d5
+```
+
+Web CI:
+
+```text
+Run: 30958021241 — success
+Artifact: 8911836376
+Digest: sha256:f9b43059040787f990a601c2be559958adda963660d0d15b2fc5a4611cabbb97
+```
+
+Vercel Build Contract:
+
+```text
+Run: 30958021244 — success
+```
+
+Passed:
+
+- Stage 4B contracts `10/10`.
+- Web TypeScript.
+- Shared Core boundary/typecheck/`52/52`.
+- secret scan.
+- Web Adapter parity.
+- Next build.
+- Visual/PWA/offline/cache gates.
+- repository-root Vercel build contract.
+
+### 026.5 Integration synchronization
+
+Integration advanced with:
+
+```text
+13a9407374d2d84d754dcf5eb7d50b8b4176bb64
+fix(vercel): deploy the NeoFit Web/PWA from repository root
+```
+
+Stage 4B synchronized via:
+
+```text
+e36b5310fc443afbc4f69ca6bf73ca921c050a5c
+```
+
+Branch is behind Integration by zero commits.
+
+### 026.6 Remote boundary recheck
+
+Supabase Project rechecked after implementation:
+
+```text
+public schema Application tables: 0
+```
+
+No migration، table، RLS policy or remote schema mutation ran.
+
+### 026.7 Evidence authority
+
+- `docs/NEOFIT_STAGE4B_SUPABASE_SSR_FOUNDATION_EVIDENCE.md`.
+- Master Plan candidate update: `f16d4b53bdc325cf1f75117bdb1fdb84926bf990`.
 
 ---
 
 ## Stage 2B parallel state
 
-Vercel Stage 2B remains independent in Issue #16 / Draft PR #28. Supabase Project creation does not close or merge that work.
+Vercel HTTPS validation remains independent in Issue #16 / Draft PR #28. Stage 4B does not close that gate.
 
 ---
 
 ## Exact continuation point
 
-1. Verify Core/Web CI on the final Integration HEAD containing Stage 4A evidence/docs.
-2. Create `stage4b/supabase-ssr-foundation` from that verified HEAD.
-3. Open a focused Draft PR.
-4. Write tests/contracts before implementation.
-5. Add env/config/Browser/Server/Proxy foundation without user tables.
-6. Run Core/Web CI، inspect review threads and secret boundaries.
-7. Update mandatory docs at every checkpoint.
-8. Start Stage 4C only after Stage 4B review/merge.
+1. Stage 4 Plan، README و Development Handoff با Entry 026 همگام شوند.
+2. Final Foundation/Web/Vercel CI روی documentation head اجرا شود.
+3. PR #30 review threads و changed files بررسی شوند.
+4. PR پس از Final green از Draft خارج شود.
+5. PR #30 با expected head Merge شود.
+6. post-merge state در Master/Progress/Issue #25 ثبت شود.
+7. Stage 4C در Branch/PR مستقل با migration/RLS tests آغاز شود.
