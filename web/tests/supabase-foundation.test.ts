@@ -29,10 +29,7 @@ test('Stage 4B foundation files and local Supabase config exist', async () => {
 test('public environment parser is fail-closed and accepts the project contract', async () => {
   const { parseSupabasePublicEnv } = await import('../lib/supabase/env.ts');
 
-  assert.throws(
-    () => parseSupabasePublicEnv({}),
-    /NEXT_PUBLIC_SUPABASE_URL/,
-  );
+  assert.throws(() => parseSupabasePublicEnv({}), /NEXT_PUBLIC_SUPABASE_URL/);
   assert.throws(
     () =>
       parseSupabasePublicEnv({
@@ -114,17 +111,23 @@ test('Next.js root proxy delegates to the Supabase session helper', async () => 
   assert.match(source, /manifest\.webmanifest/);
 });
 
-test('environment example contains names only and no committed key values', async () => {
+test('environment example preserves app settings and contains blank Supabase values', async () => {
   const source = await readWeb('.env.example');
-  const assignments = source
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith('#') && line.includes('='));
+  const assignments = new Map(
+    source
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith('#') && line.includes('='))
+      .map((line) => {
+        const separator = line.indexOf('=');
+        return [line.slice(0, separator), line.slice(separator + 1)] as const;
+      }),
+  );
 
-  assert.deepEqual(assignments.sort(), [
-    'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=',
-    'NEXT_PUBLIC_SUPABASE_URL=',
-  ]);
+  assert.equal(assignments.get('NEXT_PUBLIC_SUPABASE_URL'), '');
+  assert.equal(assignments.get('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'), '');
+  assert.equal(assignments.get('NEXT_PUBLIC_APP_URL'), 'http://localhost:3000');
+  assert.equal(assignments.get('NEXT_PUBLIC_VERCEL_ENV'), 'development');
   assert.doesNotMatch(source, /sb_publishable_[A-Za-z0-9_-]+/);
   assert.doesNotMatch(source, /eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/);
 });
