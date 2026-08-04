@@ -24,13 +24,14 @@ The Expo application under [`mobile/`](mobile/README.md) remains a frozen releas
 - Stage 2B — protected Vercel HTTPS validation: active in Issue #16 / Draft PR #28
 - Stage 3 — Shared Nutrition Core and Web parity: complete
 - Stage 4A — Supabase decision and Project creation: complete
-- Stage 4B — Supabase local config and SSR clients: exact next stage
-- Stage 4C–4D — Schema/RLS and Nutrition persistence: not started
+- Stage 4B — Supabase local config and SSR clients: implementation candidate green in Draft PR #30
+- Stage 4C — Identity schema and RLS: exact next stage after Stage 4B merge
+- Stage 4D — Nutrition persistence: not started
 - Stage 5–9: not started
 
 ## Supabase Project
 
-A dedicated NeoFit Project now exists:
+Dedicated Project:
 
 ```text
 name: neofit
@@ -39,7 +40,16 @@ region: eu-central-1
 status: ACTIVE_HEALTHY
 ```
 
-No key value is stored in Git. No Application table، migration، Auth UI or RLS policy exists yet.
+Stage 4B currently provides:
+
+- fail-closed public environment validation;
+- Browser and Server Supabase clients;
+- cookie-aware request Proxy using `getClaims()`;
+- `private, no-store` session responses;
+- local Supabase config;
+- secret-boundary and regression tests.
+
+No key value is stored in Git. Remote `public` schema still contains zero Application tables. No migration، RLS policy، generated database type or Auth UI exists yet.
 
 ## Read first
 
@@ -50,6 +60,7 @@ Operational sources of truth:
 - [`docs/DEVELOPMENT_HANDOFF.md`](docs/DEVELOPMENT_HANDOFF.md)
 - [`docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md`](docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md)
 - [`docs/NEOFIT_STAGE4A_PROJECT_PROVISIONING_EVIDENCE.md`](docs/NEOFIT_STAGE4A_PROJECT_PROVISIONING_EVIDENCE.md)
+- [`docs/NEOFIT_STAGE4B_SUPABASE_SSR_FOUNDATION_EVIDENCE.md`](docs/NEOFIT_STAGE4B_SUPABASE_SSR_FOUNDATION_EVIDENCE.md)
 
 Scientific/data contracts:
 
@@ -65,15 +76,13 @@ Scientific/data contracts:
 - Language and vision models may not invent calories، macronutrients، weights or portions.
 - SQL and React must not duplicate Nutrition arithmetic.
 - All exposed user-owned tables require RLS before application use.
-- Service Role credentials must never enter Browser bundles، logs or artifacts.
+- privileged credentials must never enter Browser bundles، logs or artifacts.
 - Dashboard edits are not Schema authority; migrations are.
+- server authorization is not based only on `getSession()`.
 
 ## Exact next work
 
-Create a focused Branch/PR for Stage 4B:
-
-```text
-stage4b/supabase-ssr-foundation
-```
-
-That PR must add test-first Environment validation، Browser/Server Supabase clients، cookie-aware proxy and secret-boundary checks without creating user tables.
+1. Finish final documentation/review CI on Draft PR #30.
+2. Merge Stage 4B only if Foundation، Web/PWA and Vercel Build Contract remain green.
+3. Start Stage 4C in a new Branch/PR with versioned migrations، generated types and RLS denial tests.
+4. Keep Stage 2B Vercel HTTPS validation independent in Issue #16 / PR #28.

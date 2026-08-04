@@ -1,0 +1,117 @@
+name: Supabase Foundation CI
+
+on:
+  push:
+    branches:
+      - 'stage4b/**'
+    paths:
+      - 'web/lib/supabase/**'
+      - 'web/proxy.ts'
+      - 'web/.env.example'
+      - 'web/tests/supabase-foundation.test.ts'
+      - 'web/package.json'
+      - 'supabase/**'
+      - '.github/workflows/supabase-foundation-ci.yml'
+      - 'docs/NEOFIT_MASTER_PLAN.md'
+      - 'docs/NEOFIT_PROGRESS_LOG.md'
+      - 'docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md'
+  pull_request:
+    branches:
+      - web/pwa-foundation
+    paths:
+      - 'web/lib/supabase/**'
+      - 'web/proxy.ts'
+      - 'web/.env.example'
+      - 'web/tests/supabase-foundation.test.ts'
+      - 'web/package.json'
+      - 'supabase/**'
+      - '.github/workflows/supabase-foundation-ci.yml'
+      - 'docs/NEOFIT_MASTER_PLAN.md'
+      - 'docs/NEOFIT_PROGRESS_LOG.md'
+      - 'docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-foundation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+
+      - name: Install Web dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+
+      - name: Initialize evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p web/artifacts/supabase-foundation
+          printf '{"commit":"%s","branch":"%s","status":"preflight"}\n' \
+            "$GITHUB_SHA" \
+            "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" \
+            > web/artifacts/supabase-foundation/preflight.json
+
+      - name: Stage 4B foundation contracts
+        working-directory: web
+        run: npm run test:supabase-foundation
+
+      - name: Web TypeScript
+        working-directory: web
+        run: npm run typecheck
+
+      - name: Shared Nutrition Core regression
+        working-directory: packages/nutrition-core
+        run: npm run check
+
+      - name: Fail on committed Supabase secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE \
+            --exclude='*.test.ts' \
+            --exclude='.env.example' \
+            '(SUPABASE_SERVICE_ROLE_KEY|sb_secret_|service[_-]?role|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)' \
+            web/lib/supabase web/proxy.ts supabase/config.toml; then
+            echo 'Potential Supabase secret or service-role contract found in committed runtime/config files.' >&2
+            exit 1
+          fi
+
+      - name: Write Stage 4B evidence metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '{\n  "commit": "%s",\n  "projectRef": "rjwrobltmjodfarnltal",\n  "scope": "local-config-and-ssr-client-foundation",\n  "schemaMutation": false,\n  "serviceRoleUsed": false,\n  "generatedAt": "%s"\n}\n' \
+            "$GITHUB_SHA" \
+            "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            > web/artifacts/supabase-foundation/metadata.json
+          cat web/artifacts/supabase-foundation/metadata.json
+
+      - name: Upload Stage 4B evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-supabase-foundation-evidence
+          path: web/artifacts/supabase-foundation
+          if-no-files-found: error
+          retention-days: 30
