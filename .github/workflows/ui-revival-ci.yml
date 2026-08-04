@@ -9,6 +9,7 @@ on:
       - master
     paths:
       - 'src/**'
+      - 'scripts/verify-ui-revival.mjs'
       - 'package.json'
       - 'package-lock.json'
       - 'next.config.ts'
@@ -25,7 +26,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     env:
       NEXT_TELEMETRY_DISABLED: '1'
       NEXT_PUBLIC_FIREBASE_API_KEY: 'AIzaSyDemoNeoFitPreviewKey0000000000000'
@@ -59,7 +60,48 @@ jobs:
           grep -q 'lang="fa" dir="rtl"' src/app/layout.tsx
           grep -q 'demo-emad' src/context/user-profile-context.tsx
           ! grep -q 'from "firebase/' src/context/user-profile-context.tsx
+          ! grep -q '@/ai/flows/calculate-activity-calories' src/components/dashboard/log-entry-sheet.tsx
           test -s src/app/'(main)'/today/page.tsx
           test -s src/app/'(main)'/nutrition/page.tsx
           test -s src/app/'(main)'/workout/page.tsx
           test -s src/app/'(main)'/progress/page.tsx
+
+      - name: Install browser runtime gate
+        run: |
+          npm install --no-save --no-package-lock playwright@1.61.1
+          npx playwright install --with-deps chromium
+
+      - name: Start built application
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -H 127.0.0.1 -p 3000 > /tmp/neofit-ui-revival.log 2>&1 &
+          echo $! > /tmp/neofit-ui-revival.pid
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:3000/today > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/neofit-ui-revival.log
+          exit 1
+
+      - name: Verify real browser routes
+        run: node scripts/verify-ui-revival.mjs
+
+      - name: Upload runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-ui-revival-runtime
+          path: artifacts/ui-revival-smoke
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Stop built application
+        if: always()
+        shell: bash
+        run: |
+          if test -f /tmp/neofit-ui-revival.pid; then
+            kill "$(cat /tmp/neofit-ui-revival.pid)" 2>/dev/null || true
+          fi
