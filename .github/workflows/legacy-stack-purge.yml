@@ -1,0 +1,113 @@
+name: Legacy Stack Purge
+
+on:
+  push:
+    branches:
+      - revival/firebase-ui-front
+    paths:
+      - '.github/workflows/legacy-stack-purge.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: revival/firebase-ui-front
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+
+      - name: Remove legacy services and workspace artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf src/ai src/lib/firebase.ts src/lib/firebase-admin.ts .idx
+          rm -f .firebaserc apphosting.yaml .modified
+          rm -f .github/workflows/firebase-genkit-inventory.yml
+
+          node <<'NODE'
+          const fs = require('node:fs');
+          const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          for (const name of [
+            '@genkit-ai/googleai',
+            '@genkit-ai/next',
+            'firebase',
+            'firebase-admin',
+            'genkit',
+          ]) delete packageJson.dependencies?.[name];
+          delete packageJson.devDependencies?.['genkit-cli'];
+          packageJson.name = 'neofit-web';
+          packageJson.engines = { node: '22.x' };
+          packageJson.scripts = {
+            ...packageJson.scripts,
+            typecheck: 'tsc --noEmit',
+          };
+          fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2) + '\n');
+          NODE
+
+          cat > README.md <<'EOF'
+          # NeoFit Web
+
+          رابط کامل وب نئوفیت بر پایهٔ Next.js، با رابط فارسی و راست‌به‌چپ.
+
+          ## وضعیت این شاخه
+
+          - فرانت تاریخی و کامل‌تر نئوفیت به‌عنوان پایهٔ رابط کاربری احیا شده است.
+          - داده‌های نسخهٔ Preview در مرورگر نگه‌داری می‌شوند.
+          - محاسبات و کاتالوگ نهایی باید از Shared Nutrition Core تأمین شوند.
+          - حساب کاربری و همگام‌سازی در مسیر معماری جدید پروژه متصل می‌شوند.
+
+          ```bash
+          npm ci
+          npm run dev
+          npm run typecheck
+          npm run build
+          ```
+          EOF
+
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/ui-revival-ci.yml')
+          text = path.read_text()
+          start = text.index('    env:\n')
+          end = text.index('\n    steps:\n', start)
+          text = text[:start] + "    env:\n      NEXT_TELEMETRY_DISABLED: '1'\n" + text[end:]
+          text = text.replace("          ! grep -q 'from \"firebase/' src/context/user-profile-context.tsx\n", "")
+          text = text.replace("          ! grep -q '@/ai/flows/calculate-activity-calories' src/components/dashboard/log-entry-sheet.tsx\n", "")
+          text = text.replace("      - name: Build historical UI migration candidate\n        run: npm run build\n", "      - name: TypeScript\n        run: npm run typecheck\n\n      - name: Build historical UI migration candidate\n        run: npm run build\n")
+          path.write_text(text)
+          PY
+
+      - name: Regenerate dependency lock
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Assert complete purge
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/legacy-stack-purge.yml
+          forbidden='firebase|firestore|genkit|apphosting|googleai|dotprompt|NEXT_PUBLIC_FIREBASE|FIREBASE_|@/ai/'
+          if rg -n -i "$forbidden" --glob '!artifacts/**' .; then
+            echo 'Legacy references remain.' >&2
+            exit 1
+          fi
+          git ls-files --deleted --modified --others --exclude-standard
+
+      - name: Commit cleaned tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'NeoFit Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          git commit -m 'refactor(revival): purge legacy cloud and generation stack'
+          git push origin HEAD:revival/firebase-ui-front
