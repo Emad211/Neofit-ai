@@ -1,15 +1,27 @@
 # NeoFit Development Handoff
 
-**Last verified:** 2026-08-03  
-**Current source-of-truth branch:** `agent/iranian-food-kb-foundation`  
-**Verified product head:** `648b98cdc921beb26ccd0ff05a1f17944bb6f71d`  
-**Planning branch:** `plan/web-pwa-supabase-vercel`
+**Last verified:** 2026-08-04  
+**Integration branch:** `web/pwa-foundation`  
+**Integration head before active work:** `e79df1b20b1769f4c2b4b2084510664d76bd0d72`  
+**Active branch:** `stage2b/vercel-https-reactivation`  
+**Active PR:** #28  
+**Active issues:** #16 Vercel HTTPS، #25 Supabase Foundation
 
-## Proven current state
+## Read order
 
-The Expo/React Native application is installable and starts successfully after the Android SQLite fixes merged at the verified product head. Official Mobile CI run 573 passed.
+1. `docs/NEOFIT_MASTER_PLAN.md`
+2. `docs/NEOFIT_PROGRESS_LOG.md`
+3. `docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md` before any Supabase change
+4. GitHub PR/Issue/CI state
+5. Vercel and Supabase connector state
 
-The current implementation contains the IFKB/Nutrition release candidate:
+Do not continue from this file alone if it conflicts with the Master Plan or live tools.
+
+## Proven product state
+
+### Frozen Mobile/IFKB reference
+
+The Expo/React Native application under `mobile/` remains a frozen reference with:
 
 - 13,225 generic USDA/FNDDS/SR records
 - 9,279 generic concepts
@@ -18,102 +30,146 @@ The current implementation contains the IFKB/Nutrition release candidate:
 - deterministic nutrition calculations
 - IFKB-resolved AI meal plans before persistence
 - Stage 7 portion corrections
-- Stage 8 licensed food images and placeholders
+- Stage 8 licensed images/placeholders
 - Schema/ID freeze candidate
 
-The mobile application is now a frozen reference because its UI/UX and Persian/RTL experience are not acceptable as the main product direction.
+Mobile is not the active product UI direction.
 
-## New active direction
+### Active Web/PWA
 
-Read first:
+Completed:
 
-`docs/NEOFIT_WEB_PWA_ROADMAP_V1_FA.md`
+- Persian RTL Product/UX foundation
+- Next.js PWA shell, manifest, icons and Service Worker
+- Visual QA at 360/390/412 widths
+- local offline reload and cache-boundary tests
+- Shared `packages/nutrition-core`
+- Web Nutrition Adapter using Shared Core
+- Core parity `52/52`
+- Web Adapter tests `9/9`
 
-NeoFit will be rebuilt as a Persian-first, mobile-first PWA using Next.js, Vercel and Supabase. The platform changes; the nutrition and data contracts remain locked.
+The Web application is still fixture/state based. It has no account persistence, Supabase Auth, RLS, real user database, Web AI/Vision, IndexedDB catalog sync or backup/recovery vertical slice.
 
-## Contracts that remain locked
+## Stage 2B — current Vercel state
 
-Do not change these without a reviewed versioned migration:
+Issue #16 is active again.
 
-- canonical food IDs
-- IFKB/app mappings and fingerprints
-- provenance fields
-- deterministic nutrition arithmetic
-- rejection of provider-created nutrition
-- identity-only Vision boundary
-- all-or-nothing AI meal-plan resolution
-- imported/custom precedence
-- image attribution and licence metadata
+A previous `READY` Vercel deployment was invalid evidence because the project cloned the repository root, ran no install and finished without a Next.js build.
 
-The scientific/data source of truth remains:
+PR #28 adds:
 
-`docs/NEOFIT_NUTRITION_FINAL_SCOPE_V3.md`
+- Root `vercel.json`
+- Root npm workspace for `web` and `packages/nutrition-core`
+- explicit Next.js `16.2.12` detection
+- Node `22.x` alignment
+- CI checks for the deployment contract
+- deployment bundle including root config and both workspaces
 
-The new roadmap supersedes only its mobile-only delivery decision.
+Validated code head:
 
-## Repository strategy
+```text
+aeec3b0716b6f60dfe61a745ca266f69e1d640e8
+```
 
-- Keep `mobile/` as a frozen reference and migration source.
-- Keep `ifkb/` as the data/research/release source of truth.
-- Add the new application under `web/`.
-- Extract pure nutrition logic to `packages/nutrition-core/` in Stage 3.
-- Do not copy React Native UI code into the web app.
-- Do not continue web implementation inside PR #3.
-- After the planning PR merges, create `web/pwa-foundation` from the verified product head.
-- Use one focused PR per stage.
+Vercel evidence:
 
-## Infrastructure gate
+```text
+Project: prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG
+Deployment: dpl_2rn2B51BZJfjDYtPPhb3VXY7swna
+State: READY
+Target: Preview
+Alias: neofit-ai-git-stage2b-vercel-htt-774980-emads-projects-41cb6447.vercel.app
+Next.js: 16.2.12
+Bundler: Turbopack
+```
 
-Connected deployment and database tools are available, but no existing external project is automatically reused.
+Build log proves:
 
-- Stage 1 does not create backend infrastructure.
-- A new Supabase project is created only in Stage 4 after organization, region and cost confirmation.
-- A NeoFit Vercel project is created in Stage 2 when the first coherent PWA preview is ready.
+- npm install
+- PWA icon generation
+- `npm run build:web`
+- `next build`
+- successful compile
+- successful TypeScript
+- static generation of `/`, `/_not-found`, `/manifest.webmanifest`, `/offline`
+- output deployed from `/vercel/output`
 
-## Exact next action
+CI on that code head:
 
-Start **Stage 1 — Product/UX Foundation فارسی**.
+- Nutrition Core CI `30927566238` — success
+- Artifact `8899755836`
+- Web CI `30927566018` — success
+- Artifact `8899785585`
 
-The first implementation PR must:
+### Remaining Vercel blocker
 
-1. create `web/`;
-2. use real-shaped IFKB data without a live backend;
-3. set Persian and RTL at the root;
-4. define NeoFit design tokens;
-5. create the mobile navigation shell;
-6. implement Today, Food Search, Meal Logging, Weekly Plan and Settings;
-7. include loading, empty, error and offline states;
-8. validate widths 360, 390 and 412 pixels;
-9. avoid Supabase schema work;
-10. stop for product-owner UX approval.
+Preview Deployment Protection is active.
 
-## Stage 1 Definition of Done
+The connected tool creates a temporary share URL, but fetches redirect to Vercel SSO and the tool does not retain the required browser cookie. Therefore remote HTTPS assertions have not yet been executed.
 
-- Persian is the default language.
-- Every critical flow is genuinely RTL.
-- No horizontal overflow exists on target widths.
-- Five critical flows work with real-shaped IFKB data.
-- A normal meal can be logged from Today in no more than two page transitions.
-- Typography, spacing, color and navigation form one coherent design system.
-- The product owner accepts the UX direction.
+Do not close Issue #16 or merge PR #28 until a real browser session verifies:
 
-## Anti-overengineering rules
+1. Root NeoFit page
+2. `lang=fa` and `dir=rtl`
+3. manifest and all icons
+4. Service Worker registration/control
+5. fresh-install offline reload
+6. React navigation and meal logging interaction
+7. API/Auth/Authorization cache exclusion
+8. no unexplained build/runtime errors
 
-- no Supabase before the Stage 1 UX gate;
-- no full offline sync before the data contract is stable;
-- no extra server runtime when a Next.js route is sufficient;
-- no heavy monorepo tooling before a real need exists;
-- no billing, social, coach, marketplace or admin platform in the first web RC;
-- no rewrite of IFKB or deterministic nutrition logic;
-- no giant PR covering all web stages.
+Local Chromium CI already passes the equivalent local Production-build checks.
 
-## Evidence required after each stage
+## Stage 4 — current Supabase gate
 
-- branch and exact head SHA
-- changed files and scope
-- tests and CI run IDs
-- Preview URL when applicable
-- screenshots at target mobile widths
-- migration and access-policy evidence when applicable
-- known limitations
-- exact next stage
+Planning PR #26 is merged. Issue #25 remains open.
+
+Verified account state:
+
+```text
+Organization: Emad's Org
+Organization ID: yzymkjsfqoohxbqkhzhs
+Existing regions: eu-central-1
+NeoFit project: none
+Current project cost: 0 monthly
+```
+
+No `confirm_cost`, Project creation, Auth, migration, table or RLS operation has been executed.
+
+Project creation requires explicit acceptance of:
+
+```text
+Organization: Emad's Org (yzymkjsfqoohxbqkhzhs)
+Region: eu-central-1
+Cost: 0 monthly
+```
+
+After acceptance only:
+
+1. call Supabase cost confirmation;
+2. create Project `neofit`;
+3. record Project ref/region/status in Issue #25 and mandatory docs;
+4. create a separate test-first Stage 4B branch/PR;
+5. add SSR browser/server clients before user tables;
+6. add versioned migrations and RLS in later focused batches.
+
+## Locked contracts
+
+- Canonical IDs and fingerprints change only through versioned migration/freeze.
+- Missing nutrition remains missing; unknown grams remain `null`.
+- Provider-created nutrition is rejected.
+- Shared Core is the calculation authority.
+- SQL and React do not recalculate nutrition.
+- Every user-owned exposed table has RLS before application use.
+- Service Role never enters Browser code, logs or artifacts.
+- Preview validation does not authorize Production promotion.
+
+## Exact continuation point
+
+1. Recheck PR #28 head, CI and newest Vercel deployment.
+2. Resolve Preview browser access through Vercel Deployment Protection/share session.
+3. Run and record the remote HTTPS PWA suite.
+4. Address any remote defect or remaining release-relevant build warning.
+5. Close Issue #16 and merge PR #28 only after full evidence.
+6. In parallel, wait for explicit Supabase Organization/Region/Cost acceptance.
+7. After acceptance, create the `neofit` Project and begin Stage 4B in a new focused PR.
