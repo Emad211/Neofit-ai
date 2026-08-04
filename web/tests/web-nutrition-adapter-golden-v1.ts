@@ -16,7 +16,10 @@ export const WEB_FOOD_GOLDEN = {
   ghormehSabzi: {
     id: 'ghormeh-sabzi',
     base: { calories: 330, proteinG: 22, carbsG: 14, fatG: 20 },
-    oneAndHalf: { calories: 495, proteinG: 33, carbsG: 21, fatG: 30, grams: null },
+    oneAndHalf: {
+      macros: { calories: 495, proteinG: 33, carbsG: 21, fatG: 30 },
+      grams: null,
+    },
   },
   plainRice: {
     id: 'chelo-sefid',
@@ -25,7 +28,10 @@ export const WEB_FOOD_GOLDEN = {
   boiledEgg: {
     id: 'boiled-egg',
     base: { calories: 78, proteinG: 6, carbsG: 1, fatG: 5 },
-    two: { calories: 156, proteinG: 12, carbsG: 2, fatG: 10, grams: 100 },
+    two: {
+      macros: { calories: 156, proteinG: 12, carbsG: 2, fatG: 10 },
+      grams: 100,
+    },
   },
   joojeh: {
     id: 'joojeh-kebab',
