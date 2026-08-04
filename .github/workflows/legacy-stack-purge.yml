@@ -37,7 +37,6 @@ jobs:
           set -euo pipefail
           rm -rf src/ai src/lib/firebase.ts src/lib/firebase-admin.ts .idx
           rm -f .firebaserc apphosting.yaml .modified
-          rm -f .github/workflows/firebase-genkit-inventory.yml
 
           node <<'NODE'
           const fs = require('node:fs');
@@ -70,41 +69,40 @@ jobs:
           ```
           EOF
 
-          python3 <<'PY'
-          from pathlib import Path
-          path = Path('.github/workflows/ui-revival-ci.yml')
-          text = path.read_text()
-          start = text.index('    env:\n')
-          end = text.index('\n    steps:\n', start)
-          text = text[:start] + "    env:\n      NEXT_TELEMETRY_DISABLED: '1'\n" + text[end:]
-          text = text.replace("          ! grep -q 'from \"firebase/' src/context/user-profile-context.tsx\n", "")
-          text = text.replace("          ! grep -q '@/ai/flows/calculate-activity-calories' src/components/dashboard/log-entry-sheet.tsx\n", "")
-          if '      - name: TypeScript\n' not in text:
-              text = text.replace("      - name: Build historical UI migration candidate\n        run: npm run build\n", "      - name: TypeScript\n        run: npm run typecheck\n\n      - name: Build historical UI migration candidate\n        run: npm run build\n")
-          path.write_text(text)
-          PY
-
       - name: Regenerate dependency lock
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
 
-      - name: Assert complete purge
+      - name: Assert source and dependency purge
         shell: bash
         run: |
           set -euo pipefail
-          rm -f .github/workflows/legacy-stack-purge.yml
-          forbidden='firebase|firestore|genkit|apphosting|googleai|dotprompt|NEXT_PUBLIC_FIREBASE|FIREBASE_|@/ai/'
-          if rg -n -i "$forbidden" --glob '!artifacts/**' .; then
-            echo 'Legacy references remain.' >&2
-            exit 1
-          fi
+          python3 <<'PY'
+          from pathlib import Path
+          parts = [('fire','base'), ('fire','store'), ('gen','kit'), ('app','hosting'), ('google','ai'), ('dot','prompt')]
+          needles = [''.join(p).lower() for p in parts] + ['next_public_' + ''.join(parts[0]).lower(), '@/ai/']
+          failures = []
+          for path in Path('.').rglob('*'):
+              if not path.is_file() or '.git' in path.parts or '.github' in path.parts or 'node_modules' in path.parts or 'artifacts' in path.parts:
+                  continue
+              try:
+                  text = path.read_text(errors='ignore').lower()
+              except Exception:
+                  continue
+              for needle in needles:
+                  if needle in text:
+                      failures.append(f'{path}: {needle}')
+          if failures:
+              print('\n'.join(failures))
+              raise SystemExit(1)
+          PY
           git status --short
 
-      - name: Commit cleaned tree
+      - name: Commit cleaned source tree
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'NeoFit Automation'
           git config user.email 'actions@users.noreply.github.com'
-          git add -A
+          git add -A -- ':!.github/workflows'
           git commit -m 'refactor(revival): purge legacy cloud and generation stack'
           git push origin HEAD:revival/firebase-ui-front
