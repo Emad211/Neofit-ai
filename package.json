@@ -3,14 +3,25 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=22.13.0"
+    "node": "22.x"
   },
+  "workspaces": [
+    "web",
+    "packages/nutrition-core"
+  ],
   "scripts": {
     "start": "npm --prefix mobile run start",
     "android": "npm --prefix mobile run android",
     "ios": "npm --prefix mobile run ios",
     "typecheck": "npm --prefix mobile run typecheck",
     "doctor": "npm --prefix mobile run doctor",
-    "check": "npm --prefix mobile run check"
+    "check": "npm --prefix mobile run check",
+    "build:web": "npm --workspace @neofit/web run build",
+    "typecheck:web": "npm --workspace @neofit/web run typecheck",
+    "test:web": "npm --workspace @neofit/web run test:adapter",
+    "check:nutrition-core": "npm --workspace @neofit/nutrition-core run check"
+  },
+  "dependencies": {
+    "next": "16.2.12"
   }
 }
