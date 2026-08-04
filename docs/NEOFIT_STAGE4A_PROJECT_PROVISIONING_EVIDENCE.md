@@ -59,7 +59,7 @@ Therefore Stage 4A proves project creation only. It does not prove Auth UI, SSR 
 
 ## Process correction
 
-The evidence file was initially created directly on the integration branch with placeholder content because the intended Stage 4A branch had not yet been created. The placeholder was immediately replaced by this complete evidence record. No application code, schema, key, migration or runtime behavior was changed by that correction.
+The evidence file was initially created directly on the integration branch with placeholder content because the intended Stage 4A branch had not yet been created. The placeholder was immediately replaced by this complete evidence record. An accidental temporary `docs/.tmp` file was also created and immediately removed. No application code, schema, key, migration or runtime behavior was changed by these corrections.
 
 Stage 4B must return to the normal focused Branch/PR workflow.
 
