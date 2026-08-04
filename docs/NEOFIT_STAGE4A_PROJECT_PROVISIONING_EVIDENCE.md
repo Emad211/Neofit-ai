@@ -46,7 +46,7 @@ The project exposes an enabled modern publishable key. The key value is intentio
 
 The `public` schema contained no application tables immediately after provisioning.
 
-Therefore Stage 4A proves project creation only. It does not prove Auth UI, SSR clients, migrations, generated types, profiles, user settings, nutrition persistence, or RLS.
+Therefore Stage 4A proves project creation only. It does not prove Auth UI، SSR clients، migrations، generated types، profiles، user settings، nutrition persistence or RLS.
 
 ## Security boundaries
 
@@ -59,16 +59,34 @@ Therefore Stage 4A proves project creation only. It does not prove Auth UI, SSR 
 
 ## Process correction
 
-The evidence file was initially created directly on the integration branch with placeholder content because the intended Stage 4A branch had not yet been created. The placeholder was immediately replaced by this complete evidence record. An accidental temporary `docs/.tmp` file was also created and immediately removed. No application code, schema, key, migration or runtime behavior was changed by these corrections.
+The intended workflow was a focused Stage 4A Evidence branch. Tool routing produced direct Integration commits instead:
 
-Stage 4B must return to the normal focused Branch/PR workflow.
+```text
+3f23d1e569d22de4d2cc93eb399be68e416e56e8  placeholder evidence created
+4345d9509c525873ffc20073690af78d89d5905a  placeholder replaced by verified evidence
+f48698a723386d01bd7387c3390b8e732d39519b  accidental docs/.tmp created
+f824b83c98bfb90bafd39c90abf9cbacfc76f7b3  docs/.tmp removed
+364948a57bace2e93c424bdbf7c6a4a98a0a7656  correction recorded
+b310925e5183c3fb01711a1c7f23870366e3e4b1  accidental root file x created
+53352a5e70200a73565e15b71f88fb2fc58fe766  root file x removed
+```
+
+Impact boundary:
+
+- no Application code changed؛
+- no Schema or Auth config changed؛
+- no Key entered Git؛
+- no Migration ran؛
+- no Runtime behavior changed.
+
+The transparent history is preserved. Stage 4B returns to the normal focused Branch/PR workflow.
 
 ## Exact continuation point
 
-1. Synchronize Master Plan, Progress Log, Stage 4 Plan, README and Development Handoff with this project evidence.
-2. Let Core/Web CI validate the updated integration head.
-3. Create an independent Stage 4B branch from the updated integration head.
-4. Add Supabase CLI/config and browser/server/proxy clients test-first.
-5. Add only environment contracts; do not commit keys.
-6. Do not create user tables until the client/session foundation is reviewed.
-7. Stage 2B Vercel remains independent and open in Issue #16 / PR #28.
+1. Verify Core/Web CI on the final Integration HEAD containing Stage 4A evidence/docs.
+2. Create `stage4b/supabase-ssr-foundation` from that verified HEAD.
+3. Open a focused Draft PR.
+4. Add tests/contracts before implementation.
+5. Add Supabase config and Browser/Server/Proxy clients without user tables.
+6. Add only environment variable names; do not commit keys.
+7. Stage 2B Vercel remains independent in Issue #16 / PR #28.
