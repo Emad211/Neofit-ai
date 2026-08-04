@@ -21,12 +21,17 @@ The Expo application under [`mobile/`](mobile/README.md) remains a frozen releas
 - Stage 0 — PWA pivot: complete
 - Stage 1 — Persian RTL UX: complete and accepted
 - Stage 2A — local PWA foundation: complete
-- Stage 2B — Vercel Preview/HTTPS: active in Issue #16 and PR #28
+- Stage 2B — Vercel Preview/HTTPS: active in Issue #16 and Draft PR #28
 - Stage 3 — shared Nutrition Core and Web parity: complete
-- Stage 4 — Supabase foundation: planning merged; project creation is waiting for explicit Organization/Region/Cost acceptance
+- Stage 4 — Supabase foundation: planning merged; project creation waits for explicit Organization/Region/Cost acceptance
 - Stage 5–9: not started
 
-The current Vercel repair has produced a real Next.js Preview build. Remote browser/PWA assertions remain open because Preview Deployment Protection requires a browser session that the current fetch connector cannot preserve.
+Stage 2B has a real Next.js Preview build and a protected-browser QA workflow. The Remote suite is waiting for two external conditions:
+
+1. Vercel daily deployment quota reset for an exact-head Preview;
+2. `VERCEL_AUTOMATION_BYPASS_SECRET` configured outside Git so Playwright can access the protected Preview.
+
+The current connected Share URL flow redirects through Vercel SSO and cannot preserve its browser cookie, so Remote HTTPS behavior is not yet claimed as passed.
 
 ## Read first
 
@@ -35,6 +40,7 @@ Operational sources of truth:
 - [`docs/NEOFIT_MASTER_PLAN.md`](docs/NEOFIT_MASTER_PLAN.md)
 - [`docs/NEOFIT_PROGRESS_LOG.md`](docs/NEOFIT_PROGRESS_LOG.md)
 - [`docs/DEVELOPMENT_HANDOFF.md`](docs/DEVELOPMENT_HANDOFF.md)
+- [`docs/NEOFIT_VERCEL_PREVIEW_QA.md`](docs/NEOFIT_VERCEL_PREVIEW_QA.md)
 
 Architecture and scientific contracts:
 
@@ -53,13 +59,19 @@ Architecture and scientific contracts:
 - Imported and custom user records remain protected from bundled catalog updates.
 - SQL and React must not duplicate nutrition arithmetic.
 - Service Role credentials must never enter Browser bundles, logs or artifacts.
+- Vercel Share/Bypass tokens must never enter Git, comments, logs or artifacts.
 
 ## Exact next work
 
 Two gates are active:
 
-1. Finish Stage 2B by validating the real Vercel Preview over HTTPS in a browser session, then close Issue #16 and merge PR #28 only if all PWA checks pass.
-2. Start Stage 4A only after the user explicitly accepts:
+1. Finish Stage 2B:
+   - wait for Vercel quota reset;
+   - obtain an exact-head Preview;
+   - configure `VERCEL_AUTOMATION_BYPASS_SECRET` outside Git;
+   - run `Vercel Preview HTTPS QA`;
+   - close Issue #16 and merge PR #28 only after all Remote checks pass.
+2. Start Stage 4A only after explicit acceptance of:
 
 ```text
 Organization: Emad's Org (yzymkjsfqoohxbqkhzhs)
