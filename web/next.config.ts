@@ -1,8 +1,13 @@
+import { resolve } from 'node:path';
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  transpilePackages: ['@neofit/nutrition-core'],
+  turbopack: {
+    root: resolve(process.cwd(), '..'),
+  },
   async headers() {
     return [
       {

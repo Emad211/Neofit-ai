@@ -1,15 +1,22 @@
 'use client';
 
+import type { MealType } from '@neofit/nutrition-core';
 import { useEffect, useMemo, useState } from 'react';
 import {
   dailyTargets,
   foodFixtures,
   initialDiary,
   weeklyPlan,
-  type DiaryFixture,
   type FoodFixture,
-  type MacroSet,
 } from '@/data/fixtures';
+import {
+  buildInitialWebDiary,
+  createWebDiaryEntry,
+  estimateWebFood,
+  filterWebFoods,
+  summarizeWebDiary,
+  type WebDiaryEntry,
+} from '@/lib/nutrition-adapter';
 
 type MainTab = 'today' | 'nutrition' | 'workout' | 'progress' | 'settings';
 type Screen = MainTab | 'plan';
@@ -27,6 +34,8 @@ type IconName =
   | 'cloud-off'
   | 'check';
 
+const WEB_LOCAL_DATE = '2026-08-03';
+const WEB_INITIAL_TIMESTAMP = '2026-08-03T08:00:00.000Z';
 const faNumber = new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 1 });
 
 const categoryLabels: Readonly<Record<FoodFixture['category'], string>> = {
@@ -36,6 +45,13 @@ const categoryLabels: Readonly<Record<FoodFixture['category'], string>> = {
   soup: 'آش و سوپ',
   breakfast: 'صبحانه',
 };
+
+const mealOptions: readonly { id: MealType; label: string }[] = [
+  { id: 'breakfast', label: 'صبحانه' },
+  { id: 'lunch', label: 'ناهار' },
+  { id: 'dinner', label: 'شام' },
+  { id: 'snack', label: 'میان‌وعده' },
+];
 
 function Icon({ name, size = 22 }: { name: IconName; size?: number }) {
   const common = {
@@ -67,18 +83,6 @@ function Icon({ name, size = 22 }: { name: IconName; size?: number }) {
   return <svg {...common}>{paths[name]}</svg>;
 }
 
-function sumMacros(items: readonly MacroSet[]): MacroSet {
-  return items.reduce<MacroSet>(
-    (total, item) => ({
-      calories: total.calories + item.calories,
-      proteinG: total.proteinG + item.proteinG,
-      carbsG: total.carbsG + item.carbsG,
-      fatG: total.fatG + item.fatG,
-    }),
-    { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 },
-  );
-}
-
 function MacroBar({ label, value, target, unit = 'گرم' }: { label: string; value: number; target: number; unit?: string }) {
   const ratio = Math.min(1, value / target);
   return (
@@ -95,6 +99,7 @@ function MacroBar({ label, value, target, unit = 'گرم' }: { label: string; va
 }
 
 function FoodResult({ food, onSelect }: { food: FoodFixture; onSelect: (food: FoodFixture) => void }) {
+  const baseEstimate = estimateWebFood(food, 1);
   return (
     <button className="food-result" onClick={() => onSelect(food)} type="button">
       <span className={`food-result__mark food-result__mark--${food.category}`} aria-hidden="true">
@@ -106,7 +111,7 @@ function FoodResult({ food, onSelect }: { food: FoodFixture; onSelect: (food: Fo
         <span className="food-result__evidence"><Icon name="check" size={14} />{food.evidenceLabel}</span>
       </span>
       <span className="food-result__energy">
-        <b>{faNumber.format(food.calories)}</b>
+        <b>{faNumber.format(baseEstimate.macros.calories)}</b>
         <small>کیلوکالری</small>
       </span>
     </button>
@@ -145,8 +150,13 @@ export function NeoFitPrototype() {
   const [query, setQuery] = useState('');
   const [selectedFood, setSelectedFood] = useState<FoodFixture | null>(null);
   const [portionCount, setPortionCount] = useState(1);
-  const [mealType, setMealType] = useState<DiaryFixture['meal']>('ناهار');
-  const [diary, setDiary] = useState<DiaryFixture[]>([...initialDiary]);
+  const [mealType, setMealType] = useState<MealType>('lunch');
+  const [diary, setDiary] = useState<WebDiaryEntry[]>(() => buildInitialWebDiary({
+    foods: foodFixtures,
+    seeds: initialDiary,
+    localDate: WEB_LOCAL_DATE,
+    timestamp: WEB_INITIAL_TIMESTAMP,
+  }));
   const [language, setLanguage] = useState<'fa' | 'en'>('fa');
   const [theme, setTheme] = useState<'light' | 'system'>('light');
 
@@ -154,17 +164,18 @@ export function NeoFitPrototype() {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [screen]);
 
-  const filteredFoods = useMemo(() => {
-    const normalized = query.trim().replaceAll('ي', 'ی').replaceAll('ك', 'ک').toLocaleLowerCase('fa');
-    if (!normalized) return foodFixtures;
-    return foodFixtures.filter((food) =>
-      `${food.nameFa} ${food.nameEn}`.toLocaleLowerCase('fa').includes(normalized),
-    );
-  }, [query]);
-
-  const totals = useMemo(() => sumMacros(diary), [diary]);
-  const remainingCalories = Math.max(0, dailyTargets.calories - totals.calories);
-  const calorieProgress = Math.min(100, Math.round((totals.calories / dailyTargets.calories) * 100));
+  const filteredFoods = useMemo(
+    () => filterWebFoods(foodFixtures, query),
+    [query],
+  );
+  const summary = useMemo(
+    () => summarizeWebDiary(diary, WEB_LOCAL_DATE, dailyTargets),
+    [diary],
+  );
+  const selectedEstimate = useMemo(
+    () => selectedFood ? estimateWebFood(selectedFood, portionCount) : null,
+    [portionCount, selectedFood],
+  );
 
   const activeTab: MainTab = screen === 'plan' ? 'nutrition' : screen;
 
@@ -180,20 +191,18 @@ export function NeoFitPrototype() {
 
   function addSelectedFood() {
     if (!selectedFood) return;
-    const multiplier = portionCount;
-    setDiary((items) => [
-      ...items,
-      {
-        id: `${selectedFood.id}-${Date.now()}`,
-        label: selectedFood.nameFa,
-        meal: mealType,
-        portionText: `${faNumber.format(multiplier)} سهم · ${selectedFood.portionLabelFa}`,
-        calories: Math.round(selectedFood.calories * multiplier),
-        proteinG: Number((selectedFood.proteinG * multiplier).toFixed(1)),
-        carbsG: Number((selectedFood.carbsG * multiplier).toFixed(1)),
-        fatG: Number((selectedFood.fatG * multiplier).toFixed(1)),
-      },
-    ]);
+    const timestamp = new Date().toISOString();
+    const nextEntry = createWebDiaryEntry({
+      id: `${selectedFood.id}-${Date.now()}`,
+      label: selectedFood.nameFa,
+      mealType,
+      portionText: `${faNumber.format(portionCount)} سهم · ${selectedFood.portionLabelFa}`,
+      items: [{ foodId: selectedFood.id, portionCount }],
+      foods: foodFixtures,
+      localDate: WEB_LOCAL_DATE,
+      timestamp,
+    });
+    setDiary((items) => [...items, nextEntry]);
     setSelectedFood(null);
     setScreen('today');
   }
@@ -228,25 +237,25 @@ export function NeoFitPrototype() {
             <article className="hero-card">
               <div
                 className="calorie-ring"
-                style={{ '--progress': `${calorieProgress * 3.6}deg` } as React.CSSProperties}
-                aria-label={`${calorieProgress} درصد هدف کالری`}
+                style={{ '--progress': `${summary.calorieProgressPercent * 3.6}deg` } as React.CSSProperties}
+                aria-label={`${summary.calorieProgressPercent} درصد هدف کالری`}
               >
                 <div className="calorie-ring__inner">
-                  <strong>{faNumber.format(remainingCalories)}</strong>
+                  <strong>{faNumber.format(summary.remainingCalories)}</strong>
                   <span>باقی‌مانده</span>
                 </div>
               </div>
               <div className="hero-card__copy">
                 <span className="status-pill"><Icon name="sparkle" size={15} />در مسیر هدف</span>
-                <h3>{faNumber.format(totals.calories)} از {faNumber.format(dailyTargets.calories)} کیلوکالری</h3>
-                <p>ناهار ثبت شده؛ برای شام حدود {faNumber.format(remainingCalories)} کیلوکالری فضا داری.</p>
+                <h3>{faNumber.format(summary.macros.calories)} از {faNumber.format(summary.targets.calories)} کیلوکالری</h3>
+                <p>ناهار ثبت شده؛ برای شام حدود {faNumber.format(summary.remainingCalories)} کیلوکالری فضا داری.</p>
               </div>
             </article>
 
             <div className="macro-panel">
-              <MacroBar label="پروتئین" value={totals.proteinG} target={dailyTargets.proteinG} />
-              <MacroBar label="کربوهیدرات" value={totals.carbsG} target={dailyTargets.carbsG} />
-              <MacroBar label="چربی" value={totals.fatG} target={dailyTargets.fatG} />
+              <MacroBar label="پروتئین" value={summary.macros.proteinG} target={summary.targets.proteinG} />
+              <MacroBar label="کربوهیدرات" value={summary.macros.carbsG} target={summary.targets.carbsG} />
+              <MacroBar label="چربی" value={summary.macros.fatG} target={summary.targets.fatG} />
             </div>
 
             <button className="primary-action" type="button" onClick={openFoodPicker}>
@@ -261,18 +270,18 @@ export function NeoFitPrototype() {
                   <p className="section-kicker">تایم‌لاین</p>
                   <h2 id="diary-heading">وعده‌های ثبت‌شده</h2>
                 </div>
-                <span className="count-badge">{faNumber.format(diary.length)}</span>
+                <span className="count-badge">{faNumber.format(summary.entryCount)}</span>
               </div>
               <div className="meal-list">
                 {diary.map((entry) => (
-                  <article className="meal-row" key={entry.id}>
+                  <article className="meal-row" key={entry.core.id}>
                     <span className="meal-row__dot" aria-hidden="true" />
                     <div className="meal-row__copy">
-                      <span>{entry.meal}</span>
-                      <h3>{entry.label}</h3>
+                      <span>{entry.mealLabelFa}</span>
+                      <h3>{entry.core.label}</h3>
                       <p>{entry.portionText}</p>
                     </div>
-                    <strong>{faNumber.format(entry.calories)}<small> kcal</small></strong>
+                    <strong>{faNumber.format(entry.macros.calories)}<small> kcal</small></strong>
                   </article>
                 ))}
               </div>
@@ -426,7 +435,7 @@ export function NeoFitPrototype() {
 
       <BottomNavigation active={activeTab} onChange={setScreen} />
 
-      {selectedFood && (
+      {selectedFood && selectedEstimate && (
         <div className="sheet-layer" role="presentation" onMouseDown={() => setSelectedFood(null)}>
           <section className="meal-sheet" role="dialog" aria-modal="true" aria-labelledby="meal-sheet-title" onMouseDown={(event) => event.stopPropagation()}>
             <span className="sheet-handle" aria-hidden="true" />
@@ -436,10 +445,10 @@ export function NeoFitPrototype() {
             </header>
 
             <div className="nutrition-strip">
-              <div><b>{faNumber.format(selectedFood.calories * portionCount)}</b><span>کالری</span></div>
-              <div><b>{faNumber.format(selectedFood.proteinG * portionCount)}</b><span>پروتئین</span></div>
-              <div><b>{faNumber.format(selectedFood.carbsG * portionCount)}</b><span>کربوهیدرات</span></div>
-              <div><b>{faNumber.format(selectedFood.fatG * portionCount)}</b><span>چربی</span></div>
+              <div><b>{faNumber.format(selectedEstimate.macros.calories)}</b><span>کالری</span></div>
+              <div><b>{faNumber.format(selectedEstimate.macros.proteinG)}</b><span>پروتئین</span></div>
+              <div><b>{faNumber.format(selectedEstimate.macros.carbsG)}</b><span>کربوهیدرات</span></div>
+              <div><b>{faNumber.format(selectedEstimate.macros.fatG)}</b><span>چربی</span></div>
             </div>
 
             <div className="sheet-field">
@@ -454,13 +463,13 @@ export function NeoFitPrototype() {
             <div className="sheet-field">
               <label>وعده</label>
               <div className="meal-type-row">
-                {(['صبحانه', 'ناهار', 'شام', 'میان‌وعده'] as const).map((meal) => (
-                  <button className={mealType === meal ? 'is-active' : ''} type="button" key={meal} onClick={() => setMealType(meal)}>{meal}</button>
+                {mealOptions.map((meal) => (
+                  <button className={mealType === meal.id ? 'is-active' : ''} type="button" key={meal.id} onClick={() => setMealType(meal.id)}>{meal.label}</button>
                 ))}
               </div>
             </div>
 
-            <div className="evidence-note"><Icon name="check" size={16} /><span>مقادیر از Fixture نسخه‌دار IFKB آمده‌اند؛ مدل AI در این عددها نقشی ندارد.</span></div>
+            <div className="evidence-note"><Icon name="check" size={16} /><span>مقادیر از Fixture نسخه‌دار IFKB و Nutrition Core مشترک آمده‌اند؛ مدل AI در این عددها نقشی ندارد.</span></div>
             <button className="primary-button" type="button" onClick={addSelectedFood}>افزودن به امروز</button>
           </section>
         </div>

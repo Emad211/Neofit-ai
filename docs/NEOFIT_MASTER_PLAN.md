@@ -1,22 +1,22 @@
 # پلن مادر NeoFit
 
 **وضعیت:** مرجع واحد و اجباری پروژه  
-**آخرین بازبینی:** ۴ اوت ۲۰۲۶ — Stage 3 Batch 5 implementation parity  
+**آخرین بازبینی:** ۴ اوت ۲۰۲۶ — Stage 3 Batch 6 Web Nutrition Adapter parity  
 **Integration branch:** `web/pwa-foundation`  
-**Active branch:** `stage3/id-fingerprint-release-parity`  
-**Active PR:** #22 — Draft تا Gate نهایی اسناد/Review  
+**Active branch:** `stage3/web-adapter-parity`  
+**Active PR:** #23 — Draft تا CI اسناد و Review نهایی  
 **Stage 3 Issue:** #17  
 **Deferred Vercel Issue:** #16  
-**Batch 5 base:** Batch 4 merge `d6c0df31999595096224ec1011574245d5dc75ad`  
-**Validated implementation/metadata head:** `37315232c222001f9cb9fcaf56eb4993208335db`  
-**Nutrition Core CI:** `30866657790` — success  
-**Nutrition artifact:** `8876345516`  
-**Nutrition digest:** `sha256:02ab4e012a346eec96152ab7906aae50b898d09d2143d565d61f0dd7853f503b`  
-**Web CI:** `30866657781` — success  
-**Web artifact:** `8876366702`  
-**Web digest:** `sha256:330ede033ce3a6856497f217fbfbe82a04e69a1e968aab050b7ba0dd7491aad9`  
+**Batch 6 base:** Batch 5 merge `d3c0a28ecf2596e94c86ff74e2f00a0523219433`  
+**Validated implementation head:** `d0c1f5641fa1a42659430f773df9edb067d4beae`  
+**Nutrition Core CI:** `30868108531` — success  
+**Nutrition artifact:** `8876863249`  
+**Nutrition digest:** `sha256:67e3e82e315b79224fdecea776358c267dec91786d8413651f98a4ed3a417b57`  
+**Web CI:** `30868108528` — success  
+**Web artifact:** `8876875655`  
+**Web digest:** `sha256:04a7173e89e8e1d8e3b07c9a74f6977019e74176227c9970f58bea24b03c2d31`  
 **مرحلهٔ فعال:** Stage 3 — Nutrition Core Extraction و Parity  
-**Gate فعلی:** CI اسناد، Review نهایی، Ready/Merge PR #22؛ سپس Batch 6 Web adapter بدون duplicated arithmetic
+**Gate فعلی:** CI روی اسناد، Review نهایی و Merge PR #23؛ سپس تصمیم بستن Stage 3/Issue #17
 
 ## ۱. پروتکل اجباری ادامه
 
@@ -35,17 +35,19 @@
 
 ## ۲. معماری و قراردادهای قفل‌شده
 
-- Web: Next.js App Router + TypeScript strict
-- Pure nutrition domain: `packages/nutrition-core`
+- Web: Next.js App Router + strict TypeScript
+- Shared nutrition domain: `packages/nutrition-core`
+- Web Adapter: `web/lib/nutrition-adapter.ts`
 - Data authority: IFKB + USDA SR Legacy + FNDDS
-- Supabase فقط پس از پایان Stage 3 و تأیید Organization/Region/Cost
-- AI/Vision بدون اختیار تولید Nutrition
-- Pure Core بدون UI، React Native، Expo، SQLite driver، Network، filesystem، environment یا crypto runtime
-- `node:crypto`، `node:sqlite`، Asset loading و full audits فقط در Test/Audit/Adapter layer
-- Canonical IDs، fingerprints و Schema فقط با Migration/Freeze نسخه‌دار تغییر می‌کنند.
-- App-profile ID و IFKB Canonical ID Namespaceهای جدا هستند؛ Stability با Mapping صریح تعریف می‌شود.
+- Supabase فقط پس از بسته‌شدن Stage 3 و تأیید Organization/Region/Cost
+- AI/Vision بدون اختیار تولید یا اصلاح Nutrition
+- Pure Core بدون UI، React، Expo، SQLite runtime، Network، filesystem، environment یا crypto runtime
+- `node:crypto`، `node:sqlite`، migrations، Asset loading و full audits فقط در Test/Audit/Adapter layer
 - Missing nutrient صفر نیست؛ وزن نامعلوم `null` است.
+- Canonical IDs، fingerprints و Schema فقط با Migration/Freeze نسخه‌دار تغییر می‌کنند.
+- App-profile ID و IFKB Canonical ID Namespaceهای جدا و متصل با Mapping صریح‌اند.
 - Imported/Custom با Seed overwrite یا downgrade نمی‌شوند.
+- Web اجازهٔ duplicated calories/macros/range/goal/search arithmetic ندارد.
 
 ## ۳. وضعیت مراحل
 
@@ -72,226 +74,217 @@
 
 ### Stage 3 Batch 4 — Universal SR/FNDDS Estimate + SQLite Equivalence
 
-انجام‌شده — PR #21، Merge `d6c0df31999595096224ec1011574245d5dc75ad`.
-
-Final evidence:
-
-- Head `036207aaf722253a66aaffb1949949c3002296af`
-- Nutrition CI `30862460190`
-- Artifact `8874842655`
-- Web CI `30862460176`
-- Web Artifact `8874859573`
-- `43/43` pass، 12 Pure files
+انجام‌شده — PR #21، Merge `d6c0df31999595096224ec1011574245d5dc75ad`؛ `43/43` tests، 12 Pure source files.
 
 ### Stage 3 Batch 5 — Canonical ID/Fingerprint/Release Parity
 
-**پیاده‌سازی و Parity سبز؛ PR #22 در Gate نهایی.**
+انجام‌شده — PR #22، Merge `d3c0a28ecf2596e94c86ff74e2f00a0523219433`.
+
+Final evidence:
+
+- Head `68a521be59fc48ec15bf24f096f13ea8bb8d7b98`
+- Nutrition CI `30866846053`
+- Artifact `8876414906`
+- Web CI `30866846046`
+- Web Artifact `8876436046`
+- `52/52` Core tests، 13 Pure source files
+
+### Stage 3 Batch 6 — Web Nutrition Adapter
+
+**پیاده‌سازی و Parity سبز؛ PR #23 در Gate نهایی اسناد/Review.**
 
 #### Authority
 
-- `docs/NEOFIT_ID_FINGERPRINT_RELEASE_AUTHORITY_MAP.md`
-- Freeze audit generator Blob `ddcf4cfceefcecf2d1f9d8ad922e4472c212bc1c`
-- Schema/ID candidate doc Blob `0f372496cbad2ecf5cca72a6fdf7604255179be0`
-- Nutrition RC freeze doc Blob `3c0601f469c6d15618fcadd1179c16c581da6f6e`
-- Catalog release contract test Blob `73d61f35383f3acb7298ec2fa5e0c5dd2989c457`
-- Canon CSV Blob `175b8754c1afd4f6bcd2303d8b1113f3bf211ed5`
-- Alias CSV Blob `94429b1937edc6234b23fc8398531b531a891cc2`
-- Legacy profiles Blob `6810dffaf51afdf8b7161d3c9eb8028ae5add4be`
-- Fallback profiles Blob `62be2ae9ebb1f5bf448b848bf0e502a6d1870aa0`
-- Base migrations Blob `e6c9eede66f2bfe4c32a726ff010d0f96033dc02`
-- Migration v5 plan Blob `1176a7084784822ed012511b2b3e49ca11dd1fa4`
-- Source precedence Blob `b68655faba8ba8f526f6c358ffd1ff06aa532edd`
-- Promotion tests Blob `740432a8568f2f3f70aed69f41ec19d0da109845`
+- `docs/NEOFIT_WEB_NUTRITION_ADAPTER_AUTHORITY_MAP.md`
+- Web fixtures Blob `08e623948b84e4e4e261528b1c332ae2e76af4b7`
+- Web prototype Blob `add0839d207e5b3b12288657fe53077c9a4fda0a`
+- Mobile legacy UI adapter Blob `bbacac7a376ba9edb14b14f673d3d708dfa3319e`
+- Core Legacy adapter Blob `eb4be071cfb3ccc6bb03261abf49aa7ae972028d`
+- Core Search Blob `3dc081e6f22f9d98518ad7411bcbd5c6394cc983`
+- Core Diary Blob `e297eed728a7457b9b46529a761e450bd647e97d`
+- Core Types Blob `62fde93f8ce534b199cfe41e28da3b9903741576`
 
-#### Extracted Pure surface
+#### Web arithmetic inventory
 
-File:
+منطق تکراری کشف‌شده و حذف‌شده:
 
-- `packages/nutrition-core/src/id-fingerprint-release.ts`
+- `sumMacros` دستی
+- ضرب مستقیم `selectedFood.* * portionCount`
+- `Math.round` و `toFixed(1)` برای Nutrition
+- Initial diary با Macroهای ازپیش‌جمع‌شده
+- Persian search normalization ساده و مستقل
+- calorie remaining/progress مستقل از Goal Core
 
-Exports:
+#### Package integration
 
-- `IdentityFreezeCandidate`
-- `IDENTITY_FREEZE_CANDIDATE`
-- `validateIdentityFreezeCandidate`
-- `canonicalFingerprintPayload`
-- `normalizeIdentityPersian`
-- `resolveAppProfilesToCanon`
-- `FoodCatalogSourceType`
-- `canFoodCatalogSourceReplace`
+بدون Turborepo/Nx:
 
-#### Freeze and namespace contract
+- `packages/nutrition-core/package.json` دارای export مستقیم `./src/index.ts`
+- `web/package.json` دارای dependency محلی `file:../packages/nutrition-core`
+- Next دارای `transpilePackages: ['@neofit/nutrition-core']`
+- Turbopack root روی ریشهٔ ریپو تنظیم شده تا Package محلی خارج از `web/` قابل resolve باشد.
+- Source bundle استقرار اکنون هر دو مسیر `web` و `packages/nutrition-core` را شامل می‌شود.
 
-- Nutrition RC/Catalog `1.2.0`: frozen release candidate
-- Schema/ID `1.1.0`: `candidate-not-final`
-- Public stable compatibility هنوز وعده داده نشده است.
-- Generic records، Generic concepts، Iranian Canon و App profiles Namespaceهای مستقل‌اند.
-- App profiles با Mapping صریح و one-to-one به Canon متصل می‌شوند.
-- direct App-profile/Canon ID overlap باید صفر بماند.
+#### Fixture migration
 
-Frozen candidate baseline:
+`web/data/fixtures.ts` اکنون:
 
-- migrations `5 / 5`
-- tables `23`
-- SQLite objects `43`
-- Schema SHA `73e67213c7b8300723ddf91195d1c07384b2b3a0198d622a7d451af90c48bcbf`
-- Generic food IDs `13,225`
-- Generic Concept IDs `9,279`
-- Generic mappings `13,225` با coverage `1.0`
-- Iranian Canon IDs `261`
-- App profiles `261` = legacy `83` + fallback `178`
-- App→Canon mappings `261`
-- Alias mappings `218`
-- unresolved/ambiguous `0 / 0`
+- Foodها را به‌صورت کامل `LegacyCatalogFood` نگه می‌دارد؛
+- Alias، Evidence، Source record/version، variability و portion weight را حفظ می‌کند؛
+- Initial diary فقط Source reference نگه می‌دارد؛
+- Breakfast = تخم‌مرغ × 2؛
+- Lunch = قورمه‌سبزی × 1 + چلو × 1؛
+- Macro جمع‌شده در Diary seed ندارد؛
+- Goalها از نوع `NutritionGoals` هستند.
 
-#### Mapping behavior
+#### Adapter surface
 
-ترتیب دقیق:
+فایل `web/lib/nutrition-adapter.ts`:
 
-1. encoded fallback ID: `iranian-fallback-ifkb-canon-#####`
-2. exact normalized primary Persian name
-3. Alias فقط در نبود Primary match
+- `estimateWebFood`
+- `createWebDiaryEntry`
+- `buildInitialWebDiary`
+- `summarizeWebDiary`
+- `filterWebFoods`
+- `webMacrosFromEstimate`
+- `mealTypeLabelFa`
 
-Fail-closed:
+Shared Core authority:
 
-- zero candidate → unresolved
-- multiple candidates → ambiguous
-- exactly one → mapping
-- output arrays lexicographically sorted
+- Food → Variant: `legacyCatalogFoodToDocument`
+- portion estimate: `calculateVariantNutrition`
+- meal composition: `calculateRecipe`
+- day totals: `summarizeDiaryDay`
+- goal ratio/remaining: `calculateGoalProgress`
+- Persian normalization: `normalizePersianText`
 
-Persian normalization عین Audit generator است:
+Web فقط View model و Presentation clamp تولید می‌کند. اگر یکی از چهار Macro اصلی Missing باشد، View conversion fail-closed است.
 
-- NFKC
-- Arabic→Persian character folding
-- diacritic removal
-- half-space/bidi marks → space
-- punctuation removal
-- whitespace collapse
+#### Proven fixture outputs
 
-#### Fingerprint payload
-
-- values lexicographically sorted
-- newline-delimited
-- final newline always present
-- duplicates preserved
-- SHA-256 execution فقط در Test/Audit layer با `node:crypto`
-- Pure Core فقط payload deterministic تولید می‌کند.
-
-#### Source replacement matrix
-
-- incoming `seeded` replaces existing `seeded` only
-- incoming `imported` replaces existing `seeded` or `imported`
-- incoming `custom` replaces existing `custom` only
-- Custom و Imported در برابر reseeding محافظت می‌شوند.
+- قورمه‌سبزی 1.5 سهم: 495 kcal، P33، C21، F30، grams `null`
+- دو تخم‌مرغ: 156 kcal، P12، C2، F10، 100g
+- Initial lunch: 710 kcal، P29، C96، F24، grams `null`
+- Initial day: 866 kcal، P41، C98، F34، remaining 1334، progress 39%
+- افزودن 1.5 سهم جوجه: 480 kcal، P60، C6، F22.5
+- New day: 1346 kcal، P101، C104، F56.5، remaining 854، progress 61%
 
 #### Test-first evidence
 
 Authority/Golden checkpoint:
 
-- Authority commit `96abf2c472b6f30e1383785a2ad8003899b27753`
-- Golden commit `785796941cf22a09baabd5bc48ccfc3544091843`
-- final checkpoint head `707a16f91158e465f3571d683de91d0fefe7be62`
-- Nutrition CI `30863247927` — success
-- Artifact `8875133688`
-- Web CI `30863247923` — success
-- Web Artifact `8875149780`
+- Authority commit `f8ac06375335dffa1b9acd8d24a303b408518037`
+- Golden commit `ac9b9a271c0913b531e24948b23cd3e6d9b445f2`
+- Web CI `30867460723` — success
+- Artifact `8876656669`
+- Digest `sha256:857dfa4d188a5f606d357258e1fba77251bb2b9c67aad9ba094f1655406f2b9d`
 
 Expected Red:
 
-- Test commit `8214f2780d0c15d890097ba8081c123b53f90947`
-- Nutrition CI `30866441913` — expected failure
-- Golden provenance: pass
-- AST boundary: pass
-- TypeScript فقط به‌علت نبود APIهای Batch 5 شکست خورد.
-- preflight Artifact `8876268829`
-- Digest `sha256:b2bb9914efd8f5e974506a0908a5df2b272e017bdd250eb3be3292f54e682eac`
+- Test commit `3098ea11528e1cddf1a770f1bac425f3ac5852f5`
+- Web CI `30867587259` — expected failure
+- PWA/product contracts passed.
+- TypeScript failed because `web/lib/nutrition-adapter.ts` did not exist.
+- Build/runtime skipped.
+- Artifact upload also failed because Web CI هنوز preflight directory نداشت؛ این ضعف در Implementation رفع شد.
 
-Implementation:
+Implementation commits:
 
-- Pure implementation commit `039eb52f944bd253cff0fa24f15f9af3a2c4d0ee`
-- Package export commit `44f0b6cb265186704ea845db183b36292fd65955`
+- Core package export `2f0bc14a801f7443779ec2328698dd9f07875744`
+- Web local dependency `926845f478e76c3f567d12fcc36842bedaf8145c`
+- Initial Next transpilation `cbca8e2961cf630ab61cceba17979532dcf48c6c`
+- Fixture migration `11fe4e4262ffbd7e739cfed1deba5809b8749aac`
+- Golden correction `e08b67f4297df4f3ba77f9fbe9f2d4013984dc01`
+- Test correction `a05bf9eed351ae2d10c7346a1bf7bde9f33f47e0`
+- Web Adapter `b81dd6dab2a7168ba9585307184420a997e0ac29`
+- Component refactor `2c611bc54ff594d65d408f376984f6c6c1cf5a2f`
+- Web CI hardening `2ea5bc814964f808dc23f3ca5d49dc7dedb37c26`
 
-First Green:
+First implementation run:
 
-- Nutrition CI `30866552575` — success
-- `52/52` pass، 0 fail، 0 skipped
-- 13 Pure TypeScript source files pass AST boundary
-- Artifact `8876307563`
-- Digest `sha256:38aa76624560e187da5e5d79b0832d171778da51ca23bc9310f04e155b363a32`
+- Nutrition CI `30868017674` — success
+- Web CI `30868017681` — failure
+- TypeScript: pass
+- Adapter tests: `9/9` pass
+- Next build failed only because Turbopack package resolution root هنوز `web/` بود.
+- Failure evidence Artifact `8876835298`
+- Digest `sha256:cb87d29bd5350e28a4b75d5125f21bb21dd8d0924a6f92f32bed788fc30f0b6d`
 
-README/CI provenance:
+Build correction:
 
-- README commit `c5765d104ec25c727f10ba5635fd61dec9731186`
-- CI metadata head `37315232c222001f9cb9fcaf56eb4993208335db`
+- Commit `d0c1f5641fa1a42659430f773df9edb067d4beae`
+- Turbopack root روی repository root تنظیم شد.
+- Domain/Adapter behavior برای عبور Build تغییر نکرد.
 
 Final implementation validation:
 
-- Nutrition CI `30866657790` — success
-- Artifact `8876345516`
-- Digest `sha256:02ab4e012a346eec96152ab7906aae50b898d09d2143d565d61f0dd7853f503b`
-- Web CI `30866657781` — success
-- Web Artifact `8876366702`
-- Web digest `sha256:330ede033ce3a6856497f217fbfbe82a04e69a1e968aab050b7ba0dd7491aad9`
-
-#### Proven behavior
-
-- complete candidate Snapshot equals Golden baseline
-- silent promotion to `final` rejected
-- count/coverage/one-to-one invariants fail closed
-- canonical sample payload SHA values match with test-only crypto
-- Persian normalization parity passes
-- encoded fallback mapping passes
-- exact primary outranks Alias
-- Alias-only mapping passes
-- unresolved and ambiguous outputs remain explicit
-- mapping output deterministic across input order
-- complete 3×3 source replacement matrix passes
-- Web/PWA regression remains green
+- Nutrition CI `30868108531` — success
+- Core tests `52/52`، 13 Pure source files
+- Nutrition Artifact `8876863249`
+- Digest `sha256:67e3e82e315b79224fdecea776358c267dec91786d8413651f98a4ed3a417b57`
+- Web CI `30868108528` — success
+- Adapter tests `9/9`
+- strict TypeScript: pass
+- Next production build: pass
+- Visual regression: pass
+- PWA runtime/offline gates: pass
+- Shared Web+Core source bundle: pass
+- Web Artifact `8876875655`
+- Digest `sha256:04a7173e89e8e1d8e3b07c9a74f6977019e74176227c9970f58bea24b03c2d31`
 
 #### Claim boundary
 
-Batch 5 proves Pure mapping، payload، validation و replacement-decision parity against Golden fixtures. It does not recompute the complete production Schema/Asset Hashes inside runtime Core and does not promote Schema/ID candidate to Final.
+Batch 6 ثابت می‌کند Web Prototype برای Nutrition arithmetic، daily aggregation، goal progress و Persian normalization از Shared Core استفاده می‌کند و Component دیگر Nutrition math تکراری ندارد.
 
-### Remaining Stage 3
+Batch 6 ثابت نمی‌کند:
 
-1. Batch 6 — Web adapter without duplicated arithmetic
-2. Stage 3 closure evidence and Issue #17 close decision
+- Catalog کامل 13,225 رکوردی در Browser بارگذاری شده؛
+- IndexedDB/Offline catalog آماده است؛
+- Supabase/Auth/Sync ساخته شده؛
+- AI/Vision فعال است؛
+- Vercel HTTPS Preview تأیید شده است.
+
+### Stage 3 closure status
+
+Batchهای 1 تا 5 Merge شده‌اند. Batch 6 از نظر Code/Tests/Build سبز است ولی تا Merge PR #23، Stage 3 بسته اعلام نمی‌شود.
+
+پس از Merge #23 باید این Closureها کنترل شوند:
+
+- PR #23 merge SHA ثبت شود؛
+- Issue #17 با شواهد Batchهای 1–6 بسته شود؛
+- هر دو سند روی Integration branch به `Stage 3 complete` منتقل شوند؛
+- Stage 4 فقط پس از تأیید Organization/Region/Cost آغاز شود.
 
 ## ۴. Stage 4–9
 
-- Stage 4: Supabase پس از Stage 3 و تأیید هزینه
+- Stage 4: Supabase project/Auth/Postgres/RLS فقط پس از Stage 3 closure و تأیید هزینه/Region/Organization
 - Stage 5: Nutrition vertical slice
 - Stage 6: AvalAI/Vision
 - Stage 7: Offline Catalog/Sync
 - Stage 8: Migration/Recovery
-- Stage 9: Web RC و بستن Issue #16
+- Stage 9: Web RC، Vercel HTTPS و بستن Issue #16
 
 ## ۵. Anti-goalها
 
-- Supabase پیش از Stage 3 parity
+- Supabase پیش از Stage 3 closure و تأیید هزینه
+- Nutrition arithmetic داخل React component
+- Macroهای precomputed در Web diary seed
+- Search normalizer موازی با Core
+- Provider-created Nutrition
+- واردکردن persistence/network/SQLite به Pure Core
 - معرفی Schema/ID candidate به‌عنوان Final
-- واردکردن crypto/SQLite/filesystem/migrations به Pure runtime
-- direct string identity فرض‌کردن App profile و Canon ID
-- Alias override روی exact primary identity
-- silent unresolved/ambiguous mapping
-- تغییر replacement precedence بدون Migration/Review
-- duplicated nutrition arithmetic در Web adapter
-- ادعای Full production audit از Golden fixtures
+- ادعای Full Catalog browser integration از Fixture adapter
+- ادعای Vercel Preview پیش از Deployment واقعی
 
 ## ۶. Exact continuation point
 
 1. Nutrition Core CI و Web CI روی Commitهای این دو سند پاس شوند.
-2. PR #22 و تمام Review threadها دوباره بررسی شوند.
-3. PR #22 فقط پس از سبز ماندن CI از Draft به Ready تبدیل شود.
-4. Reviewهای جدید رفع شوند.
-5. PR #22 با expected head Merge شود.
-6. Issue #17 باز بماند و Batch 5 completed ثبت شود.
-7. Branch متمرکز Batch 6 از Merge commit ساخته شود.
-8. پیش از کد Batch 6 این موارد Inventory شوند:
-   - Web fixture/model layer
-   - Meal logging/search adapters
-   - Package import/build strategy
-   - هر محاسبهٔ calories/macros داخل `web/`
-9. Adapter فقط داده را به `@neofit/nutrition-core` تبدیل کند و arithmetic را تکرار نکند.
-10. Golden adapter tests پیش از implementation ساخته شوند.
-11. Supabase، Auth، AI/Vision و persistence sync خارج از Scope بمانند.
+2. PR #23 و تمام Review threadها دوباره بررسی شوند.
+3. PR #23 فقط پس از سبز ماندن CI از Draft به Ready تبدیل شود.
+4. Findingهای جدید رفع شوند.
+5. PR #23 با expected head Merge شود.
+6. Merge commit و کل Stage 3 evidence در Issue #17 ثبت شود.
+7. یک Closure update روی Integration branch هر دو سند را به `Stage 3 complete` منتقل کند.
+8. Issue #17 فقط پس از Closure docs و CI سبز بسته شود.
+9. Stage 4 بدون تأیید صریح Organization، Region و Cost شروع نشود.
+10. Issue #16 باز بماند تا Vercel Preview واقعی روی HTTPS تأیید شود.
