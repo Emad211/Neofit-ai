@@ -2,7 +2,7 @@
 
 **نقش:** حافظهٔ عملیاتی و شواهد توسعه  
 **همراه اجباری:** `docs/NEOFIT_MASTER_PLAN.md`  
-**آخرین به‌روزرسانی:** ۴ اوت ۲۰۲۶ — Stage 3 closure candidate
+**آخرین به‌روزرسانی:** ۴ اوت ۲۰۲۶ — Stage 3 complete
 
 ## پروتکل
 
@@ -25,8 +25,8 @@
 | 1 | انجام‌شده | PR #13، Merge `a458a27a2685bfa7d85ea28686b3182c3167d747` |
 | 2A | انجام‌شده | PR #15، Merge `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b` |
 | 2B | تعویق‌شده | Issue #16؛ Vercel Preview واقعی ندارد |
-| 3 | Closure candidate | Batchهای 1–6 Merge شده؛ Closure docs/CI باقی است |
-| 4 | شروع‌نشده | منتظر Stage 3 closure و تأیید Organization/Region/Cost |
+| 3 | انجام‌شده | Batch 1–6 Merge؛ Closure candidate CI سبز |
+| 4 | شروع‌نشده | منتظر تأیید Organization/Region/Cost |
 | 5–9 | شروع‌نشده | مطابق پلن مادر |
 
 ---
@@ -47,14 +47,12 @@
 - PR #18
 - Merge `c9599c4905f9fc1d28ba7e9086edf20376991740`
 - `10/10` tests
-- types، nutrition، recipe، diary، goals
 
 ### Batch 2 — Controlled Persian Search/Ranking
 
 - PR #19
 - Merge `917f04e319a924dda7dfb16d079453a5e5686541`
 - `25/25` tests
-- Search normalization، modifier parsing، Alias routing، SR/FNDDS ranking
 - Natural Query accuracy خارج از Claim است.
 
 ### Batch 3 — Catalog Release/Provenance/Legacy Adapter
@@ -62,7 +60,6 @@
 - PR #20
 - Merge `02c1bcf0b301a920b12abcff4f653575cb97bf7f`
 - `34/34` tests
-- Catalog `1.2.0`، evidence resolver، Legacy adapter
 - Schema/ID `1.1.0` همچنان `candidate-not-final`
 
 ### Batch 4 — Universal Estimate/SQLite parity
@@ -71,8 +68,6 @@
 - Merge `d6c0df31999595096224ec1011574245d5dc75ad`
 - `43/43` tests
 - 12 Pure files
-- FNDDS uncertainty 0.15، SR Legacy 0.08
-- SQLite فقط در Test layer
 
 ### Batch 5 — ID/Fingerprint/Release parity
 
@@ -80,7 +75,6 @@
 - Merge `d3c0a28ecf2596e94c86ff74e2f00a0523219433`
 - `52/52` tests
 - 13 Pure files
-- Mapping precedence، fail-closed ambiguity، fingerprint payload، source replacement matrix
 
 ### Batch 6 — Web Nutrition Adapter
 
@@ -88,9 +82,8 @@
 - Merge `6b46f1d6af2df345b2504a8d6bca3e4c8aa2d412`
 - Web Adapter tests `9/9`
 - Core tests `52/52`
-- React component بدون Nutrition math تکراری
-- Web fixtures به Source records تبدیل شدند.
-- Web از Shared Core برای estimate، recipe، day summary، goals و Persian normalization استفاده می‌کند.
+- Web از Shared Core برای estimate، recipe، diary summary، goals و Persian normalization استفاده می‌کند.
+- React component Nutrition math تکراری ندارد.
 
 Final Batch 6 evidence:
 
@@ -106,57 +99,74 @@ Final Batch 6 evidence:
 
 ---
 
-## Entry 018 — Batch 6 Merge و Closure start
+## Entry 018 — Batch 6 Merge
 
 **تاریخ:** ۴ اوت ۲۰۲۶  
-**Batch 6 PR:** #23  
-**Batch 6 Merge:** `6b46f1d6af2df345b2504a8d6bca3e4c8aa2d412`  
-**Closure branch:** `stage3/closure-evidence`  
-**Issue:** #17
+**PR:** #23  
+**Merge:** `6b46f1d6af2df345b2504a8d6bca3e4c8aa2d412`
 
-### انجام‌شده
-
-- PR #23 پس از CI سبز و Review صفر با expected head Merge شد.
+- PR پس از Final docs CI، Review صفر و expected head Merge شد.
 - شواهد Batch 6 در Issue #17 ثبت شد.
-- Branch closure از Merge واقعی Batch 6 ساخته شد.
-- این دو سند از حالت Batch 6 active به Closure candidate منتقل شدند.
+- Branch `stage3/closure-evidence` از Merge واقعی ساخته شد.
 
-### Stage 3 DoD review
+---
 
-| Gate | Evidence |
+## Entry 019 — Stage 3 Closure candidate
+
+**Branch:** `stage3/closure-evidence`  
+**PR:** #24  
+**Candidate head:** `9ee1a2411bb0113e40735e79fcd5e8bbb34a3d95`
+
+### Candidate CI
+
+Nutrition:
+
+- Run `30868701581` — success
+- Artifact `8877065210`
+- Digest `sha256:6bcf2cb716adc49e69121f87338fd838ed0e2bd4b7568bd1dc7888c764f9538b`
+- `52/52` Core tests
+- 13 Pure files
+
+Web:
+
+- Run `30868701585` — success
+- Artifact `8877082184`
+- Digest `sha256:2e30058850433028e369adc6c36b48006d945d393f0d42176fa905b37226bb9b`
+- `9/9` Adapter tests
+- strict TypeScript، Next build، Visual، PWA runtime/offline و source bundle: pass
+
+### Stage 3 DoD result
+
+| Gate | نتیجه |
 |---|---|
-| Arithmetic/domain | Batch 1 |
-| Persian Search/Ranking | Batch 2 |
-| Catalog Release/Provenance | Batch 3 |
-| Universal estimates + SQLite equivalence | Batch 4 |
-| Canonical ID/Fingerprint | Batch 5 |
-| Web Adapter بدون duplicated arithmetic | Batch 6 |
-| Pure boundary | 13 source files |
-| Core parity suite | 52 tests |
-| Web Adapter suite | 9 tests |
-| Next build/Visual/PWA | Batch 6 final Web CI |
-| Mandatory closure docs | این PR |
+| Arithmetic/domain | پاس |
+| Persian Search/Ranking | پاس |
+| Catalog Release/Provenance | پاس |
+| Universal Estimate/SQLite | پاس |
+| ID/Fingerprint | پاس |
+| Web Adapter بدون duplicated arithmetic | پاس |
+| Core suite | `52/52` |
+| Web Adapter suite | `9/9` |
+| Web build/Visual/PWA | پاس |
+| Closure candidate CI | پاس |
 
-### Honest boundaries
+### Final status
 
-Stage 3 implementation کامل است، اما تا Merge Closure docs و CI سبز، Issue #17 بسته نمی‌شود.
+Stage 3 از نظر Implementation، Tests، Build، Runtime gates و Closure candidate evidence کامل است.
 
-هنوز انجام‌نشده:
+Boundaries retained:
 
-- Full browser Catalog/IndexedDB
-- Supabase/Auth/RLS/Sync
-- AI/Vision Web flow
-- Vercel HTTPS Preview
-- Public Final Schema/ID freeze
+- Full Browser Catalog/IndexedDB هنوز Stage 7 است.
+- Supabase/Auth/RLS/Sync هنوز شروع نشده است.
+- AI/Vision Web flow هنوز شروع نشده است.
+- Vercel Preview واقعی در Issue #16 باز است.
+- Schema/ID هنوز Public Final freeze نیست.
 
 ### Exact continuation point
 
-1. Closure PR باز شود.
-2. Nutrition Core CI و Web CI روی Closure candidate پاس شوند.
-3. Master Plan و Progress Log با Closure Run/Artifactها به `Stage 3 complete` نهایی شوند.
-4. CI نهایی دوباره پاس شود.
-5. Reviewها بررسی و رفع شوند.
-6. Closure PR Merge شود.
-7. Issue #17 با Closure merge/CI بسته شود.
-8. Stage 4 بدون تأیید صریح Organization، Region و Cost شروع نشود.
-9. Issue #16 تا Vercel Preview واقعی باز بماند.
+1. وضعیت PR #24 و Issue #17 بررسی شود.
+2. اگر PR #24 باز است، CI نهایی Head این دو سند و Reviewها بررسی و PR Merge شود.
+3. اگر PR #24 Merge شده و Issue #17 باز است، Issue با Closure merge/CI بسته شود.
+4. Stage 4 بدون تأیید صریح Organization، Region و Cost شروع نشود.
+5. پس از تأیید، Supabase project جدید در Branch/PR مستقل ایجاد شود.
+6. Issue #16 تا Preview واقعی HTTPS باز بماند.
