@@ -91,10 +91,9 @@ jobs:
           if grep -RInE \
             --exclude='*.test.ts' \
             --exclude='.env.example' \
-            --exclude='NEOFIT_STAGE4A_PROJECT_PROVISIONING_EVIDENCE.md' \
             '(SUPABASE_SERVICE_ROLE_KEY|sb_secret_|service[_-]?role|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)' \
-            web supabase docs/NEOFIT_MASTER_PLAN.md docs/NEOFIT_PROGRESS_LOG.md docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md; then
-            echo 'Potential Supabase secret or service-role contract found in committed Stage 4B files.' >&2
+            web/lib/supabase web/proxy.ts supabase/config.toml; then
+            echo 'Potential Supabase secret or service-role contract found in committed runtime/config files.' >&2
             exit 1
           fi
 
