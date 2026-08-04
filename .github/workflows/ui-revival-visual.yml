@@ -1,0 +1,102 @@
+name: UI Revival Visual QA
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - revival/firebase-ui-front
+    paths:
+      - 'src/**'
+      - '.github/workflows/ui-revival-visual.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ui-revival-visual-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_FIREBASE_API_KEY: 'AIzaSyDemoNeoFitPreviewKey0000000000000'
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: 'neofit-preview.firebaseapp.com'
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: 'neofit-preview'
+      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: 'neofit-preview.appspot.com'
+      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: '000000000000'
+      NEXT_PUBLIC_FIREBASE_APP_ID: '1:000000000000:web:neofitpreview'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+
+      - name: Install and build
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Install Chromium
+        run: npx --yes playwright@1.61.1 install --with-deps chromium
+
+      - name: Start NeoFit
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- -H 127.0.0.1 -p 3000 > /tmp/neofit-revival.log 2>&1 &
+          echo $! > /tmp/neofit-revival.pid
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:3000/today > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/neofit-revival.log
+          exit 1
+
+      - name: Capture mobile and desktop routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/ui-revival/mobile artifacts/ui-revival/desktop
+          for route in today nutrition workout progress profile; do
+            npx --yes playwright@1.61.1 screenshot \
+              --browser chromium \
+              --device 'iPhone 13' \
+              --full-page \
+              --wait-for-timeout 1200 \
+              "http://127.0.0.1:3000/$route" \
+              "artifacts/ui-revival/mobile/$route.png"
+            npx --yes playwright@1.61.1 screenshot \
+              --browser chromium \
+              --viewport-size '1440,1000' \
+              --full-page \
+              --wait-for-timeout 1200 \
+              "http://127.0.0.1:3000/$route" \
+              "artifacts/ui-revival/desktop/$route.png"
+          done
+          printf '{"commit":"%s","routes":["today","nutrition","workout","progress","profile"],"viewports":["iPhone 13","1440x1000"]}\n' "$GITHUB_SHA" > artifacts/ui-revival/report.json
+
+      - name: Upload visual evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-ui-revival-visual
+          path: artifacts/ui-revival
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Stop NeoFit
+        if: always()
+        shell: bash
+        run: |
+          if test -f /tmp/neofit-revival.pid; then
+            kill "$(cat /tmp/neofit-revival.pid)" 2>/dev/null || true
+          fi
