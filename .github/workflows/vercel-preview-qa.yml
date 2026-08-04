@@ -1,0 +1,63 @@
+name: Vercel Preview HTTPS QA
+
+on:
+  workflow_dispatch:
+    inputs:
+      preview_url:
+        description: 'Protected Vercel Preview URL without a share or bypass query parameter'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vercel-preview-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEOFIT_PREVIEW_URL: ${{ inputs.preview_url }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@v4
+
+      - name: Mask Vercel automation bypass secret
+        shell: bash
+        run: |
+          if [ -n "${VERCEL_AUTOMATION_BYPASS_SECRET:-}" ]; then
+            echo "::add-mask::$VERCEL_AUTOMATION_BYPASS_SECRET"
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.2
+          cache: npm
+          cache-dependency-path: |
+            package.json
+            web/package.json
+            packages/nutrition-core/package.json
+
+      - name: Install repository workspaces
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify protected Preview over HTTPS
+        run: npm run qa:vercel-preview
+
+      - name: Upload remote Preview evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-vercel-preview-qa-${{ github.run_id }}
+          path: web/artifacts/vercel-preview
+          if-no-files-found: error
+          retention-days: 30
