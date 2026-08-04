@@ -10,6 +10,7 @@ on:
       - 'docs/NEOFIT_SEARCH_RANKING_AUTHORITY_MAP.md'
       - 'docs/NEOFIT_CATALOG_PROVENANCE_AUTHORITY_MAP.md'
       - 'docs/NEOFIT_UNIVERSAL_ESTIMATE_SQLITE_AUTHORITY_MAP.md'
+      - 'docs/NEOFIT_ID_FINGERPRINT_RELEASE_AUTHORITY_MAP.md'
       - 'docs/NEOFIT_MASTER_PLAN.md'
       - 'docs/NEOFIT_PROGRESS_LOG.md'
       - '.github/workflows/nutrition-core-ci.yml'
@@ -22,6 +23,7 @@ on:
       - 'docs/NEOFIT_SEARCH_RANKING_AUTHORITY_MAP.md'
       - 'docs/NEOFIT_CATALOG_PROVENANCE_AUTHORITY_MAP.md'
       - 'docs/NEOFIT_UNIVERSAL_ESTIMATE_SQLITE_AUTHORITY_MAP.md'
+      - 'docs/NEOFIT_ID_FINGERPRINT_RELEASE_AUTHORITY_MAP.md'
       - 'docs/NEOFIT_MASTER_PLAN.md'
       - 'docs/NEOFIT_PROGRESS_LOG.md'
       - '.github/workflows/nutrition-core-ci.yml'
@@ -72,12 +74,15 @@ jobs:
           test -s docs/NEOFIT_SEARCH_RANKING_AUTHORITY_MAP.md
           test -s docs/NEOFIT_CATALOG_PROVENANCE_AUTHORITY_MAP.md
           test -s docs/NEOFIT_UNIVERSAL_ESTIMATE_SQLITE_AUTHORITY_MAP.md
+          test -s docs/NEOFIT_ID_FINGERPRINT_RELEASE_AUTHORITY_MAP.md
           test -s packages/nutrition-core/tests/mobile-rc-golden-v1.ts
           test -s packages/nutrition-core/tests/search-ranking-golden-v1.ts
           test -s packages/nutrition-core/tests/catalog-provenance-golden-v1.ts
           test -s packages/nutrition-core/tests/catalog-provenance-parity.test.ts
           test -s packages/nutrition-core/tests/universal-estimate-golden-v1.ts
           test -s packages/nutrition-core/tests/universal-estimate-sqlite-parity.test.ts
+          test -s packages/nutrition-core/tests/id-fingerprint-release-golden-v1.ts
+          test -s packages/nutrition-core/tests/id-fingerprint-release-parity.test.ts
           grep -q '648b98cdc921beb26ccd0ff05a1f17944bb6f71d' packages/nutrition-core/tests/mobile-rc-golden-v1.ts
           grep -q '2291e1958efe5e17010230c5864c9fadc9bc47ba' packages/nutrition-core/tests/mobile-rc-golden-v1.ts
           grep -q '24a1d20effe679b23e4ee4966d0bdb01f2b06ec0' packages/nutrition-core/tests/search-ranking-golden-v1.ts
@@ -93,6 +98,10 @@ jobs:
           grep -q '80538220517f8b4f0bc80117469b16f6a82c7bdf' packages/nutrition-core/tests/universal-estimate-golden-v1.ts
           grep -q 'fndds: 0.15' packages/nutrition-core/tests/universal-estimate-golden-v1.ts
           grep -q 'sr_legacy: 0.08' packages/nutrition-core/tests/universal-estimate-golden-v1.ts
+          grep -q 'ddcf4cfceefcecf2d1f9d8ad922e4472c212bc1c' packages/nutrition-core/tests/id-fingerprint-release-golden-v1.ts
+          grep -q 'b68655faba8ba8f526f6c358ffd1ff06aa532edd' packages/nutrition-core/tests/id-fingerprint-release-golden-v1.ts
+          grep -q 'ea66d4b2b532bff1ec2f637c136adb90fa110f00cc67ca51209bc816d08ffe71' packages/nutrition-core/tests/id-fingerprint-release-golden-v1.ts
+          grep -q 'candidate-not-final' packages/nutrition-core/tests/id-fingerprint-release-golden-v1.ts
 
       - name: Verify pure-domain boundary
         run: npm run boundary
@@ -110,7 +119,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          printf '{\n  "package": "@neofit/nutrition-core",\n  "schemaVersion": 1,\n  "commit": "%s",\n  "referenceBranch": "agent/iranian-food-kb-foundation",\n  "referenceHead": "648b98cdc921beb26ccd0ff05a1f17944bb6f71d",\n  "sourceTestBlob": "2291e1958efe5e17010230c5864c9fadc9bc47ba",\n  "searchBlob": "bb99c934beeed5094da7e0a29a8f53635ace48b3",\n  "rankingBlob": "9b23b1ef7d6817ff2b946e1fdedcad76608279e1",\n  "controlledSearchRelease": "1.1.0",\n  "controlledSearchManifestBlob": "24a1d20effe679b23e4ee4966d0bdb01f2b06ec0",\n  "controlledSearchArtifactDigest": "sha256:d43931525ade2f1b685b18647d1554cc317f14bd8874ed66fe5c85370454fbde",\n  "naturalQueryCorpus": "not_released",\n  "catalogReleaseVersion": "1.2.0",\n  "catalogManifestBlob": "f6bcc7bbeeed078b2798b625591b08a11bce0b78",\n  "catalogWorkflowBlob": "1012754613cf99bd3c73de49830731e9cc52adcf",\n  "catalogBuilderBlob": "597180d6bd540bc9b8bf0fc931c030d534289f5c",\n  "catalogReleaseProjectionBlob": "1afb7266b7d456530febb5c1c49c109e3d1f3ef7",\n  "catalogProvenanceBlob": "1edb7e8eed151305075e634a84596db2211dffaf",\n  "legacyCatalogAdapterBlob": "30fcc0d774a43f0f0608bd29c342c3e20d339f58",\n  "schemaIdCandidateStatus": "candidate-not-final",\n  "schemaIdCandidateDocumentBlob": "0f372496cbad2ecf5cca72a6fdf7604255179be0",\n  "nutritionRcFreezeDocumentBlob": "3c0601f469c6d15618fcadd1179c16c581da6f6e",\n  "universalEstimateBlob": "7f54426e0b6838700f09b831c7df5a94afef8361",\n  "universalRepositoryBlob": "cdfacc1eafba4267cdc793284462bbabd7ca93b5",\n  "sqliteEquivalenceTestBlob": "80538220517f8b4f0bc80117469b16f6a82c7bdf",\n  "fnddsUncertainty": 0.15,\n  "srLegacyUncertainty": 0.08,\n  "sqliteRuntimeBoundary": "test-only",\n  "generatedAt": "%s"\n}\n' \
+          printf '{\n  "package": "@neofit/nutrition-core",\n  "schemaVersion": 1,\n  "commit": "%s",\n  "referenceBranch": "agent/iranian-food-kb-foundation",\n  "referenceHead": "648b98cdc921beb26ccd0ff05a1f17944bb6f71d",\n  "sourceTestBlob": "2291e1958efe5e17010230c5864c9fadc9bc47ba",\n  "searchBlob": "bb99c934beeed5094da7e0a29a8f53635ace48b3",\n  "rankingBlob": "9b23b1ef7d6817ff2b946e1fdedcad76608279e1",\n  "controlledSearchRelease": "1.1.0",\n  "controlledSearchManifestBlob": "24a1d20effe679b23e4ee4966d0bdb01f2b06ec0",\n  "controlledSearchArtifactDigest": "sha256:d43931525ade2f1b685b18647d1554cc317f14bd8874ed66fe5c85370454fbde",\n  "naturalQueryCorpus": "not_released",\n  "catalogReleaseVersion": "1.2.0",\n  "catalogManifestBlob": "f6bcc7bbeeed078b2798b625591b08a11bce0b78",\n  "catalogWorkflowBlob": "1012754613cf99bd3c73de49830731e9cc52adcf",\n  "catalogBuilderBlob": "597180d6bd540bc9b8bf0fc931c030d534289f5c",\n  "catalogReleaseProjectionBlob": "1afb7266b7d456530febb5c1c49c109e3d1f3ef7",\n  "catalogProvenanceBlob": "1edb7e8eed151305075e634a84596db2211dffaf",\n  "legacyCatalogAdapterBlob": "30fcc0d774a43f0f0608bd29c342c3e20d339f58",\n  "schemaIdCandidateStatus": "candidate-not-final",\n  "schemaIdCandidateDocumentBlob": "0f372496cbad2ecf5cca72a6fdf7604255179be0",\n  "nutritionRcFreezeDocumentBlob": "3c0601f469c6d15618fcadd1179c16c581da6f6e",\n  "universalEstimateBlob": "7f54426e0b6838700f09b831c7df5a94afef8361",\n  "universalRepositoryBlob": "cdfacc1eafba4267cdc793284462bbabd7ca93b5",\n  "sqliteEquivalenceTestBlob": "80538220517f8b4f0bc80117469b16f6a82c7bdf",\n  "fnddsUncertainty": 0.15,\n  "srLegacyUncertainty": 0.08,\n  "sqliteRuntimeBoundary": "test-only",\n  "identityAuditGeneratorBlob": "ddcf4cfceefcecf2d1f9d8ad922e4472c212bc1c",\n  "identitySourcePrecedenceBlob": "b68655faba8ba8f526f6c358ffd1ff06aa532edd",\n  "identityPromotionTestBlob": "740432a8568f2f3f70aed69f41ec19d0da109845",\n  "identityFreezeVersion": "1.1.0",\n  "identityFreezeStatus": "candidate-not-final",\n  "identityMappingCount": 261,\n  "identityUnresolvedCount": 0,\n  "identityAmbiguousCount": 0,\n  "identityResolverPrecedence": "encoded-fallback>exact-primary>alias",\n  "identityFingerprintPayload": "sorted-newline-final-newline",\n  "identityCryptoBoundary": "test-only",\n  "generatedAt": "%s"\n}\n' \
             "$GITHUB_SHA" \
             "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             > artifacts/parity-metadata.json
