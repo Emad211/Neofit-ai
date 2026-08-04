@@ -15,6 +15,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test:adapter": "node --import tsx --test tests/web-nutrition-adapter.test.ts",
+    "test:supabase-foundation": "node --import tsx --test tests/supabase-foundation.test.ts",
     "check:adapter": "npm run typecheck && npm run test:adapter",
     "visual:capture": "node scripts/capture-stage1.mjs",
     "pwa:verify": "node scripts/verify-pwa.mjs"
