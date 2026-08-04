@@ -5,11 +5,15 @@ on:
     branches:
       - web/pwa-foundation
       - stage2/pwa-vercel-foundation
+      - 'stage2b/**'
       - 'stage3/**'
     paths:
+      - 'vercel.json'
       - 'web/**'
       - 'packages/nutrition-core/**'
       - '.github/workflows/web-ci.yml'
+      - 'README.md'
+      - 'docs/DEVELOPMENT_HANDOFF.md'
       - 'docs/NEOFIT_WEB_NUTRITION_ADAPTER_AUTHORITY_MAP.md'
       - 'docs/NEOFIT_MASTER_PLAN.md'
       - 'docs/NEOFIT_PROGRESS_LOG.md'
@@ -17,9 +21,12 @@ on:
     branches:
       - web/pwa-foundation
     paths:
+      - 'vercel.json'
       - 'web/**'
       - 'packages/nutrition-core/**'
       - '.github/workflows/web-ci.yml'
+      - 'README.md'
+      - 'docs/DEVELOPMENT_HANDOFF.md'
       - 'docs/NEOFIT_WEB_NUTRITION_ADAPTER_AUTHORITY_MAP.md'
       - 'docs/NEOFIT_MASTER_PLAN.md'
       - 'docs/NEOFIT_PROGRESS_LOG.md'
@@ -67,7 +74,7 @@ jobs:
           mkdir -p artifacts
           printf '{"commit":"%s","status":"preflight"}\n' "$GITHUB_SHA" > artifacts/preflight.json
 
-      - name: Verify product, PWA and nutrition-adapter contracts
+      - name: Verify product, PWA, Vercel and nutrition-adapter contracts
         working-directory: .
         shell: bash
         run: |
@@ -98,6 +105,11 @@ jobs:
           test -s web/app/loading.tsx
           test -s web/app/not-found.tsx
           test -s web/vercel.json
+          test -s vercel.json
+          grep -q '"framework": "nextjs"' vercel.json
+          grep -q '"installCommand": "cd web && npm install --no-audit --no-fund"' vercel.json
+          grep -q '"buildCommand": "cd web && npm run build"' vercel.json
+          grep -q '"outputDirectory": "web/.next"' vercel.json
 
       - name: TypeScript
         run: npm run typecheck
@@ -149,11 +161,11 @@ jobs:
           cat artifacts/stage1-visual/visual-report.json
           cat artifacts/pwa/pwa-report.json
 
-      - name: Write Web adapter evidence metadata
+      - name: Write Web adapter and Vercel evidence metadata
         shell: bash
         run: |
           set -euo pipefail
-          printf '{\n  "commit": "%s",\n  "package": "@neofit/web",\n  "nutritionCore": "@neofit/nutrition-core",\n  "batch5Merge": "d3c0a28ecf2596e94c86ff74e2f00a0523219433",\n  "webFixtureAuthorityBlob": "08e623948b84e4e4e261528b1c332ae2e76af4b7",\n  "webPrototypeAuthorityBlob": "add0839d207e5b3b12288657fe53077c9a4fda0a",\n  "mobileLegacyUiAdapterBlob": "bbacac7a376ba9edb14b14f673d3d708dfa3319e",\n  "coreLegacyAdapterBlob": "eb4be071cfb3ccc6bb03261abf49aa7ae972028d",\n  "coreSearchBlob": "3dc081e6f22f9d98518ad7411bcbd5c6394cc983",\n  "coreDiaryBlob": "e297eed728a7457b9b46529a761e450bd647e97d",\n  "nutritionArithmetic": "shared-core-only",\n  "webPackageStrategy": "local-file-dependency",\n  "generatedAt": "%s"\n}\n' \
+          printf '{\n  "commit": "%s",\n  "package": "@neofit/web",\n  "nutritionCore": "@neofit/nutrition-core",\n  "batch5Merge": "d3c0a28ecf2596e94c86ff74e2f00a0523219433",\n  "webFixtureAuthorityBlob": "08e623948b84e4e4e261528b1c332ae2e76af4b7",\n  "webPrototypeAuthorityBlob": "add0839d207e5b3b12288657fe53077c9a4fda0a",\n  "mobileLegacyUiAdapterBlob": "bbacac7a376ba9edb14b14f673d3d708dfa3319e",\n  "coreLegacyAdapterBlob": "eb4be071cfb3ccc6bb03261abf49aa7ae972028d",\n  "coreSearchBlob": "3dc081e6f22f9d98518ad7411bcbd5c6394cc983",\n  "coreDiaryBlob": "e297eed728a7457b9b46529a761e450bd647e97d",\n  "nutritionArithmetic": "shared-core-only",\n  "webPackageStrategy": "local-file-dependency",\n  "vercelEntrypoint": "repository-root-vercel-json",\n  "vercelFramework": "nextjs",\n  "vercelApplicationRoot": "web",\n  "generatedAt": "%s"\n}\n' \
             "$GITHUB_SHA" \
             "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             > artifacts/web-adapter-metadata.json
@@ -174,9 +186,9 @@ jobs:
             --exclude='packages/nutrition-core/node_modules' \
             --exclude='packages/nutrition-core/artifacts' \
             -czf web/artifacts/vercel/neofit-web-source.tar.gz \
-            web packages/nutrition-core
+            vercel.json web packages/nutrition-core
           sha256sum web/artifacts/vercel/neofit-web-source.tar.gz | tee web/artifacts/vercel/neofit-web-source.sha256
-          printf '{"commit":"%s","branch":"%s","includes":["web","packages/nutrition-core"],"generatedAt":"%s"}\n' \
+          printf '{"commit":"%s","branch":"%s","includes":["vercel.json","web","packages/nutrition-core"],"generatedAt":"%s"}\n' \
             "$GITHUB_SHA" \
             "$GITHUB_HEAD_REF" \
             "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
