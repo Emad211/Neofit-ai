@@ -27,7 +27,7 @@ test('Stage 4B foundation files and local Supabase config exist', async () => {
 });
 
 test('public environment parser is fail-closed and accepts the project contract', async () => {
-  const { parseSupabasePublicEnv } = await import('../lib/supabase/env.ts');
+  const { parseSupabasePublicEnv } = await import('../lib/supabase/env');
 
   assert.throws(() => parseSupabasePublicEnv({}), /NEXT_PUBLIC_SUPABASE_URL/);
   assert.throws(
