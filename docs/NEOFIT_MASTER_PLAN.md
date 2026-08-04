@@ -1,7 +1,7 @@
 # پلن مادر NeoFit
 
 **وضعیت:** مرجع واحد و اجباری پروژه  
-**آخرین بازبینی:** ۴ اوت ۲۰۲۶ — Stage 2B فعال و Preview واقعی Build شده؛ Stage 4A منتظر پذیرش زیرساخت  
+**آخرین بازبینی:** ۴ اوت ۲۰۲۶ — Protected Preview QA آماده؛ Vercel quota و Stage 4A decision gate باز  
 **Integration branch:** `web/pwa-foundation`  
 **Integration HEAD پیش از PR فعال:** `e79df1b20b1769f4c2b4b2084510664d76bd0d72`  
 **Stage 2B branch:** `stage2b/vercel-https-reactivation`  
@@ -9,7 +9,7 @@
 **Stage 2B Issue:** #16 — active  
 **Stage 4 planning merge:** `094fc099f624b0349d6ed3bd1485bad6f11fdf14`  
 **Stage 4 Issue:** #25 — open  
-**مرحله‌های فعال:** Stage 2B HTTPS validation و Stage 4A decision gate
+**مرحله‌های فعال:** Stage 2B protected HTTPS validation و Stage 4A decision gate
 
 ## ۱. پروتکل اجباری ادامه
 
@@ -17,15 +17,17 @@
 
 1. این فایل کامل خوانده شود.
 2. `docs/NEOFIT_PROGRESS_LOG.md` کامل خوانده شود.
-3. برای Stage 4، `docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md` کامل خوانده شود.
-4. Branch، HEAD، PR، Issue، CI، Review، Vercel و Supabase از ابزار واقعی بررسی شوند.
-5. فقط Exact continuation point اجرا شود.
+3. برای Stage 2B، `docs/NEOFIT_VERCEL_PREVIEW_QA.md` خوانده شود.
+4. برای Stage 4، `docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md` خوانده شود.
+5. Branch، HEAD، PR، Issue، CI، Review، Vercel و Supabase از ابزار واقعی بررسی شوند.
+6. فقط Exact continuation point اجرا شود.
 
 در پایان هر نوبت:
 
 - این فایل و Progress Log با Commit، Run، Artifact، Failure، Correction، تصمیم و نقطهٔ ادامه همگام شوند.
-- `README.md` و `docs/DEVELOPMENT_HANDOFF.md` نباید Stage قدیمی را به‌عنوان قدم بعد معرفی کنند.
+- `README.md` و `docs/DEVELOPMENT_HANDOFF.md` نباید Stage قدیمی را قدم بعد معرفی کنند.
 - هیچ Build، Deployment، Preview، Parity، Freeze، Migration، Coverage یا Accuracy بدون شواهد اعلام نشود.
+- Token، Share URL و Automation Bypass Secret هرگز وارد Git، Log، Comment یا Artifact نشوند.
 - حافظهٔ مکالمه جای ریپو، CI یا Connector state را نمی‌گیرد.
 
 ## ۲. معماری و قراردادهای قفل‌شده
@@ -41,7 +43,7 @@
 - RLS روی تمام Tableهای exposed و user-owned پیش از Application use اجباری است.
 - Service Role هرگز وارد Browser bundle، Client Component، log یا Artifact نمی‌شود.
 - Canonical ID، fingerprint و Schema فقط با Migration/Freeze نسخه‌دار تغییر می‌کنند.
-- Deployment Preview با Production promotion یکسان نیست؛ Stage 2B حق Promote به Production ندارد.
+- Preview با Production promotion یکسان نیست؛ Stage 2B حق Promote به Production ندارد.
 
 ## ۳. وضعیت مراحل
 
@@ -50,12 +52,12 @@
 | 0 Pivot | complete | PR #12، `151de2c0d5c9b02602c2f89eb4df808653cdd74e` |
 | 1 Persian RTL UX | complete/accepted | PR #13، `a458a27a2685bfa7d85ea28686b3182c3167d747` |
 | 2A PWA Foundation | complete | PR #15، `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b` |
-| 2B Vercel HTTPS | active | Issue #16، PR #28، real Next.js Preview built |
+| 2B Vercel HTTPS | active | Issue #16، PR #28، real Preview + protected QA contract |
 | 3 Nutrition Core/Web parity | complete | PR #18–#24؛ Issue #17 closed |
 | 4 Supabase foundation | decision gate | PR #26 planning merged؛ Issue #25 open |
 | 5–9 | not started | طبق Roadmap |
 
-### Stage 3 final state
+## ۴. Stage 3 final state
 
 Implementation merges:
 
@@ -67,158 +69,173 @@ Implementation merges:
 - Batch 6 `6b46f1d6af2df345b2504a8d6bca3e4c8aa2d412`
 - Closure `d1f4c465fc3192cb6c919fca6d4940f1ab75d3d5`
 
-Final suites:
+Final contract:
 
 - Core `52/52`
 - Web Adapter `9/9`
 - 13 Pure source files
 - strict TypeScript، Next build، Visual و PWA runtime pass
 
-## ۴. Stage 2B — Vercel Preview/HTTPS
+## ۵. Stage 2B — Vercel Preview/HTTPS
 
-### Reconstructed failure
+### Failure reconstructed
 
-Issue #16 قبلاً نوشته بود هیچ Deployment وجود ندارد. بررسی مستقیم نشان داد Vercel Git Integration فعال است، اما Deployment شاخهٔ Integration معتبر نبود:
+Deployment قدیمی `dpl_7kJ7LHEM2MBmz6kwj5pWpM8BcbQc` با state `READY` در حدود ۵۰۰ ms تمام می‌شد، اما install و Next.js build اجرا نمی‌شد. READY بودن آن Evidence معتبر نبود.
 
-- Project ID: `prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG`
-- Team ID: `team_BsUv0VprkU4YjdFbQi2hZCEm`
-- old deployment: `dpl_7kJ7LHEM2MBmz6kwj5pWpM8BcbQc`
-- commit: `e79df1b20b1769f4c2b4b2084510664d76bd0d72`
-- state: `READY`
-- Project framework: `null`
-- Build duration: حدود ۵۰۰ میلی‌ثانیه
-- dependency install: اجرا نشده
-- Next.js build: اجرا نشده
+### Build correction در PR #28
 
-پس READY بودن آن Deployment به معنی Preview واقعی NeoFit نبود.
+- Root `vercel.json`؛
+- npm workspace حداقلی برای `web` و `packages/nutrition-core`؛
+- Next.js `16.2.12` در Root contract؛
+- `npm run build:web`؛
+- Node `22.x`؛
+- CI validation برای deployment contract؛
+- source bundle شامل Root config، Web و Shared Core.
 
-### Correction در PR #28
-
-- Root-level `vercel.json` اضافه شد.
-- Root `package.json` به npm workspace حداقلی برای `web` و `packages/nutrition-core` تبدیل شد.
-- Next.js `16.2.12` در Root contract قابل تشخیص شد.
-- Node runtime روی Major `22.x` قفل شد.
-- Web CI حضور و محتوای Root deployment contract را کنترل می‌کند.
-- Source bundle اکنون `package.json`، `vercel.json`، `web/` و `packages/nutrition-core/` را شامل می‌شود.
-
-### Real Preview evidence
-
-Validated branch head:
+آخرین Runtime واقعی Deployشده:
 
 ```text
-aeec3b0716b6f60dfe61a745ca266f69e1d640e8
+commit: bfe3e56f18f77c717f0b31c8b36f294e9498add0
+deployment: dpl_7q1AqruWVV6B6qSA1KmByH6UMSxj
+state: READY
+target: Preview
+alias: neofit-ai-git-stage2b-vercel-htt-774980-emads-projects-41cb6447.vercel.app
 ```
 
-Vercel:
+این Deployment واقعاً npm install، PWA icon generation، Next.js `16.2.12`، Turbopack compile، TypeScript، route generation و `/vercel/output` را اجرا کرده است.
 
-- Deployment ID: `dpl_2rn2B51BZJfjDYtPPhb3VXY7swna`
-- State: `READY`
-- Target: Preview (`target: null`)
-- Branch alias: `neofit-ai-git-stage2b-vercel-htt-774980-emads-projects-41cb6447.vercel.app`
-- Detected Next.js: `16.2.12`
-- Bundler: Turbopack
-- Install: `npm install --no-audit --no-fund`
-- Build: `npm run build:web` → `next build`
-- Compiled: success
-- TypeScript: success
-- Static routes: `/`, `/_not-found`, `/manifest.webmanifest`, `/offline`
-- Build output: `/vercel/output`
+### Protected Preview QA authority
 
-CI همان Head:
+منبع اجرایی:
 
-- Nutrition Core CI `30927566238` — success
-- Nutrition Artifact `8899755836`
-- Nutrition digest `sha256:3fffa656b714d13e695e0d47818e9ac9f7ce846dec2cc27231a4f4e92cf7adb8`
-- Web CI `30927566018` — success
-- Web Artifact `8899785585`
-- Web digest `sha256:91fc7d0b78e76f988ab12b199b517eed72c48df95c1d2781d9880789d1c3630b`
+- `docs/NEOFIT_VERCEL_PREVIEW_QA.md`
+- `web/scripts/verify-vercel-preview.mjs`
+- `.github/workflows/vercel-preview-qa.yml`
+- `npm run qa:vercel-preview`
 
-### Remaining Stage 2B gate
+Remote assertions:
 
-Deployment Protection روی Preview فعال است. Connector یک temporary share URL تولید می‌کند، اما Fetch آن به SSO redirect برمی‌گردد و Cookie session در ابزار حفظ نمی‌شود. بنابراین هنوز این موارد روی Remote HTTPS browser به‌طور مستقیم اثبات نشده‌اند:
+- HTTPS و Same-origin؛
+- عدم SSO challenge؛
+- `lang=fa` و `dir=rtl`؛
+- Manifest و Iconها؛
+- Service Worker registration/control؛
+- API/Auth/Authorization/non-GET cache exclusions؛
+- Flow واقعی ثبت قورمه‌سبزی؛
+- Offline reload.
 
-- Root HTML با `lang=fa` و `dir=rtl`
-- manifest/icon fetch روی Preview
-- Service Worker registration/control روی Preview
-- fresh-install offline reload روی Preview
-- React navigation و meal-log interaction روی Preview
-- Remote cache exclusion observation
+برای Deployment Protection فقط قرارداد رسمی زیر مجاز است:
 
-Local Chromium CI همهٔ این قراردادها را به‌جز لایهٔ Remote HTTPS/Protection پاس کرده است. Issue #16 تا رفع این Gate باز می‌ماند.
+```text
+x-vercel-protection-bypass: <GitHub Secret>
+x-vercel-set-bypass-cookie: true
+```
 
-### Non-blocking build notes
+Secret name:
 
-- Vercel Project Settings هنوز `framework: null` گزارش می‌دهد، اما Root `vercel.json` Framework preset را برای Build override می‌کند و Build واقعی Next.js اثبات شده است.
-- Next.js دربارهٔ lockfile و optional SWC dependency هشدار می‌دهد؛ Build، TypeScript و route generation سبز هستند. این هشدار باید پیش از Merge ارزیابی شود، اما Failure محصولی فعلی نیست.
+```text
+VERCEL_AUTOMATION_BYPASS_SECRET
+```
 
-## ۵. Stage 4 planning checkpoint — merged
+### Current code/CI head
 
-- Issue #25: `Stage 4: Supabase Auth, Postgres and RLS foundation`
+```text
+12b25a8677ab276464428e87b184dff634d4087d
+```
+
+Nutrition Core:
+
+- Run `30929824693` — success
+- Artifact `8900647856`
+- Digest `sha256:37bac1d174d412498eb8517c1d7a779ac77addd8aded24440de2f1ffcffa0ea2`
+
+Web:
+
+- Run `30929821835` — success
+- Artifact `8900682338`
+- Digest `sha256:a0baeeedd3ebfd508e62574618a3b63ddb47f470f2c534f9817634139439f4fd`
+
+Passed:
+
+- Core parity/pure boundary؛
+- strict TypeScript؛
+- Preview verifier syntax؛
+- Web Adapter parity؛
+- Next production build؛
+- icons، visual regression، local Service Worker، offline و cache gates.
+
+### Runtime-equivalence evidence
+
+Compare از Deployشدهٔ `bfe3e56…` تا Head `12b25a…` فقط این فایل‌ها را تغییر می‌دهد:
+
+- Workflow Remote QA؛
+- سند Remote QA؛
+- command exposure در Root/Web package.
+
+هیچ `web/app`، Component، Service Worker، Public Asset یا Nutrition Core runtime تغییر نکرده است. Preview موجود برای اجرای Remote QA از نظر Runtime معادل است؛ بااین‌حال پیش از Merge یک Deployment exact-head نیز الزامی است.
+
+### Current external failures
+
+Deployment Protection:
+
+- Share URL به Vercel SSO و Cookie session وابسته است؛
+- ابزار Fetch Cookie را حفظ نمی‌کند؛
+- Automation Bypass هنوز خارج Git تنظیم نشده است.
+
+Deployment quota:
+
+```text
+Resource is limited - try again in 24 hours
+code: api-deployments-free-per-day
+more than 100 deployments
+```
+
+در نتیجه Head فعلی هنوز Deployment exact-head ندارد.
+
+## ۶. Stage 4 planning checkpoint
+
+- Issue #25
 - Planning PR #26
-- Merge: `094fc099f624b0349d6ed3bd1485bad6f11fdf14`
-- Plan: `docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md`
+- Merge `094fc099f624b0349d6ed3bd1485bad6f11fdf14`
+- Plan `docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md`
 
-### Supabase inventory rechecked — 4 Aug 2026
-
-Organization:
+Supabase inventory:
 
 ```text
-Emad's Org
-yzymkjsfqoohxbqkhzhs
-```
-
-Projects:
-
-| Name | Ref | Region | Status |
-|---|---|---|---|
-| `Emad211's Project` | `albwvkdamcmvukhzafep` | `eu-central-1` | `INACTIVE` |
-| `nila-gol` | `msiowolgbuffddhcdmqw` | `eu-central-1` | `INACTIVE` |
-
-NeoFit Supabase project:
-
-- وجود ندارد
-- Project ID/ref ندارد
-- Auth/Table/RLS/Migration ندارد
-
-Cost:
-
-```text
-type: project
-recurrence: monthly
-amount: 0
-```
-
-Proposed decision — هنوز صریحاً پذیرفته نشده:
-
-```text
-Organization: Emad's Org (yzymkjsfqoohxbqkhzhs)
-Region: eu-central-1
+Organization: Emad's Org / yzymkjsfqoohxbqkhzhs
+Region proposal: eu-central-1
 Cost: 0 monthly
 Project name: neofit
+NeoFit project: none
+confirm_cost: not called
+Auth/Schema/RLS: not started
 ```
 
-### Planned Stage 4 batches
+Stage 4 batches:
 
 - 4A: explicit decision، cost confirmation، Project creation
 - 4B: CLI/config + SSR clients
 - 4C: profiles/user_settings + RLS + generated types
-- 4D: nutrition_goals/nutrition_entries persistence contracts
-- Closure: advisors، RLS tests، Core/Web CI و docs
+- 4D: nutrition_goals/nutrition_entries persistence
+- Closure: advisors، RLS tests، CI و docs
 
-## ۶. Current hard gates
+## ۷. Current hard gates
 
 ### Vercel
 
-قبل از Merge PR #28 و بستن Issue #16:
+پیش از Merge PR #28 و بستن Issue #16:
 
-1. Preview باید با Browser session قابل دسترسی شود.
-2. Remote HTTPS PWA checks اجرا و ثبت شوند.
-3. Build warningهای باقی‌مانده بررسی شوند.
-4. PR Review thread باز نباشد.
+1. quota reset؛
+2. exact-head Preview؛
+3. Automation Bypass Secret در Vercel و GitHub؛
+4. Remote workflow pass؛
+5. Run/Artifact/Digest/Deployment/runtime evidence؛
+6. documents synchronized؛
+7. zero review threads.
 
 ### Supabase
 
-کاربر باید این سه مقدار را صریحاً بپذیرد:
+کاربر باید صریحاً این سه مقدار را بپذیرد:
 
 1. Organization `Emad's Org`
 2. Region `eu-central-1`
@@ -230,51 +247,48 @@ Project name: neofit
 - Project ساخته نمی‌شود؛
 - Auth/Schema/RLS implementation آغاز نمی‌شود.
 
-## ۷. Claim boundaries
+## ۸. Claim boundaries
 
 ثابت شده است:
 
-- Stage 3 کامل و بسته است.
-- Stage 2B دوباره فعال شده است.
-- Vercel Git Integration و Project واقعی وجود دارند.
-- یک Preview واقعی Next.js برای Head `aeec3b0…` Build و Deploy شده است.
-- Local Web/PWA/Visual و Shared Core CI سبز هستند.
-- Supabase Organization/Projects/Cost دوباره بررسی شده‌اند.
-- Stage 4 architecture/security plan Merge شده است.
+- Stage 3 کامل است.
+- Vercel Git Integration و Project واقعی‌اند.
+- Build واقعی Next.js و Preview واقعی وجود دارد.
+- Protected Remote QA contract کامل و Fail-closed است.
+- Current Head در Core/Web CI سبز است.
+- Runtime diff بعد از آخرین Deployment فقط QA/docs/commands است.
+- Supabase account/cost inventory بررسی شده است.
 
 ثابت نشده است:
 
-- Remote HTTPS browser/PWA behavior پشت Deployment Protection؛
+- Automation Bypass Secret configuration؛
+- Remote HTTPS suite pass؛
+- exact-head Deployment؛
 - Stage 2B closure؛
 - پذیرش Organization/Region/Cost؛
 - NeoFit Supabase Project؛
 - Auth/SSR clients؛
 - Postgres migrations/RLS؛
-- Full Browser Catalog/IndexedDB؛
-- AI/Vision Web flow؛
-- Public Final Schema/ID freeze.
+- Stage 5–9.
 
-## ۸. Anti-goalها
+## ۹. Anti-goalها
 
-- READY deployment را بدون Next build به‌عنوان Preview واقعی معرفی‌کردن
+- READY بدون Next build را Preview واقعی معرفی‌کردن
+- ذخیرهٔ Share/Bypass token در Git یا Artifact
 - Promote به Production در Stage 2B
 - Project creation بدون explicit acceptance
 - reuse کردن Project unrelated
 - Dashboard-only Schema edits
 - permissive RLS
 - Service Role در Browser
-- Authorization فقط با `getSession()`
 - Nutrition arithmetic در SQL/React
-- Provider-created Nutrition
-- Full Catalog/IndexedDB در Stage 4
 
-## ۹. Exact continuation point
+## ۱۰. Exact continuation point
 
-1. PR #28، Issue #16 و آخرین Vercel Deployment دوباره بررسی شوند.
-2. دسترسی Browser به Preview با Deployment Protection/share session حل شود.
-3. Root، RTL، Manifest، Iconها، Service Worker، Offline reload، React interaction و cache boundary روی HTTPS آزموده شوند.
-4. فقط پس از پاس کامل، Issue #16 بسته و PR #28 Ready/Merge شود.
-5. در مسیر موازی، برای Stage 4A پذیرش صریح Organization، Region و Cost دریافت شود.
-6. فقط بعد از پذیرش `Supabase.confirm_cost` و Project creation اجرا شود.
-7. Project ID/ref/region/status در Issue #25 و دو سند اجباری ثبت شود.
-8. Stage 4B در Branch/PR مستقل و test-first آغاز شود.
+1. پس از Reset quota، exact-head Preview برای PR #28 ساخته شود.
+2. Automation Bypass Secret خارج Git ساخته و در GitHub Secret ثبت شود.
+3. Workflow `Vercel Preview HTTPS QA` روی Alias عمومی اجرا شود.
+4. Evidence در Issue #16، PR #28، Master Plan و Progress Log ثبت شود.
+5. فقط پس از Remote pass، PR #28 Ready/Merge و Issue #16 Completed شود.
+6. Stage 4A فقط پس از پذیرش صریح Organization/Region/Cost اجرا شود.
+7. پس از Project creation، ID/ref/region/status ثبت و Stage 4B در PR مستقل آغاز شود.
