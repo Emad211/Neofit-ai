@@ -2,13 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutGrid,
-  Apple,
-  Dumbbell,
-  LineChart,
-  User,
-} from "lucide-react";
+import { Apple, Dumbbell, LayoutGrid, LineChart, User } from "lucide-react";
 import {
   SidebarProvider,
   Sidebar,
@@ -23,15 +17,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { ModeToggle } from "./mode-toggle";
 
 const navItems = [
-  { href: "/today", icon: LayoutGrid, label: "Today" },
-  { href: "/nutrition", icon: Apple, label: "Nutrition" },
-  { href: "/workout", icon: Dumbbell, label: "Workout" },
-  { href: "/progress", icon: LineChart, label: "Progress" },
-  { href: "/profile", icon: User, label: "Profile" },
+  { href: "/today", icon: LayoutGrid, label: "امروز" },
+  { href: "/nutrition", icon: Apple, label: "تغذیه" },
+  { href: "/workout", icon: Dumbbell, label: "تمرین" },
+  { href: "/progress", icon: LineChart, label: "پیشرفت" },
+  { href: "/profile", icon: User, label: "پروفایل" },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -41,10 +35,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   const sidebarContent = (
     <>
       <SidebarHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <Link href="/today" className="flex items-center gap-2">
-            <Dumbbell className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold font-headline">NeoFit AI</span>
+            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+              <Dumbbell className="h-5 w-5" />
+            </span>
+            <span>
+              <span className="block text-xl font-extrabold font-headline">نئوفیت</span>
+              <span className="block text-[11px] text-muted-foreground">مربی هوشمند شخصی</span>
+            </span>
           </Link>
           <ModeToggle />
         </div>
@@ -53,11 +52,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname.startsWith(item.href)}
-                tooltip={item.label}
-              >
+              <SidebarMenuButton asChild isActive={pathname.startsWith(item.href)} tooltip={item.label}>
                 <Link href={item.href}>
                   <item.icon />
                   <span>{item.label}</span>
@@ -72,22 +67,20 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   if (isMobile) {
     return (
-      <div>
-        <main className="pb-20">{children}</main>
-        <footer className="fixed bottom-0 left-0 right-0 z-50 border-t bg-card/80 backdrop-blur-sm">
-          <nav className="flex items-center justify-around p-2">
+      <div dir="rtl" className="min-h-screen bg-background">
+        <main className="pb-24">{children}</main>
+        <footer className="fixed inset-x-0 bottom-0 z-50 border-t bg-card/90 backdrop-blur-xl">
+          <nav className="mx-auto flex max-w-xl items-center justify-around px-1 py-2">
             {navItems.map((item) => (
               <Link
                 href={item.href}
                 key={item.href}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 rounded-md p-2 text-xs transition-colors hover:bg-secondary",
-                  pathname.startsWith(item.href)
-                    ? "text-primary"
-                    : "text-muted-foreground"
+                  "flex min-w-14 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs transition-colors",
+                  pathname.startsWith(item.href) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary"
                 )}
               >
-                <item.icon className="h-6 w-6" />
+                <item.icon className="h-5 w-5" />
                 <span>{item.label}</span>
               </Link>
             ))}
@@ -99,15 +92,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <SidebarProvider>
-      <Sidebar side="left" collapsible="icon">
-        {sidebarContent}
-      </Sidebar>
+      <Sidebar side="right" collapsible="icon">{sidebarContent}</Sidebar>
       <SidebarInset>
-        <div className="absolute top-4 left-4">
+        <div className="absolute right-4 top-4 z-20">
           <SidebarTrigger asChild>
-            <Button size="icon" variant="ghost">
-              <LayoutGrid />
-            </Button>
+            <Button size="icon" variant="ghost" aria-label="بازکردن منو"><LayoutGrid /></Button>
           </SidebarTrigger>
         </div>
         {children}
