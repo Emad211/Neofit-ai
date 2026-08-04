@@ -1,0 +1,40 @@
+name: Firebase Genkit Inventory
+
+on:
+  push:
+    branches:
+      - revival/firebase-ui-front
+    paths:
+      - '.github/workflows/firebase-genkit-inventory.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Inventory tracked files and references
+        shell: bash
+        run: |
+          set -uo pipefail
+          echo '=== TRACKED FIREBASE/GENKIT-NAMED FILES ==='
+          git ls-files | grep -Ei 'firebase|firestore|genkit|apphosting|\.idx' || true
+          echo '=== SOURCE/CONFIG REFERENCES (EXCLUDING LOCKFILE) ==='
+          rg -n -i \
+            'firebase|firestore|genkit|apphosting|googleai|dotprompt|NEXT_PUBLIC_FIREBASE|FIREBASE_' \
+            --glob '!package-lock.json' \
+            --glob '!artifacts/**' \
+            . || true
+          echo '=== PACKAGE-LOCK PACKAGE KEYS ==='
+          node <<'NODE'
+          const lock = require('./package-lock.json');
+          const matches = Object.keys(lock.packages || {}).filter((key) => /firebase|genkit|googleai|dotprompt/i.test(key));
+          console.log(matches.join('\n'));
+          console.log(`MATCH_COUNT=${matches.length}`);
+          NODE
