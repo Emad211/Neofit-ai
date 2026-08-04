@@ -5,9 +5,12 @@ on:
     branches:
       - web/pwa-foundation
       - stage2/pwa-vercel-foundation
+      - 'stage3/**'
     paths:
       - 'web/**'
+      - 'packages/nutrition-core/**'
       - '.github/workflows/web-ci.yml'
+      - 'docs/NEOFIT_WEB_NUTRITION_ADAPTER_AUTHORITY_MAP.md'
       - 'docs/NEOFIT_MASTER_PLAN.md'
       - 'docs/NEOFIT_PROGRESS_LOG.md'
   pull_request:
@@ -15,7 +18,9 @@ on:
       - web/pwa-foundation
     paths:
       - 'web/**'
+      - 'packages/nutrition-core/**'
       - '.github/workflows/web-ci.yml'
+      - 'docs/NEOFIT_WEB_NUTRITION_ADAPTER_AUTHORITY_MAP.md'
       - 'docs/NEOFIT_MASTER_PLAN.md'
       - 'docs/NEOFIT_PROGRESS_LOG.md'
   workflow_dispatch:
@@ -48,12 +53,21 @@ jobs:
         with:
           node-version: 22.13.1
           cache: npm
-          cache-dependency-path: web/package.json
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Verify product and PWA contracts
+      - name: Initialize evidence directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          printf '{"commit":"%s","status":"preflight"}\n' "$GITHUB_SHA" > artifacts/preflight.json
+
+      - name: Verify product, PWA and nutrition-adapter contracts
         working-directory: .
         shell: bash
         run: |
@@ -66,6 +80,17 @@ jobs:
           grep -q "request.headers.has('authorization')" web/public/sw.js
           grep -q 'window.scrollTo' web/components/neofit-prototype.tsx
           grep -q 'NEXT_PUBLIC_VERCEL_ENV' web/lib/environment.ts
+          grep -q '@neofit/nutrition-core' web/package.json
+          grep -q 'transpilePackages' web/next.config.ts
+          grep -q 'summarizeWebDiary' web/components/neofit-prototype.tsx
+          grep -q 'calculateVariantNutrition' web/lib/nutrition-adapter.ts
+          grep -q 'calculateRecipe' web/lib/nutrition-adapter.ts
+          grep -q 'summarizeDiaryDay' web/lib/nutrition-adapter.ts
+          grep -q 'calculateGoalProgress' web/lib/nutrition-adapter.ts
+          test -s docs/NEOFIT_WEB_NUTRITION_ADAPTER_AUTHORITY_MAP.md
+          test -s web/tests/web-nutrition-adapter-golden-v1.ts
+          test -s web/tests/web-nutrition-adapter.test.ts
+          test -s packages/nutrition-core/src/index.ts
           test -s web/app/manifest.ts
           test -s web/app/offline/page.tsx
           test -s web/app/error.tsx
@@ -76,6 +101,9 @@ jobs:
 
       - name: TypeScript
         run: npm run typecheck
+
+      - name: Web nutrition adapter parity tests
+        run: npm run test:adapter
 
       - name: Production build
         run: npm run build
@@ -121,24 +149,38 @@ jobs:
           cat artifacts/stage1-visual/visual-report.json
           cat artifacts/pwa/pwa-report.json
 
-      - name: Prepare reproducible Vercel source bundle
+      - name: Write Web adapter evidence metadata
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p artifacts/vercel
+          printf '{\n  "commit": "%s",\n  "package": "@neofit/web",\n  "nutritionCore": "@neofit/nutrition-core",\n  "batch5Merge": "d3c0a28ecf2596e94c86ff74e2f00a0523219433",\n  "webFixtureAuthorityBlob": "08e623948b84e4e4e261528b1c332ae2e76af4b7",\n  "webPrototypeAuthorityBlob": "add0839d207e5b3b12288657fe53077c9a4fda0a",\n  "mobileLegacyUiAdapterBlob": "bbacac7a376ba9edb14b14f673d3d708dfa3319e",\n  "coreLegacyAdapterBlob": "eb4be071cfb3ccc6bb03261abf49aa7ae972028d",\n  "coreSearchBlob": "3dc081e6f22f9d98518ad7411bcbd5c6394cc983",\n  "coreDiaryBlob": "e297eed728a7457b9b46529a761e450bd647e97d",\n  "nutritionArithmetic": "shared-core-only",\n  "webPackageStrategy": "local-file-dependency",\n  "generatedAt": "%s"\n}\n' \
+            "$GITHUB_SHA" \
+            "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            > artifacts/web-adapter-metadata.json
+          cat artifacts/web-adapter-metadata.json
+
+      - name: Prepare reproducible Vercel source bundle
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p web/artifacts/vercel
           tar \
-            --exclude='./node_modules' \
-            --exclude='./.next' \
-            --exclude='./artifacts' \
-            --exclude='./.env*' \
-            --exclude='./tsconfig.tsbuildinfo' \
-            -czf artifacts/vercel/neofit-web-source.tar.gz .
-          sha256sum artifacts/vercel/neofit-web-source.tar.gz | tee artifacts/vercel/neofit-web-source.sha256
-          printf '{"commit":"%s","branch":"%s","generatedAt":"%s"}\n' \
+            --exclude='web/node_modules' \
+            --exclude='web/.next' \
+            --exclude='web/artifacts' \
+            --exclude='web/.env*' \
+            --exclude='web/tsconfig.tsbuildinfo' \
+            --exclude='packages/nutrition-core/node_modules' \
+            --exclude='packages/nutrition-core/artifacts' \
+            -czf web/artifacts/vercel/neofit-web-source.tar.gz \
+            web packages/nutrition-core
+          sha256sum web/artifacts/vercel/neofit-web-source.tar.gz | tee web/artifacts/vercel/neofit-web-source.sha256
+          printf '{"commit":"%s","branch":"%s","includes":["web","packages/nutrition-core"],"generatedAt":"%s"}\n' \
             "$GITHUB_SHA" \
             "$GITHUB_HEAD_REF" \
             "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            > artifacts/vercel/source-metadata.json
+            > web/artifacts/vercel/source-metadata.json
 
       - name: Upload web evidence
         if: always()
