@@ -21,17 +21,15 @@ The Expo application under [`mobile/`](mobile/README.md) remains a frozen releas
 - Stage 0 — PWA pivot: complete
 - Stage 1 — Persian RTL UX: complete and accepted
 - Stage 2A — local PWA foundation: complete
-- Stage 2B — protected Vercel HTTPS validation: active in Issue #16 / Draft PR #28
+- Stage 2B — protected Vercel HTTPS validation: active in Issue #16 / PR #28
 - Stage 3 — Shared Nutrition Core and Web parity: complete
-- Stage 4A — Supabase decision and Project creation: complete
-- Stage 4B — Supabase local config and SSR clients: implementation candidate green in Draft PR #30
-- Stage 4C — Identity schema and RLS: exact next stage after Stage 4B merge
+- Stage 4A — Supabase Project creation: complete
+- Stage 4B — local config and SSR clients: complete and merged in PR #30
+- Stage 4C — Identity schema and RLS: exact next stage
 - Stage 4D — Nutrition persistence: not started
 - Stage 5–9: not started
 
 ## Supabase Project
-
-Dedicated Project:
 
 ```text
 name: neofit
@@ -40,7 +38,7 @@ region: eu-central-1
 status: ACTIVE_HEALTHY
 ```
 
-Stage 4B currently provides:
+Stage 4B now provides:
 
 - fail-closed public environment validation;
 - Browser and Server Supabase clients;
@@ -75,14 +73,15 @@ Scientific/data contracts:
 - Nutrition calculations remain deterministic and live in Shared Core.
 - Language and vision models may not invent calories، macronutrients، weights or portions.
 - SQL and React must not duplicate Nutrition arithmetic.
-- All exposed user-owned tables require RLS before application use.
+- Every exposed user-owned table requires RLS before use.
 - privileged credentials must never enter Browser bundles، logs or artifacts.
 - Dashboard edits are not Schema authority; migrations are.
 - server authorization is not based only on `getSession()`.
 
 ## Exact next work
 
-1. Finish final documentation/review CI on Draft PR #30.
-2. Merge Stage 4B only if Foundation، Web/PWA and Vercel Build Contract remain green.
-3. Start Stage 4C in a new Branch/PR with versioned migrations، generated types and RLS denial tests.
-4. Keep Stage 2B Vercel HTTPS validation independent in Issue #16 / PR #28.
+1. Merge the Stage 4B closure handoff.
+2. Create `stage4c/identity-schema-rls` from the updated Integration head.
+3. Write migration and RLS denial tests before applying remote DDL.
+4. Add versioned `profiles` and `user_settings` migration، generated types and advisor checks.
+5. Keep Stage 2B Vercel HTTPS validation independent in Issue #16 / PR #28.
