@@ -53,21 +53,39 @@ The Catalog generator, SQLite asset and Manifest remain authoritative. `IFKB_CAT
 
 `node:sqlite`, SQL execution and row mapping are test or Adapter concerns. They are not runtime dependencies of `packages/nutrition-core/src`.
 
+### Batch 5 — Canonical identity, fingerprints and release status
+
+- complete typed Schema/ID comparison snapshot that remains `candidate-not-final`
+- validation of migration, table, SQLite-object and identifier-set invariants
+- canonical sorted-line fingerprint payload generation without cryptographic runtime access
+- Persian identity normalization identical to the frozen Audit generator
+- deterministic App-profile → IFKB Canon resolver
+- mapping precedence: encoded fallback ID, exact primary Persian name, then Alias
+- fail-closed unresolved and ambiguous mapping results
+- deterministic sorted mapping output
+- conservative Seeded/Imported/Custom replacement matrix
+
+`canonicalFingerprintPayload` produces the exact UTF-8 payload consumed by the Audit layer. SHA-256 execution remains test/audit-only through `node:crypto`.
+
+App-profile IDs and IFKB Canonical IDs remain distinct namespaces. Stability is defined by explicit one-to-one mappings, not by assuming the identifiers are interchangeable.
+
 ## Claim boundaries
 
 The Search surface is tied to the official controlled Persian Alias benchmark. It does not establish unrestricted natural-language understanding.
 
 The independent Persian Natural Query corpus has a validator and governance contract, but its frozen 500-row release does not yet exist. Generated Alias queries are not relabelled as natural queries.
 
-The Nutrition RC and Catalog `1.2.0` are frozen. The Schema/ID `1.1.0` baseline remains explicitly `candidate-not-final`; it is not a public stable-compatibility promise.
+The Nutrition RC and Catalog `1.2.0` are frozen. The Schema/ID `1.1.0` snapshot remains explicitly `candidate-not-final`; it is not a public stable-compatibility promise.
 
 Batch 4 proves estimator parity and Golden-row SQLite arithmetic equivalence. It does not rerun or replace the full 13,225-record IFKB Catalog audit.
 
+Batch 5 proves the pure mapping, payload, validation and replacement-decision contracts against the frozen Golden baseline. It does not recompute the complete production Asset/Schema hashes inside runtime Core and does not promote the candidate to Final.
+
 ## Explicitly absent
 
-This package has no runtime dependency on React, React Native, Expo, SQLite, filesystem, network, Vercel, Supabase or AI providers.
+This package has no runtime dependency on React, React Native, Expo, SQLite, filesystem, network, cryptographic providers, Vercel, Supabase or AI providers.
 
-Persistence precedence, production database adapters, migrations, backup/restore, Vision and Web adapters remain later evidence-backed work.
+Production database adapters, migrations, full Asset/Schema audit execution, repository restore/synchronization, backup/restore, Vision and Web adapters remain outside Pure Core.
 
 ## Numeric and missing-data policy
 
@@ -79,14 +97,27 @@ Persistence precedence, production database adapters, migrations, backup/restore
 - Legacy uncertainty is clamped to a relative fraction between `0` and `0.8`;
 - Universal source uncertainty is fixed by source type: FNDDS `0.15`, SR Legacy `0.08`.
 
+## Identity and fingerprint policy
+
+- fingerprint values are lexicographically sorted;
+- entries are newline-delimited;
+- the payload always ends with a final newline;
+- duplicates are preserved because the Audit hashes the exact sorted set payload it receives;
+- Persian identity normalization uses NFKC, Arabic-to-Persian character folding, diacritic removal, bidi/half-space normalization and punctuation removal;
+- exact primary identity outranks Alias matches;
+- zero candidates remain unresolved;
+- multiple candidates remain ambiguous;
+- neither condition is silently guessed or auto-promoted.
+
 ## Source authority
 
 - `docs/NEOFIT_NUTRITION_CORE_AUTHORITY_MAP.md`
 - `docs/NEOFIT_SEARCH_RANKING_AUTHORITY_MAP.md`
 - `docs/NEOFIT_CATALOG_PROVENANCE_AUTHORITY_MAP.md`
 - `docs/NEOFIT_UNIVERSAL_ESTIMATE_SQLITE_AUTHORITY_MAP.md`
+- `docs/NEOFIT_ID_FINGERPRINT_RELEASE_AUTHORITY_MAP.md`
 
-Golden fixtures identify the frozen Mobile branch/head, exact source Blob SHAs, controlled Search release evidence, Catalog Manifest, Schema/ID candidate baseline and Universal estimator/SQLite equivalence authorities. A parity difference must be reviewed as a behavioral change; tests must not be silently changed to accept a new result.
+Golden fixtures identify the frozen Mobile branch/head, exact source Blob SHAs, controlled Search release evidence, Catalog Manifest, Schema/ID candidate baseline, Universal estimator/SQLite equivalence authorities and identity/fingerprint Audit contracts. A parity difference must be reviewed as a behavioral change; tests must not be silently changed to accept a new result.
 
 ## Validation
 
