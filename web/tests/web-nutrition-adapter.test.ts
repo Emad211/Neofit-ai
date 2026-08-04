@@ -44,11 +44,11 @@ test('Web adapter fixtures identify exact Web, Mobile and Core authorities', () 
 
 test('Standard and fractional food portions are calculated by Nutrition Core', () => {
   const ghormeh = estimateWebFood(food(WEB_FOOD_GOLDEN.ghormehSabzi.id), 1.5);
-  assert.deepEqual(ghormeh.macros, WEB_FOOD_GOLDEN.ghormehSabzi.oneAndHalf);
+  assert.deepEqual(ghormeh.macros, WEB_FOOD_GOLDEN.ghormehSabzi.oneAndHalf.macros);
   assert.equal(ghormeh.estimate.grams, WEB_FOOD_GOLDEN.ghormehSabzi.oneAndHalf.grams);
 
   const egg = estimateWebFood(food(WEB_FOOD_GOLDEN.boiledEgg.id), 2);
-  assert.deepEqual(egg.macros, WEB_FOOD_GOLDEN.boiledEgg.two);
+  assert.deepEqual(egg.macros, WEB_FOOD_GOLDEN.boiledEgg.two.macros);
   assert.equal(egg.estimate.grams, WEB_FOOD_GOLDEN.boiledEgg.two.grams);
 });
 
