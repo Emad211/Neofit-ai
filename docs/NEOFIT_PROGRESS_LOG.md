@@ -2,7 +2,7 @@
 
 **نقش:** حافظهٔ عملیاتی و شواهد توسعه  
 **همراه اجباری:** `docs/NEOFIT_MASTER_PLAN.md`  
-**آخرین به‌روزرسانی:** ۴ اوت ۲۰۲۶ — Stage 3 complete
+**آخرین به‌روزرسانی:** ۴ اوت ۲۰۲۶ — Stage 4 planning checkpoint CI green
 
 ## پروتکل
 
@@ -25,148 +25,190 @@
 | 1 | انجام‌شده | PR #13، Merge `a458a27a2685bfa7d85ea28686b3182c3167d747` |
 | 2A | انجام‌شده | PR #15، Merge `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b` |
 | 2B | تعویق‌شده | Issue #16؛ Vercel Preview واقعی ندارد |
-| 3 | انجام‌شده | Batch 1–6 Merge؛ Closure candidate CI سبز |
-| 4 | شروع‌نشده | منتظر تأیید Organization/Region/Cost |
-| 5–9 | شروع‌نشده | مطابق پلن مادر |
+| 3 | انجام‌شده | Batch 1–6، PR #24 Closure، Issue #17 closed |
+| 4 | Planning/Decision | Issue #25، PR #26 Draft، Project ندارد |
+| 5–9 | شروع‌نشده | مطابق Master Plan |
 
 ---
 
-## Stage 0–2 evidence
+## Stage 3 closure summary
 
-- Pivot Merge `151de2c0d5c9b02602c2f89eb4df808653cdd74e`
-- Persian RTL UX Merge `a458a27a2685bfa7d85ea28686b3182c3167d747`
-- PWA Foundation Merge `b7b19a52f06b3ef9db1bd08ee58a5965ddf8540b`
-- Vercel HTTPS validation در Issue #16 باز است.
+Implementation merges:
 
----
+- Batch 1 `c9599c4905f9fc1d28ba7e9086edf20376991740`
+- Batch 2 `917f04e319a924dda7dfb16d079453a5e5686541`
+- Batch 3 `02c1bcf0b301a920b12abcff4f653575cb97bf7f`
+- Batch 4 `d6c0df31999595096224ec1011574245d5dc75ad`
+- Batch 5 `d3c0a28ecf2596e94c86ff74e2f00a0523219433`
+- Batch 6 `6b46f1d6af2df345b2504a8d6bca3e4c8aa2d412`
 
-## Stage 3 evidence ledger
+Closure:
 
-### Batch 1 — Arithmetic/domain
-
-- PR #18
-- Merge `c9599c4905f9fc1d28ba7e9086edf20376991740`
-- `10/10` tests
-
-### Batch 2 — Controlled Persian Search/Ranking
-
-- PR #19
-- Merge `917f04e319a924dda7dfb16d079453a5e5686541`
-- `25/25` tests
-- Natural Query accuracy خارج از Claim است.
-
-### Batch 3 — Catalog Release/Provenance/Legacy Adapter
-
-- PR #20
-- Merge `02c1bcf0b301a920b12abcff4f653575cb97bf7f`
-- `34/34` tests
-- Schema/ID `1.1.0` همچنان `candidate-not-final`
-
-### Batch 4 — Universal Estimate/SQLite parity
-
-- PR #21
-- Merge `d6c0df31999595096224ec1011574245d5dc75ad`
-- `43/43` tests
-- 12 Pure files
-
-### Batch 5 — ID/Fingerprint/Release parity
-
-- PR #22
-- Merge `d3c0a28ecf2596e94c86ff74e2f00a0523219433`
-- `52/52` tests
+- PR #24
+- Merge `d1f4c465fc3192cb6c919fca6d4940f1ab75d3d5`
+- Issue #17 closed/completed
+- Core `52/52`
+- Web Adapter `9/9`
 - 13 Pure files
 
-### Batch 6 — Web Nutrition Adapter
+Final closure evidence:
 
-- PR #23
-- Merge `6b46f1d6af2df345b2504a8d6bca3e4c8aa2d412`
-- Web Adapter tests `9/9`
-- Core tests `52/52`
-- Web از Shared Core برای estimate، recipe، diary summary، goals و Persian normalization استفاده می‌کند.
-- React component Nutrition math تکراری ندارد.
-
-Final Batch 6 evidence:
-
-- Branch/docs head `5b33d137ab3f35a1f89bcb186e410b2533e94c5c`
-- Nutrition CI `30868394519` — success
-- Nutrition Artifact `8876962490`
-- Nutrition digest `sha256:4827344e1441a61dbeab6675bd7684869ab5bee7a6281c92c19a4e1ce48033c3`
-- Web CI `30868394529` — success
-- Web Artifact `8876973096`
-- Web digest `sha256:c1c326e8463f0fa8177154c0fd012326a8c362b7826bad098948ba85fda960f4`
-- strict TypeScript، Next build، Visual، PWA runtime/offline، Web+Core bundle: pass
-- Review thread باز: صفر
+- Head `43102e4925effb4f8c80dfa05b1588c08dd2f263`
+- Nutrition CI `30868884712`
+- Artifact `8877128689`
+- Digest `sha256:de56b9d8f7f38b07c18d8424a9da51a7d68617785c4eb8f4a415655204ae689e`
+- Web CI `30868884702`
+- Artifact `8877147921`
+- Digest `sha256:f35e03b57db23bdda15fe1b6c7659d3c5af94e2a2125be12ecbe6a104fd9f76c`
 
 ---
 
-## Entry 018 — Batch 6 Merge
+## Entry 020 — Stage 4 real-state reconstruction
 
-**تاریخ:** ۴ اوت ۲۰۲۶  
-**PR:** #23  
-**Merge:** `6b46f1d6af2df345b2504a8d6bca3e4c8aa2d412`
+**تاریخ/زمان:** ۴ اوت ۲۰۲۶، حدود ۱۷:۱۰ ایران  
+**Base:** `d1f4c465fc3192cb6c919fca6d4940f1ab75d3d5`
 
-- PR پس از Final docs CI، Review صفر و expected head Merge شد.
-- شواهد Batch 6 در Issue #17 ثبت شد.
-- Branch `stage3/closure-evidence` از Merge واقعی ساخته شد.
+Start protocol:
+
+- Master Plan و Progress Log از Integration خوانده شدند.
+- PR #24 بررسی شد: closed/merged.
+- Issue #17 بررسی شد: closed/completed.
+- Repo برای Supabase/Auth/RLS/Env جست‌وجو شد: مورد موجود نبود.
+
+Supabase Organization:
+
+```text
+Emad's Org
+yzymkjsfqoohxbqkhzhs
+```
+
+Supabase projects:
+
+```text
+Emad211's Project
+ref: albwvkdamcmvukhzafep
+region: eu-central-1
+status: INACTIVE
+
+nila-gol
+ref: msiowolgbuffddhcdmqw
+region: eu-central-1
+status: INACTIVE
+```
+
+نتیجه:
+
+- NeoFit Supabase project وجود ندارد.
+- هیچ Project قدیمی reuse نشد.
+- Auth/Table/RLS/Migration برای NeoFit وجود ندارد.
+
+Cost read:
+
+```text
+type: project
+recurrence: monthly
+amount: 0
+```
+
+هیچ `confirm_cost` یا `create_project` اجرا نشد.
+
+Official docs checked:
+
+- Next.js SSR clients/cookies/`getClaims()`
+- RLS روی exposed tables و `auth.uid()`/`with check`
+- generated TypeScript types
+- versioned database migrations
 
 ---
 
-## Entry 019 — Stage 3 Closure candidate
+## Entry 021 — Stage 4 planning records
 
-**Branch:** `stage3/closure-evidence`  
-**PR:** #24  
-**Candidate head:** `9ee1a2411bb0113e40735e79fcd5e8bbb34a3d95`
+**Issue:** #25  
+**Branch:** `stage4/supabase-foundation-plan`  
+**Base:** `d1f4c465fc3192cb6c919fca6d4940f1ab75d3d5`
 
-### Candidate CI
+Records:
 
-Nutrition:
+- Issue #25 created
+- Branch created from Stage 3 closure merge
+- Plan `docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md`
+- Planning PR #26 created as Draft
 
-- Run `30868701581` — success
-- Artifact `8877065210`
-- Digest `sha256:6bcf2cb716adc49e69121f87338fd838ed0e2bd4b7568bd1dc7888c764f9538b`
-- `52/52` Core tests
-- 13 Pure files
+Commits:
+
+- Stage 4 Plan `c2dc8a9f582eb501fc14a947a03ab9da15a6f473`
+- Master initial update `653510cfcd8f4e4867bf5a2e2347daa3ccd5c7f2`
+- Progress initial head `65868b0ebd50e99781c5d0dee49e598352e10b96`
+
+Proposed decision — not accepted yet:
+
+```text
+Organization: Emad's Org (yzymkjsfqoohxbqkhzhs)
+Region: eu-central-1
+Cost: 0 monthly
+Project name: neofit
+```
+
+Planned batches:
+
+- 4A: decision/cost confirmation/project creation
+- 4B: CLI/config + SSR clients
+- 4C: profiles/user_settings + RLS + generated types
+- 4D: nutrition_goals/nutrition_entries persistence
+- Closure: advisors/RLS tests/Core-Web CI/docs
+
+Current resources:
+
+- Supabase Project: none
+- Auth: none
+- Tables: none
+- RLS: none
+- Migrations: none
+
+---
+
+## Entry 022 — Stage 4 planning candidate CI
+
+**PR:** #26 — Draft  
+**Candidate head:** `65868b0ebd50e99781c5d0dee49e598352e10b96`
+
+Nutrition Core:
+
+- Run `30916037781` — success
+- Artifact `8895077703`
+- Digest `sha256:1772d2b6a66f34bbcb2044d1e28be82e2b3780b78636e687104c6d49add556a1`
+- Golden provenance، AST boundary، strict TypeScript و Core tests pass
 
 Web:
 
-- Run `30868701585` — success
-- Artifact `8877082184`
-- Digest `sha256:2e30058850433028e369adc6c36b48006d945d393f0d42176fa905b37226bb9b`
-- `9/9` Adapter tests
-- strict TypeScript، Next build، Visual، PWA runtime/offline و source bundle: pass
+- Run `30916032109` — success
+- Artifact `8895107603`
+- Digest `sha256:fd2b5de8c0f55f5d4d93b5b3c0fd34a6723a49e0ee31470d2c2cb620699d610f`
+- strict TypeScript، Adapter tests، Next build، icons، Visual، PWA runtime/offline و Web+Core source bundle pass
 
-### Stage 3 DoD result
+Review:
 
-| Gate | نتیجه |
-|---|---|
-| Arithmetic/domain | پاس |
-| Persian Search/Ranking | پاس |
-| Catalog Release/Provenance | پاس |
-| Universal Estimate/SQLite | پاس |
-| ID/Fingerprint | پاس |
-| Web Adapter بدون duplicated arithmetic | پاس |
-| Core suite | `52/52` |
-| Web Adapter suite | `9/9` |
-| Web build/Visual/PWA | پاس |
-| Closure candidate CI | پاس |
+- open review threads before docs evidence update: 0
 
-### Final status
+Interpretation:
 
-Stage 3 از نظر Implementation، Tests، Build، Runtime gates و Closure candidate evidence کامل است.
+این CI فقط ثابت می‌کند Planning documents هیچ Regression در Core/Web ایجاد نکرده‌اند. این CI ثابت نمی‌کند Supabase Project/Auth/RLS ساخته شده است.
 
-Boundaries retained:
+Docs evidence commits:
 
-- Full Browser Catalog/IndexedDB هنوز Stage 7 است.
-- Supabase/Auth/RLS/Sync هنوز شروع نشده است.
-- AI/Vision Web flow هنوز شروع نشده است.
-- Vercel Preview واقعی در Issue #16 باز است.
-- Schema/ID هنوز Public Final freeze نیست.
+- Master evidence update `c224910757eae4bcf95017bc3bdd8969b4336e88`
+- Progress evidence update/head `<current commit after this update>`
 
 ### Exact continuation point
 
-1. وضعیت PR #24 و Issue #17 بررسی شود.
-2. اگر PR #24 باز است، CI نهایی Head این دو سند و Reviewها بررسی و PR Merge شود.
-3. اگر PR #24 Merge شده و Issue #17 باز است، Issue با Closure merge/CI بسته شود.
-4. Stage 4 بدون تأیید صریح Organization، Region و Cost شروع نشود.
-5. پس از تأیید، Supabase project جدید در Branch/PR مستقل ایجاد شود.
-6. Issue #16 تا Preview واقعی HTTPS باز بماند.
+1. Stage 4 Plan، Master Plan و این Log خوانده شوند.
+2. PR #26 Final docs head، CI و Review بررسی شود.
+3. PR #26 فقط پس از Green نهایی Ready و Merge شود.
+4. Merge SHA و Planning checkpoint در Issue #25 ثبت شود.
+5. کاربر باید Organization/Region/Cost را صریحاً بپذیرد.
+6. فقط پس از پذیرش `confirm_cost` و `create_project` اجرا شود.
+7. Project ID/ref/region/status در Issue و هر دو سند ثبت شود.
+8. Stage 4B در Branch/PR مستقل و test-first آغاز شود.
+9. Issue #16 باز بماند.
+
+**تا پایان این Entry هیچ Supabase resource ایجاد نشده است.**

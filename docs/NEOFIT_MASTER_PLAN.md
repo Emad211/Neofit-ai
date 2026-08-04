@@ -1,13 +1,17 @@
 # پلن مادر NeoFit
 
 **وضعیت:** مرجع واحد و اجباری پروژه  
-**آخرین بازبینی:** ۴ اوت ۲۰۲۶ — Stage 3 complete  
+**آخرین بازبینی:** ۴ اوت ۲۰۲۶ — Stage 4 Supabase planning checkpoint validated  
 **Integration branch:** `web/pwa-foundation`  
-**Stage 3 implementation merge:** `6b46f1d6af2df345b2504a8d6bca3e4c8aa2d412`  
-**Closure publication:** PR #24 از `stage3/closure-evidence`  
-**Stage 3 Issue:** #17 — فقط پس از رسیدن این سند به Integration بسته/بسته‌شده محسوب شود  
+**Stage 3 closure merge:** `d1f4c465fc3192cb6c919fca6d4940f1ab75d3d5`  
+**Stage 3 Issue:** #17 — closed/completed  
+**Active branch:** `stage4/supabase-foundation-plan`  
+**Active PR:** #26 — Draft تا Final docs CI/Review  
+**Active Issue:** #25 — Supabase Auth/Postgres/RLS foundation  
 **Deferred Vercel Issue:** #16  
-**مرحلهٔ بعدی مجاز:** Stage 4 planning gate؛ اجرا فقط با تأیید Organization/Region/Cost
+**مرحلهٔ فعال:** Stage 4 planning/decision فقط؛ Project creation هنوز مجاز نیست
+
+---
 
 ## ۱. پروتکل اجباری ادامه
 
@@ -16,13 +20,15 @@
 1. این فایل کامل خوانده شود.
 2. `docs/NEOFIT_PROGRESS_LOG.md` کامل خوانده شود.
 3. Branch، HEAD، PR، Issue، CI، Review، Vercel و Supabase از ابزار واقعی بررسی شوند.
-4. فقط Exact continuation point این سند اجرا شود.
+4. فقط Exact continuation point اجرا شود.
 
 در پایان هر نوبت:
 
 - هر دو سند با Commit، Run، Artifact، Failure، Correction، تصمیم و نقطهٔ ادامه همگام شوند.
 - هیچ Build، Deployment، Preview، Parity، Freeze، Migration، Coverage یا Accuracy بدون شواهد اعلام نشود.
-- حافظهٔ مکالمه جای ریپو و CI را نمی‌گیرد.
+- حافظهٔ مکالمه جای ریپو، CI یا Connector state را نمی‌گیرد.
+
+---
 
 ## ۲. معماری و قراردادهای قفل‌شده
 
@@ -37,7 +43,11 @@
 - App-profile ID و IFKB Canonical ID Namespaceهای جدا و متصل با Mapping صریح‌اند.
 - Imported/Custom با Seed overwrite یا downgrade نمی‌شوند.
 - Web Nutrition arithmetic، daily aggregation، goals و Persian normalization را تکرار نمی‌کند.
-- Supabase فقط پس از تأیید صریح Organization/Region/Cost ایجاد می‌شود.
+- Supabase Schema authority فقط migration versioned خواهد بود.
+- RLS روی تمام Tableهای exposed و user-owned پیش از Application use اجباری است.
+- Service Role هیچ‌وقت وارد Browser bundle، Client Component، log یا Artifact نمی‌شود.
+
+---
 
 ## ۳. وضعیت مراحل
 
@@ -57,164 +67,227 @@
 
 تعویق‌شده در Issue #16.
 
-- Vercel Project: `neofit-ai`
-- Project ID: `prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG`
-- Preview واقعی: ندارد
+- Project `neofit-ai`
+- Project ID `prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG`
+- Preview واقعی ندارد.
 - HTTPS PWA validation پیش از Web RC اجباری است.
 
 ### Stage 3 — Nutrition Core Extraction و Parity
 
-**انجام‌شده. تمام شش Batch پیاده‌سازی Merge و Closure candidate در Nutrition/Web CI سبز شده است.**
+**انجام‌شده و بسته‌شده.**
 
-#### Batch 1 — Arithmetic/domain
+| Batch | PR | Merge | Evidence |
+|---|---|---|---|
+| 1 Arithmetic/domain | #18 | `c9599c4905f9fc1d28ba7e9086edf20376991740` | `10/10` |
+| 2 Persian Search/Ranking | #19 | `917f04e319a924dda7dfb16d079453a5e5686541` | `25/25` |
+| 3 Catalog/Provenance | #20 | `02c1bcf0b301a920b12abcff4f653575cb97bf7f` | `34/34` |
+| 4 Universal Estimate/SQLite | #21 | `d6c0df31999595096224ec1011574245d5dc75ad` | `43/43` |
+| 5 ID/Fingerprint | #22 | `d3c0a28ecf2596e94c86ff74e2f00a0523219433` | `52/52`، 13 Pure files |
+| 6 Web Adapter | #23 | `6b46f1d6af2df345b2504a8d6bca3e4c8aa2d412` | Core `52/52`، Web `9/9` |
 
-- PR #18
-- Merge `c9599c4905f9fc1d28ba7e9086edf20376991740`
-- types، nutrition، recipe، diary، goals
-- `10/10` tests
+Batch 6 final:
 
-#### Batch 2 — Controlled Persian Search/Ranking
-
-- PR #19
-- Merge `917f04e319a924dda7dfb16d079453a5e5686541`
-- normalization، modifier parsing، Alias routing و SR/FNDDS ranking
-- `25/25` tests
-- 500-case release فقط Controlled Alias است؛ Natural Query accuracy ادعا نمی‌شود.
-
-#### Batch 3 — Catalog Release/Provenance/Legacy Adapter
-
-- PR #20
-- Merge `02c1bcf0b301a920b12abcff4f653575cb97bf7f`
-- Catalog `1.2.0` projection/invariants
-- Schema/ID `1.1.0` = `candidate-not-final`
-- Evidence resolver و Legacy adapter
-- `34/34` tests
-
-#### Batch 4 — Universal SR/FNDDS Estimate + SQLite Equivalence
-
-- PR #21
-- Merge `d6c0df31999595096224ec1011574245d5dc75ad`
-- FNDDS uncertainty `0.15`
-- SR Legacy uncertainty `0.08`
-- direct test-layer SQLite equivalence
-- `43/43` tests
-- 12 Pure files
-
-#### Batch 5 — Canonical ID/Fingerprint/Release Parity
-
-- PR #22
-- Merge `d3c0a28ecf2596e94c86ff74e2f00a0523219433`
-- mapping precedence: encoded fallback → exact primary → Alias
-- unresolved/ambiguous fail-closed
-- sorted newline fingerprint payload
-- Seeded/Imported/Custom replacement matrix
-- `52/52` tests
-- 13 Pure files
-
-#### Batch 6 — Web Nutrition Adapter
-
-- PR #23
-- Merge `6b46f1d6af2df345b2504a8d6bca3e4c8aa2d412`
-- Web local dependency به `@neofit/nutrition-core`
-- Fixtureها به Source records تبدیل شدند.
-- Initial diary Macroهای precomputed ندارد.
-- `web/lib/nutrition-adapter.ts` تنها Nutrition boundary وب است.
-- React component هیچ جمع، ضرب یا Round مستقل Nutrition ندارد.
-- `9/9` Web Adapter tests
-- `52/52` Core tests
-
-Final Batch 6 evidence:
-
-- Branch/docs head `5b33d137ab3f35a1f89bcb186e410b2533e94c5c`
 - Nutrition CI `30868394519` — success
-- Nutrition Artifact `8876962490`
-- Nutrition digest `sha256:4827344e1441a61dbeab6675bd7684869ab5bee7a6281c92c19a4e1ce48033c3`
+- Artifact `8876962490`
+- Digest `sha256:4827344e1441a61dbeab6675bd7684869ab5bee7a6281c92c19a4e1ce48033c3`
 - Web CI `30868394529` — success
-- Web Artifact `8876973096`
-- Web digest `sha256:c1c326e8463f0fa8177154c0fd012326a8c362b7826bad098948ba85fda960f4`
-- strict TypeScript، Next build، Visual regression، PWA runtime/offline و Web+Core source bundle: pass
-- Review thread باز پیش از Merge: صفر
+- Artifact `8876973096`
+- Digest `sha256:c1c326e8463f0fa8177154c0fd012326a8c362b7826bad098948ba85fda960f4`
 
-## ۴. Closure evidence
+Closure:
 
-Closure candidate head:
+- PR #24
+- Merge `d1f4c465fc3192cb6c919fca6d4940f1ab75d3d5`
+- Issue #17 closed/completed
 
-- `9ee1a2411bb0113e40735e79fcd5e8bbb34a3d95`
+Final Closure document head `43102e4925effb4f8c80dfa05b1588c08dd2f263`:
 
-Closure Nutrition:
+- Nutrition CI `30868884712` — success
+- Artifact `8877128689`
+- Digest `sha256:de56b9d8f7f38b07c18d8424a9da51a7d68617785c4eb8f4a415655204ae689e`
+- Web CI `30868884702` — success
+- Artifact `8877147921`
+- Digest `sha256:f35e03b57db23bdda15fe1b6c7659d3c5af94e2a2125be12ecbe6a104fd9f76c`
 
-- CI `30868701581` — success
-- Artifact `8877065210`
-- Digest `sha256:6bcf2cb716adc49e69121f87338fd838ed0e2bd4b7568bd1dc7888c764f9538b`
-- Core tests `52/52`
-- Pure boundary: 13 files
+### Stage 4 — Supabase Auth/Postgres/RLS Foundation
 
-Closure Web:
+**Planning/Decision checkpoint سبز؛ زیرساخت ساخته نشده است.**
 
-- CI `30868701585` — success
-- Artifact `8877082184`
-- Digest `sha256:2e30058850433028e369adc6c36b48006d945d393f0d42176fa905b37226bb9b`
-- Adapter tests `9/9`
-- strict TypeScript، Next build، Visual، PWA runtime/offline و Web+Core bundle: pass
+Records:
 
-## ۵. Stage 3 Definition of Done
+- Issue #25
+- Branch `stage4/supabase-foundation-plan`
+- PR #26 — Draft
+- Plan `docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md`
 
-| Gate | وضعیت |
-|---|---|
-| Pure arithmetic/domain parity | پاس |
-| Persian Search/Ranking parity | پاس |
-| Catalog Release/Provenance parity | پاس |
-| Universal estimates + SQLite equivalence | پاس |
-| Canonical ID/Fingerprint parity | پاس |
-| Web Adapter بدون duplicated arithmetic | پاس |
-| Core parity suite | `52/52` |
-| Web Adapter suite | `9/9` |
-| Next build/Visual/PWA | پاس |
-| Mandatory closure docs | پاس در Closure candidate |
-| Implementation batches merged | پاس، Batch 1–6 |
+#### Verified Supabase inventory
 
-## ۶. Claim boundaries
+Organization:
 
-Stage 3 ثابت کرده است:
+```text
+Emad's Org
+yzymkjsfqoohxbqkhzhs
+```
 
-- Shared Nutrition Core از Mobile/IFKB authorities استخراج شده است.
-- Web Prototype از Shared Core برای Nutrition استفاده می‌کند.
-- Nutrition از Provider/AI ساخته نمی‌شود.
-- Missing data، uncertainty، IDs و provenance قراردادهای fail-closed دارند.
+Existing projects:
 
-Stage 3 ثابت نکرده است:
+| Name | Ref | Region | Status |
+|---|---|---|---|
+| `Emad211's Project` | `albwvkdamcmvukhzafep` | `eu-central-1` | `INACTIVE` |
+| `nila-gol` | `msiowolgbuffddhcdmqw` | `eu-central-1` | `INACTIVE` |
 
-- Full Catalog 13,225 رکوردی در Browser بارگذاری شده است.
-- IndexedDB/Offline Catalog/Sync آماده است.
-- Supabase/Auth/RLS ساخته شده است.
-- AI/Vision Web flow فعال است.
-- Vercel HTTPS Preview واقعی تأیید شده است.
-- Schema/ID candidate یک Public Final freeze است.
+NeoFit Supabase project:
 
-## ۷. Stage 4–9
+- وجود ندارد
+- Project ID/ref ندارد
+- Table/Auth/RLS/Migration ندارد
 
-- Stage 4: Supabase project، Auth، Postgres، RLS و sync foundation — فقط پس از تأیید Organization/Region/Cost
+Cost read:
+
+```text
+type: project
+recurrence: monthly
+amount: 0
+```
+
+#### Proposed decision — pending explicit acceptance
+
+```text
+Organization: Emad's Org (yzymkjsfqoohxbqkhzhs)
+Region: eu-central-1
+Cost: 0 monthly
+Project name: neofit
+```
+
+Region بر اساس Region فعلی Projectهای حساب و geography اروپایی پیشنهاد شده است؛ latency/residency benchmark claim نیست.
+
+#### Stage 4 architecture gate
+
+- `@supabase/supabase-js` + `@supabase/ssr`
+- Browser/Server client separation
+- cookie-aware Next.js proxy
+- `getClaims()` برای protected identity paths
+- migrations as Schema authority
+- generated database types
+- RLS پیش از Application use
+- ownership با `auth.uid()` و `with check`
+- anon denied برای User data
+- Service Role فقط Server/Operations
+- SQL بدون Nutrition arithmetic
+- Shared Core output با schema version persist می‌شود.
+
+#### Stage 4 proposed batches
+
+- 4A: explicit decision، cost confirmation، Project creation
+- 4B: CLI/config + SSR clients
+- 4C: profiles/user_settings + RLS + generated types
+- 4D: nutrition_goals/nutrition_entries persistence contracts
+- Closure: advisors، RLS tests، Core/Web CI و docs
+
+#### Planning commits
+
+- Stage 4 Plan `c2dc8a9f582eb501fc14a947a03ab9da15a6f473`
+- Master initial update `653510cfcd8f4e4867bf5a2e2347daa3ccd5c7f2`
+- Progress initial head `65868b0ebd50e99781c5d0dee49e598352e10b96`
+
+#### Planning candidate CI
+
+Candidate head:
+
+```text
+65868b0ebd50e99781c5d0dee49e598352e10b96
+```
+
+Nutrition:
+
+- Run `30916037781` — success
+- Artifact `8895077703`
+- Digest `sha256:1772d2b6a66f34bbcb2044d1e28be82e2b3780b78636e687104c6d49add556a1`
+- Core parity/AST/TypeScript pass
+
+Web:
+
+- Run `30916032109` — success
+- Artifact `8895107603`
+- Digest `sha256:fd2b5de8c0f55f5d4d93b5b3c0fd34a6723a49e0ee31470d2c2cb620699d610f`
+- TypeScript، Adapter tests، Next build، Visual و PWA runtime pass
+
+Review thread باز پیش از Final docs update: صفر.
+
+#### Current blocker
+
+کاربر باید سه مقدار را صریحاً بپذیرد:
+
+1. Organization `Emad's Org`
+2. Region `eu-central-1`
+3. Cost `0` monthly
+
+تا قبل از پذیرش:
+
+- `confirm_cost` اجرا نمی‌شود؛
+- Supabase Project ساخته نمی‌شود؛
+- Auth/Schema/RLS implementation آغاز نمی‌شود.
+
+---
+
+## ۴. Claim boundaries
+
+ثابت شده است:
+
+- Stage 3 کامل و بسته است.
+- Supabase Organization/Projects/Cost بررسی شده‌اند.
+- Stage 4 Plan و Security gates ثبت شده‌اند.
+- Planning candidate در Core/Web CI سبز است.
+
+ثابت یا انجام نشده است:
+
+- پذیرش Organization/Region/Cost؛
+- NeoFit Supabase Project؛
+- Auth/SSR clients؛
+- Postgres migrations؛
+- RLS policies/tests؛
+- Full Browser Catalog/IndexedDB؛
+- AI/Vision Web flow؛
+- Vercel HTTPS Preview؛
+- Public Final Schema/ID freeze.
+
+---
+
+## ۵. Stage 5–9
+
 - Stage 5: Nutrition vertical slice
 - Stage 6: AvalAI/Vision
-- Stage 7: Offline Catalog/Sync
+- Stage 7: Full Browser Catalog، IndexedDB و Offline Sync
 - Stage 8: Migration/Recovery
-- Stage 9: Web RC، Vercel HTTPS و بستن Issue #16
+- Stage 9: Web RC، Vercel HTTPS و Issue #16
 
-## ۸. Anti-goalها
+---
 
-- شروع Supabase بدون تأیید هزینه/Region/Organization
-- معرفی Schema/ID candidate به‌عنوان Final
-- Nutrition arithmetic داخل UI/React
+## ۶. Anti-goalها
+
+- Project creation بدون explicit acceptance
+- reuse کردن Project unrelated
+- Dashboard-only Schema edits
+- permissive RLS
+- Service Role در Browser
+- Server authorization فقط با `getSession()`
+- Nutrition arithmetic در SQL/React
 - Provider-created Nutrition
-- واردکردن persistence/network/SQLite به Pure Core
-- ادعای Full Browser Catalog از Fixture adapter
-- ادعای Vercel Preview پیش از Deployment واقعی
+- ORM/monorepo tooling بدون نیاز اثبات‌شده
+- Full Catalog/IndexedDB در Stage 4
+- Vercel claim بدون Deployment واقعی
 
-## ۹. Exact continuation point
+---
 
-1. وضعیت PR #24 و Issue #17 از GitHub واقعی بررسی شود.
-2. اگر PR #24 هنوز باز است، CI نهایی Head این سند و Reviewها بررسی و PR با expected head Merge شود.
-3. اگر Issue #17 هنوز باز است و Closure PR Merge شده، با Merge SHA و Closure CI بسته شود.
-4. Stage 4 شروع نشود تا کاربر Organization، Region و Cost را صریحاً تأیید کند.
-5. پس از تأیید، Stage 4 در Branch/PR مستقل و با Supabase project جدید آغاز شود.
-6. Issue #16 تا Vercel Preview واقعی روی HTTPS باز بماند.
+## ۷. Exact continuation point
+
+1. Stage 4 Plan، این فایل و Progress Log خوانده شوند.
+2. PR #26 Head/CI/Review و Issue #25 بررسی شوند.
+3. Final Nutrition/Web CI روی Head این اسناد پاس شود.
+4. PR #26 از Draft به Ready و با expected head Merge شود.
+5. Merge SHA و Planning evidence در Issue #25 ثبت شود.
+6. کاربر Organization/Region/Cost را صریحاً بپذیرد.
+7. فقط پس از پذیرش `Supabase.confirm_cost` اجرا شود.
+8. Project `neofit` ایجاد و ID/ref/region/status ثبت شود.
+9. Stage 4B در Branch/PR مستقل و test-first آغاز شود.
+10. Issue #16 تا Preview واقعی HTTPS باز بماند.
