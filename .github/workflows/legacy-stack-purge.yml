@@ -6,6 +6,11 @@ on:
       - revival/firebase-ui-front
     paths:
       - '.github/workflows/legacy-stack-purge.yml'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/legacy-stack-purge.yml'
   workflow_dispatch:
 
 permissions:
@@ -37,20 +42,11 @@ jobs:
           node <<'NODE'
           const fs = require('node:fs');
           const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-          for (const name of [
-            '@genkit-ai/googleai',
-            '@genkit-ai/next',
-            'firebase',
-            'firebase-admin',
-            'genkit',
-          ]) delete packageJson.dependencies?.[name];
+          for (const name of ['@genkit-ai/googleai', '@genkit-ai/next', 'firebase', 'firebase-admin', 'genkit']) delete packageJson.dependencies?.[name];
           delete packageJson.devDependencies?.['genkit-cli'];
           packageJson.name = 'neofit-web';
           packageJson.engines = { node: '22.x' };
-          packageJson.scripts = {
-            ...packageJson.scripts,
-            typecheck: 'tsc --noEmit',
-          };
+          packageJson.scripts = { ...packageJson.scripts, typecheck: 'tsc --noEmit' };
           fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2) + '\n');
           NODE
 
@@ -83,7 +79,8 @@ jobs:
           text = text[:start] + "    env:\n      NEXT_TELEMETRY_DISABLED: '1'\n" + text[end:]
           text = text.replace("          ! grep -q 'from \"firebase/' src/context/user-profile-context.tsx\n", "")
           text = text.replace("          ! grep -q '@/ai/flows/calculate-activity-calories' src/components/dashboard/log-entry-sheet.tsx\n", "")
-          text = text.replace("      - name: Build historical UI migration candidate\n        run: npm run build\n", "      - name: TypeScript\n        run: npm run typecheck\n\n      - name: Build historical UI migration candidate\n        run: npm run build\n")
+          if '      - name: TypeScript\n' not in text:
+              text = text.replace("      - name: Build historical UI migration candidate\n        run: npm run build\n", "      - name: TypeScript\n        run: npm run typecheck\n\n      - name: Build historical UI migration candidate\n        run: npm run build\n")
           path.write_text(text)
           PY
 
@@ -100,7 +97,7 @@ jobs:
             echo 'Legacy references remain.' >&2
             exit 1
           fi
-          git ls-files --deleted --modified --others --exclude-standard
+          git status --short
 
       - name: Commit cleaned tree
         shell: bash
