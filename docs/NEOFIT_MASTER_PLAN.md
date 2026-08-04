@@ -1,15 +1,13 @@
 # پلن مادر NeoFit
 
 **وضعیت:** مرجع واحد و اجباری پروژه  
-**آخرین بازبینی:** ۴ اوت ۲۰۲۶ — Stage 3 closure candidate  
+**آخرین بازبینی:** ۴ اوت ۲۰۲۶ — Stage 3 complete  
 **Integration branch:** `web/pwa-foundation`  
-**Active branch:** `stage3/closure-evidence`  
-**Active PR:** Closure PR هنوز باز نشده  
-**Stage 3 Issue:** #17 — فقط منتظر Closure docs/CI  
-**Deferred Vercel Issue:** #16  
 **Stage 3 implementation merge:** `6b46f1d6af2df345b2504a8d6bca3e4c8aa2d412`  
-**مرحلهٔ فعال:** Stage 3 closure evidence  
-**Gate فعلی:** Closure docs PR، Nutrition/Web CI، Merge و سپس بستن Issue #17
+**Closure publication:** PR #24 از `stage3/closure-evidence`  
+**Stage 3 Issue:** #17 — فقط پس از رسیدن این سند به Integration بسته/بسته‌شده محسوب شود  
+**Deferred Vercel Issue:** #16  
+**مرحلهٔ بعدی مجاز:** Stage 4 planning gate؛ اجرا فقط با تأیید Organization/Region/Cost
 
 ## ۱. پروتکل اجباری ادامه
 
@@ -39,7 +37,7 @@
 - App-profile ID و IFKB Canonical ID Namespaceهای جدا و متصل با Mapping صریح‌اند.
 - Imported/Custom با Seed overwrite یا downgrade نمی‌شوند.
 - Web Nutrition arithmetic، daily aggregation، goals و Persian normalization را تکرار نمی‌کند.
-- Supabase فقط پس از بسته‌شدن Stage 3 و تأیید صریح Organization/Region/Cost ایجاد می‌شود.
+- Supabase فقط پس از تأیید صریح Organization/Region/Cost ایجاد می‌شود.
 
 ## ۳. وضعیت مراحل
 
@@ -66,7 +64,7 @@
 
 ### Stage 3 — Nutrition Core Extraction و Parity
 
-**تمام Batchهای پیاده‌سازی ۱ تا ۶ Merge شده‌اند؛ Closure docs/CI باقی است.**
+**انجام‌شده. تمام شش Batch پیاده‌سازی Merge و Closure candidate در Nutrition/Web CI سبز شده است.**
 
 #### Batch 1 — Arithmetic/domain
 
@@ -125,7 +123,7 @@
 - `9/9` Web Adapter tests
 - `52/52` Core tests
 
-Final pre-merge Batch 6 evidence:
+Final Batch 6 evidence:
 
 - Branch/docs head `5b33d137ab3f35a1f89bcb186e410b2533e94c5c`
 - Nutrition CI `30868394519` — success
@@ -137,7 +135,29 @@ Final pre-merge Batch 6 evidence:
 - strict TypeScript، Next build، Visual regression، PWA runtime/offline و Web+Core source bundle: pass
 - Review thread باز پیش از Merge: صفر
 
-## ۴. Stage 3 Definition of Done
+## ۴. Closure evidence
+
+Closure candidate head:
+
+- `9ee1a2411bb0113e40735e79fcd5e8bbb34a3d95`
+
+Closure Nutrition:
+
+- CI `30868701581` — success
+- Artifact `8877065210`
+- Digest `sha256:6bcf2cb716adc49e69121f87338fd838ed0e2bd4b7568bd1dc7888c764f9538b`
+- Core tests `52/52`
+- Pure boundary: 13 files
+
+Closure Web:
+
+- CI `30868701585` — success
+- Artifact `8877082184`
+- Digest `sha256:2e30058850433028e369adc6c36b48006d945d393f0d42176fa905b37226bb9b`
+- Adapter tests `9/9`
+- strict TypeScript، Next build، Visual، PWA runtime/offline و Web+Core bundle: pass
+
+## ۵. Stage 3 Definition of Done
 
 | Gate | وضعیت |
 |---|---|
@@ -147,14 +167,13 @@ Final pre-merge Batch 6 evidence:
 | Universal estimates + SQLite equivalence | پاس |
 | Canonical ID/Fingerprint parity | پاس |
 | Web Adapter بدون duplicated arithmetic | پاس |
-| Nutrition Core CI | پاس |
-| Web build/visual/PWA CI | پاس |
-| Mandatory docs closure روی Integration | در حال اجرا |
-| Issue #17 close | منتظر Closure docs merge |
+| Core parity suite | `52/52` |
+| Web Adapter suite | `9/9` |
+| Next build/Visual/PWA | پاس |
+| Mandatory closure docs | پاس در Closure candidate |
+| Implementation batches merged | پاس، Batch 1–6 |
 
-Stage 3 فقط پس از Merge همین Closure docs و CI سبز، `complete` اعلام می‌شود.
-
-## ۵. Claim boundaries
+## ۶. Claim boundaries
 
 Stage 3 ثابت کرده است:
 
@@ -172,7 +191,7 @@ Stage 3 ثابت نکرده است:
 - Vercel HTTPS Preview واقعی تأیید شده است.
 - Schema/ID candidate یک Public Final freeze است.
 
-## ۶. Stage 4–9
+## ۷. Stage 4–9
 
 - Stage 4: Supabase project، Auth، Postgres، RLS و sync foundation — فقط پس از تأیید Organization/Region/Cost
 - Stage 5: Nutrition vertical slice
@@ -181,7 +200,7 @@ Stage 3 ثابت نکرده است:
 - Stage 8: Migration/Recovery
 - Stage 9: Web RC، Vercel HTTPS و بستن Issue #16
 
-## ۷. Anti-goalها
+## ۸. Anti-goalها
 
 - شروع Supabase بدون تأیید هزینه/Region/Organization
 - معرفی Schema/ID candidate به‌عنوان Final
@@ -191,14 +210,11 @@ Stage 3 ثابت نکرده است:
 - ادعای Full Browser Catalog از Fixture adapter
 - ادعای Vercel Preview پیش از Deployment واقعی
 
-## ۸. Exact continuation point
+## ۹. Exact continuation point
 
-1. Closure PR از `stage3/closure-evidence` به `web/pwa-foundation` باز شود.
-2. Nutrition Core CI و Web CI روی Closure candidate پاس شوند.
-3. هر دو سند با Run/Artifactهای Closure به وضعیت نهایی `Stage 3 complete` به‌روزرسانی شوند.
-4. CI نهایی روی Head نهایی اسناد پاس شود.
-5. Review threadها بررسی و رفع شوند.
-6. Closure PR با expected head Merge شود.
-7. Issue #17 با Merge SHA و Closure CI بسته شود.
-8. Stage 4 شروع نشود تا کاربر Organization، Region و Cost را صریحاً تأیید کند.
-9. Issue #16 تا Vercel Preview واقعی باز بماند.
+1. وضعیت PR #24 و Issue #17 از GitHub واقعی بررسی شود.
+2. اگر PR #24 هنوز باز است، CI نهایی Head این سند و Reviewها بررسی و PR با expected head Merge شود.
+3. اگر Issue #17 هنوز باز است و Closure PR Merge شده، با Merge SHA و Closure CI بسته شود.
+4. Stage 4 شروع نشود تا کاربر Organization، Region و Cost را صریحاً تأیید کند.
+5. پس از تأیید، Stage 4 در Branch/PR مستقل و با Supabase project جدید آغاز شود.
+6. Issue #16 تا Vercel Preview واقعی روی HTTPS باز بماند.
