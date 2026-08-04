@@ -63,7 +63,7 @@ Cost: 0 monthly
 - `docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md` created.
 - Planning PR #26 merged: `094fc099f624b0349d6ed3bd1485bad6f11fdf14`.
 - Handoff PR #27 merged: `e79df1b20b1769f4c2b4b2084510664d76bd0d72`.
-- Planning established Browser/Server separation، `getClaims()`، versioned migrations، RLS fail-closed، generated types و Shared Core authority.
+- Planning established Browser/Server separation، `getClaims()`، versioned migrations، RLS fail-closed، generated types and Shared Core authority.
 
 At the end of Entry 024:
 
@@ -118,9 +118,9 @@ api url: https://rjwrobltmjodfarnltal.supabase.co
 Connector checks:
 
 - modern publishable key enabled؛ value not committed or documented.
-- legacy anon key also exists for compatibility؛ value not committed.
+- legacy anon key exists for compatibility؛ value not committed.
 - Service Role was not requested or exposed.
-- `public` schema baseline: zero application tables.
+- `public` schema baseline: zero Application tables.
 
 ### Evidence file
 
@@ -128,16 +128,22 @@ Connector checks:
 
 ### Direct-integration process correction
 
-The intended action was to create a focused Stage 4A evidence branch. The first Evidence write occurred directly on `web/pwa-foundation` before that branch existed:
+The intended action was to create a focused Stage 4A evidence branch. Tool routing caused direct Integration writes instead:
 
-- Commit `3f23d1e569d22de4d2cc93eb399be68e416e56e8` created placeholder evidence.
-- Commit `4345d9509c525873ffc20073690af78d89d5905a` immediately replaced it with verified evidence.
-- An accidental `docs/.tmp` file was created in `f48698a723386d01bd7387c3390b8e732d39519b` and removed in `f824b83c98bfb90bafd39c90abf9cbacfc76f7b3`.
-- Commit `364948a57bace2e93c424bdbf7c6a4a98a0a7656` recorded both corrections in the Evidence file.
+```text
+3f23d1e569d22de4d2cc93eb399be68e416e56e8  placeholder evidence created
+4345d9509c525873ffc20073690af78d89d5905a  placeholder replaced by verified evidence
+f48698a723386d01bd7387c3390b8e732d39519b  accidental docs/.tmp created
+f824b83c98bfb90bafd39c90abf9cbacfc76f7b3  docs/.tmp removed
+364948a57bace2e93c424bdbf7c6a4a98a0a7656  initial correction record
+b310925e5183c3fb01711a1c7f23870366e3e4b1  accidental root file x created
+53352a5e70200a73565e15b71f88fb2fc58fe766  root file x removed
+944acc79a60f91421ede46a9bbcee5ca910355f7  complete correction record
+```
 
 Impact boundary:
 
-- no application code changed؛
+- no Application code changed؛
 - no database schema or Auth config changed؛
 - no key entered Git؛
 - no migration ran؛
@@ -145,13 +151,17 @@ Impact boundary:
 
 Correction decision:
 
-- keep the transparent history instead of rewriting it؛
-- update all mandatory docs immediately؛
+- preserve transparent history instead of rewriting it؛
+- synchronize all mandatory docs immediately؛
 - enforce normal Branch/PR workflow again from Stage 4B.
 
-### Master Plan update
+### Mandatory document updates
 
-- Commit `bf6432da85443390ade497c05bc3449ac014cd22` marks Stage 4A complete and moves continuation to Stage 4B.
+- Master Plan: `bf6432da85443390ade497c05bc3449ac014cd22`.
+- Stage 4 Plan: `e438fbd7a21232eecec0e5e8650182c6cc6e094f`.
+- README: `bf3c0e4f61bd34b3e26f84602836660037744342`.
+- Development Handoff: `6e8d087c76d17c11e83bea8acf616e3ecfd5a4b2`.
+- Issue #25 body synchronized with Project evidence.
 
 ### Claim boundaries
 
@@ -176,18 +186,17 @@ Not proven:
 
 ## Stage 2B parallel state
 
-Vercel Stage 2B remains independent in Issue #16 / Draft PR #28. Supabase project creation does not close or merge that work.
+Vercel Stage 2B remains independent in Issue #16 / Draft PR #28. Supabase Project creation does not close or merge that work.
 
 ---
 
 ## Exact continuation point
 
-1. Synchronize Stage 4 Plan، README و Development Handoff with Project evidence.
-2. Verify Core/Web CI on the updated Integration HEAD.
-3. Update Issue #25 with Project ref، region، status، URL and baseline table state.
-4. Create `stage4b/supabase-ssr-foundation` from the updated Integration HEAD.
-5. Open a focused Draft PR.
-6. Write tests/contracts first for environment validation، Browser/Server separation، cookie proxy and secret boundary.
-7. Add Supabase dependencies/config/clients without user tables.
-8. Run Core/Web CI، inspect reviews and update mandatory docs.
-9. Start Stage 4C only after Stage 4B review/merge.
+1. Verify Core/Web CI on the final Integration HEAD containing Stage 4A evidence/docs.
+2. Create `stage4b/supabase-ssr-foundation` from that verified HEAD.
+3. Open a focused Draft PR.
+4. Write tests/contracts before implementation.
+5. Add env/config/Browser/Server/Proxy foundation without user tables.
+6. Run Core/Web CI، inspect review threads and secret boundaries.
+7. Update mandatory docs at every checkpoint.
+8. Start Stage 4C only after Stage 4B review/merge.
