@@ -71,6 +71,9 @@ export type WorkoutLog = {
   loggedAt: string;
   durationMinutes: number;
   totalVolume: number;
+  rpe?: number;
+  painScale?: number;
+  notes?: string;
   exercises: Array<{
     id: string;
     name: string;
@@ -110,7 +113,7 @@ interface UserDataContextType {
   logActivity: (log: Omit<ActivityLog, "logType" | "loggedAt" | "id">) => Promise<void>;
   logWeight: (log: Omit<WeightLog, "logType" | "loggedAt" | "id">) => Promise<void>;
   updateLog: (id: string, type: CombinedLog["logType"], data: Partial<CombinedLog>) => Promise<void>;
-  deleteLog: (id: string, type: CombinedLog["logType"]) => Promise<void>;
+  deleteLog: (id: string, type: CombinedLog["logType"],) => Promise<void>;
   resetUserData: () => Promise<void>;
   reauthenticateUser: (_password: string) => Promise<void>;
   updateUserAccount: (data: { displayName?: string }) => Promise<void>;
@@ -162,114 +165,115 @@ function todayAt(hour: number, minute: number) {
 }
 
 const defaultLogs: CombinedLog[] = [
-  {
-    id: "demo-breakfast",
-    logType: "meal",
-    loggedAt: todayAt(8, 30),
-    mealType: "breakfast",
-    description: "دو عدد تخم‌مرغ آب‌پز",
-    calories: 156,
-  },
-  {
-    id: "demo-lunch",
-    logType: "meal",
-    loggedAt: todayAt(13, 45),
-    mealType: "lunch",
-    description: "قورمه‌سبزی با چلو",
-    calories: 710,
-  },
+  { id: "meal-breakfast", logType: "meal", loggedAt: todayAt(8, 15), mealType: "breakfast", description: "تخم‌مرغ آب‌پز، نان سنگک و خیار", calories: 420 },
+  { id: "activity-walk", logType: "activity", loggedAt: todayAt(10, 30), activityType: "پیاده‌روی تند", durationMinutes: 25, intensity: "medium", caloriesBurned: 150 },
+  { id: "weight-today", logType: "weight", loggedAt: todayAt(7, 45), weight: 95 },
 ];
 
-const initialState: PersistedState = {
-  profile: defaultProfile,
-  nutritionPlan: demoNutritionPlan,
-  workoutPlan: demoWorkoutPlan,
-  shoppingListState: {},
-  checkedIngredientsState: {},
-  loggedMealsState: ["today-breakfast", "today-lunch"],
-  logs: defaultLogs,
-};
+function createDefaultState(): PersistedState {
+  return {
+    profile: defaultProfile,
+    nutritionPlan: demoNutritionPlan,
+    workoutPlan: demoWorkoutPlan,
+    shoppingListState: {},
+    checkedIngredientsState: {},
+    loggedMealsState: ["today-breakfast"],
+    logs: defaultLogs,
+  };
+}
+
+function readState(): PersistedState {
+  if (typeof window === "undefined") return createDefaultState();
+  const raw = window.localStorage.getItem(STORAGE_KEY);
+  if (!raw) return createDefaultState();
+  try {
+    return { ...createDefaultState(), ...JSON.parse(raw) };
+  } catch {
+    return createDefaultState();
+  }
+}
 
 const UserDataContext = React.createContext<UserDataContextType | undefined>(undefined);
 
-function makeId(prefix: string) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
 export function UserDataProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = React.useState<DemoUser>(demoUser);
-  const [state, setState] = React.useState<PersistedState>(initialState);
+  const [state, setState] = React.useState<PersistedState>(() => createDefaultState());
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
-      if (saved) setState({ ...initialState, ...JSON.parse(saved) });
-    } catch (error) {
-      console.warn("NeoFit demo state could not be restored", error);
-    } finally {
-      setIsLoading(false);
-    }
+    setState(readState());
+    setIsLoading(false);
   }, []);
 
-  React.useEffect(() => {
-    if (!isLoading) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [state, isLoading]);
-
-  const addLog = React.useCallback((log: CombinedLog) => {
-    setState((current) => ({ ...current, logs: [log, ...current.logs] }));
+  const persist = React.useCallback((next: PersistedState) => {
+    setState(next);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   }, []);
+
+  const saveUserProfile = React.useCallback(async (profile: UserProfile) => persist({ ...state, profile }), [persist, state]);
+  const savePlans = React.useCallback(async (plans: { nutritionPlan: NutritionPlan; workoutPlan: WorkoutPlan }) => persist({ ...state, ...plans }), [persist, state]);
+  const updateShoppingListState = React.useCallback(async (shoppingListState: ShoppingListState) => persist({ ...state, shoppingListState }), [persist, state]);
+  const updateCheckedIngredientsState = React.useCallback(async (mealId: string, ingredientName: string, checked: boolean) => {
+    persist({ ...state, checkedIngredientsState: { ...state.checkedIngredientsState, [mealId]: { ...(state.checkedIngredientsState[mealId] || {}), [ingredientName]: checked } } });
+  }, [persist, state]);
+  const updateLoggedMealsState = React.useCallback(async (loggedMealsState: string[]) => persist({ ...state, loggedMealsState }), [persist, state]);
+
+  const appendLog = React.useCallback(async (log: CombinedLog) => persist({ ...state, logs: [log, ...state.logs] }), [persist, state]);
+  const saveWorkoutLog = React.useCallback(async (log: Omit<WorkoutLog, "logType" | "loggedAt" | "id">) => appendLog({ ...log, id: `workout-${Date.now()}`, logType: "workout", loggedAt: new Date().toISOString() }), [appendLog]);
+  const logMeal = React.useCallback(async (log: Omit<MealLog, "logType" | "loggedAt" | "id">) => appendLog({ ...log, id: `meal-${Date.now()}`, logType: "meal", loggedAt: new Date().toISOString() }), [appendLog]);
+  const logActivity = React.useCallback(async (log: Omit<ActivityLog, "logType" | "loggedAt" | "id">) => appendLog({ ...log, id: `activity-${Date.now()}`, logType: "activity", loggedAt: new Date().toISOString() }), [appendLog]);
+  const logWeight = React.useCallback(async (log: Omit<WeightLog, "logType" | "loggedAt" | "id">) => {
+    const nextProfile = { ...state.profile, weight: log.weight };
+    persist({ ...state, profile: nextProfile, logs: [{ ...log, id: `weight-${Date.now()}`, logType: "weight", loggedAt: new Date().toISOString() }, ...state.logs] });
+  }, [persist, state]);
+
+  const updateLog = React.useCallback(async (id: string, _type: CombinedLog["logType"], data: Partial<CombinedLog>) => {
+    persist({ ...state, logs: state.logs.map((log) => log.id === id ? ({ ...log, ...data } as CombinedLog) : log) });
+  }, [persist, state]);
+  const deleteLog = React.useCallback(async (id: string, _type: CombinedLog["logType"]) => persist({ ...state, logs: state.logs.filter((log) => log.id !== id) }), [persist, state]);
+  const resetUserData = React.useCallback(async () => {
+    const next = createDefaultState();
+    persist(next);
+  }, [persist]);
+  const reauthenticateUser = React.useCallback(async (_password: string) => Promise.resolve(), []);
+  const updateUserAccount = React.useCallback(async (data: { displayName?: string }) => {
+    if (data.displayName) persist({ ...state, profile: { ...state.profile, name: data.displayName } });
+  }, [persist, state]);
+  const updateUserEmail = React.useCallback(async (_email: string) => Promise.resolve(), []);
+  const updateUserPassword = React.useCallback(async (_password: string) => Promise.resolve(), []);
 
   const value = React.useMemo<UserDataContextType>(() => ({
-    user,
+    user: demoUser,
     userProfile: state.profile,
     nutritionPlan: state.nutritionPlan,
     workoutPlan: state.workoutPlan,
     shoppingListState: state.shoppingListState,
     checkedIngredientsState: state.checkedIngredientsState,
     loggedMealsState: state.loggedMealsState,
+    saveUserProfile,
+    savePlans,
+    updateShoppingListState,
+    updateCheckedIngredientsState,
+    updateLoggedMealsState,
+    saveWorkoutLog,
+    logMeal,
+    logActivity,
+    logWeight,
+    updateLog,
+    deleteLog,
+    resetUserData,
+    reauthenticateUser,
+    updateUserAccount,
+    updateUserEmail,
+    updateUserPassword,
     combinedLogs: state.logs,
     isLoading,
-    saveUserProfile: async (profile) => setState((current) => ({ ...current, profile })),
-    savePlans: async ({ nutritionPlan, workoutPlan }) => setState((current) => ({ ...current, nutritionPlan, workoutPlan })),
-    updateShoppingListState: async (shoppingListState) => setState((current) => ({ ...current, shoppingListState })),
-    updateCheckedIngredientsState: async (mealId, ingredientName, checked) => setState((current) => ({
-      ...current,
-      checkedIngredientsState: {
-        ...current.checkedIngredientsState,
-        [mealId]: { ...current.checkedIngredientsState[mealId], [ingredientName]: checked },
-      },
-    })),
-    updateLoggedMealsState: async (loggedMealsState) => setState((current) => ({ ...current, loggedMealsState })),
-    logMeal: async (log) => addLog({ ...log, id: makeId("meal"), logType: "meal", loggedAt: new Date().toISOString() }),
-    logActivity: async (log) => addLog({ ...log, id: makeId("activity"), logType: "activity", loggedAt: new Date().toISOString() }),
-    logWeight: async (log) => addLog({ ...log, id: makeId("weight"), logType: "weight", loggedAt: new Date().toISOString() }),
-    saveWorkoutLog: async (log) => addLog({ ...log, id: makeId("workout"), logType: "workout", loggedAt: new Date().toISOString() }),
-    updateLog: async (id, type, data) => setState((current) => ({
-      ...current,
-      logs: current.logs.map((log) => log.id === id && log.logType === type ? ({ ...log, ...data } as CombinedLog) : log),
-    })),
-    deleteLog: async (id, type) => setState((current) => ({ ...current, logs: current.logs.filter((log) => !(log.id === id && log.logType === type)) })),
-    resetUserData: async () => {
-      window.localStorage.removeItem(STORAGE_KEY);
-      setState(initialState);
-      setUser(demoUser);
-    },
-    reauthenticateUser: async () => undefined,
-    updateUserAccount: async ({ displayName }) => {
-      if (!displayName) return;
-      setUser((current) => ({ ...current, displayName }));
-      setState((current) => ({ ...current, profile: { ...current.profile, name: displayName } }));
-    },
-    updateUserEmail: async (email) => setUser((current) => ({ ...current, email })),
-    updateUserPassword: async () => undefined,
-  }), [addLog, isLoading, state, user]);
+  }), [state, isLoading, saveUserProfile, savePlans, updateShoppingListState, updateCheckedIngredientsState, updateLoggedMealsState, saveWorkoutLog, logMeal, logActivity, logWeight, updateLog, deleteLog, resetUserData, reauthenticateUser, updateUserAccount, updateUserEmail, updateUserPassword]);
 
   return <UserDataContext.Provider value={value}>{children}</UserDataContext.Provider>;
 }
 
 export function useUserData() {
   const context = React.useContext(UserDataContext);
-  if (!context) throw new Error("useUserData must be used inside UserDataProvider");
+  if (!context) throw new Error("useUserData must be used within a UserDataProvider");
   return context;
 }
