@@ -4,6 +4,7 @@
 **Branch:** `web/full-frontend-integration`  
 **Draft PR:** #36  
 **Validated code head:** `f5f5a6f60c15d09793f9ea416f1fe721b6d9e740`  
+**Final documentation head before this evidence update:** `0f88dcf87ebc8d0f1a1143dd9c0b4c18fae20f73`  
 **Supabase project:** `rjwrobltmjodfarnltal`
 
 ## Scope
@@ -84,9 +85,11 @@ web/tests/supabase-app-integration.test.ts
 - Publishable configuration is optional for Preview builds and fails closed when invalid.
 - No key value is committed or written to this document.
 
-## Validation
+## Validated code-head CI
 
 ```text
+code head: f5f5a6f60c15d09793f9ea416f1fe721b6d9e740
+
 Supabase Identity Schema CI 31032483010 — success
 Supabase Nutrition Persistence CI 31032481404 — success
 Supabase Foundation CI 31032481373 — success
@@ -95,6 +98,22 @@ Web CI 31032481411 — success
 
 Web Artifact 8941255661
 Digest sha256:f0e57c1b940f6b17a67e5562814ddd2ff3f70f13a59a51d11e3efdc25a808172
+```
+
+## Final documentation-head CI
+
+```text
+head: 0f88dcf87ebc8d0f1a1143dd9c0b4c18fae20f73
+
+Web CI 31033160546 — success
+Artifact 8941513789
+Digest sha256:a83ac83af1105fa25590cfa61bf93050e41dd401920abd847562b7a55cba0092
+
+Nutrition Core CI 31033158969 — success
+Supabase Identity Schema CI 31033159086 — success
+Supabase Nutrition Persistence CI 31033159397 — success
+Supabase Foundation CI 31033159707 — success
+Vercel Build Contract 31033159050 — success
 ```
 
 Web CI proved:
@@ -133,7 +152,7 @@ Proven now:
 - Auth/SSR/Callback/Sign-out implementation compiles and is contract-tested;
 - account reads and writes target the four merged RLS tables;
 - guest mode remains usable when Supabase Environment is absent;
-- all architecture, schema and browser regression gates pass.
+- all architecture, schema and browser regression gates pass on the synchronized documentation head.
 
 Not yet proven on the current Auth head:
 
@@ -150,7 +169,7 @@ Reason: the latest Vercel Git deployments are currently blocked by the Free-plan
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 2. Configure Supabase allowed Site URL/Redirect URLs for the chosen Vercel domains.
-3. Deploy exact head `f5f5a6f60c15d09793f9ea416f1fe721b6d9e740` after the Vercel quota resets.
+3. Deploy the exact latest PR #36 head after the Vercel quota resets.
 4. Run one temporary real-account browser test:
    - sign up/confirm or sign in;
    - verify `profiles`, `user_settings`, `nutrition_goals` bootstrap;
