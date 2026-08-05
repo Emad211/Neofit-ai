@@ -72,7 +72,7 @@ export function MealCard({ meal, isLogged, isToday, onUpdateMeal, onLogMeal }: M
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(event) => event.stopPropagation()} aria-label={`گزینه‌های ${meal.name}`}><MoreVertical className="h-4 w-4" /></Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" dir="rtl" onClick={(event) => event.stopPropagation()}>
+              <DropdownMenuContent align="start" className="text-right" onClick={(event) => event.stopPropagation()}>
                 <DropdownMenuItem onClick={() => setIsDetailsOpen(true)}><Eye className="ml-2 h-4 w-4" />مشاهده جزئیات</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setIsReplaceOpen(true)}><Replace className="ml-2 h-4 w-4" />جایگزینی وعده</DropdownMenuItem>
               </DropdownMenuContent>
