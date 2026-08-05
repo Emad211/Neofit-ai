@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - revival/firebase-ui-front
+      - 'revival/**'
     paths:
       - 'src/**'
       - '.github/workflows/ui-revival-visual.yml'
@@ -24,11 +24,9 @@ jobs:
       NEXT_TELEMETRY_DISABLED: '1'
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22.13.1
           cache: npm
@@ -46,15 +44,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm run start -- -H 127.0.0.1 -p 3000 > /tmp/neofit-revival.log 2>&1 &
-          echo $! > /tmp/neofit-revival.pid
+          npm run start -- -H 127.0.0.1 -p 3000 > /tmp/neofit-visual.log 2>&1 &
+          echo $! > /tmp/neofit-visual.pid
           for attempt in $(seq 1 60); do
             if curl --fail --silent http://127.0.0.1:3000/today > /dev/null; then
               exit 0
             fi
             sleep 1
           done
-          cat /tmp/neofit-revival.log
+          cat /tmp/neofit-visual.log
           exit 1
 
       - name: Capture mobile and desktop routes
@@ -68,10 +66,9 @@ jobs:
           done
           printf '{"commit":"%s","routes":["today","nutrition","workout","progress","profile"],"viewports":["iPhone 13","1440x1000"]}\n' "$GITHUB_SHA" > artifacts/ui-revival/report.json
 
-      - name: Upload visual evidence
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: neofit-ui-revival-visual
+          name: neofit-ui-visual
           path: artifacts/ui-revival
           if-no-files-found: error
           retention-days: 30
@@ -80,6 +77,6 @@ jobs:
         if: always()
         shell: bash
         run: |
-          if test -f /tmp/neofit-revival.pid; then
-            kill "$(cat /tmp/neofit-revival.pid)" 2>/dev/null || true
+          if test -f /tmp/neofit-visual.pid; then
+            kill "$(cat /tmp/neofit-visual.pid)" 2>/dev/null || true
           fi
