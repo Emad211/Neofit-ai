@@ -87,6 +87,20 @@ try {
   const planResult = await inspectLayout(page, 'weekly-plan', 390);
   if (planResult.pathname !== '/nutrition/plan') throw new Error(`Expected /nutrition/plan, got ${planResult.pathname}`);
 
+  await page.getByRole('link', { name: 'تمرین', exact: true }).click();
+  await page.getByRole('heading', { name: 'تمرین‌های این هفته' }).waitFor();
+  await page.screenshot({ path: path.join(outputDir, 'workout-390.png') });
+  const workoutResult = await inspectLayout(page, 'workout', 390);
+  if (workoutResult.pathname !== '/workout') throw new Error(`Expected /workout, got ${workoutResult.pathname}`);
+
+  await page.getByRole('link', { name: /فشار بالاتنه/ }).first().click();
+  await page.getByRole('heading', { name: 'فشار بالاتنه' }).waitFor();
+  await page.screenshot({ path: path.join(outputDir, 'workout-push-details-390.png'), fullPage: true });
+  const workoutDetailsResult = await inspectLayout(page, 'workout-details', 390);
+  if (workoutDetailsResult.pathname !== '/workout/push-a') {
+    throw new Error(`Expected /workout/push-a, got ${workoutDetailsResult.pathname}`);
+  }
+
   await page.getByRole('link', { name: 'پروفایل', exact: true }).click();
   await page.getByRole('heading', { name: 'پروفایل' }).waitFor();
   await page.waitForFunction(() => window.scrollY === 0);
