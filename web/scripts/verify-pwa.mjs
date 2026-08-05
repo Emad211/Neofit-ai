@@ -78,6 +78,13 @@ try {
   await page.evaluate(async () => {
     await fetch('/api/pwa-cache-probe').catch(() => undefined);
   });
+
+  // Prime the two first integrated routes before simulating a disconnected revisit.
+  await page.goto(`${baseUrl}/nutrition`, { waitUntil: 'networkidle' });
+  await page.getByRole('heading', { name: 'چه چیزی خوردی؟' }).waitFor();
+  await page.goto(`${baseUrl}/today`, { waitUntil: 'networkidle' });
+  await page.getByRole('heading', { name: 'خلاصهٔ امروز' }).waitFor();
+
   const cacheSnapshot = await page.evaluate(async () => {
     const result = [];
     for (const cacheName of await caches.keys()) {
@@ -99,9 +106,9 @@ try {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.getByRole('heading', { name: 'سلام عماد، روزت چطوره؟' }).waitFor({ state: 'visible' });
 
-  await page.getByRole('button', { name: 'تغذیه' }).click();
+  await page.getByRole('link', { name: 'تغذیه', exact: true }).click();
   await page.getByRole('heading', { name: 'چه چیزی خوردی؟' }).waitFor({ state: 'visible' });
-  await page.getByRole('button', { name: 'امروز' }).click();
+  await page.getByRole('link', { name: 'امروز', exact: true }).click();
   await page.getByRole('heading', { name: 'خلاصهٔ امروز' }).waitFor({ state: 'visible' });
 
   const offlineState = await page.evaluate(() => ({
@@ -109,12 +116,14 @@ try {
     controlled: Boolean(navigator.serviceWorker.controller),
     lang: document.documentElement.lang,
     dir: document.documentElement.dir,
+    pathname: window.location.pathname,
     styleSheetCount: document.styleSheets.length,
     scriptCount: document.scripts.length,
   }));
   assert(offlineState.online === false, 'Browser did not enter offline mode.');
   assert(offlineState.controlled, 'Offline page lost service-worker control.');
   assert(offlineState.lang === 'fa' && offlineState.dir === 'rtl', 'Offline shell lost Persian RTL metadata.');
+  assert(offlineState.pathname === '/today', `Unexpected offline pathname: ${offlineState.pathname}`);
   assert(offlineState.styleSheetCount > 0, 'Offline shell loaded without stylesheets.');
   assert(offlineState.scriptCount > 0, 'Offline shell loaded without scripts.');
   await page.screenshot({ path: path.join(outputDir, 'fresh-install-offline-shell-390.png'), fullPage: false });
