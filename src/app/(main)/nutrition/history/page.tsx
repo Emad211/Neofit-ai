@@ -40,6 +40,13 @@ const mealTypeLabels: Record<MealLog["mealType"], string> = {
   snack: "میان‌وعده",
 };
 
+const dayFormatter = new Intl.DateTimeFormat("fa-IR", {
+  weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+
 export default function NutritionHistoryPage() {
   const { combinedLogs, nutritionPlan } = useUserData();
   const [initialPlan, setInitialPlan] = React.useState<InitialPlanPreview | null>(null);
@@ -92,7 +99,7 @@ export default function NutritionHistoryPage() {
                 <Card key={group.key}>
                   <CardHeader className="pb-3">
                     <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div><p className="text-xs text-muted-foreground">{new Intl.DateTimeFormat("fa-IR", { weekday: "long", dateStyle: "medium" }).format(group.date)}</p><CardTitle className="mt-1 text-xl">{group.calories.toLocaleString("fa-IR")} کالری ثبت‌شده</CardTitle></div>
+                      <div><p className="text-xs text-muted-foreground">{dayFormatter.format(group.date)}</p><CardTitle className="mt-1 text-xl">{group.calories.toLocaleString("fa-IR")} کالری ثبت‌شده</CardTitle></div>
                       <div className={variance > 0 ? "rounded-full bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-300" : "rounded-full bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300"}>{calorieTarget ? variance === 0 ? "مطابق هدف" : variance > 0 ? `${variance.toLocaleString("fa-IR")} بیشتر از هدف` : `${Math.abs(variance).toLocaleString("fa-IR")} کمتر از هدف` : "هدف ثبت نشده"}</div>
                     </div>
                   </CardHeader>
