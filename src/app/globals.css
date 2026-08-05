@@ -88,8 +88,8 @@
   }
 
   :focus-visible {
-    outline: 3px solid hsl(var(--ring));
-    outline-offset: 3px;
+    outline: 3px solid hsl(var(--ring)) !important;
+    outline-offset: 3px !important;
   }
 }
 
