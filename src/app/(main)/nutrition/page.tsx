@@ -27,7 +27,7 @@ function NutritionToolCard({ icon, title, description, children }: { icon: React
           </span>
         </button>
       </DialogTrigger>
-      <DialogContent dir="rtl" className="sm:max-w-[625px]">
+      <DialogContent dir="rtl" className="max-h-[90vh] overflow-y-auto sm:max-w-[625px]">
         <DialogHeader className="text-right"><DialogTitle className="flex items-center gap-2">{icon}{title}</DialogTitle></DialogHeader>
         {children}
       </DialogContent>
