@@ -8,7 +8,7 @@ const testDirectory = dirname(fileURLToPath(import.meta.url));
 const webRoot = resolve(testDirectory, '..');
 const repositoryRoot = resolve(webRoot, '..');
 const migrationsRoot = resolve(repositoryRoot, 'supabase/migrations');
-const migrationName = '20260805131500_nutrition_persistence.sql';
+const migrationName = '20260805132201_nutrition_persistence.sql';
 
 async function readMigration(): Promise<string> {
   return readFile(resolve(migrationsRoot, migrationName), 'utf8');
