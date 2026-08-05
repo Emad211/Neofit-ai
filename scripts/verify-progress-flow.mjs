@@ -97,6 +97,22 @@ try {
   report.checks.periodReports = { weeklyReportVisible, monthlyReportVisible, weeklyMinutesVisible, reportVolumeVisible, passed: reportsPassed };
   if (!reportsPassed) report.passed = false;
 
+  const photoPrivacyVisible = await page.getByText(/خصوصی و موقت/).isVisible().catch(() => false);
+  const photoEmptyVisible = await page.getByText("هنوز عکس پیشرفتی انتخاب نشده است", { exact: true }).isVisible().catch(() => false);
+  await page.getByLabel("انتخاب عکس پیشرفت").setInputFiles({
+    name: "progress-test.svg",
+    mimeType: "image/svg+xml",
+    buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="160"><rect width="120" height="160" fill="#ddd"/><circle cx="60" cy="60" r="30" fill="#888"/></svg>'),
+  });
+  await page.waitForTimeout(300);
+  const photoPreviewVisible = await page.getByRole("img", { name: "عکس پیشرفت progress-test.svg" }).isVisible().catch(() => false);
+  const photoNameVisible = await page.getByText("progress-test.svg", { exact: true }).isVisible().catch(() => false);
+  await page.getByRole("button", { name: "حذف عکس پیشرفت progress-test.svg" }).click();
+  const photoRemovedVisible = await page.getByText("هنوز عکس پیشرفتی انتخاب نشده است", { exact: true }).isVisible().catch(() => false);
+  const photosPassed = photoPrivacyVisible && photoEmptyVisible && photoPreviewVisible && photoNameVisible && photoRemovedVisible;
+  report.checks.progressPhotos = { photoPrivacyVisible, photoEmptyVisible, photoPreviewVisible, photoNameVisible, photoRemovedVisible, passed: photosPassed };
+  if (!photosPassed) report.passed = false;
+
   const firstWorkoutMilestone = await page.getByText("اولین تمرین", { exact: true }).isVisible().catch(() => false);
   const firstRecordMilestone = await page.getByText("اولین رکورد شخصی", { exact: true }).isVisible().catch(() => false);
   const nutritionMilestone = await page.getByText("ثبت منظم تغذیه", { exact: true }).isVisible().catch(() => false);
