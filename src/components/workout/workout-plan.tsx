@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { Button } from "../ui/button";
-import { PlayCircle, Flame, Clock, Coffee } from "lucide-react";
+import { ArrowLeft, PlayCircle, Flame, Clock, Coffee } from "lucide-react";
 import { Badge } from "../ui/badge";
 import Link from "next/link";
 import { Skeleton } from "../ui/skeleton";
@@ -42,9 +42,10 @@ export function WorkoutPlan() {
         const duration = workout.duration || "۶۰ دقیقه";
         const calories = workout.calories || "۳۵۰ کیلوکالری";
         const exercises = Array.isArray(workout.exercises) ? workout.exercises : [];
+        const id = workout.id || `workout-${index}`;
 
         return (
-          <div key={workout.id || index} className="h-full">
+          <div key={id} className="h-full">
             <Card className="flex h-full flex-col overflow-hidden">
               <CardHeader className="bg-gradient-to-br from-primary/10 to-transparent">
                 <div className="flex items-start justify-between gap-3">
@@ -75,13 +76,14 @@ export function WorkoutPlan() {
                   </ul>
                 )}
               </CardContent>
-              {!isRestDay && (
-                <div className="mt-auto p-6 pt-0">
-                  <Button className="w-full" asChild>
-                    <Link href={`/workout-player/${workout.id || `workout-${index}`}`}><PlayCircle className="ml-2 h-5 w-5" />شروع تمرین</Link>
-                  </Button>
-                </div>
-              )}
+              <div className="mt-auto grid gap-2 p-6 pt-0 sm:grid-cols-2">
+                <Button variant="outline" asChild className={isRestDay ? "sm:col-span-2" : ""}>
+                  <Link href={`/workout/${id}`}>جزئیات جلسه<ArrowLeft className="mr-2 h-4 w-4" /></Link>
+                </Button>
+                {!isRestDay ? (
+                  <Button asChild><Link href={`/workout-player/${id}`}><PlayCircle className="ml-2 h-5 w-5" />شروع تمرین</Link></Button>
+                ) : null}
+              </div>
             </Card>
           </div>
         );
