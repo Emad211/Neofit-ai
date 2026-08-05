@@ -56,7 +56,7 @@ export function SpeedDial() {
             ))}
           </div>
 
-          <Button size="icon" className="relative h-15 w-15 rounded-full shadow-xl" onClick={() => setIsOpen((open) => !open)} aria-expanded={isOpen} aria-label={isOpen ? "بستن افزودن سریع" : "بازکردن افزودن سریع"}>
+          <Button size="icon" className="relative h-[60px] w-[60px] rounded-full shadow-xl" onClick={() => setIsOpen((open) => !open)} aria-expanded={isOpen} aria-label={isOpen ? "بستن افزودن سریع" : "بازکردن افزودن سریع"}>
             <Plus className={cn("absolute h-7 w-7 transition-all", isOpen ? "rotate-90 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100")} />
             <X className={cn("absolute h-7 w-7 transition-all", isOpen ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-0 opacity-0")} />
           </Button>
