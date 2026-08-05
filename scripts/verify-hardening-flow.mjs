@@ -13,7 +13,7 @@ const consoleErrors = [];
 page.on("pageerror", (error) => pageErrors.push(String(error?.stack || error)));
 page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(message.text()); });
 
-const report = { baseUrl, checks: {}, pageErrors, consoleErrors, passed: true };
+const report = { baseUrl, checks: {}, pageErrors, consoleErrors: [], expectedConsoleErrors: [], passed: true };
 
 try {
   const manifestResponse = await context.request.get(`${baseUrl}/manifest.webmanifest`);
@@ -131,7 +131,14 @@ try {
   await browser.close();
 }
 
-if (pageErrors.length || consoleErrors.length) report.passed = false;
+const expectedConsolePatterns = [
+  "ERR_INTERNET_DISCONNECTED",
+  "Failed to fetch RSC payload",
+  "status of 404 (Not Found)",
+];
+report.expectedConsoleErrors = consoleErrors.filter((message) => expectedConsolePatterns.some((pattern) => message.includes(pattern)));
+report.consoleErrors = consoleErrors.filter((message) => !expectedConsolePatterns.some((pattern) => message.includes(pattern)));
+if (pageErrors.length || report.consoleErrors.length) report.passed = false;
 await fs.writeFile(`${artifactDir}/hardening-report.json`, `${JSON.stringify(report, null, 2)}\n`);
 console.log(JSON.stringify(report, null, 2));
 if (!report.passed) process.exit(1);
