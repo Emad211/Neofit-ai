@@ -1,30 +1,33 @@
 "use client";
 
 import { useState, type ElementType } from "react";
-import { Apple, Droplets, Dumbbell, Plus, Weight, X } from "lucide-react";
+import { Apple, Droplets, Dumbbell, Plus, Ruler, Weight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useDailyMetrics } from "@/hooks/use-daily-metrics";
 import { LogEntrySheet, type LogType } from "./log-entry-sheet";
+import { MeasurementSheet } from "./measurement-sheet";
 
 type Action = {
   icon: ElementType;
   label: string;
   logType?: Exclude<LogType, null>;
-  kind?: "water";
+  kind?: "water" | "measurement";
 };
 
 const actions: Action[] = [
   { icon: Apple, label: "ثبت غذا", logType: "meal" },
   { icon: Dumbbell, label: "ثبت فعالیت", logType: "activity" },
   { icon: Weight, label: "ثبت وزن", logType: "weight" },
+  { icon: Ruler, label: "ثبت اندازه‌ها", kind: "measurement" },
   { icon: Droplets, label: "یک لیوان آب", kind: "water" },
 ];
 
 export function SpeedDial() {
   const [isOpen, setIsOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [measurementOpen, setMeasurementOpen] = useState(false);
   const [activeLogType, setActiveLogType] = useState<Exclude<LogType, null> | null>(null);
   const { addWater } = useDailyMetrics();
   const { toast } = useToast();
@@ -33,6 +36,11 @@ export function SpeedDial() {
     if (action.kind === "water") {
       addWater(250);
       toast({ title: "آب ثبت شد", description: "۲۵۰ میلی‌لیتر به مصرف امروز اضافه شد." });
+      setIsOpen(false);
+      return;
+    }
+    if (action.kind === "measurement") {
+      setMeasurementOpen(true);
       setIsOpen(false);
       return;
     }
@@ -64,6 +72,7 @@ export function SpeedDial() {
       </div>
 
       <LogEntrySheet open={sheetOpen} onOpenChange={setSheetOpen} logType={activeLogType} onClose={() => setActiveLogType(null)} />
+      <MeasurementSheet open={measurementOpen} onOpenChange={setMeasurementOpen} />
     </>
   );
 }
