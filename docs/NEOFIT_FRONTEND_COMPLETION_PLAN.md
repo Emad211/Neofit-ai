@@ -2,12 +2,12 @@
 
 **Status:** Active implementation contract  
 **Primary branch:** `revival/full-ui-front`  
-**Current phase:** Phase 4 — Nutrition completion  
-**Strategy:** complete the end-to-end frontend with simple backend-neutral local adapters first; connect Supabase, Nutrition Core and external APIs only after the frontend contract is complete.
+**Current phase:** Phase 5 — Progress and reports  
+**Strategy:** finish the end-to-end frontend with simple backend-neutral local adapters first; connect Supabase, Nutrition Core and external APIs only after the frontend contract is complete.
 
 ## 1. Definition of frontend complete
 
-A user must be able to enter, finish onboarding, receive and follow a visible plan, execute a workout, inspect and log nutrition, record body data, review progress, manage settings and use the NeoFit assistant without dead actions, untranslated primary flows, missing system states or broken routes.
+A user must be able to enter, finish Onboarding, receive and follow a visible plan, execute a workout, inspect and log nutrition, record body data, review progress, manage settings and use the NeoFit assistant without dead actions, untranslated primary flows, missing system states or broken routes.
 
 Every primary route must support Persian RTL, mobile/tablet/desktop layouts, dark mode, accessible labels and appropriate loading, empty, error, offline and success states.
 
@@ -20,20 +20,20 @@ Every primary route must support Persian RTL, mobile/tablet/desktop layouts, dar
 - Phase 2 App Shell, Today, Notification Center, Quick Add and offline/system states are complete.
 - Fixed-width mobile, tablet and desktop gates prove correct navigation, Sidebar collapse and no horizontal overflow.
 - Phase 3 Workout is complete: weekly plan, Day Details, persistent Player, guides, alternatives, completion feedback, History, previous performance, personal records and route states.
-- Phase 4 Nutrition now has a Persian daily/weekly landing page, daily calorie status, initial macro targets, localized meal cards, ingredient/recipe details, equivalent meal replacement, persistent meal logging, shopping-list access and route loading/error states.
-- The focused Nutrition gate proves landing hierarchy, details, recipe, replacement, logging, refresh persistence and shopping-list access without page or console errors.
-- Nutrition History, manual portion-aware food logging, recent/saved food polish and supplement summary remain before Phase 4 closure.
-- Progress, settings, coach and final PWA/accessibility hardening remain incomplete.
+- Phase 4 Nutrition is complete at frontend level: daily/weekly plan, calorie and target-macro summary, details/recipe, alternatives, persistent logging, History, portion-aware trusted-food logging, recent/saved foods, Shopping List, hydration, safe supplement empty state and route states.
+- The final Nutrition gate proves planned-meal logging, refresh persistence, daily History, target variance, Shopping List, trusted portion scaling, saved/recent food behavior and water persistence.
+- Actual meal macro totals remain intentionally unavailable until Nutrition Core supplies trusted sourced values.
+- Progress, Profile/Settings, Coach and final PWA/accessibility hardening remain incomplete.
 
-Remaining estimate before backend integration: **18–34 development hours**, or **30–54 hours including full responsive/accessibility/browser QA**.
+Remaining estimate before backend integration: **14–28 development hours**, or **24–45 hours including full responsive/accessibility/browser QA**.
 
 ## 3. Delivery order
 
 1. ~~Complete Onboarding end-to-end.~~ **Completed**
 2. ~~Complete App Shell and Today.~~ **Completed**
 3. ~~Complete Workout and Workout Player.~~ **Completed**
-4. **Complete Nutrition — active**
-5. Build Progress and reports.
+4. ~~Complete Nutrition.~~ **Completed**
+5. **Build Progress and reports — active**
 6. Complete Profile, Settings and Notifications.
 7. Complete NeoFit Coach/Chat UI.
 8. Complete system states, offline/PWA and accessibility.
@@ -106,45 +106,42 @@ Remaining estimate before backend integration: **18–34 development hours**, or
 - Loading, empty and recoverable error states
 - End-to-end browser evidence
 
-Long-term load/volume charts are intentionally deferred to Progress rather than duplicated in Workout.
+Long-term load/volume charts are assigned to Progress rather than duplicated in Workout.
 
-### 4.6 Nutrition — active
+### 4.6 Nutrition — implemented
 
-Implemented:
-
-- Persian daily/weekly landing hierarchy
+- Persian daily/weekly hierarchy
 - Daily calorie target, logged calories, remaining calories and meal adherence
-- Initial protein, carbohydrate and fat targets from the completed Onboarding plan
-- Clear weekly cards with Persian dates, Today marker and daily adherence
+- Initial protein, carbohydrate and fat targets from Onboarding
+- Weekly cards with Persian dates, Today marker and adherence
 - Ingredient quantities and recipe/preparation sheet
 - Equivalent local meal alternatives
 - Persistent planned-meal logging
-- Persian Meal Cards with Details, Alternative and Log actions
-- Removed the dead Remove-from-plan action
-- Existing local Food Library and Camera preview retained
-- Shopping list access
+- Nutrition History grouped by day with target variance and individual meals
+- Trusted Food Library lookup with 0.5/1/1.5/2 portion scaling
+- Meal-type selection and direct History logging
+- Saved and recent trusted foods
+- Shopping List
+- Hydration summary using the shared daily-metrics store
+- Safe supplement empty state without invented recommendations
+- Camera preview retained for later API integration
 - Loading, empty and recoverable error states
-- Focused browser evidence for details, replacement, logging, refresh persistence and shopping list
+- Focused end-to-end browser evidence
 
-Remaining:
+Actual meal macro totals must come from Nutrition Core; the frontend does not invent nutrition values for unknown foods.
 
-- Nutrition History and actual-vs-plan daily grouping
-- Simple manual/library logging with portion selection
-- Saved/recent food presentation
-- Water and supplement summary
-- Final Nutrition browser coverage and responsive review
+### 4.7 Progress — active
 
-Actual food macro totals must come from Nutrition Core later; the frontend must not invent protein, carbohydrate or fat values for meals that lack a trusted source.
+Target contract:
 
-### 4.7 Progress
-
-- Weight, target delta, adherence and workout count
-- Weight/body-measurement charts and entry flow
-- Training volume, PRs, load progression and muscle coverage
-- Calories/protein/adherence analytics
-- Progress photos
+- Current weight, target delta, adherence and workout count
+- Weight and body-measurement trends using existing local records
+- Training duration, volume, PRs and exercise progression
+- Calories and meal-adherence analytics from existing MealLog records
+- Progress photos with private local preview
 - Milestones, streaks and achievements
-- Weekly/monthly reports
+- Weekly/monthly summary cards
+- Progress-specific loading, empty and recoverable error states
 
 ### 4.8 NeoFit Coach
 
@@ -227,19 +224,22 @@ Remaining globally:
 
 - [x] Daily/weekly hierarchy and initial macro summary
 - [x] Details, alternatives and recipes
-- [x] Planned-meal logging and shopping-list access
+- [x] Planned-meal logging and Shopping List
+- [x] Daily History and actual-vs-target grouping
+- [x] Portion-aware trusted-food logging
+- [x] Saved and recent foods
+- [x] Hydration and safe supplement state
 - [x] Nutrition loading/error/empty states
-- [x] First focused browser flow
-- [ ] Nutrition History and actual-vs-plan grouping
-- [ ] Portion-aware manual/library logging and saved/recent foods
-- [ ] Water/supplement summary and final Nutrition gate
+- [x] End-to-end browser evidence
 
 ### Phase 5 — Progress and reports
 
-- [ ] Weight and measurement charts
+- [ ] Overview metrics from existing local data
+- [ ] Weight and body-measurement trends
 - [ ] Training volume, PR and exercise progression
 - [ ] Nutrition analytics
 - [ ] Photos, milestones and reports
+- [ ] Progress states and browser gate
 
 ### Phase 6 — Profile, Notifications and Coach
 
@@ -256,10 +256,10 @@ Remaining globally:
 
 ## 6. Exact continuation point
 
-1. Add `/nutrition/history` by grouping the existing `MealLog` records by day; do not create another store.
-2. Show daily logged calories, planned target, variance and individual meals.
-3. Link the Nutrition landing page to History.
-4. Reuse the current Food Library for a minimal portion-aware manual logging path rather than building a new library architecture.
-5. Add recent/saved food presentation only if the existing local data contract can support it directly.
-6. Keep actual meal macros explicitly unavailable until Nutrition Core supplies trusted values.
-7. Extend the focused Nutrition gate and then decide whether Phase 4 can close.
+1. Read the current Progress placeholder and existing chart components before changing them.
+2. Reuse only existing data sources: `WeightLog`, `WorkoutLog`, `MealLog`, `neofit:measurement-logs:v1` and `neofit:workout-records:v1`.
+3. Build the first Progress slice as overview metrics plus weight, waist and training-volume trends.
+4. Do not introduce a Progress store; derive the view from existing records.
+5. Add one focused browser gate that seeds existing records and verifies the rendered summaries.
+6. Add Progress loading/error/empty states before moving to photos and milestone polish.
+7. Keep completed Onboarding, Shell, Workout and Nutrition contracts unchanged except for verified defects.
