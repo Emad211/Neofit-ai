@@ -75,11 +75,11 @@ try {
   const completionVisible = await page.getByRole("heading", { name: "تمرین کامل شد!" }).isVisible().catch(() => false);
   const rpeSlider = page.locator("#rpe");
   await rpeSlider.focus();
-  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowLeft");
   const painSlider = page.locator("#pain");
   await painSlider.focus();
-  await page.keyboard.press("ArrowRight");
-  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowLeft");
+  await page.keyboard.press("ArrowLeft");
   const visibleSliderValues = {
     rpe: await rpeSlider.inputValue(),
     pain: await painSlider.inputValue(),
