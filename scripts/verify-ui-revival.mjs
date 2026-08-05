@@ -45,6 +45,22 @@ try {
 
     const response = await page.goto(`${baseUrl}/${route}`, { waitUntil: "domcontentloaded", timeout: 30_000 });
     await page.waitForTimeout(route === "onboarding/analysis" ? 4_000 : 1_200);
+
+    let interaction = {};
+    let interactionPassed = true;
+    if (route === "onboarding/injuries") {
+      const parts = page.locator(".injury-body-part");
+      const bodyPartCount = await parts.count();
+      if (bodyPartCount > 0) {
+        await parts.first().click();
+        await page.waitForTimeout(200);
+      }
+      const firstPressed = bodyPartCount > 0 ? await parts.first().getAttribute("aria-pressed") : null;
+      const selectedTextVisible = await page.getByText("1 ناحیه", { exact: true }).isVisible().catch(() => false);
+      interaction = { bodyPartCount, firstPressed, selectedTextVisible };
+      interactionPassed = bodyPartCount >= 40 && firstPressed === "true" && selectedTextVisible;
+    }
+
     const state = await page.evaluate(() => ({
       lang: document.documentElement.lang,
       dir: document.documentElement.dir,
@@ -55,8 +71,8 @@ try {
     await page.screenshot({ path: `${artifactDir}/${route.replaceAll("/", "-")}.png`, fullPage: true });
 
     const status = response?.status() ?? 0;
-    const passed = status >= 200 && status < 400 && state.lang === "fa" && state.dir === "rtl" && !state.hasErrorOverlay && pageErrors.length === 0 && consoleErrors.length === 0 && state.bodyLength > 40;
-    report.routes.push({ route, status, ...state, pageErrors, consoleErrors, passed });
+    const passed = status >= 200 && status < 400 && state.lang === "fa" && state.dir === "rtl" && !state.hasErrorOverlay && pageErrors.length === 0 && consoleErrors.length === 0 && state.bodyLength > 40 && interactionPassed;
+    report.routes.push({ route, status, ...state, interaction, pageErrors, consoleErrors, passed });
     if (!passed) report.passed = false;
     await page.close();
   }
