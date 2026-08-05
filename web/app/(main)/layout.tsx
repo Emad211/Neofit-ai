@@ -3,8 +3,6 @@ import { AppShell } from '@/components/app-shell';
 import { NutritionStateProvider } from '@/components/nutrition-state';
 import { loadAccountSnapshot } from '@/lib/supabase/account';
 
-export const dynamic = 'force-dynamic';
-
 export default async function MainLayout({ children }: { children: ReactNode }) {
   const snapshot = await loadAccountSnapshot();
 
