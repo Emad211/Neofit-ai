@@ -105,6 +105,8 @@ jobs:
           test -s src/app/'(main)'/today/error.tsx
           test -s src/app/'(main)'/notifications/page.tsx
           test -s src/app/'(main)'/nutrition/page.tsx
+          test -s src/app/'(main)'/nutrition/loading.tsx
+          test -s src/app/'(main)'/nutrition/error.tsx
           test -s src/app/'(main)'/workout/page.tsx
           test -s src/app/'(main)'/workout/loading.tsx
           test -s src/app/'(main)'/workout/error.tsx
@@ -143,6 +145,9 @@ jobs:
 
       - name: Workout day-details, resume and completion gate
         run: node scripts/verify-workout-flow.mjs
+
+      - name: Nutrition plan, details and logging gate
+        run: node scripts/verify-nutrition-flow.mjs
 
       - name: Upload browser evidence
         if: always()
