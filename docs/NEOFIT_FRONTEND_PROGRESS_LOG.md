@@ -16,10 +16,10 @@ public RawGitHack export: 30969428940 — success
 
 ---
 
-## 2026-08-05 — Phase 1 Onboarding completed end-to-end
+## 2026-08-05 — Phase 1 Onboarding completed
 
 - Implemented all 15 steps from Welcome through plan activation.
-- Restored the historical full front/back SVG injury selector.
+- Restored the complete historical front/back SVG injury selector.
 - Preserved 73 independently clickable body regions.
 - Added current/past injury, severity, pain, forbidden movement and notes.
 - Added Lifestyle, Nutrition profile, Training history, Availability, Preferences, Review, Analysis, Result and Confirmation.
@@ -46,7 +46,6 @@ Console errors: 0
 - Rebuilt Today around readiness, adherence, workout, meal, water, steps, sleep, weight and timeline.
 - Added Quick Add for meal, activity, weight, water and body measurements.
 - Added Today loading, empty, error and offline behavior.
-- Corrected the Sidebar trigger’s accessible role/name.
 - Proved tablet `820×1180` and desktop `1440×1000` layouts, Sidebar collapse and no horizontal overflow.
 
 ---
@@ -55,13 +54,13 @@ Console errors: 0
 
 ### Implemented
 
-- Persian weekly overview with summary metrics and active-session banner.
-- Dedicated `/workout/[id]` Day Details with warm-up, targets, rest, safety and previous performance.
+- Persian weekly overview and dedicated `/workout/[id]` Day Details.
+- Warm-up, exercise targets, rest, safety and previous performance.
 - Persistent Workout Player under `neofit:active-workout:<id>`.
 - Exact refresh resume for exercise, set, load/reps and start time.
 - Preserve-or-discard exit behavior.
-- Rest Timer, movement guide and local alternative selection.
-- Explicit Completion save with duration, volume, sets, RPE, pain and notes.
+- Rest Timer, movement guide and local alternatives.
+- Explicit Completion with duration, volume, sets, RPE, pain and notes.
 - Personal records for max weight and exercise volume.
 - `/workout/history` with totals, recent PRs, per-session badges and repeat action.
 - Workout loading, empty and recoverable error states.
@@ -86,34 +85,18 @@ Console errors: 0
 
 ## 2026-08-05 — Phase 4 Nutrition completed
 
-### Landing and weekly plan
+### Implemented
 
-- Replaced remaining English Nutrition copy with a Persian RTL daily/weekly hierarchy.
-- Added daily calorie target, logged calories, remaining calories and meal adherence.
-- Read target protein/carbohydrate/fat from `neofit:initial-plan:v1`.
-- Kept target macros separate from actual meal macros; actual macros are not invented.
-- Added Persian weekly cards, dates, Today marker, adherence ratio and daily totals.
-
-### Meal details and planned logging
-
-- Fully localized Meal Cards.
-- Kept Details, Alternative and Log as explicit actions.
-- Removed the dead Remove-from-plan action.
-- Preserved ingredients, quantities and preparation/recipe content.
-- Preserved local equivalent-meal replacement.
-- Persisted planned-meal completion through the existing User Data context.
-- Preserved Camera preview and Shopping List.
-
-### Nutrition History and trusted logging
-
-- Added `/nutrition/history` using existing `MealLog` records only.
-- Grouped logs by day and added target variance and individual meals.
-- Reused the existing local Food Library.
-- Added 0.5, 1, 1.5 and 2 portion selection and meal-type selection.
-- Scaled only trusted catalogue values and refused invented values for unknown foods.
-- Added recent and saved trusted foods.
-- Reused shared hydration state and added a safe no-active-supplement state.
-- Made tool dialogs scrollable on mobile after browser QA found an inaccessible action.
+- Persian daily/weekly hierarchy with calorie target, logged/remaining calories and meal adherence.
+- Onboarding target macros without inventing actual food macros.
+- Localized Meal Cards, ingredient/recipe details and equivalent alternatives.
+- Persistent planned-meal logging.
+- `/nutrition/history` grouped by day with target variance.
+- Trusted Food Library portion scaling and meal-type logging.
+- Recent and saved foods.
+- Shopping List, hydration controls and safe no-supplement state.
+- Mobile-scrollable tool dialogs.
+- Nutrition loading, empty and recoverable error states.
 
 ```text
 validated head: bd8c5a3cf3f176f8a9223afe24e6f3002044fe43
@@ -132,63 +115,73 @@ Console errors: 0
 
 ---
 
-## 2026-08-05 — Phase 5 Progress analytics foundation proven
+## 2026-08-05 — Phase 5 Progress completed
 
-### Overview and core trends
+### Overview and trends
 
 - Replaced the empty Progress placeholder with a Persian RTL dashboard.
 - Added current weight, weight change and target delta.
-- Added latest waist and valid-measurement count.
+- Added latest waist and measurement count.
 - Added current-week Workout sessions and total volume.
-- Added personal-record and achievement summary.
 - Added weight and waist Line Charts.
-- Added recent Workout-volume Bar Chart.
+- Added recent Workout-volume and daily-calorie Bar Charts.
+- Added average logged calories and target comparison.
+- Added personal-record and achievement summary.
+
+### Exercise progression
+
+- Grouped existing `WorkoutLog.exercises` entries by exercise ID.
+- Derived valid set reps, weight, per-session max weight and volume.
+- Added exercise selector.
+- Added session count, best weight, latest session volume and change from first session.
+- Added max-weight progression chart.
+- No analytics service or additional persistence layer was created.
+
+### Reports and achievements
+
+- Added 7-day and 30-day summaries.
+- Each report derives Workout count, minutes, volume, MealLog count, average calories and weight change.
+- Added six earned/locked milestones from existing records.
+- Reports are calculated on render and are not stored as duplicated records.
+
+### Private progress photos
+
+- Added local image preview with image-type and 5 MB validation.
+- Keeps a maximum of four previews.
+- Uses temporary Object URLs only.
+- Does not upload images and does not store image bytes or Base64 in Local Storage.
+- Explicitly removes Object URLs on deletion and unmount.
+- Photos disappear on refresh by design until a real private-storage contract exists.
+
+### System states and responsive evidence
+
 - Added Progress loading, meaningful empty-chart states and recoverable error state.
+- The focused mobile gate verifies seeded existing persistence formats.
+- The shared responsive gate verifies Progress on tablet and desktop.
+- No horizontal overflow was found at `820×1180` or `1440×1000`.
 
-### Nutrition analytics and milestones
-
-- Added daily logged-calorie analytics directly from existing `MealLog` records.
-- Added optional target comparison from `neofit:initial-plan:v1`.
-- Added average calories across logged days.
-- Added six simple milestones derived from existing records:
-  - first Workout;
-  - five Workout sessions;
-  - first personal record;
-  - two-kilogram weight change;
-  - seven meal logs;
-  - two body-measurement records.
-- No Progress store, analytics service or additional data layer was introduced.
-
-### Browser evidence
-
-The focused Progress gate seeds the existing persistence formats and verifies:
-
-- current weight `93 kg` from two WeightLogs;
-- target delta `7 kg` from the Onboarding draft;
-- latest waist `92 cm` from existing measurement logs;
-- two current-week Workout sessions and volume;
-- personal-record data;
-- weight, waist, Workout-volume and calorie charts;
-- earned and locked milestone cards;
-- zero page errors and zero console errors.
+### Final validation evidence
 
 ```text
-validated head: 7394e134ce9e6fbc4269adefd4c6fca3b5fa98ed
-UI Revival CI: 30983403800 — success
-artifact: 8921133784
-artifact digest: sha256:2a268752ff9fe9f888eb14ac5754389e8df7113c61b72dc66245edb1e50449b0
+validated head: 1323578d6ac6f35080b669825eebc813faa6c5bb
+UI Revival CI: 30986983995 — success
+artifact: 8922547510
+artifact digest: sha256:cc09fa8289c806938f4a20c06cc42d0e19a3e7f1f7a91e03440c31a8eccf2c34
 TypeScript: success
 Production build: success
 Mobile route and interaction gate: success
-Tablet responsive gate: success
-Desktop responsive gate: success
+Tablet Progress responsive gate: success
+Desktop Progress responsive gate: success
 Workout regression gate: success
 Nutrition regression gate: success
-Progress overview summary: success
-Weight trend: success
-Waist trend: success
-Workout-volume trend: success
-Daily-calorie trend: success
+Weight, waist, Workout-volume and calorie charts: success
+Exercise progression chart: success
+Seeded best exercise weight: 40 kg
+Seeded exercise improvement: +5 kg
+Seeded latest exercise volume: 400
+7-day report: 2 workouts / 115 minutes / 7300 volume
+30-day report: success
+Private photo add/preview/remove: success
 Milestone rendering: success
 Page errors: 0
 Console errors: 0
@@ -196,11 +189,13 @@ Console errors: 0
 
 ### Exact continuation point
 
-Phase 5 remains active:
+Phase 5 is closed. Continue with Phase 6 Profile, Settings and Notifications:
 
-1. Add exercise-specific progression by grouping existing `WorkoutLog.exercises` records.
-2. Add concise weekly/monthly summary cards from the same records.
-3. Add private local progress-photo preview only after analytics summaries are proven.
-4. Do not add a Progress store or analytics service.
-5. Extend the existing Progress browser gate rather than creating overlapping test infrastructure.
-6. Close Phase 5 after the remaining sections and responsive review pass.
+1. Read `/profile`, `/profile/view`, `/profile/edit` and `/profile/account` before editing.
+2. Preserve useful existing UI and identify dead or misleading actions.
+3. Normalize Profile into a clear summary with Edit, Account, Settings, Privacy and Support entries.
+4. Reuse the existing User Data context and Onboarding draft; do not create another profile store.
+5. Complete the smallest functional edit/account/settings flows first.
+6. Add per-category notification preferences after the Profile contract is stable.
+7. Add Profile-specific route states and one focused browser gate.
+8. Keep completed Onboarding, Shell, Workout, Nutrition and Progress unchanged except for verified defects.
