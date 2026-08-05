@@ -1,217 +1,111 @@
-// src/components/dashboard/daily-feed.tsx
 "use client";
 
 import * as React from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Apple, Dumbbell, Weight, MoreVertical, Edit, Trash2, Flame, Clock, LineChart } from 'lucide-react';
-import { DailyMotivationCard } from "./daily-motivation-card";
-import { useUserData } from "@/context/user-profile-context";
-import { format } from 'date-fns';
-import { Skeleton } from "../ui/skeleton";
+import { format } from "date-fns";
+import { Apple, Dumbbell, Flame, LineChart, MoreVertical, Edit, Trash2, Clock, Weight } from "lucide-react";
 import type { CombinedLog } from "@/context/user-profile-context";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+import { useUserData } from "@/context/user-profile-context";
+import { DailyMotivationCard } from "./daily-motivation-card";
 import { LogEntrySheet } from "./log-entry-sheet";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 
-// Use theme-based colors for better consistency
-const iconMapping: { [key in CombinedLog['logType']]: { icon: React.ElementType, color: string, style: React.CSSProperties } } = {
-    meal: { icon: Apple, color: 'var(--chart-1)', style: { '--bg-color': 'hsl(var(--chart-1))', '--text-color': 'hsl(var(--chart-1))' } as React.CSSProperties },
-    activity: { icon: Flame, color: 'var(--chart-2)', style: { '--bg-color': 'hsl(var(--chart-2))', '--text-color': 'hsl(var(--chart-2))' } as React.CSSProperties },
-    weight: { icon: LineChart, color: 'var(--chart-3)', style: { '--bg-color': 'hsl(var(--chart-3))', '--text-color': 'hsl(var(--chart-3))' } as React.CSSProperties },
-    workout: { icon: Dumbbell, color: 'var(--chart-4)', style: { '--bg-color': 'hsl(var(--chart-4))', '--text-color': 'hsl(var(--chart-4))' } as React.CSSProperties },
-};
+const iconMap = {
+  meal: Apple,
+  activity: Flame,
+  weight: LineChart,
+  workout: Dumbbell,
+} satisfies Record<CombinedLog["logType"], React.ElementType>;
 
-const Stat = ({ icon, value, label }: { icon: React.ReactNode, value: string | number, label: string }) => (
-    <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-secondary/50 text-center">
-        <div className="text-primary mb-1">{icon}</div>
-        <p className="text-xl font-bold text-foreground">{value}</p>
-        <p className="text-xs font-medium text-muted-foreground">{label}</p>
-    </div>
-);
+function titleFor(log: CombinedLog) {
+  if (log.logType === "meal") return log.description;
+  if (log.logType === "activity") return log.activityType;
+  if (log.logType === "weight") return "ثبت وزن";
+  return log.workoutName;
+}
 
+function detailsFor(log: CombinedLog) {
+  if (log.logType === "meal") return `${log.calories} کیلوکالری`;
+  if (log.logType === "activity") return `${log.durationMinutes} دقیقه · ${log.caloriesBurned} کیلوکالری`;
+  if (log.logType === "weight") return `${log.weight} کیلوگرم`;
+  return `${log.durationMinutes} دقیقه · حجم ${log.totalVolume} کیلوگرم`;
+}
 
-export function DailyFeed({ quote, logs }: { quote: string, logs: CombinedLog[] }) {
-    const { isLoading, deleteLog } = useUserData();
-    const { toast } = useToast();
-    
-    const [isSheetOpen, setIsSheetOpen] = React.useState(false);
-    const [editableLog, setEditableLog] = React.useState<CombinedLog | null>(null);
+export function DailyFeed({ quote, logs }: { quote: string; logs: CombinedLog[] }) {
+  const { isLoading, deleteLog } = useUserData();
+  const { toast } = useToast();
+  const [sheetOpen, setSheetOpen] = React.useState(false);
+  const [editableLog, setEditableLog] = React.useState<CombinedLog | null>(null);
 
-    const handleEdit = (log: CombinedLog) => {
-        setEditableLog(log);
-        setIsSheetOpen(true);
+  const handleEdit = (log: CombinedLog) => {
+    if (log.logType === "workout") {
+      toast({ title: "ثبت تمرین", description: "ویرایش تمرین کامل از صفحهٔ تمرین انجام می‌شود." });
+      return;
     }
-    
-    const handleDelete = async (logId: string, logType: CombinedLog['logType']) => {
-        try {
-            await deleteLog(logId, logType);
-            toast({
-                title: "Log Deleted",
-                description: "The entry has been successfully removed.",
-            });
-        } catch (error) {
-            console.error("Failed to delete log:", error);
-            toast({
-                variant: 'destructive',
-                title: "Deletion Failed",
-                description: "There was a problem deleting the log. Please try again.",
-            });
-        }
-    }
-    
+    setEditableLog(log);
+    setSheetOpen(true);
+  };
 
-    const renderFeedItem = (item: CombinedLog) => {
-        const config = iconMapping[item.logType];
-        const Icon = config.icon;
-        
-        const itemDate = new Date(item.loggedAt);
-        const timeString = format(itemDate, 'p');
+  const handleDelete = async (log: CombinedLog) => {
+    if (!log.id) return;
+    await deleteLog(log.id, log.logType);
+    toast({ title: "حذف شد", description: "ورودی از تایم‌لاین امروز حذف شد." });
+  };
 
-        let title = '';
-        switch (item.logType) {
-            case 'activity': title = item.activityType; break;
-            case 'meal': title = item.description; break;
-            case 'weight': title = 'Weight Logged'; break;
-            case 'workout': title = `Workout: ${item.workoutName}`; break;
-        }
+  if (isLoading) {
+    return <div className="space-y-4"><Skeleton className="h-36 w-full" /><Skeleton className="h-28 w-full" /><Skeleton className="h-28 w-full" /></div>;
+  }
 
-        return (
-            <Card key={item.id} style={config.style} className={`overflow-hidden animate-in fade-in-50 border-[var(--bg-color)]/20`}>
-                <CardHeader className={`flex flex-row items-start gap-4 space-y-0 p-4 bg-[var(--bg-color)]/10`}>
-                    <div className={`p-2 rounded-full bg-background/50`}>
-                        <Icon className={`h-6 w-6 text-[var(--text-color)]`} />
-                    </div>
-                    <div className="flex-1">
-                        <CardTitle className="text-base font-bold">{title}</CardTitle>
-                        <CardDescription className={`text-[var(--text-color)] font-semibold`}>{timeString}</CardDescription>
-                    </div>
-                    <AlertDialog>
-                        <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                            <MoreVertical className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEdit(item)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            <span>Edit</span>
-                            </DropdownMenuItem>
-                            <AlertDialogTrigger asChild>
-                            <DropdownMenuItem
-                                className="text-destructive"
-                                onSelect={(e) => e.preventDefault()}
-                            >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                <span>Delete</span>
-                            </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                        </DropdownMenuContent>
-                        </DropdownMenu>
-                        <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete this log entry.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(item.id!, item.logType)}>
-                            Delete
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+  return (
+    <section dir="rtl" className="space-y-6">
+      <h2 className="text-2xl font-bold">تایم‌لاین امروز</h2>
+      <DailyMotivationCard quote={quote} />
+
+      {logs.length === 0 ? (
+        <Card className="border-dashed p-8 text-center">
+          <CardTitle className="text-lg">هنوز چیزی ثبت نشده است</CardTitle>
+          <CardDescription className="mt-2">از دکمهٔ افزودن برای ثبت غذا، فعالیت یا وزن استفاده کن.</CardDescription>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {logs.map((log) => {
+            const Icon = iconMap[log.logType];
+            return (
+              <Card key={log.id || `${log.logType}-${log.loggedAt}`} className="overflow-hidden">
+                <CardHeader className="flex flex-row items-start gap-4 space-y-0 bg-secondary/35 p-4">
+                  <div className="rounded-full bg-primary/10 p-2 text-primary"><Icon className="h-6 w-6" /></div>
+                  <div className="flex-1 text-right">
+                    <CardTitle className="text-base">{titleFor(log)}</CardTitle>
+                    <CardDescription className="mt-1">{format(new Date(log.loggedAt), "HH:mm")}</CardDescription>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {log.logType !== "workout" && <DropdownMenuItem onClick={() => handleEdit(log)}><Edit className="ml-2 h-4 w-4" />ویرایش</DropdownMenuItem>}
+                      <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(log)}><Trash2 className="ml-2 h-4 w-4" />حذف</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </CardHeader>
-                <CardContent className="p-4">
-                     {item.logType === 'meal' && (
-                        <Stat icon={<Flame className="h-6 w-6"/>} value={item.calories} label="kcal" />
-                     )}
-                     {item.logType === 'activity' && (
-                        <div className="grid grid-cols-2 gap-4">
-                            <Stat icon={<Clock className="h-6 w-6"/>} value={`${item.durationMinutes} min`} label="Duration" />
-                            <Stat icon={<Flame className="h-6 w-6"/>} value={item.caloriesBurned} label="kcal Burned" />
-                        </div>
-                     )}
-                     {item.logType === 'weight' && (
-                         <Stat icon={<Weight className="h-6 w-6"/>} value={`${item.weight} kg`} label="Current Weight" />
-                     )}
-                      {item.logType === 'workout' && (
-                        <div className="grid grid-cols-3 gap-4">
-                            <Stat icon={<Clock className="h-6 w-6"/>} value={`${item.durationMinutes} min`} label="Duration" />
-                            <Stat icon={<Dumbbell className="h-6 w-6"/>} value={item.totalVolume} label="kg Volume" />
-                            <Stat icon={<Flame className="h-6 w-6"/>} value="~350" label="kcal Burned" />
-                        </div>
-                     )}
+                <CardContent className="flex items-center gap-3 p-4 text-sm text-muted-foreground">
+                  {log.logType === "weight" ? <Weight className="h-5 w-5 text-primary" /> : log.logType === "workout" ? <Dumbbell className="h-5 w-5 text-primary" /> : log.logType === "activity" ? <Clock className="h-5 w-5 text-primary" /> : <Apple className="h-5 w-5 text-primary" />}
+                  <span>{detailsFor(log)}</span>
                 </CardContent>
-            </Card>
-        )
-    }
-
-    const renderSkeleton = () => (
-        <div className="space-y-6">
-            <Skeleton className="h-48 w-full" />
-             {[...Array(2)].map((_, i) => (
-                <Card key={i} className="overflow-hidden">
-                    <CardHeader className="flex flex-row items-start gap-4 space-y-0 p-4">
-                        <Skeleton className="h-12 w-12 rounded-full" />
-                        <div className="flex-1 space-y-2">
-                           <Skeleton className="h-5 w-3/4" />
-                           <Skeleton className="h-4 w-1/4" />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-4">
-                        <Skeleton className="h-16 w-full" />
-                    </CardContent>
-                </Card>
-             ))}
+              </Card>
+            );
+          })}
         </div>
-    )
+      )}
 
-    return (
-        <div>
-            <h2 className="text-2xl font-bold font-headline mb-4">Your Day</h2>
-            <div className="space-y-6">
-                <DailyMotivationCard quote={quote} />
-                {isLoading ? renderSkeleton() : (
-                    logs.length > 0 ? (
-                        logs.map(renderFeedItem)
-                    ) : (
-                         <Card className="text-center p-8 border-dashed">
-                            <h3 className="text-lg font-semibold">Nothing Logged Yet</h3>
-                            <p className="text-muted-foreground mt-1">
-                                Use the <span className="font-bold text-primary">+</span> button to add a meal, activity, or your weight.
-                            </p>
-                        </Card>
-                    )
-                )}
-            </div>
-            
-            <LogEntrySheet
-                open={isSheetOpen}
-                onOpenChange={setIsSheetOpen}
-                logType={editableLog?.logType ?? null}
-                editableLog={editableLog}
-                onClose={() => setEditableLog(null)}
-            />
-        </div>
-    );
+      <LogEntrySheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        logType={editableLog && editableLog.logType !== "workout" ? editableLog.logType : null}
+        editableLog={editableLog}
+        onClose={() => setEditableLog(null)}
+      />
+    </section>
+  );
 }

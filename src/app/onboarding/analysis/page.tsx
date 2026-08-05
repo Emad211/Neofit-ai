@@ -1,225 +1,64 @@
+"use client";
 
-// This file is a suspense boundary. Read more about them here:
-// https://nextjs.org/docs/app/building-your-application/routing/loading-ui-and-streaming
-"use client"
-import React, { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { Activity, ArrowLeft, CheckCircle2, Dumbbell, HeartPulse, Salad, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { OnboardingLoading, OnboardingShell } from "@/components/onboarding/onboarding-shell";
+import { useOnboarding } from "@/context/onboarding-context";
+import { cn } from "@/lib/utils";
 
-import { generateNutritionProgram, GenerateNutritionProgramInput, GenerateNutritionProgramOutput } from '@/ai/flows/generate-nutrition-program';
-import { generateWorkoutProgram, GenerateWorkoutProgramInput, GenerateWorkoutProgramOutput } from '@/ai/flows/generate-workout-program';
-import { AnalysisAnimation } from '@/components/onboarding/analysis-animation';
-import { Button } from '@/components/ui/button';
-import { MoveRight } from 'lucide-react';
-import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Apple, Dumbbell } from 'lucide-react';
-import { UserProfile, useUserData } from '@/context/user-profile-context';
+const stages = [
+  { title: "بررسی هدف و سرعت پیشرفت", description: "تطبیق هدف اصلی با وزن فعلی و وزن هدف", icon: Sparkles },
+  { title: "اعمال ملاحظات سلامت", description: "اولویت‌دادن به سابقه پزشکی، آسیب‌ها و محدودیت پزشک", icon: HeartPulse },
+  { title: "برآورد انرژی و درشت‌مغذی‌ها", description: "محاسبه نقطه شروع کالری، پروتئین، چربی و کربوهیدرات", icon: Salad },
+  { title: "چینش ساختار تمرین", description: "هماهنگ‌سازی تعداد روز، تجهیزات، تجربه و زمان جلسه", icon: Dumbbell },
+  { title: "کنترل قابلیت اجرا", description: "بررسی خواب، استرس، بودجه، آشپزی و برنامه روزانه", icon: Activity },
+];
 
-type AnalysisResults = {
-    nutrition: GenerateNutritionProgramOutput;
-    workout: GenerateWorkoutProgramOutput;
-}
-
-function OnboardingAnalysisPage() {
-  return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 sm:p-6 lg:p-8">
-      <Suspense fallback={<Loading />}>
-        <AnalysisResult />
-      </Suspense>
-    </div>
-  );
-}
-
-function Loading() {
-  const messages = [
-    "Consulting with our AI Nutritionist...",
-    "Designing your personalized meal plan...",
-    "Talking to the AI Strength Coach...",
-    "Building your custom workout schedule...",
-    "Considering your goals and preferences...",
-    "Crafting the perfect plan for you...",
-  ];
-
-  const [message, setMessage] = React.useState(messages[0]);
+export default function OnboardingAnalysisPage() {
+  const router = useRouter();
+  const { isHydrated, completeStep } = useOnboarding();
+  const [activeStage, setActiveStage] = React.useState(0);
 
   React.useEffect(() => {
-    let i = 0;
-    const interval = setInterval(() => {
-      i = (i + 1) % messages.length;
-      setMessage(messages[i]);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, [messages]);
+    if (!isHydrated || activeStage >= stages.length) return;
+    const timer = window.setTimeout(() => setActiveStage((current) => current + 1), 650);
+    return () => window.clearTimeout(timer);
+  }, [activeStage, isHydrated]);
 
+  if (!isHydrated) return <OnboardingLoading />;
+  const finished = activeStage >= stages.length;
+  const percent = Math.min(100, Math.round((activeStage / stages.length) * 100));
+
+  const continueToResult = () => {
+    completeStep(13);
+    router.push("/onboarding/result");
+  };
 
   return (
-      <div className="w-full max-w-2xl text-center">
-        <AnalysisAnimation />
-        <h1 className="mt-8 text-3xl font-bold tracking-tight text-foreground sm:text-4xl font-headline">
-          Generating Your Custom Plans
-        </h1>
-        <p className="mt-4 text-lg text-muted-foreground transition-all duration-500">
-          {message}
-        </p>
-      </div>
-  )
-}
+    <OnboardingShell step={13} title={finished ? "تحلیل اولیه کامل شد" : "در حال تحلیل اطلاعات شما"} description={finished ? "خروجی مرحله بعد یک نقطه شروع شفاف و قابل ویرایش است؛ نه نسخه پزشکی و نه تصمیم غیرقابل تغییر." : "هر بخش جداگانه بررسی می‌شود تا نتیجه فقط یک عدد کالری یا برنامه عمومی نباشد."} backHref="/onboarding/review">
+      <div className="rounded-3xl border bg-muted/20 p-5 sm:p-6">
+        <div className="mb-5 flex items-center justify-between text-sm"><span className="font-bold">پیشرفت تحلیل</span><span className="text-muted-foreground">{percent}٪</span></div>
+        <div className="mb-7 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${percent}%` }} /></div>
 
-function AnalysisResult() {
-  const searchParams = useSearchParams();
-  const { user, saveUserProfile, savePlans } = useUserData();
-  const [analysisResult, setAnalysisResult] = React.useState<AnalysisResults | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    const performAnalysis = async () => {
-        if (!user) {
-            setError("No user logged in. Cannot generate plans.");
-            return;
-        }
-
-        const physicalSpecifications = `${searchParams.get('gender') || 'other'}, ${searchParams.get('age') || 25} years, ${searchParams.get('height') || 170}cm, ${searchParams.get('weight') || 70}kg, ${searchParams.get('bodyType') || 'mesomorph'}`;
-        
-        const userProfileData: UserProfile = {
-            ...Object.fromEntries(searchParams.entries()),
-            name: user.displayName || "User", // Add user's name
-        } as any;
-
-
-        const nutritionParams: GenerateNutritionProgramInput = {
-            userId: user.uid,
-            goals: userProfileData.goal,
-            performanceGoals: userProfileData.performanceGoals,
-            fitnessLevel: userProfileData.fitnessLevel,
-            physicalSpecifications: physicalSpecifications,
-            lifestyle: userProfileData.lifestyle,
-            sleepHours: userProfileData.sleepHours,
-            stressLevel: userProfileData.stressLevel,
-            eatingHabits: userProfileData.eatingHabits,
-            cookingSkill: userProfileData.cookingSkill,
-            costLevel: userProfileData.costLevel,
-            trainingDays: parseInt(userProfileData.trainingDays, 10),
-            trainingDuration: userProfileData.trainingDuration,
-            trainingTime: userProfileData.trainingTime,
-        };
-
-        const workoutParams: GenerateWorkoutProgramInput = {
-            userId: user.uid,
-            goals: userProfileData.goal,
-            performanceGoals: userProfileData.performanceGoals,
-            fitnessLevel: userProfileData.fitnessLevel,
-            trainingDays: parseInt(userProfileData.trainingDays, 10),
-            trainingDuration: userProfileData.trainingDuration,
-            trainingTime: userProfileData.trainingTime,
-            workoutLocation: userProfileData.workoutLocation,
-            availableEquipment: userProfileData.availableEquipment || 'Full gym equipment',
-            medicalHistory: userProfileData.medicalHistory || 'None',
-            physicalSpecifications: physicalSpecifications,
-            sleepHours: userProfileData.sleepHours,
-            stressLevel: userProfileData.stressLevel,
-        };
-
-      try {
-        const [nutritionResult, workoutResult] = await Promise.all([
-            generateNutritionProgram(nutritionParams),
-            generateWorkoutProgram(workoutParams)
-        ]);
-
-        // Save the full user profile and the generated plans to Firestore
-        await saveUserProfile(userProfileData);
-        await savePlans({ 
-            nutritionPlan: nutritionResult.weeklyMealPlan, 
-            workoutPlan: workoutResult.weeklyWorkoutPlan 
-        });
-
-        setAnalysisResult({ nutrition: nutritionResult, workout: workoutResult });
-      } catch (e: any) {
-        console.error(e);
-        if (typeof e.message === 'string' && e.message.includes('429')) {
-             setError("Our AI is experiencing high traffic right now. Please try again in a few moments.");
-        } else {
-             setError("Our AI is currently unavailable. Please try again later.");
-        }
-      }
-    };
-
-    performAnalysis();
-  }, [searchParams, saveUserProfile, savePlans, user]);
-
-  if (error) {
-    return <ErrorDisplay message={error} />
-  }
-
-  if (!analysisResult) {
-    return <Loading />;
-  }
-
-  return <AnalysisContent result={analysisResult} />
-}
-
-
-function AnalysisContent({ result }: { result: AnalysisResults }) {
-  return (
-    <div className="w-full max-w-3xl">
-      <div className="text-center">
-        <h1 className="mt-8 text-3xl font-bold tracking-tight text-foreground sm:text-4xl font-headline">
-          Your Personal Plans are Ready!
-        </h1>
-        <p className="mt-4 text-lg text-muted-foreground">
-          Here is a summary of what our AI experts have created for you.
-        </p>
+        <div className="space-y-3">
+          {stages.map((stage, index) => {
+            const isDone = index < activeStage;
+            const isActive = index === activeStage && !finished;
+            return (
+              <div key={stage.title} className={cn("flex items-start gap-4 rounded-2xl border p-4 transition", isDone && "border-emerald-500/30 bg-emerald-500/5", isActive && "border-primary bg-primary/5 shadow-sm", index > activeStage && "opacity-50")}>
+                <div className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-muted text-muted-foreground", isDone && "bg-emerald-500 text-white", isActive && "bg-primary text-primary-foreground")}>
+                  {isDone ? <CheckCircle2 className="h-5 w-5" /> : <stage.icon className={cn("h-5 w-5", isActive && "animate-pulse")} />}
+                </div>
+                <div><p className="font-bold">{stage.title}</p><p className="mt-1 text-sm leading-6 text-muted-foreground">{stage.description}</p></div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-        <Card className="flex flex-col">
-          <CardHeader className="flex flex-row items-center gap-4">
-            <Apple className="h-8 w-8 text-primary" />
-            <CardTitle>Nutrition Plan</CardTitle>
-          </CardHeader>
-          <CardContent className="flex-grow">
-            <p className="text-muted-foreground">{result.nutrition.summary}</p>
-          </CardContent>
-        </Card>
-        <Card className="flex flex-col">
-          <CardHeader className="flex flex-row items-center gap-4">
-            <Dumbbell className="h-8 w-8 text-primary" />
-            <CardTitle>Workout Plan</CardTitle>
-          </CardHeader>
-           <CardContent className="flex-grow">
-            <p className="text-muted-foreground">{result.workout.summary}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="mt-10 text-center">
-        <Button size="lg" asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
-          <Link href="/today">
-            Start Your Journey <MoveRight className="ml-2 h-5 w-5" />
-          </Link>
-        </Button>
-      </div>
-    </div>
+      {finished ? <Button type="button" size="lg" className="mt-8 h-12 w-full text-base" onClick={continueToResult}>مشاهده نتیجه اولیه<ArrowLeft className="mr-2 h-5 w-5" /></Button> : <p className="mt-6 text-center text-sm text-muted-foreground">این تحلیل روی همین دستگاه و بدون ارسال اطلاعات به سرویس خارجی اجرا می‌شود.</p>}
+    </OnboardingShell>
   );
 }
-
-function ErrorDisplay({ message }: { message: string }) {
-  return (
-     <div className="w-full max-w-2xl text-center">
-        <h1 className="mt-8 text-3xl font-bold tracking-tight text-destructive sm:text-4xl font-headline">
-          Analysis Failed
-        </h1>
-        <p className="mt-4 text-lg text-muted-foreground">
-          {message}
-        </p>
-        <div className="mt-10">
-          <Button size="lg" asChild variant="secondary">
-            <Link href="/">
-              Return to Start
-            </Link>
-          </Button>
-      </div>
-     </div>
-  )
-}
-
-export default OnboardingAnalysisPage;

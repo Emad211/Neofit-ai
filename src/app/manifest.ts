@@ -1,0 +1,23 @@
+import type { MetadataRoute } from "next";
+
+export const dynamic = "force-static";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "NeoFit | نئوفیت",
+    short_name: "نئوفیت",
+    description: "برنامه فارسی تمرین، تغذیه و پیگیری پیشرفت",
+    start_url: "/today",
+    scope: "/",
+    display: "standalone",
+    background_color: "#e3f3f0",
+    theme_color: "#49b4a7",
+    lang: "fa",
+    dir: "rtl",
+    orientation: "portrait-primary",
+    icons: [
+      { src: "/neofit-icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+      { src: "/neofit-icon.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" },
+    ],
+  };
+}

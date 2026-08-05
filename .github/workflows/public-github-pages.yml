@@ -1,0 +1,126 @@
+name: Public GitHub Pages
+
+on:
+  push:
+    branches:
+      - revival/full-ui-front
+    paths:
+      - '.github/workflows/public-github-pages.yml'
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'next.config.ts'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/public-github-pages.yml'
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'next.config.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Configure GitHub Pages static export
+        shell: bash
+        run: |
+          cat > next.config.ts <<'EOF'
+          import type { NextConfig } from "next";
+
+          const nextConfig: NextConfig = {
+            output: "export",
+            trailingSlash: true,
+            basePath: "/Neofit-ai",
+            assetPrefix: "/Neofit-ai",
+            images: {
+              unoptimized: true,
+              remotePatterns: [
+                {
+                  protocol: "https",
+                  hostname: "placehold.co",
+                  port: "",
+                  pathname: "/**",
+                },
+              ],
+            },
+          };
+
+          export default nextConfig;
+          EOF
+
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path("src/app/(main)/workout-player/[slug]/page.tsx")
+          text = path.read_text()
+          if "generateStaticParams" not in text:
+              text = text.replace(
+                  'import { WorkoutPlayer } from "@/components/workout/workout-player";\n',
+                  'import { WorkoutPlayer } from "@/components/workout/workout-player";\nimport { demoWorkoutPlan } from "@/lib/neofit-demo-data";\n\nexport function generateStaticParams() {\n  return demoWorkoutPlan.map((workout) => ({ slug: workout.id }));\n}\n'
+              )
+          path.write_text(text)
+          PY
+
+      - name: TypeScript
+        run: npm run typecheck
+
+      - name: Build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: npm run build
+
+      - name: Verify output
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s out/index.html
+          for route in today nutrition workout progress profile profile/account auth; do
+            test -s "out/$route/index.html"
+          done
+          touch out/.nojekyll
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

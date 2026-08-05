@@ -1,5 +1,17 @@
-# Firebase Studio
+# NeoFit Web
 
-This is a NextJS starter in Firebase Studio.
+رابط کامل وب نئوفیت بر پایهٔ Next.js، با رابط فارسی و راست‌به‌چپ.
 
-To get started, take a look at src/app/page.tsx.
+## وضعیت این شاخه
+
+- فرانت تاریخی و کامل‌تر نئوفیت به‌عنوان پایهٔ رابط کاربری احیا شده است.
+- داده‌های نسخهٔ Preview در مرورگر نگه‌داری می‌شوند.
+- محاسبات و کاتالوگ نهایی باید از Shared Nutrition Core تأمین شوند.
+- حساب کاربری و همگام‌سازی در مسیر معماری جدید پروژه متصل می‌شوند.
+
+```bash
+npm ci
+npm run dev
+npm run typecheck
+npm run build
+```
