@@ -1,189 +1,159 @@
 # NeoFit Frontend Completion Plan
 
-**Status:** Active implementation contract  
+**Status:** Frontend contract complete and browser-proven  
 **Primary branch:** `revival/full-ui-front`  
-**Current phase:** Phase 7 — final hardening  
-**Strategy:** complete and prove the frontend with backend-neutral local adapters; connect Supabase, Nutrition Core and external APIs only after the frontend contract is stable.
+**Active PR:** `#34` — Draft, not merged  
+**Next program:** backend and production integration
 
-## 1. Definition of frontend complete
+## 1. Frontend Definition of Done
 
-A user must be able to enter, complete Onboarding, inspect the generated plan, execute workouts, follow and log nutrition, record body data, review progress, manage local settings and use the NeoFit Coach without dead actions, misleading promises, untranslated primary flows or broken routes.
+The frontend is considered complete when a user can:
 
-Primary routes must be Persian RTL, usable on mobile/tablet/desktop, dark-mode compatible, keyboard accessible and equipped with suitable loading, empty, error, offline and success states.
+- finish the full Onboarding flow;
+- inspect the resulting program;
+- execute and resume a workout;
+- inspect, replace and log meals;
+- record body and daily metrics;
+- review progress and reports;
+- manage local profile/settings/privacy controls;
+- use the NeoFit Coach contract;
+- recover from loading, empty, error, offline, missing-page and expired-session states;
+- use the primary experience on mobile, tablet, desktop and keyboard.
 
-## 2. Proven current state
+All of these conditions are now implemented and covered by browser gates.
 
-- Historical complete Next.js UI remains the visual foundation.
-- Firebase, Genkit and App Hosting runtime are absent.
-- Phase 1 Onboarding is complete across 15 steps, including the original 73-region front/back injury map.
-- Phase 2 App Shell, Today, Quick Add, Notifications and shared offline feedback are complete.
-- Phase 3 Workout is complete: weekly plan, Day Details, persistent Player, guides, alternatives, Completion, History and personal records.
-- Phase 4 Nutrition is complete: daily/weekly plan, details/recipe, alternatives, trusted portion logging, History, saved/recent foods, Shopping List and hydration.
-- Phase 5 Progress is complete: overview, five charts, exercise progression, milestones, 7/30-day reports and private temporary photo previews.
-- Phase 6 Profile/Settings/Notifications/Coach is complete:
-  - Persian profile summary, read-only details and functional editing;
-  - local account-name management without fake email/password actions;
-  - persistent per-category notification preferences;
-  - JSON export, confirmed local-data deletion, privacy boundary, FAQ and diagnostics;
-  - local Rule-based Coach using current browser data, persistent history, action links and medical safety boundary.
-- Browser gates currently prove all completed phases with zero page/console errors.
-
-Remaining estimate before backend integration: **4–10 development hours**, or **8–16 hours including final browser/accessibility QA**.
-
-## 3. Delivery order
-
-1. ~~Onboarding end-to-end.~~ **Completed**
-2. ~~App Shell and Today.~~ **Completed**
-3. ~~Workout and Workout Player.~~ **Completed**
-4. ~~Nutrition.~~ **Completed**
-5. ~~Progress and reports.~~ **Completed**
-6. ~~Profile, Settings, Notifications and Coach.~~ **Completed**
-7. **System states, PWA, accessibility and final matrix — active**
-
-## 4. Route and feature map
-
-### 4.1 Entry and authentication
-
-Frontend preview currently exposes a demo/local account boundary. Real login, registration, verification, password recovery and multi-device sessions belong to the later Supabase Auth integration.
-
-### 4.2 Onboarding — implemented
-
-- Persistent 15-step Wizard
-- Goal, identity/body, health and lifestyle
-- Complete injury Body Map and movement limitations
-- Nutrition/training preferences and availability
-- Editable review, local analysis, explainable result and activation
-
-### 4.3 App Shell and Today — implemented
-
-- Mobile header/bottom navigation and desktop collapsible Sidebar
-- Coach, Notifications, unread count and theme control
-- Readiness, adherence, workout/meal cards and timeline
-- Persistent water, steps, sleep, weight and measurements
-- Quick Add and shared offline feedback
-
-### 4.4 Workout — implemented
-
-- Weekly overview and `/workout/[id]` Day Details
-- Warm-up, sets/reps/rest, safety and previous performance
-- Persistent Player and exact refresh resume
-- Rest Timer, guide and alternatives
-- Completion with duration, volume, RPE, pain and notes
-- Personal records and `/workout/history`
-
-### 4.5 Nutrition — implemented
-
-- Daily/weekly plan, calorie target and target macros
-- Ingredients, recipe and equivalent alternatives
-- Planned-meal and trusted-food logging
-- Daily History and target variance
-- Portion scaling, recent/saved foods and Shopping List
-- Hydration and safe supplement empty state
-
-Actual nutrition values for unknown foods must come from Nutrition Core; the frontend does not invent them.
-
-### 4.6 Progress — implemented
-
-- Weight, target delta, waist and weekly workout summary
-- Weight, waist, workout-volume, calorie and exercise-progression charts
-- Personal records and derived milestones
-- 7-day and 30-day summaries
-- Temporary local progress-photo previews without upload or persistent image bytes
-
-### 4.7 Profile, Settings and Notifications — implemented
-
-- Profile summary and Persian read-only details
-- Functional editing of current local profile
-- Local display-name management
-- Clear boundaries for unavailable real account actions
-- Per-category notification preferences
-- Theme control
-- JSON export and confirmed deletion of local NeoFit data
-- Privacy explanation, FAQ, diagnostics and version information
-- Loading/error states and focused browser evidence
-
-### 4.8 NeoFit Coach — implemented local contract
-
-- Suggested prompts and manual text input
-- Today, Workout, Nutrition and Progress summaries from existing local records
-- Action links to relevant routes
-- Persistent local history capped at 50 messages
-- Confirmed clear-history action
-- Explicit offline/local badge and no-online-model disclosure
-- Medical safety response and link to health limitations
-- Loading/error states and focused browser evidence
-
-The later online Coach must replace only the response adapter while preserving the current UI, safety boundary and action-card contract.
-
-### 4.9 Phase 7 hardening — active
-
-Required:
-
-- custom 404 and global recoverable error boundary;
-- maintenance and expired-session states;
-- Skip Link and consistent visible keyboard focus;
-- reduced-motion support and landmark checks;
-- Web App Manifest and simple Service Worker without API/Auth/non-GET caching;
-- install prompt only when the browser exposes it;
-- final mobile/tablet/desktop route and interaction matrix;
-- final document synchronization and exact continuation point for backend integration.
-
-## 5. Phase checklist
+## 2. Completed product areas
 
 ### Phase 1 — Onboarding
-- [x] 15-step persistent Wizard
-- [x] Legacy 73-region injury selector
-- [x] Analysis, result and confirmation
-- [x] Browser evidence
 
-### Phase 2 — Shell and Today
-- [x] Mobile/desktop shell
-- [x] Today hierarchy and Quick Add
-- [x] Notifications and offline feedback
-- [x] Responsive evidence
+- [x] Persistent 15-step Persian RTL Wizard
+- [x] Goal, body, medical, lifestyle, nutrition and training inputs
+- [x] Original front/back SVG injury map with 73 selectable regions
+- [x] Review, staged analysis, explainable result and activation
+- [x] Refresh-resume and medical acknowledgement validation
+
+### Phase 2 — App Shell and Today
+
+- [x] Mobile header and bottom navigation
+- [x] Desktop collapsible right Sidebar
+- [x] Readiness, adherence, workout, meal and timeline hierarchy
+- [x] Quick Add for food, activity, weight, water and measurements
+- [x] Persistent daily metrics and Notification Center
+- [x] Shared offline feedback
 
 ### Phase 3 — Workout
-- [x] Overview, Day Details and persistent Player
-- [x] Guide, alternatives and Completion
-- [x] History and personal records
-- [x] Route states and browser evidence
+
+- [x] Persian weekly overview and Day Details
+- [x] Warm-up, exercise order, sets/reps/rest and safety notes
+- [x] Persistent Workout Player with exact refresh resume
+- [x] Rest Timer, guides and alternatives
+- [x] Completion with duration, volume, RPE, pain and notes
+- [x] History, repeat-session action and personal records
 
 ### Phase 4 — Nutrition
-- [x] Plans, details, alternatives and logging
-- [x] History, trusted portions and saved/recent foods
-- [x] Shopping List, hydration and safe supplement state
-- [x] Route states and browser evidence
+
+- [x] Daily/weekly plan and target summary
+- [x] Ingredients, preparation, recipe and equivalent alternatives
+- [x] Planned-meal and trusted-food logging
+- [x] Portion scaling and meal-type selection
+- [x] Daily History and target variance
+- [x] Recent/saved foods, Shopping List and hydration
+- [x] Safe supplement empty state
+
+Unknown-food values are intentionally not invented. Real values must later come from Shared Nutrition Core.
 
 ### Phase 5 — Progress
-- [x] Overview and five data charts
-- [x] Exercise progression and records
-- [x] Milestones and 7/30-day reports
-- [x] Temporary private photo previews
-- [x] Responsive/browser evidence
+
+- [x] Weight, target delta, waist and weekly workout summary
+- [x] Weight, waist, workout-volume, calorie and exercise charts
+- [x] Personal records and derived milestones
+- [x] Seven-day and 30-day reports
+- [x] Temporary private photo preview without upload or persistent image bytes
 
 ### Phase 6 — Profile, Settings, Notifications and Coach
-- [x] Profile summary, details and functional edit flow
-- [x] Local account/settings/privacy/support
-- [x] Per-category notification preferences
-- [x] JSON export and confirmed local deletion
-- [x] Profile route states and browser gate
-- [x] Local Coach prompts, history, action links and safety boundary
-- [x] Coach route states and browser gate
+
+- [x] Profile summary, Persian details and functional editing
+- [x] Local display-name management
+- [x] Removal of fake email/password and AI-regeneration actions
+- [x] Persistent per-category notification preferences
+- [x] JSON export and confirmed local-data deletion
+- [x] Privacy boundary, FAQ, diagnostics and version information
+- [x] Local Rule-based Coach with suggested prompts and manual input
+- [x] Today, Workout, Nutrition and Progress action cards
+- [x] Persistent local conversation history
+- [x] Explicit no-online-model disclosure and medical safety boundary
 
 ### Phase 7 — Hardening
-- [ ] 404/global error/maintenance/session-expired states
-- [ ] Skip Link, focus and reduced-motion hardening
-- [ ] Manifest, Service Worker and install prompt
-- [ ] Final accessibility checks
-- [ ] Final route/interaction matrix
-- [ ] Backend-integration handoff
 
-## 6. Exact continuation point
+- [x] Custom Persian 404
+- [x] Global recoverable error boundary
+- [x] Maintenance and expired-session pages
+- [x] Root Skip Link and focusable main target
+- [x] Consistent three-pixel `focus-visible` outline
+- [x] Reduced-motion support
+- [x] Persian RTL Web App Manifest and scalable icon
+- [x] Dependency-free Service Worker registration
+- [x] Safe cache boundaries for API/Auth/Authorization/non-GET requests
+- [x] Real Service Worker activation/control and offline reload test
+- [x] Final mobile/tablet/desktop and regression matrix
 
-1. Add custom `not-found`, `global-error`, `/maintenance` and `/session-expired` pages without introducing a new state framework.
-2. Add one root Skip Link, a focus target and global `:focus-visible`/reduced-motion rules.
-3. Add a simple manifest, SVG application icon, Service Worker and registration component; do not add a PWA dependency.
-4. Cache only safe same-origin GET navigation/static assets; bypass API, Auth/Authorization and non-GET requests.
-5. Extend the existing browser workflows rather than creating overlapping CI.
-6. Run final mobile/tablet/desktop and keyboard checks before declaring the frontend complete.
-7. Keep all completed product contracts unchanged except for proven defects.
+## 3. Final validation evidence
+
+```text
+validated runtime head: fd717f49a3f7ee5afd0a2669a0f2ffdd575db237
+UI Revival CI: 30994281464 — success
+artifact: 8925545367
+artifact digest: sha256:452b0847bb32894044ed4a797b5468dce14628e753ef6cdd63babed0ed4f1b76
+static pages generated: 42/42
+TypeScript: success
+Production build: success
+Mobile gate: success
+Tablet/Desktop responsive gate: success
+Workout regression gate: success
+Nutrition regression gate: success
+Progress regression gate: success
+Profile/Settings regression gate: success
+Coach safety/history/action gate: success
+Manifest and icon: success
+Service Worker registered, activated and controlling page: success
+Offline reload: success
+Skip Link and focus target: success
+Visible keyboard focus: 3 px
+Reduced motion: success
+404/Maintenance/Session Expired: success
+Unexpected page errors: 0
+Unexpected console errors: 0
+```
+
+Expected browser messages generated intentionally while simulating offline mode and requesting a 404 are recorded separately and do not hide unexpected errors.
+
+## 4. Scope boundary
+
+This completion refers to the **frontend product contract and local preview adapter**. The following are not yet production-connected:
+
+- Supabase Auth and real sessions;
+- Supabase Postgres/RLS persistence;
+- real multi-device synchronization;
+- Shared Nutrition Core food resolution and macro totals;
+- online Coach/API execution;
+- private object storage for progress photos;
+- real push notifications;
+- final public production deployment/domain.
+
+The current local data remains in browser storage by design.
+
+## 5. Exact continuation point
+
+1. Keep PR `#34` Draft and unmerged until the integration strategy is approved.
+2. Create a dedicated integration branch from `revival/full-ui-front`; do not modify the proven frontend contract directly.
+3. Replace the local adapters incrementally, in this order:
+   1. Supabase Auth/session resolution;
+   2. profile and Onboarding persistence with RLS;
+   3. daily metrics, WorkoutLog, MealLog and WeightLog persistence;
+   4. workout/nutrition plan persistence;
+   5. Shared Nutrition Core food resolution;
+   6. online Coach adapter while preserving the current UI/safety contract;
+   7. private photo storage and push-notification delivery.
+4. Preserve the current local adapter as a deterministic demo and fallback fixture.
+5. Run the same browser gates after every adapter replacement.
+6. Do not promote Production until the public URL, authentication, RLS and destructive-data flows are verified end-to-end.
