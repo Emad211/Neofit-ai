@@ -15,6 +15,16 @@ const routes = [
   "onboarding/basics",
   "onboarding/body",
   "onboarding/medical",
+  "onboarding/injuries",
+  "onboarding/lifestyle",
+  "onboarding/nutrition",
+  "onboarding/training-history",
+  "onboarding/availability",
+  "onboarding/preferences",
+  "onboarding/review",
+  "onboarding/analysis",
+  "onboarding/result",
+  "onboarding/confirmation",
 ];
 const artifactDir = "artifacts/ui-revival-smoke";
 await fs.mkdir(artifactDir, { recursive: true });
@@ -34,7 +44,7 @@ try {
     });
 
     const response = await page.goto(`${baseUrl}/${route}`, { waitUntil: "domcontentloaded", timeout: 30_000 });
-    await page.waitForTimeout(1_200);
+    await page.waitForTimeout(route === "onboarding/analysis" ? 4_000 : 1_200);
     const state = await page.evaluate(() => ({
       lang: document.documentElement.lang,
       dir: document.documentElement.dir,
@@ -45,7 +55,7 @@ try {
     await page.screenshot({ path: `${artifactDir}/${route.replaceAll("/", "-")}.png`, fullPage: true });
 
     const status = response?.status() ?? 0;
-    const passed = status >= 200 && status < 400 && state.lang === "fa" && state.dir === "rtl" && !state.hasErrorOverlay && pageErrors.length === 0 && consoleErrors.length === 0;
+    const passed = status >= 200 && status < 400 && state.lang === "fa" && state.dir === "rtl" && !state.hasErrorOverlay && pageErrors.length === 0 && consoleErrors.length === 0 && state.bodyLength > 40;
     report.routes.push({ route, status, ...state, pageErrors, consoleErrors, passed });
     if (!passed) report.passed = false;
     await page.close();
