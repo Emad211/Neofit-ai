@@ -74,13 +74,57 @@
     --sidebar-border: 215 28% 17%;
     --sidebar-ring: 174 45% 51%;
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  :focus-visible {
+    outline: 3px solid hsl(var(--ring));
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  .skip-link {
+    position: fixed;
+    inset-inline-start: 1rem;
+    top: 1rem;
+    z-index: 100;
+    transform: translateY(-180%);
+    border-radius: 0.75rem;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    padding: 0.75rem 1rem;
+    font-weight: 800;
+    box-shadow: 0 12px 30px rgb(0 0 0 / 0.2);
+    transition: transform 150ms ease;
+  }
+
+  .skip-link:focus-visible {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
