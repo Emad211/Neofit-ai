@@ -4,6 +4,15 @@ on:
   push:
     branches:
       - revival/full-ui-front
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/public-static-export.yml'
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'next.config.ts'
   workflow_dispatch:
 
 permissions:
