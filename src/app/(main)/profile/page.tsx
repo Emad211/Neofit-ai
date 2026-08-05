@@ -1,108 +1,120 @@
-// src/app/(main)/profile/page.tsx
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
-import { useUserData } from "@/context/user-profile-context";
+import {
+  ChevronLeft,
+  Dumbbell,
+  Edit3,
+  FileText,
+  MapPin,
+  Scale,
+  ShieldCheck,
+  Target,
+  UserCog,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, Edit, FileText, UserCog, LogOut, ShieldCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ModeToggle } from "@/components/mode-toggle";
-import { useToast } from "@/hooks/use-toast";
+import { useUserData } from "@/context/user-profile-context";
 
-const SettingsItem = ({ icon, title, description, href }: { icon: React.ReactNode; title: string; description: string; href: string }) => (
-  <Link href={href} className="block">
-    <div className="flex items-center gap-4 rounded-lg p-4 transition-colors hover:bg-secondary">
-      <div className="text-primary">{icon}</div>
-      <div className="flex-grow text-right">
-        <p className="font-semibold">{title}</p>
-        <p className="text-sm text-muted-foreground">{description}</p>
+const goalLabels = {
+  lose_weight: "کاهش وزن و چربی",
+  gain_muscle: "افزایش عضله",
+  improve_fitness: "بهبود آمادگی جسمانی",
+};
+
+const locationLabels = {
+  gym: "باشگاه",
+  home: "خانه",
+};
+
+function SettingsItem({ icon, title, description, href }: { icon: React.ReactNode; title: string; description: string; href: string }) {
+  return (
+    <Link href={href} className="flex items-center gap-4 rounded-2xl p-4 transition-colors hover:bg-secondary/60">
+      <span className="rounded-2xl bg-primary/10 p-3 text-primary">{icon}</span>
+      <span className="min-w-0 flex-1 text-right">
+        <span className="block font-black">{title}</span>
+        <span className="mt-1 block text-sm leading-6 text-muted-foreground">{description}</span>
+      </span>
+      <ChevronLeft className="h-5 w-5 shrink-0 text-muted-foreground" />
+    </Link>
+  );
+}
+
+function SummaryItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border bg-card p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div><p className="text-xs text-muted-foreground">{label}</p><p className="mt-2 font-black">{value}</p></div>
+        <span className="rounded-xl bg-primary/10 p-2 text-primary">{icon}</span>
       </div>
-      <ChevronLeft className="h-5 w-5 text-muted-foreground" />
     </div>
-  </Link>
-);
+  );
+}
 
 export default function ProfilePage() {
   const { user, userProfile, isLoading } = useUserData();
-  const { toast } = useToast();
-
-  const handleLogout = () => {
-    toast({
-      title: "حساب نمایشی نئوفیت",
-      description: "خروج واقعی پس از اتصال Supabase Auth فعال می‌شود.",
-    });
-  };
 
   if (isLoading) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8">
-        <header className="mb-10 flex flex-col items-center text-center">
-          <Skeleton className="h-24 w-24 rounded-full" />
-          <Skeleton className="mt-4 h-7 w-32" />
-          <Skeleton className="mt-2 h-4 w-48" />
-        </header>
-        <div className="mx-auto max-w-2xl space-y-6">
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-32 w-full" />
+      <main className="p-4 sm:p-6 lg:p-8">
+        <div className="mx-auto max-w-4xl">
+          <header className="mb-8 flex flex-col items-center"><Skeleton className="h-24 w-24 rounded-full" /><Skeleton className="mt-4 h-8 w-40" /><Skeleton className="mt-2 h-4 w-52" /></header>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-28" />)}</div>
+          <Skeleton className="mt-6 h-64" />
         </div>
-      </div>
+      </main>
     );
   }
 
-  const userName = userProfile?.name || user?.displayName || "عماد";
+  const userName = userProfile?.name || user?.displayName || "کاربر نئوفیت";
   const userEmail = user?.email || "demo@neofit.local";
 
   return (
-    <div dir="rtl" className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background p-4 sm:p-6 lg:p-8">
-      <header className="mb-10 flex flex-col items-center pt-8 text-center lg:pt-2">
-        <Avatar className="h-24 w-24 border-4 border-primary shadow-lg">
-          <AvatarImage src={user?.photoURL || ""} alt={userName} />
-          <AvatarFallback className="text-2xl font-bold">{userName.charAt(0)}</AvatarFallback>
-        </Avatar>
-        <h1 className="mt-4 text-3xl font-extrabold font-headline text-foreground">{userName}</h1>
-        <p className="text-muted-foreground">{userEmail}</p>
-        <div className="mt-3 inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs text-primary shadow-sm">
-          <ShieldCheck className="h-4 w-4" />
-          حساب نمایشی برای ارزیابی رابط کاربری
+    <main dir="rtl" className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-4xl py-3">
+        <header className="mb-7 flex flex-col items-center text-center">
+          <Avatar className="h-24 w-24 border-4 border-primary shadow-lg">
+            <AvatarImage src={user?.photoURL || ""} alt={userName} />
+            <AvatarFallback className="text-2xl font-black">{userName.charAt(0)}</AvatarFallback>
+          </Avatar>
+          <h1 className="mt-4 text-3xl font-black">{userName}</h1>
+          <p className="mt-1 text-sm text-muted-foreground" dir="ltr">{userEmail}</p>
+          <div className="mt-3 inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs font-bold text-primary shadow-sm"><ShieldCheck className="h-4 w-4" />حساب محلی نسخهٔ نمایشی</div>
+        </header>
+
+        {userProfile ? (
+          <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="خلاصه پروفایل">
+            <SummaryItem icon={<Target className="h-5 w-5" />} label="هدف اصلی" value={goalLabels[userProfile.goal]} />
+            <SummaryItem icon={<Scale className="h-5 w-5" />} label="وزن فعلی" value={`${userProfile.weight.toLocaleString("fa-IR")} کیلوگرم`} />
+            <SummaryItem icon={<Dumbbell className="h-5 w-5" />} label="برنامه تمرین" value={`${Number(userProfile.trainingDays).toLocaleString("fa-IR")} روز در هفته`} />
+            <SummaryItem icon={<MapPin className="h-5 w-5" />} label="محل تمرین" value={locationLabels[userProfile.workoutLocation]} />
+          </section>
+        ) : null}
+
+        <div className="mt-7 grid gap-5 lg:grid-cols-2">
+          <Card>
+            <CardHeader><CardTitle>اطلاعات و برنامه</CardTitle></CardHeader>
+            <CardContent className="divide-y p-0">
+              <SettingsItem icon={<FileText className="h-5 w-5" />} title="مشاهده اطلاعات من" description="اطلاعات پایه، سبک زندگی، تغذیه و سابقه پزشکی" href="/profile/view" />
+              <SettingsItem icon={<Edit3 className="h-5 w-5" />} title="ویرایش مشخصات" description="هدف، وزن، شرایط تمرین و عادت‌های روزانه را به‌روز کن" href="/profile/edit" />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle>حساب و نمایش</CardTitle></CardHeader>
+            <CardContent className="divide-y p-0">
+              <SettingsItem icon={<UserCog className="h-5 w-5" />} title="مدیریت حساب محلی" description="نام نمایشی و محدودیت‌های حساب نسخهٔ فعلی" href="/profile/account" />
+              <div className="flex items-center justify-between gap-4 p-4"><div><p className="font-black">حالت نمایش</p><p className="mt-1 text-sm text-muted-foreground">روشن، تاریک یا مطابق دستگاه</p></div><ModeToggle /></div>
+            </CardContent>
+          </Card>
         </div>
-      </header>
 
-      <main className="mx-auto max-w-2xl space-y-8 pb-24">
-        <Card>
-          <CardHeader><CardTitle>اطلاعات و برنامه</CardTitle></CardHeader>
-          <CardContent className="divide-y divide-border p-0">
-            <SettingsItem icon={<FileText className="h-6 w-6" />} title="مشاهده اطلاعات من" description="اطلاعاتی که مبنای برنامه‌های نئوفیت هستند" href="/profile/view" />
-            <SettingsItem icon={<Edit className="h-6 w-6" />} title="ویرایش مشخصات و برنامه" description="هدف، اندازه‌ها، سبک زندگی و تنظیمات تمرین" href="/profile/edit" />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle>تنظیمات حساب</CardTitle></CardHeader>
-          <CardContent className="divide-y divide-border p-0">
-            <SettingsItem icon={<UserCog className="h-6 w-6" />} title="مدیریت حساب" description="نام نمایشی، ایمیل و تنظیمات ورود" href="/profile/account" />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle>تنظیمات برنامه</CardTitle></CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between p-2">
-              <p className="font-semibold">حالت نمایش</p>
-              <ModeToggle />
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="text-center">
-          <Button variant="ghost" className="text-destructive hover:text-destructive" onClick={handleLogout}>
-            <LogOut className="ml-2 h-4 w-4" />
-            خروج از حساب
-          </Button>
+        <div className="mt-6 rounded-2xl border bg-muted/30 p-4 text-sm leading-7 text-muted-foreground">
+          ورود واقعی، همگام‌سازی چنددستگاهی، تغییر ایمیل و رمز عبور بعد از اتصال زیرساخت حساب فعال می‌شوند. این صفحه فعلاً فقط داده‌های محلی همین مرورگر را مدیریت می‌کند.
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
