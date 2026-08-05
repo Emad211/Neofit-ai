@@ -101,6 +101,14 @@ try {
     throw new Error(`Expected /workout/push-a, got ${workoutDetailsResult.pathname}`);
   }
 
+  await page.getByRole('link', { name: 'پیشرفت', exact: true }).click();
+  await page.getByRole('heading', { name: 'پیشرفت', exact: true, level: 2 }).waitFor();
+  await page.getByText('روند وزن', { exact: true }).waitFor();
+  await page.getByText(/ثبت غذای امروز/).waitFor();
+  await page.screenshot({ path: path.join(outputDir, 'progress-390.png'), fullPage: true });
+  const progressResult = await inspectLayout(page, 'progress', 390);
+  if (progressResult.pathname !== '/progress') throw new Error(`Expected /progress, got ${progressResult.pathname}`);
+
   await page.getByRole('link', { name: 'پروفایل', exact: true }).click();
   await page.getByRole('heading', { name: 'پروفایل' }).waitFor();
   await page.waitForFunction(() => window.scrollY === 0);
