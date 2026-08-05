@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 const baseUrl = process.env.NEOFIT_BASE_URL || "http://127.0.0.1:3000";
 const routes = [
   "today",
+  "notifications",
   "nutrition",
   "workout",
   "progress",
@@ -100,6 +101,38 @@ try {
   report.flows.push({ name: "medical-safety-validation", validationVisible, passed: validationVisible });
   if (!validationVisible) report.passed = false;
   await flowPage.screenshot({ path: `${artifactDir}/onboarding-validation.png`, fullPage: true });
+
+  await flowPage.goto(`${baseUrl}/today`, { waitUntil: "domcontentloaded" });
+  await flowPage.waitForTimeout(700);
+  const notificationEntryVisible = await flowPage.getByRole("link", { name: "اعلان‌ها" }).isVisible().catch(() => false);
+  const coachEntryVisible = await flowPage.getByRole("link", { name: "مربی نئوفیت" }).isVisible().catch(() => false);
+  const beforeWater = await flowPage.evaluate(() => {
+    const date = new Date().toISOString().slice(0, 10);
+    const stored = window.localStorage.getItem(`neofit:daily-metrics:${date}`);
+    return stored ? JSON.parse(stored).waterMl : 1250;
+  });
+  await flowPage.getByRole("button", { name: "بازکردن افزودن سریع" }).click();
+  await flowPage.getByRole("button", { name: "یک لیوان آب" }).click();
+  await flowPage.waitForTimeout(250);
+  const afterWater = await flowPage.evaluate(() => {
+    const date = new Date().toISOString().slice(0, 10);
+    return JSON.parse(window.localStorage.getItem(`neofit:daily-metrics:${date}`) || "{}").waterMl;
+  });
+  const quickAddPassed = afterWater === beforeWater + 250;
+  report.flows.push({ name: "today-shell-and-water-quick-add", notificationEntryVisible, coachEntryVisible, beforeWater, afterWater, passed: notificationEntryVisible && coachEntryVisible && quickAddPassed });
+  if (!notificationEntryVisible || !coachEntryVisible || !quickAddPassed) report.passed = false;
+  await flowPage.screenshot({ path: `${artifactDir}/today-interaction.png`, fullPage: true });
+
+  await flowPage.goto(`${baseUrl}/notifications`, { waitUntil: "domcontentloaded" });
+  await flowPage.waitForTimeout(600);
+  const markAllButton = flowPage.getByRole("button", { name: "خواندن همه" });
+  const markAllWasEnabled = await markAllButton.isEnabled().catch(() => false);
+  if (markAllWasEnabled) await markAllButton.click();
+  await flowPage.reload({ waitUntil: "domcontentloaded" });
+  await flowPage.waitForTimeout(500);
+  const allReadPersisted = await flowPage.getByText("همه اعلان‌ها خوانده شده‌اند", { exact: true }).isVisible().catch(() => false);
+  report.flows.push({ name: "notification-read-state-persists", markAllWasEnabled, allReadPersisted, passed: markAllWasEnabled && allReadPersisted });
+  if (!markAllWasEnabled || !allReadPersisted) report.passed = false;
   await flowPage.close();
 } finally {
   await browser.close();
