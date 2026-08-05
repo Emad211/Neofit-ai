@@ -6,6 +6,7 @@ import { deploymentEnvironment, publicAppUrl } from '@/lib/environment';
 import './globals.css';
 import './refinements.css';
 import './system-pages.css';
+import './integration.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(publicAppUrl),
