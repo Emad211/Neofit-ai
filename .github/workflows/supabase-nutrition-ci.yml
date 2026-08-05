@@ -1,0 +1,94 @@
+name: Supabase Nutrition Persistence CI
+
+on:
+  push:
+    branches:
+      - 'stage4d/**'
+    paths:
+      - 'supabase/migrations/**'
+      - 'web/lib/supabase/database.types.ts'
+      - 'web/tests/supabase-nutrition-persistence.test.ts'
+      - 'web/tests/supabase-identity-schema.test.ts'
+      - 'web/package.json'
+      - '.github/workflows/supabase-nutrition-ci.yml'
+  pull_request:
+    branches:
+      - web/pwa-foundation
+    paths:
+      - 'supabase/migrations/**'
+      - 'web/lib/supabase/database.types.ts'
+      - 'web/tests/supabase-nutrition-persistence.test.ts'
+      - 'web/tests/supabase-identity-schema.test.ts'
+      - 'web/package.json'
+      - '.github/workflows/supabase-nutrition-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-nutrition-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: web/package.json
+
+      - name: Install Web dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+
+      - name: Nutrition persistence contract
+        working-directory: web
+        run: npm run test:supabase-nutrition
+
+      - name: Identity and Supabase regressions
+        working-directory: web
+        run: |
+          npm run test:supabase-identity
+          npm run test:supabase-foundation
+          npm run typecheck
+
+      - name: Shared Nutrition Core regression
+        working-directory: packages/nutrition-core
+        run: npm run check
+
+      - name: Reject secrets and permissive policies
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE \
+            '(SUPABASE_SERVICE_ROLE_KEY|sb_secret_|sb_publishable_|eyJ[A-Za-z0-9_-]+\.|using[[:space:]]*\([[:space:]]*true[[:space:]]*\)|with check[[:space:]]*\([[:space:]]*true[[:space:]]*\))' \
+            supabase/migrations; then
+            echo 'Forbidden key material or permissive RLS policy found.' >&2
+            exit 1
+          fi
+
+      - name: Write evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p web/artifacts/supabase-nutrition
+          printf '{\n  "commit": "%s",\n  "migration": "20260805132201_nutrition_persistence.sql",\n  "tables": ["nutrition_goals", "nutrition_entries"],\n  "sharedCoreJson": true,\n  "sqlNutritionArithmetic": false,\n  "rlsRequired": true\n}\n' \
+            "$GITHUB_SHA" > web/artifacts/supabase-nutrition/metadata.json
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-supabase-nutrition-evidence
+          path: web/artifacts/supabase-nutrition
+          if-no-files-found: warn
+          retention-days: 30
