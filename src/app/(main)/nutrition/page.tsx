@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { WeeklyMealPlan } from "@/components/nutrition/weekly-meal-plan";
 import { ShoppingList } from "@/components/nutrition/shopping-list";
 import { FoodLibrary } from "@/components/nutrition/food-library";
@@ -12,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useUserData, type MealLog } from "@/context/user-profile-context";
 import type { InitialPlanPreview } from "@/lib/onboarding-model";
-import { Apple, Camera, ChevronLeft, Flame, ListChecks, Search, Utensils, Wheat } from "lucide-react";
+import { Apple, Camera, ChevronLeft, Flame, History, ListChecks, Search, Utensils, Wheat } from "lucide-react";
 
 function NutritionToolCard({ icon, title, description, children }: { icon: React.ReactNode; title: string; description: string; children: React.ReactNode }) {
   return (
@@ -69,13 +70,16 @@ export default function NutritionPage() {
       <div className="mx-auto max-w-6xl py-3">
         <header className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div><div className="mb-2 inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300"><Apple className="h-3.5 w-3.5" />برنامه غذایی شخصی</div><h1 className="text-3xl font-black sm:text-4xl">تغذیه امروز و هفته</h1><p className="mt-2 text-muted-foreground">وعده‌ها را مرور، ثبت یا با گزینه‌های نزدیک جایگزین کن.</p></div>
-          <Sheet>
-            <SheetTrigger asChild><Button className="w-full sm:w-auto"><ListChecks className="ml-2 h-4 w-4" />لیست خرید</Button></SheetTrigger>
-            <SheetContent dir="rtl" className="w-full p-0 sm:w-[540px]">
-              <SheetHeader className="p-6 text-right"><SheetTitle className="flex items-center gap-2"><ListChecks className="h-5 w-5" />لیست خرید برنامه</SheetTitle></SheetHeader>
-              <div className="h-[calc(100vh-80px)] overflow-y-auto px-5 pb-6"><ShoppingList /></div>
-            </SheetContent>
-          </Sheet>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <Button asChild variant="outline" className="w-full sm:w-auto"><Link href="/nutrition/history"><History className="ml-2 h-4 w-4" />تاریخچه تغذیه</Link></Button>
+            <Sheet>
+              <SheetTrigger asChild><Button className="w-full sm:w-auto"><ListChecks className="ml-2 h-4 w-4" />لیست خرید</Button></SheetTrigger>
+              <SheetContent dir="rtl" className="w-full p-0 sm:w-[540px]">
+                <SheetHeader className="p-6 text-right"><SheetTitle className="flex items-center gap-2"><ListChecks className="h-5 w-5" />لیست خرید برنامه</SheetTitle></SheetHeader>
+                <div className="h-[calc(100vh-80px)] overflow-y-auto px-5 pb-6"><ShoppingList /></div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </header>
 
         <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="خلاصه تغذیه امروز">
