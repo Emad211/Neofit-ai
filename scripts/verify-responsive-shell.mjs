@@ -11,7 +11,7 @@ const cases = [
 ];
 
 const browser = await chromium.launch({ headless: true });
-const report = { baseUrl, cases: [], passed: true };
+const report = { baseUrl, cases: [], fatalError: null, passed: true };
 
 try {
   for (const testCase of cases) {
@@ -24,73 +24,82 @@ try {
       if (message.type() === "error") consoleErrors.push(message.text());
     });
 
-    const response = await page.goto(`${baseUrl}/today`, { waitUntil: "domcontentloaded", timeout: 30_000 });
-    await page.waitForTimeout(1_200);
+    try {
+      const response = await page.goto(`${baseUrl}/today`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+      await page.waitForTimeout(1_200);
 
-    const sidebar = page.locator('div[data-state][data-side="right"]').first();
-    const sidebarPanel = page.locator('[data-sidebar="sidebar"]').first();
-    const sidebarVisible = await sidebarPanel.isVisible().catch(() => false);
-    const mobileNavigationVisible = await page.getByRole("navigation", { name: "ناوبری اصلی" }).isVisible().catch(() => false);
-    const readinessVisible = await page.getByText("امتیاز آمادگی امروز", { exact: true }).isVisible().catch(() => false);
-    const notificationEntryVisible = await page.getByRole("link", { name: /اعلان‌ها/ }).isVisible().catch(() => false);
-    const noHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+      const sidebar = page.locator('div[data-state][data-side="right"]').first();
+      const sidebarPanel = page.locator('[data-sidebar="sidebar"]').first();
+      const sidebarVisible = await sidebarPanel.isVisible().catch(() => false);
+      const mobileNavigationVisible = await page.getByRole("navigation", { name: "ناوبری اصلی" }).isVisible().catch(() => false);
+      const readinessVisible = await page.getByText("امتیاز آمادگی امروز", { exact: true }).isVisible().catch(() => false);
+      const notificationEntryVisible = await page.getByRole("link", { name: /اعلان‌ها/ }).first().isVisible().catch(() => false);
+      const noHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
 
-    const stateBefore = await sidebar.getAttribute("data-state").catch(() => null);
-    await page.getByRole("button", { name: "بازکردن منو" }).click();
-    await page.waitForTimeout(300);
-    const stateAfter = await sidebar.getAttribute("data-state").catch(() => null);
-    const sidebarTogglePassed = stateBefore === "expanded" && stateAfter === "collapsed";
-    await page.getByRole("button", { name: "بازکردن منو" }).click();
-    await page.waitForTimeout(250);
+      const stateBefore = await sidebar.getAttribute("data-state").catch(() => null);
+      await page.getByRole("button", { name: "بازکردن منو" }).click();
+      await page.waitForTimeout(300);
+      const stateAfter = await sidebar.getAttribute("data-state").catch(() => null);
+      const sidebarTogglePassed = stateBefore === "expanded" && stateAfter === "collapsed";
+      await page.getByRole("button", { name: "بازکردن منو" }).click();
+      await page.waitForTimeout(250);
 
-    await page.screenshot({ path: `${artifactDir}/today-${testCase.name}.png`, fullPage: true });
+      await page.screenshot({ path: `${artifactDir}/today-${testCase.name}.png`, fullPage: true });
 
-    const notificationResponse = await page.goto(`${baseUrl}/notifications`, { waitUntil: "domcontentloaded", timeout: 30_000 });
-    await page.waitForTimeout(700);
-    const notificationNoOverflow = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
-    const notificationTitleVisible = await page.getByRole("heading", { name: "اعلان‌ها" }).isVisible().catch(() => false);
-    await page.screenshot({ path: `${artifactDir}/notifications-${testCase.name}.png`, fullPage: true });
+      const notificationResponse = await page.goto(`${baseUrl}/notifications`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+      await page.waitForTimeout(700);
+      const notificationNoOverflow = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+      const notificationTitleVisible = await page.getByRole("heading", { name: "اعلان‌ها" }).first().isVisible().catch(() => false);
+      await page.screenshot({ path: `${artifactDir}/notifications-${testCase.name}.png`, fullPage: true });
 
-    const passed =
-      (response?.status() ?? 0) >= 200 &&
-      (response?.status() ?? 0) < 400 &&
-      (notificationResponse?.status() ?? 0) >= 200 &&
-      (notificationResponse?.status() ?? 0) < 400 &&
-      sidebarVisible &&
-      !mobileNavigationVisible &&
-      readinessVisible &&
-      notificationEntryVisible &&
-      noHorizontalOverflow &&
-      notificationNoOverflow &&
-      notificationTitleVisible &&
-      sidebarTogglePassed &&
-      pageErrors.length === 0 &&
-      consoleErrors.length === 0;
+      const passed =
+        (response?.status() ?? 0) >= 200 &&
+        (response?.status() ?? 0) < 400 &&
+        (notificationResponse?.status() ?? 0) >= 200 &&
+        (notificationResponse?.status() ?? 0) < 400 &&
+        sidebarVisible &&
+        !mobileNavigationVisible &&
+        readinessVisible &&
+        notificationEntryVisible &&
+        noHorizontalOverflow &&
+        notificationNoOverflow &&
+        notificationTitleVisible &&
+        sidebarTogglePassed &&
+        pageErrors.length === 0 &&
+        consoleErrors.length === 0;
 
-    report.cases.push({
-      name: testCase.name,
-      viewport: testCase.viewport,
-      sidebarVisible,
-      mobileNavigationVisible,
-      readinessVisible,
-      notificationEntryVisible,
-      noHorizontalOverflow,
-      notificationNoOverflow,
-      notificationTitleVisible,
-      stateBefore,
-      stateAfter,
-      sidebarTogglePassed,
-      pageErrors,
-      consoleErrors,
-      passed,
-    });
-    if (!passed) report.passed = false;
-    await context.close();
+      report.cases.push({
+        name: testCase.name,
+        viewport: testCase.viewport,
+        sidebarVisible,
+        mobileNavigationVisible,
+        readinessVisible,
+        notificationEntryVisible,
+        noHorizontalOverflow,
+        notificationNoOverflow,
+        notificationTitleVisible,
+        stateBefore,
+        stateAfter,
+        sidebarTogglePassed,
+        pageErrors,
+        consoleErrors,
+        passed,
+      });
+      if (!passed) report.passed = false;
+    } catch (error) {
+      report.cases.push({ name: testCase.name, viewport: testCase.viewport, error: String(error?.stack || error), pageErrors, consoleErrors, passed: false });
+      report.passed = false;
+    } finally {
+      await context.close();
+    }
   }
+} catch (error) {
+  report.fatalError = String(error?.stack || error);
+  report.passed = false;
 } finally {
   await browser.close();
+  await fs.writeFile(`${artifactDir}/responsive-report.json`, `${JSON.stringify(report, null, 2)}\n`);
 }
 
-await fs.writeFile(`${artifactDir}/responsive-report.json`, `${JSON.stringify(report, null, 2)}\n`);
 console.log(JSON.stringify(report, null, 2));
 if (!report.passed) process.exit(1);
