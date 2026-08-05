@@ -1,5 +1,5 @@
-import { NeoFitPrototype } from '@/components/neofit-prototype';
+import { redirect } from 'next/navigation';
 
 export default function HomePage() {
-  return <NeoFitPrototype />;
+  redirect('/today');
 }
