@@ -83,7 +83,7 @@ export function DailyFeed({ quote, logs }: { quote: string; logs: CombinedLog[] 
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" dir="rtl">
+                    <DropdownMenuContent align="end">
                       {log.logType !== "workout" && <DropdownMenuItem onClick={() => handleEdit(log)}><Edit className="ml-2 h-4 w-4" />ویرایش</DropdownMenuItem>}
                       <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(log)}><Trash2 className="ml-2 h-4 w-4" />حذف</DropdownMenuItem>
                     </DropdownMenuContent>
