@@ -5,6 +5,7 @@
 **Active product branch:** `web/full-frontend-integration`  
 **Active Draft PR:** #36  
 **Validated code head:** `f5f5a6f60c15d09793f9ea416f1fe721b6d9e740`  
+**Latest synchronized documentation head:** `72343eba6bb57113e7cdb1c592e8799814b23320`  
 **Exact next:** Vercel Env + exact-head deploy + real temporary-account Runtime proof
 
 ## Mandatory read order
@@ -119,6 +120,20 @@ Artifact 8941255661
 Digest sha256:f0e57c1b940f6b17a67e5562814ddd2ff3f70f13a59a51d11e3efdc25a808172
 ```
 
+Final documentation-head checkpoint before the last Evidence-only update:
+
+```text
+head: 0f88dcf87ebc8d0f1a1143dd9c0b4c18fae20f73
+Web CI 31033160546 — success
+Artifact 8941513789
+Digest sha256:a83ac83af1105fa25590cfa61bf93050e41dd401920abd847562b7a55cba0092
+Nutrition Core CI 31033158969 — success
+Identity CI 31033159086 — success
+Nutrition Persistence CI 31033159397 — success
+Foundation CI 31033159707 — success
+Vercel Build Contract 31033159050 — success
+```
+
 Passed:
 
 - strict TypeScript؛
@@ -151,7 +166,7 @@ Do not claim:
 
 ## 5. Exact continuation point
 
-1. Recheck PR #36 Head and all CI after documentation commits.
+1. Recheck PR #36 Head and CI on `72343eba6bb57113e7cdb1c592e8799814b23320`.
 2. In Vercel Project Settings, configure Preview and Production:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
