@@ -1,64 +1,39 @@
 # NeoFit Frontend Progress Log
 
-## 2026-08-05 — Frontend completion program started
+This log records only browser-proven milestones on branch `revival/full-ui-front`.
 
-The complete page map, delivery order and frontend Definition of Done are recorded in:
+## Phase 1 — Onboarding completed
 
-- `docs/NEOFIT_FRONTEND_COMPLETION_PLAN.md`
-
-Initial shared Onboarding model, persistent draft and Wizard shell:
-
-```text
-head: 6912b68d6c075bad3af8303e7053e2ee564fc876
-UI Revival CI: 30969428938 — success
-public RawGitHack export: 30969428940 — success
-```
-
----
-
-## 2026-08-05 — Phase 1 Onboarding completed
-
-- Implemented all 15 steps from Welcome through plan activation.
-- Restored the complete historical front/back SVG injury selector.
-- Preserved 73 independently clickable body regions.
-- Added current/past injury, severity, pain, forbidden movement and notes.
-- Added Lifestyle, Nutrition profile, Training history, Availability, Preferences, Review, Analysis, Result and Confirmation.
-- Added draft migration, restart, refresh resume and medical acknowledgement validation.
+- Persistent 15-step Wizard
+- Complete historical front/back injury selector
+- 73 independently clickable body regions
+- Medical safety acknowledgement, draft migration and refresh resume
 
 ```text
 validated head: 35f7b1f9af9f8546ac839d1dc310b1978035254d
 UI Revival CI: 30970855075 — success
 artifact: 8916466012
 artifact digest: sha256:b3208cf01b6d70309512814ab473944a9c9fc87beeee50df5eee654db2f3a871
-Onboarding routes: 15/15 success
-Injury body regions: 73
-Page errors: 0
-Console errors: 0
 ```
 
 ---
 
-## 2026-08-05 — Phase 2 App Shell and Today completed
+## Phase 2 — App Shell and Today completed
 
-- Added Persian RTL mobile header, bottom navigation, desktop header and collapsible right Sidebar.
-- Added Coach and Notification entries with persistent unread state.
-- Added Notification Center read/delete/mark-all behavior.
-- Rebuilt Today around readiness, adherence, workout, meal, water, steps, sleep, weight and timeline.
-- Added Quick Add for meal, activity, weight, water and body measurements.
-- Added Today loading, empty, error and offline behavior.
-- Proved tablet `820×1180` and desktop `1440×1000` layouts, Sidebar collapse and no horizontal overflow.
+- Mobile/desktop App Shell
+- Today dashboard and Quick Add
+- Persistent daily metrics and notifications
+- Offline feedback
+- Tablet and desktop Sidebar/overflow evidence
 
 ---
 
-## 2026-08-05 — Phase 3 Workout completed
+## Phase 3 — Workout completed
 
-- Persian weekly overview and dedicated `/workout/[id]` Day Details.
-- Warm-up, targets, rest, safety and previous performance.
-- Persistent Player and exact refresh resume.
-- Rest Timer, movement guide and local alternatives.
-- Completion with duration, volume, RPE, pain and notes.
-- Personal records and `/workout/history`.
-- Loading, empty and recoverable error states.
+- Weekly overview and Day Details
+- Persistent Workout Player and exact refresh resume
+- Guides, alternatives, Rest Timer and safety notes
+- Completion feedback, History and personal records
 
 ```text
 validated head: fd47596ef09aed24a6ae5c4cafe0723b3d10efff
@@ -69,15 +44,13 @@ artifact digest: sha256:bdc692e02d3a8747e7ef12a853597378260d6fec94bd1582a57b4ae6
 
 ---
 
-## 2026-08-05 — Phase 4 Nutrition completed
+## Phase 4 — Nutrition completed
 
-- Persian daily/weekly hierarchy with calorie target and adherence.
-- Ingredients, recipe and equivalent alternatives.
-- Persistent planned-meal and trusted-food logging.
-- Daily History with target variance.
-- Trusted portion scaling, recent/saved foods and Shopping List.
-- Hydration and safe no-supplement state.
-- Mobile-scrollable tool dialogs and route states.
+- Daily/weekly plans
+- Ingredients, recipe and alternatives
+- Persistent planned/trusted food logging
+- Portion scaling, History, recent/saved foods and Shopping List
+- Hydration and safe supplement state
 
 ```text
 validated head: bd8c5a3cf3f176f8a9223afe24e6f3002044fe43
@@ -88,14 +61,13 @@ artifact digest: sha256:f2d097581a6425b1c1b1d31c047e5ab0dc73cf33234fda4e5bf61e6f
 
 ---
 
-## 2026-08-05 — Phase 5 Progress completed
+## Phase 5 — Progress completed
 
-- Replaced the empty placeholder with a Persian RTL dashboard.
-- Added weight, target delta, waist and weekly workout summaries.
-- Added weight, waist, workout-volume, calorie and exercise-progression charts.
-- Added personal records, milestones and 7/30-day summaries.
-- Added temporary local photo previews with no upload or persistent image bytes.
-- Kept all analytics derived from existing logs; no Progress store/service was introduced.
+- Overview metrics and five charts
+- Exercise-specific progression and records
+- Seven-day and 30-day reports
+- Derived milestones
+- Temporary private photo previews without persistent image bytes
 
 ```text
 validated head: 1323578d6ac6f35080b669825eebc813faa6c5bb
@@ -106,68 +78,99 @@ artifact digest: sha256:cc09fa8289c806938f4a20c06cc42d0e19a3e7f1f7a91e03440c31a8
 
 ---
 
-## 2026-08-05 — Phase 6 Profile, Settings, Notifications and Coach completed
+## Phase 6 — Profile, Settings, Notifications and Coach completed
 
-### Profile and local account
-
-- Rebuilt the Profile landing page around clear goal, weight, schedule and location summaries.
-- Fully localized `/profile/view` and `/profile/edit`.
-- Added functional local profile editing and explicit weight validation.
-- Added functional display-name editing.
-- Removed fake editable email/password and AI-plan-regeneration promises.
-- Added Profile loading/error states and a focused browser flow.
-
-### Settings, privacy and notifications
-
-- Added persistent Workout, Meal, Water and Report notification preferences.
-- Kept existing notices visible when future-category delivery is disabled.
-- Added `/profile/settings` with local-data boundary, FAQ, diagnostics and version information.
-- Added real JSON export.
-- Added confirmed local-data deletion and redirect to Onboarding.
-- Verified cancellation preserves data before destructive confirmation.
-
-### Local Coach
-
-- Replaced the empty `/chat` route with a Persian local Coach.
-- Added suggested prompts and manual input.
-- Added Today, Workout, Nutrition and Progress summaries from current browser records.
-- Added route action links.
-- Added local history capped at 50 messages and confirmed clear-history behavior.
-- Added an explicit no-online-model disclosure.
-- Added a medical safety response that refuses diagnosis/treatment and routes to health limitations.
-- Added Coach loading/error states.
-
-### Final Phase 6 evidence
+- Persian Profile summary/view/edit
+- Functional local profile and display-name editing
+- Persistent per-category notification preferences
+- JSON export and confirmed local-data deletion
+- Privacy/FAQ/diagnostics boundary
+- Local Coach summaries, action cards, history and medical safety response
 
 ```text
 validated head: 1af8c43848058ba5ce896b131e9482c43306905b
 UI Revival CI: 30993048559 — success
 artifact: 8925014900
 artifact digest: sha256:9b59deddc69b618df749a4c46061e1a91521186ea3b1af8ad4b66782f03e6b34
+```
+
+---
+
+## Phase 7 — Final hardening completed
+
+### System states
+
+- Added custom Persian 404.
+- Added global recoverable error boundary.
+- Added Maintenance and Session Expired pages.
+- Proved expected HTTP status and no horizontal overflow.
+
+### Keyboard and motion accessibility
+
+- Added one root Skip Link.
+- Added a focusable `#main-content` target.
+- Added a consistent three-pixel `focus-visible` outline.
+- Added reduced-motion behavior.
+- Proved Skip Link focus/activation and computed focus style in Chromium.
+
+### PWA baseline
+
+- Added Persian RTL Web App Manifest.
+- Added scalable NeoFit SVG icon.
+- Added dependency-free Service Worker registration.
+- Added browser install prompt only when `beforeinstallprompt` exists.
+- Added safe cache boundaries:
+  - bypass non-GET requests;
+  - bypass cross-origin requests;
+  - bypass `/api` and `/auth`;
+  - bypass requests carrying `Authorization`;
+  - network-first navigation with cached/offline fallback;
+  - cache-first safe static assets.
+- Proved Service Worker registration, activation and page control.
+- Proved `/today` reloads while Chromium is offline.
+
+### Final browser evidence
+
+```text
+validated runtime head: fd717f49a3f7ee5afd0a2669a0f2ffdd575db237
+UI Revival CI: 30994281464 — success
+artifact: 8925545367
+artifact digest: sha256:452b0847bb32894044ed4a797b5468dce14628e753ef6cdd63babed0ed4f1b76
+static pages: 42/42
 TypeScript: success
 Production build: success
-Mobile gate: success
-Tablet/Desktop responsive gate: success
-Workout regression gate: success
-Nutrition regression gate: success
-Progress regression gate: success
-Profile edit/account/settings/export/delete gate: success
-Notification preference persistence: success
-Coach Today summary: success
-Coach Workout guidance and action link: success
-Coach medical safety boundary: success
-Coach history persistence and clear: success
-Page errors: 0
-Console errors: 0
+all product regression gates: success
+Manifest/icon: success
+Service Worker source boundary: success
+Service Worker registered: true
+Service Worker state: activated
+Service Worker controls page: true
+Offline reload: success
+Skip Link: success
+Main focus target: success
+Visible focus outline: 3 px
+Reduced-motion media/state: success
+404 status/page: success
+Maintenance page: success
+Session Expired page: success
+Unexpected page errors: 0
+Unexpected console errors: 0
 ```
+
+Network failures caused deliberately by offline simulation and the expected 404 resource message are recorded separately by the Gate and are not discarded silently.
+
+---
+
+## Frontend completion state
+
+The frontend contract is complete and remains on Draft PR `#34`. It is a deterministic local preview, not yet a production-connected application.
 
 ### Exact continuation point
 
-Phase 6 is closed. Continue with Phase 7 hardening:
-
-1. Add custom 404, global error, maintenance and expired-session states.
-2. Add one root Skip Link and consistent visible focus/reduced-motion rules.
-3. Add a dependency-free manifest, SVG icon, Service Worker and registration component.
-4. Do not cache API/Auth/Authorization/non-GET requests.
-5. Extend existing browser gates for manifest, Service Worker, keyboard landmarks and final route matrix.
-6. Keep completed product flows unchanged except for proven defects.
+1. Do not merge or promote PR `#34` without explicit approval.
+2. Create a dedicated backend-integration branch from this proven frontend.
+3. Replace local adapters incrementally with Supabase Auth/Postgres/RLS.
+4. Connect Shared Nutrition Core before displaying real actual-macro totals for unknown foods.
+5. Replace only the Coach response adapter; preserve the current UI and medical safety contract.
+6. Add private storage and push delivery only after their access-control contracts exist.
+7. Re-run the same browser matrix after every integration slice.
