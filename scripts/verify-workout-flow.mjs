@@ -48,7 +48,7 @@ try {
   await page.waitForTimeout(700);
 
   const dayTitleVisible = await page.getByRole("heading", { name: "فشار بالاتنه" }).isVisible().catch(() => false);
-  const warmupVisible = await page.getByRole("heading", { name: "گرم‌کردن پیشنهادی" }).isVisible().catch(() => false);
+  const warmupVisible = await page.getByText("گرم‌کردن پیشنهادی", { exact: true }).isVisible().catch(() => false);
   const previousPerformanceVisible = await page.getByText(/آخرین عملکرد:.*۳۰/).first().isVisible().catch(() => false);
   const dayDetailsPassed = dayTitleVisible && warmupVisible && previousPerformanceVisible;
   report.checks.dayDetails = { dayTitleVisible, warmupVisible, previousPerformanceVisible, passed: dayDetailsPassed };
@@ -123,7 +123,7 @@ try {
   await page.waitForTimeout(700);
 
   const saveSuccessVisible = await page.getByRole("heading", { name: "جلسه با موفقیت ثبت شد" }).isVisible().catch(() => false);
-  const freshRecordsVisible = await page.getByRole("heading", { name: "رکوردهای تازه" }).isVisible().catch(() => false);
+  const freshRecordsVisible = await page.getByText("رکوردهای تازه", { exact: true }).isVisible().catch(() => false);
   const storedResult = await page.evaluate(() => {
     const activeSession = window.localStorage.getItem("neofit:active-workout:push-a");
     const state = JSON.parse(window.localStorage.getItem("neofit-ui-demo-v3") || "{}");
@@ -143,7 +143,7 @@ try {
   await page.goto(`${baseUrl}/workout/history`, { waitUntil: "domcontentloaded", timeout: 30_000 });
   await page.waitForTimeout(700);
   const historyTitleVisible = await page.getByRole("heading", { name: "جلسه‌ها و رکوردها" }).isVisible().catch(() => false);
-  const recordsTitleVisible = await page.getByRole("heading", { name: "رکوردهای اخیر" }).isVisible().catch(() => false);
+  const recordsTitleVisible = await page.getByText("رکوردهای اخیر", { exact: true }).isVisible().catch(() => false);
   const loggedWorkoutVisible = await page.getByText("فشار بالاتنه", { exact: true }).first().isVisible().catch(() => false);
   const noteVisible = await page.getByText("فرم خوب بود و ست آخر کنترل‌شده انجام شد.", { exact: true }).isVisible().catch(() => false);
   const recordBadgeVisible = await page.getByText(/رکورد/, { exact: false }).first().isVisible().catch(() => false);
