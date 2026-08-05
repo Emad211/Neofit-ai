@@ -47,7 +47,7 @@ export default function WorkoutPage() {
       <div className="mx-auto max-w-6xl py-3">
         <header className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div><div className="mb-2 inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs font-bold text-primary"><Dumbbell className="h-3.5 w-3.5" />برنامه تمرینی شخصی</div><h1 className="text-3xl font-black sm:text-4xl">تمرین این هفته</h1><p className="mt-2 text-muted-foreground">جلسه‌ها، روزهای استراحت و پیشرفت هفتگی را از اینجا مدیریت کن.</p></div>
-          <Button asChild variant="outline"><Link href="/progress"><History className="ml-2 h-4 w-4" />تاریخچه و رکوردها</Link></Button>
+          <Button asChild variant="outline"><Link href="/workout/history"><History className="ml-2 h-4 w-4" />تاریخچه و رکوردها</Link></Button>
         </header>
 
         {activeSession ? (
