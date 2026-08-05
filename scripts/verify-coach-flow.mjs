@@ -61,7 +61,8 @@ try {
 
   await page.getByRole("button", { name: "تمرین بعدی" }).click();
   await page.waitForTimeout(250);
-  const workoutResponseVisible = await page.getByText(/جلسهٔ بعدی/).isVisible().catch(() => false);
+  const workoutPageText = await page.locator("body").innerText();
+  const workoutResponseVisible = workoutPageText.includes("جلسهٔ بعدی") && workoutPageText.includes("تعداد حرکات");
   const workoutActionVisible = await page.getByRole("link", { name: "جزئیات جلسه" }).isVisible().catch(() => false);
   const workoutPassed = workoutResponseVisible && workoutActionVisible;
   report.checks.workoutGuidance = { workoutResponseVisible, workoutActionVisible, passed: workoutPassed };
