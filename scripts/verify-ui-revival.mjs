@@ -104,7 +104,7 @@ try {
 
   await flowPage.goto(`${baseUrl}/today`, { waitUntil: "domcontentloaded" });
   await flowPage.waitForTimeout(700);
-  const notificationEntryVisible = await flowPage.getByRole("link", { name: "اعلان‌ها" }).isVisible().catch(() => false);
+  const notificationEntryVisible = await flowPage.getByRole("link", { name: /اعلان‌ها/ }).isVisible().catch(() => false);
   const coachEntryVisible = await flowPage.getByRole("link", { name: "مربی نئوفیت" }).isVisible().catch(() => false);
   const beforeWater = await flowPage.evaluate(() => {
     const date = new Date().toISOString().slice(0, 10);
