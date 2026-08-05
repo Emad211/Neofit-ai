@@ -10,6 +10,15 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'next.config.ts'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/public-github-pages.yml'
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'next.config.ts'
   workflow_dispatch:
 
 permissions:
@@ -18,7 +27,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: github-pages
+  group: github-pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
