@@ -19,13 +19,13 @@ Every primary route must support Persian RTL, mobile/tablet/desktop layouts, dar
 - The injury step preserves the full old front/back SVG body selector with 73 clickable regions.
 - Phase 2 App Shell, Today, Notification Center, Quick Add and offline/system states are complete.
 - Fixed-width mobile, tablet and desktop gates prove correct navigation, Sidebar collapse and no horizontal overflow.
-- Phase 3 Workout is complete at frontend level: weekly plan, day details, persistent Player, guides, alternatives, completion feedback, history, previous performance, personal records and Workout route states.
-- The Workout gate proves Day Details, refresh resume, exercise replacement, RPE/pain/note persistence, PR detection, active-session cleanup and History rendering.
-- Exercise-level long-term charts belong to Phase 5 Progress rather than expanding the Workout area further.
-- Nutrition and Profile retain useful historical foundations but still need product-flow completion.
+- Phase 3 Workout is complete: weekly plan, Day Details, persistent Player, guides, alternatives, completion feedback, History, previous performance, personal records and route states.
+- Phase 4 Nutrition now has a Persian daily/weekly landing page, daily calorie status, initial macro targets, localized meal cards, ingredient/recipe details, equivalent meal replacement, persistent meal logging, shopping-list access and route loading/error states.
+- The focused Nutrition gate proves landing hierarchy, details, recipe, replacement, logging, refresh persistence and shopping-list access without page or console errors.
+- Nutrition History, manual portion-aware food logging, recent/saved food polish and supplement summary remain before Phase 4 closure.
 - Progress, settings, coach and final PWA/accessibility hardening remain incomplete.
 
-Remaining estimate before backend integration: **22–40 development hours**, or **36–62 hours including full responsive/accessibility/browser QA**.
+Remaining estimate before backend integration: **18–34 development hours**, or **30–54 hours including full responsive/accessibility/browser QA**.
 
 ## 3. Delivery order
 
@@ -92,7 +92,7 @@ Remaining estimate before backend integration: **22–40 development hours**, or
 ### 4.5 Workout — implemented
 
 - Persian weekly overview, rest days and summary metrics
-- Dedicated `/workout/[id]` day details
+- Dedicated `/workout/[id]` Day Details
 - Warm-up, ordered exercises, sets/reps/rest and safety notes
 - Previous performance hints
 - Explicit detail and start actions
@@ -110,19 +110,31 @@ Long-term load/volume charts are intentionally deferred to Progress rather than 
 
 ### 4.6 Nutrition — active
 
-Target contract:
+Implemented:
 
-- Daily and weekly meal-plan hierarchy
-- Day totals and remaining calories/macros
-- Exact portions and ingredient details
-- Equivalent Iranian meal alternatives
-- Recipe and preparation view
-- Search/library/manual food logging and portion selection
-- Saved and recent foods
-- Shopping list
+- Persian daily/weekly landing hierarchy
+- Daily calorie target, logged calories, remaining calories and meal adherence
+- Initial protein, carbohydrate and fat targets from the completed Onboarding plan
+- Clear weekly cards with Persian dates, Today marker and daily adherence
+- Ingredient quantities and recipe/preparation sheet
+- Equivalent local meal alternatives
+- Persistent planned-meal logging
+- Persian Meal Cards with Details, Alternative and Log actions
+- Removed the dead Remove-from-plan action
+- Existing local Food Library and Camera preview retained
+- Shopping list access
+- Loading, empty and recoverable error states
+- Focused browser evidence for details, replacement, logging, refresh persistence and shopping list
+
+Remaining:
+
+- Nutrition History and actual-vs-plan daily grouping
+- Simple manual/library logging with portion selection
+- Saved/recent food presentation
 - Water and supplement summary
-- Nutrition history and actual-vs-plan comparison
-- Nutrition-specific loading, empty and recoverable error states
+- Final Nutrition browser coverage and responsive review
+
+Actual food macro totals must come from Nutrition Core later; the frontend must not invent protein, carbohydrate or fat values for meals that lack a trusted source.
 
 ### 4.7 Progress
 
@@ -168,16 +180,16 @@ Remaining:
 
 ### 4.11 System states
 
-Implemented for Onboarding, Today, Shell and Workout:
+Implemented for Onboarding, Today, Shell, Workout and Nutrition:
 
 - Route-specific loading
 - Recoverable error/retry
 - Empty states where applicable
-- Offline feedback
+- Offline feedback through the shared shell
 
 Remaining globally:
 
-- Nutrition, Progress, Profile and Coach states
+- Progress, Profile and Coach states
 - Maintenance and expired session
 - PWA install and Service Worker integration
 - Final keyboard and screen-reader audit
@@ -202,7 +214,7 @@ Remaining globally:
 ### Phase 3 — Workout
 
 - [x] Persian weekly overview and active-session banner
-- [x] Dedicated day-detail hierarchy
+- [x] Dedicated Day Details
 - [x] Persistent Workout Player and rest timer
 - [x] Exercise guide and alternatives
 - [x] Completion and pain/RPE/note capture
@@ -213,10 +225,14 @@ Remaining globally:
 
 ### Phase 4 — Nutrition
 
-- [ ] Final daily/weekly hierarchy and macro summary
-- [ ] Details, alternatives and recipes
-- [ ] Logging, library, shopping list and history
-- [ ] Nutrition-specific states and browser gate
+- [x] Daily/weekly hierarchy and initial macro summary
+- [x] Details, alternatives and recipes
+- [x] Planned-meal logging and shopping-list access
+- [x] Nutrition loading/error/empty states
+- [x] First focused browser flow
+- [ ] Nutrition History and actual-vs-plan grouping
+- [ ] Portion-aware manual/library logging and saved/recent foods
+- [ ] Water/supplement summary and final Nutrition gate
 
 ### Phase 5 — Progress and reports
 
@@ -240,10 +256,10 @@ Remaining globally:
 
 ## 6. Exact continuation point
 
-1. Read the existing Nutrition page and components before changing them.
-2. Preserve useful historical visuals and existing meal-details, alternatives, library and shopping-list work.
-3. First normalize the Nutrition landing page into daily totals, remaining macros and a clear daily/weekly plan hierarchy.
-4. Then close meal details, alternatives/recipes and logging flows without introducing a second data layer.
-5. Reuse the current local User Data context; do not build a new store until a demonstrated limitation requires it.
-6. Add only the Nutrition-specific loading/error/empty states and one focused browser flow.
-7. Keep completed Onboarding, Shell and Workout contracts unchanged except for verified defects.
+1. Add `/nutrition/history` by grouping the existing `MealLog` records by day; do not create another store.
+2. Show daily logged calories, planned target, variance and individual meals.
+3. Link the Nutrition landing page to History.
+4. Reuse the current Food Library for a minimal portion-aware manual logging path rather than building a new library architecture.
+5. Add recent/saved food presentation only if the existing local data contract can support it directly.
+6. Keep actual meal macros explicitly unavailable until Nutrition Core supplies trusted values.
+7. Extend the focused Nutrition gate and then decide whether Phase 4 can close.
