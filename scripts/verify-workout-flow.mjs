@@ -73,16 +73,17 @@ try {
   await page.waitForTimeout(500);
 
   const completionVisible = await page.getByRole("heading", { name: "تمرین کامل شد!" }).isVisible().catch(() => false);
-  await page.locator("#rpe").evaluate((element) => {
-    element.value = "8";
-    element.dispatchEvent(new Event("input", { bubbles: true }));
-    element.dispatchEvent(new Event("change", { bubbles: true }));
-  });
-  await page.locator("#pain").evaluate((element) => {
-    element.value = "2";
-    element.dispatchEvent(new Event("input", { bubbles: true }));
-    element.dispatchEvent(new Event("change", { bubbles: true }));
-  });
+  const rpeSlider = page.locator("#rpe");
+  await rpeSlider.focus();
+  await page.keyboard.press("ArrowRight");
+  const painSlider = page.locator("#pain");
+  await painSlider.focus();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  const visibleSliderValues = {
+    rpe: await rpeSlider.inputValue(),
+    pain: await painSlider.inputValue(),
+  };
   await page.locator("#workout-notes").fill("فرم خوب بود و ست آخر کنترل‌شده انجام شد.");
   await page.getByRole("button", { name: "ذخیره تمرین در تاریخچه" }).click();
   await page.waitForTimeout(700);
@@ -96,8 +97,8 @@ try {
       workout: workout ? { rpe: workout.rpe, painScale: workout.painScale, notes: workout.notes, totalVolume: workout.totalVolume } : null,
     };
   });
-  const completionPassed = completionVisible && saveSuccessVisible && storedResult.activeSessionCleared && storedResult.workout?.rpe === 8 && storedResult.workout?.painScale === 2 && storedResult.workout?.notes?.includes("فرم خوب بود") && storedResult.workout?.totalVolume > 0;
-  report.checks.completionAndSave = { completionVisible, saveSuccessVisible, storedResult, passed: completionPassed };
+  const completionPassed = completionVisible && visibleSliderValues.rpe === "8" && visibleSliderValues.pain === "2" && saveSuccessVisible && storedResult.activeSessionCleared && storedResult.workout?.rpe === 8 && storedResult.workout?.painScale === 2 && storedResult.workout?.notes?.includes("فرم خوب بود") && storedResult.workout?.totalVolume > 0;
+  report.checks.completionAndSave = { completionVisible, visibleSliderValues, saveSuccessVisible, storedResult, passed: completionPassed };
   if (!completionPassed) report.passed = false;
   await page.screenshot({ path: `${artifactDir}/workout-completion.png`, fullPage: true });
 
