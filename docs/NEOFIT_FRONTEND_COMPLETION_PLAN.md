@@ -2,8 +2,8 @@
 
 **Status:** Active implementation contract  
 **Primary branch:** `revival/full-ui-front`  
-**Current phase:** Phase 2 — application shell and Today  
-**Strategy:** finish the complete product journey with backend-neutral local adapters first; replace those adapters with Supabase, Nutrition Core and API integrations only after frontend completion.
+**Current phase:** Phase 2 responsive verification, then Phase 3 Workout  
+**Strategy:** complete the end-to-end product journey using backend-neutral local adapters first; connect Supabase, Nutrition Core and external APIs only after the frontend contract is complete.
 
 ## 1. Definition of frontend complete
 
@@ -16,26 +16,30 @@ Every route must support Persian RTL, mobile/tablet/desktop layouts, dark mode, 
 - Historical full Next.js UI is retained as the visual base.
 - Obsolete Firebase, Genkit and App Hosting runtime is absent from the active frontend.
 - The complete 15-step onboarding journey is implemented on one persistent local draft model.
-- The injury step restores the full legacy front/back SVG body selector with 73 independently clickable regions.
-- Onboarding includes review, staged analysis, explainable initial result, reminder/start confirmation and activation into Today.
-- Draft resume after refresh and required medical acknowledgement are browser-tested.
-- Today, Nutrition, Workout and Profile retain usable foundations.
-- Progress, notification center, histories, complete system states and assistant UX remain incomplete.
+- The injury step preserves the complete old front/back SVG body selector with 73 independently clickable regions.
+- Onboarding review, staged analysis, explainable result, confirmation and activation into Today are complete.
+- The shared mobile/desktop application shell is normalized.
+- Today contains readiness, adherence, workout, meal, daily metrics, progress and timeline hierarchy.
+- Quick Add supports meal, activity, weight, water and body measurements.
+- Notification Center supports persistent read/unread state, mark-all-read and delete.
+- Today has loading, error, empty and offline behavior.
+- Mobile route and interaction QA is proven; explicit fixed-width tablet/desktop visual evidence remains before Phase 2 closure.
+- Workout, Nutrition and Profile retain useful historical foundations.
+- Progress, workout history/completion, nutrition history, settings, coach and final hardening remain incomplete.
 
-Remaining estimate before backend integration: **45–70 development hours**, or **70–100 hours including full responsive/accessibility/browser QA**.
+Remaining estimate before backend integration: **35–60 development hours**, or **55–85 hours including full responsive/accessibility/browser QA**.
 
 ## 3. Delivery order
 
 1. ~~Complete onboarding end-to-end.~~ **Completed**
-2. Normalize design system and application shell.
-3. Complete Today.
-4. Complete Workout and Workout Player.
-5. Complete Nutrition.
-6. Build Progress and reports.
-7. Complete Profile, Settings and Notifications.
-8. Complete NeoFit Coach/Chat UI.
-9. Complete system states, offline/PWA and accessibility.
-10. Run full responsive and interaction QA.
+2. **Application shell and Today — functional work completed; responsive evidence pending**
+3. Complete Workout and Workout Player.
+4. Complete Nutrition.
+5. Build Progress and reports.
+6. Complete Profile, Settings and Notifications.
+7. Complete NeoFit Coach/Chat UI.
+8. Complete system states, offline/PWA and accessibility.
+9. Run the final responsive and interaction matrix.
 
 ## 4. Final route and feature map
 
@@ -58,7 +62,7 @@ Remaining estimate before backend integration: **45–70 development hours**, or
 7. Occupation, activity, sitting, steps, sleep, stress and smoking
 8. Meals, diet, allergies, dislikes, Iranian foods, budget and cooking context
 9. Level, training age, previous sports, break, familiar movements and experience
-10. Home/gym, equipment, days, session duration, preferred days/time and schedule notes
+10. Home/gym, equipment, days, duration, preferred days/time and schedule notes
 11. Intensity, cardio, training style, variety, nutrition strictness, coach tone and reminders
 12. Editable grouped review
 13. Staged local analysis
@@ -75,23 +79,30 @@ Onboarding contract:
 - Medical safety copy without diagnostic claims
 - Explicit restart support
 
-### 4.3 Main application shell
+### 4.3 Main application shell — functional implementation present
 
-Bottom navigation: Today, Workout, Nutrition, Progress, Profile.  
-Shared header: user identity, date, notifications, Quick Add and NeoFit Coach.  
-Required: mobile-first responsive layout, RTL, dark mode and consistent page width/spacing.
+- Mobile sticky header and bottom navigation
+- Desktop sticky header and right collapsible sidebar
+- Navigation: Today, Workout, Nutrition, Progress, Profile
+- NeoFit Coach and Notification entries
+- Persistent unread notification counter
+- Theme control
+- Offline banner and `/offline` destination
 
-### 4.4 Today
+### 4.4 Today — functional implementation present
 
 - Greeting/date and readiness score
-- Calories/macros summary
-- Today workout and start action
-- Next meal
-- Water, steps, sleep and weight
-- Daily timeline and adherence
-- Reminders/warnings
+- Daily adherence summary
+- Calories/protein/workout progress
+- Today workout and direct start action
+- Next meal and Nutrition action
+- Persistent water, steps and sleep controls
+- Current weight and Progress action
+- Daily timeline
+- Notification/reminder entry
 - Quick Add: meal, activity, weight, water and measurement
-- Daily insight and end-of-day summary
+- Daily motivation
+- Route skeleton, recoverable error, empty timeline and offline feedback
 
 ### 4.5 Workout
 
@@ -139,7 +150,7 @@ Required: mobile-first responsive layout, RTL, dark mode and consistent page wid
 
 - Workout, meal, water, measurement, weekly report, program and account notifications
 - Read/unread, delete and mark-all-read
-- Per-category settings
+- Per-category notification settings
 
 ### 4.10 Profile and settings
 
@@ -165,38 +176,33 @@ Required: mobile-first responsive layout, RTL, dark mode and consistent page wid
 
 - [x] Shared onboarding data model and persistent state
 - [x] Shared wizard shell and progress
-- [x] Welcome
-- [x] Goal
-- [x] Basic details
-- [x] Body measurements
+- [x] Welcome, Goal, Basic details and Body measurements
 - [x] Medical history
 - [x] Full legacy injury body map and limitations
-- [x] Lifestyle
-- [x] Nutrition profile
-- [x] Training history
-- [x] Availability/equipment
-- [x] Program preferences
-- [x] Review
-- [x] Analysis
-- [x] Result
-- [x] Confirmation
-- [x] Browser route coverage, injury interaction, refresh resume and medical validation
+- [x] Lifestyle and Nutrition profile
+- [x] Training history and Availability/equipment
+- [x] Program preferences and Review
+- [x] Analysis, Result and Confirmation
+- [x] Route coverage, injury interaction, refresh resume and medical validation
 
 ### Phase 2 — App shell and Today
 
-- [ ] Normalize responsive application shell
-- [ ] Header, notification entry and Quick Add
-- [ ] Today readiness, calorie/macro and workout/meal hierarchy
-- [ ] Water, steps, sleep, weight and measurement cards
-- [ ] Timeline, reminders, adherence and end-of-day summary
-- [ ] Loading, empty, error and offline states
-- [ ] Browser interaction and responsive evidence
+- [x] Normalize mobile/desktop application shell
+- [x] Header, notification entry and Quick Add
+- [x] Today readiness, calorie/macro and workout/meal hierarchy
+- [x] Water, steps, sleep, weight and measurement cards
+- [x] Timeline, reminders, adherence and daily summary
+- [x] Loading, empty, error and offline states
+- [x] Mobile browser route and interaction evidence
+- [ ] Fixed-width tablet and desktop visual/interaction evidence
 
 ### Phase 3 — Workout
 
-- [ ] Plan/day details/player
-- [ ] Alternatives/details/completion
-- [ ] History and PR views
+- [ ] Weekly plan and day-detail hierarchy
+- [ ] Workout Player state and timer
+- [ ] Exercise details and constraint-aware alternatives
+- [ ] Completion summary and pain/RPE capture
+- [ ] History, records and repeat session
 
 ### Phase 4 — Nutrition
 
@@ -206,23 +212,27 @@ Required: mobile-first responsive layout, RTL, dark mode and consistent page wid
 
 ### Phase 5 — Progress and reports
 
-- [ ] Charts and measurements
+- [ ] Weight and measurement charts using current local records
 - [ ] Training/nutrition analytics
 - [ ] Photos, milestones and reports
 
 ### Phase 6 — Profile, notifications and coach
 
 - [ ] Profile/settings/privacy/support
-- [ ] Notification center/settings
+- [ ] Per-category notification settings
 - [ ] Coach UI/history/action cards
 
 ### Phase 7 — Hardening
 
-- [ ] Loading/empty/error/offline states across all routes
+- [ ] Loading/empty/error/offline states across remaining routes
 - [ ] Responsive QA
 - [ ] Accessibility QA
 - [ ] PWA and final browser matrix
 
 ## 6. Exact continuation point
 
-Begin Phase 2 from the current historical `AppShell` and Today route. First define one normalized responsive shell contract for desktop and mobile, then refactor Today into the agreed hierarchy without removing existing useful cards. Add notification entry and Quick Add behavior before extending daily metrics. Keep the finished onboarding contract unchanged except for defect fixes or documented product decisions.
+1. Add explicit Chromium evidence at tablet and desktop widths for AppShell, Today and Notification Center.
+2. Verify sidebar visibility/collapse, desktop header, card grids, fixed Quick Add placement and absence of mobile bottom navigation at desktop width.
+3. Correct any spacing or overflow defects and then mark Phase 2 complete.
+4. Begin Phase 3 from the current Workout plan and Workout Player, preserving useful historical visuals while adding persistent session state, completion summary, alternatives and history.
+5. Do not change the finished onboarding contract except for verified defects or documented product decisions.
