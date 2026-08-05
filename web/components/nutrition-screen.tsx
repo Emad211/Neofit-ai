@@ -48,11 +48,13 @@ function FoodResult({ food, onSelect }: { food: FoodFixture; onSelect: (food: Fo
 
 export function NutritionScreen() {
   const router = useRouter();
-  const { addFood } = useNutritionState();
+  const { addFood, account } = useNutritionState();
   const [query, setQuery] = useState('');
   const [selectedFood, setSelectedFood] = useState<FoodFixture | null>(null);
   const [portionCount, setPortionCount] = useState(1);
   const [mealType, setMealType] = useState<MealType>('lunch');
+  const [saving, setSaving] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const filteredFoods = useMemo(() => filterWebFoods(foodFixtures, query), [query]);
   const selectedEstimate = useMemo(
@@ -63,13 +65,23 @@ export function NutritionScreen() {
   function chooseFood(food: FoodFixture) {
     setSelectedFood(food);
     setPortionCount(1);
+    setSubmitError('');
   }
 
-  function confirmFood() {
-    if (!selectedFood) return;
-    addFood(selectedFood, portionCount, mealType);
-    setSelectedFood(null);
-    router.push('/today');
+  async function confirmFood() {
+    if (!selectedFood || saving) return;
+    setSaving(true);
+    setSubmitError('');
+    try {
+      await addFood(selectedFood, portionCount, mealType);
+      setSelectedFood(null);
+      router.push('/today');
+      router.refresh();
+    } catch {
+      setSubmitError('ثبت غذا انجام نشد. اتصال اینترنت و وضعیت حساب را بررسی کن.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -122,7 +134,7 @@ export function NutritionScreen() {
       </section>
 
       {selectedFood && selectedEstimate ? (
-        <div className="sheet-layer" role="presentation" onMouseDown={() => setSelectedFood(null)}>
+        <div className="sheet-layer" role="presentation" onMouseDown={() => !saving && setSelectedFood(null)}>
           <section
             className="meal-sheet"
             role="dialog"
@@ -137,7 +149,7 @@ export function NutritionScreen() {
                 <h2 id="meal-sheet-title">{selectedFood.nameFa}</h2>
                 <p>{selectedFood.portionLabelFa}</p>
               </div>
-              <button type="button" aria-label="بستن" onClick={() => setSelectedFood(null)}>×</button>
+              <button type="button" aria-label="بستن" disabled={saving} onClick={() => setSelectedFood(null)}>×</button>
             </header>
 
             <div className="nutrition-strip">
@@ -150,9 +162,9 @@ export function NutritionScreen() {
             <div className="sheet-field">
               <label>تعداد سهم</label>
               <div className="stepper">
-                <button type="button" aria-label="کم‌کردن سهم" onClick={() => setPortionCount((value) => Math.max(0.5, value - 0.5))}>−</button>
+                <button type="button" aria-label="کم‌کردن سهم" disabled={saving} onClick={() => setPortionCount((value) => Math.max(0.5, value - 0.5))}>−</button>
                 <strong>{faNumber.format(portionCount)}</strong>
-                <button type="button" aria-label="افزایش سهم" onClick={() => setPortionCount((value) => Math.min(10, value + 0.5))}>+</button>
+                <button type="button" aria-label="افزایش سهم" disabled={saving} onClick={() => setPortionCount((value) => Math.min(10, value + 0.5))}>+</button>
               </div>
             </div>
 
@@ -163,6 +175,7 @@ export function NutritionScreen() {
                   <button
                     type="button"
                     key={option.id}
+                    disabled={saving}
                     className={mealType === option.id ? 'is-active' : ''}
                     onClick={() => setMealType(option.id)}
                   >
@@ -173,7 +186,13 @@ export function NutritionScreen() {
             </div>
 
             <p className="evidence-note"><NeoFitIcon name="check" size={16} />مقدارها با قوانین قطعی Nutrition Core محاسبه شده‌اند.</p>
-            <button className="primary-button" type="button" onClick={confirmFood}>ثبت این غذا</button>
+            <p className="sync-destination-note">
+              {account ? 'این وعده در حساب Supabase تو ذخیره می‌شود.' : 'این وعده فقط در همین مرورگر ذخیره می‌شود.'}
+            </p>
+            {submitError ? <p className="meal-submit-error" role="alert">{submitError}</p> : null}
+            <button className="primary-button" type="button" disabled={saving} onClick={confirmFood}>
+              {saving ? 'در حال ذخیره...' : 'ثبت این غذا'}
+            </button>
           </section>
         </div>
       ) : null}
