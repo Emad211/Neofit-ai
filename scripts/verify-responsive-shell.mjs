@@ -52,11 +52,22 @@ try {
       const notificationTitleVisible = await page.getByRole("heading", { name: "اعلان‌ها" }).first().isVisible().catch(() => false);
       await page.screenshot({ path: `${artifactDir}/notifications-${testCase.name}.png`, fullPage: true });
 
+      const progressResponse = await page.goto(`${baseUrl}/progress`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+      await page.waitForTimeout(1_000);
+      const progressNoOverflow = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+      const progressTitleVisible = await page.getByRole("heading", { name: "پیشرفت من" }).isVisible().catch(() => false);
+      const exerciseProgressVisible = await page.getByText("روند هر حرکت", { exact: true }).isVisible().catch(() => false);
+      const reportsVisible = await page.getByText("گزارش‌های دوره‌ای", { exact: true }).isVisible().catch(() => false);
+      const photosVisible = await page.getByText("عکس‌های پیشرفت", { exact: true }).isVisible().catch(() => false);
+      await page.screenshot({ path: `${artifactDir}/progress-${testCase.name}.png`, fullPage: true });
+
       const passed =
         (response?.status() ?? 0) >= 200 &&
         (response?.status() ?? 0) < 400 &&
         (notificationResponse?.status() ?? 0) >= 200 &&
         (notificationResponse?.status() ?? 0) < 400 &&
+        (progressResponse?.status() ?? 0) >= 200 &&
+        (progressResponse?.status() ?? 0) < 400 &&
         sidebarVisible &&
         !mobileNavigationVisible &&
         readinessVisible &&
@@ -64,6 +75,11 @@ try {
         noHorizontalOverflow &&
         notificationNoOverflow &&
         notificationTitleVisible &&
+        progressNoOverflow &&
+        progressTitleVisible &&
+        exerciseProgressVisible &&
+        reportsVisible &&
+        photosVisible &&
         sidebarTogglePassed &&
         pageErrors.length === 0 &&
         consoleErrors.length === 0;
@@ -78,6 +94,11 @@ try {
         noHorizontalOverflow,
         notificationNoOverflow,
         notificationTitleVisible,
+        progressNoOverflow,
+        progressTitleVisible,
+        exerciseProgressVisible,
+        reportsVisible,
+        photosVisible,
         stateBefore,
         stateAfter,
         sidebarTogglePassed,
