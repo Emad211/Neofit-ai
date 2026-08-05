@@ -46,6 +46,7 @@ try {
       timezone: "Asia/Tehran",
     };
     window.localStorage.setItem("neofit-ui-demo-v3", JSON.stringify(state));
+    window.localStorage.removeItem("neofit:notification-preferences:v1");
   });
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForTimeout(900);
@@ -55,8 +56,9 @@ try {
   const weightVisible = await page.getByText("۹۳ کیلوگرم", { exact: true }).isVisible().catch(() => false);
   const trainingVisible = await page.getByText("۶ روز در هفته", { exact: true }).isVisible().catch(() => false);
   const localBoundaryVisible = await page.getByText(/حساب محلی نسخهٔ نمایشی/).isVisible().catch(() => false);
-  const landingPassed = profileTitleVisible && goalVisible && weightVisible && trainingVisible && localBoundaryVisible;
-  report.checks.landing = { profileTitleVisible, goalVisible, weightVisible, trainingVisible, localBoundaryVisible, passed: landingPassed };
+  const notificationSettingsEntryVisible = await page.getByRole("link", { name: /تنظیمات اعلان‌ها/ }).isVisible().catch(() => false);
+  const landingPassed = profileTitleVisible && goalVisible && weightVisible && trainingVisible && localBoundaryVisible && notificationSettingsEntryVisible;
+  report.checks.landing = { profileTitleVisible, goalVisible, weightVisible, trainingVisible, localBoundaryVisible, notificationSettingsEntryVisible, passed: landingPassed };
   if (!landingPassed) report.passed = false;
 
   await page.getByRole("link", { name: /مشاهده اطلاعات من/ }).click();
@@ -112,6 +114,29 @@ try {
   report.checks.account = { accountTitleVisible, emailVisible, editableEmailAbsent, persistedAccount, newNameVisible, passed: accountPassed };
   if (!accountPassed) report.passed = false;
 
+  await page.getByRole("link", { name: /تنظیمات اعلان‌ها/ }).click();
+  await page.waitForTimeout(600);
+  const notificationSettingsVisible = await page.getByText("تنظیمات اعلان‌ها", { exact: true }).isVisible().catch(() => false);
+  const waterSwitch = page.getByRole("switch", { name: "آب روزانه" });
+  const workoutSwitch = page.getByRole("switch", { name: "تمرین و برنامه" });
+  const initialWaterChecked = await waterSwitch.isChecked().catch(() => false);
+  await waterSwitch.click();
+  await page.waitForFunction(() => {
+    const preferences = JSON.parse(window.localStorage.getItem("neofit:notification-preferences:v1") || "{}");
+    return preferences.water === false;
+  }, null, { timeout: 10_000 });
+  const existingWaterNoticeVisible = await page.getByText("یادآوری آب", { exact: true }).isVisible().catch(() => false);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(500);
+  const persistedWaterUnchecked = !(await page.getByRole("switch", { name: "آب روزانه" }).isChecked().catch(() => true));
+  const workoutStillChecked = await page.getByRole("switch", { name: "تمرین و برنامه" }).isChecked().catch(() => false);
+  const persistedPreferences = await page.evaluate(() => JSON.parse(window.localStorage.getItem("neofit:notification-preferences:v1") || "{}"));
+  const notificationsPassed = notificationSettingsVisible && initialWaterChecked && persistedWaterUnchecked && workoutStillChecked && existingWaterNoticeVisible && persistedPreferences.water === false && persistedPreferences.workout === true;
+  report.checks.notificationPreferences = { notificationSettingsVisible, initialWaterChecked, persistedWaterUnchecked, workoutStillChecked, existingWaterNoticeVisible, persistedPreferences, passed: notificationsPassed };
+  if (!notificationsPassed) report.passed = false;
+
+  await page.goto(`${baseUrl}/profile`, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(400);
   const noHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
   report.checks.mobileLayout = { noHorizontalOverflow, passed: noHorizontalOverflow };
   if (!noHorizontalOverflow) report.passed = false;
