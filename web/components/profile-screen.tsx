@@ -1,22 +1,79 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { NeoFitIcon } from '@/components/neofit-icons';
 import { useNutritionState } from '@/components/nutrition-state';
 import { workoutPlan } from '@/data/workout-fixtures';
+import { createClient } from '@/lib/supabase/client';
 
 const faNumber = new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 1 });
 
 export function ProfileScreen() {
-  const { summary, resetDiary } = useNutritionState();
+  const router = useRouter();
+  const {
+    summary,
+    resetDiary,
+    account,
+    supabaseConfigured,
+    syncStatus,
+    syncMessage,
+  } = useNutritionState();
   const [message, setMessage] = useState('');
+  const [displayName, setDisplayName] = useState(account?.displayName ?? '');
+  const [working, setWorking] = useState(false);
 
-  function clearDemoDiary() {
-    const accepted = window.confirm('ثبت‌های آزمایشی تغذیه به حالت اولیه برگردند؟');
+  useEffect(() => {
+    setDisplayName(account?.displayName ?? '');
+  }, [account?.displayName]);
+
+  async function clearDiary() {
+    const accepted = window.confirm(
+      account
+        ? 'تمام ثبت‌های تغذیه این حساب حذف شوند؟ این کار قابل بازگشت نیست.'
+        : 'ثبت‌های آزمایشی تغذیه به حالت اولیه برگردند؟',
+    );
     if (!accepted) return;
-    resetDiary();
-    setMessage('ثبت‌های آزمایشی به حالت اولیه برگشتند.');
+
+    setWorking(true);
+    setMessage('');
+    try {
+      await resetDiary();
+      setMessage(account ? 'ثبت‌های تغذیه حساب حذف شدند.' : 'ثبت‌های آزمایشی به حالت اولیه برگشتند.');
+    } catch {
+      setMessage('انجام عملیات ممکن نشد. دوباره تلاش کن.');
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function saveDisplayName() {
+    if (!account || working) return;
+    const name = displayName.trim();
+    if (!name || name.length > 80) {
+      setMessage('نام نمایشی باید بین ۱ تا ۸۰ کاراکتر باشد.');
+      return;
+    }
+
+    setWorking(true);
+    setMessage('');
+    const supabase = createClient();
+    const { error } = await supabase.from('profiles').upsert({
+      id: account.id,
+      display_name: name,
+      locale: 'fa',
+      timezone: 'Asia/Tehran',
+    });
+    if (error) {
+      setMessage('ذخیره نام نمایشی انجام نشد.');
+      setWorking(false);
+      return;
+    }
+
+    setMessage('نام نمایشی در حساب ذخیره شد.');
+    setWorking(false);
+    router.refresh();
   }
 
   return (
@@ -26,17 +83,57 @@ export function ProfileScreen() {
           <p className="section-kicker">حساب و برنامه</p>
           <h2 id="profile-heading">پروفایل من</h2>
         </div>
-        <span className="status-pill status-pill--soft"><NeoFitIcon name="profile" size={15} />محلی</span>
+        <span className="status-pill status-pill--soft">
+          <NeoFitIcon name={account ? 'check' : 'profile'} size={15} />
+          {account ? 'متصل' : 'مهمان'}
+        </span>
       </div>
 
       <article className="profile-identity-card">
-        <span className="profile-identity-card__avatar">ع</span>
+        <span className="profile-identity-card__avatar">
+          {(account?.displayName || account?.email || 'م').slice(0, 1)}
+        </span>
         <div>
-          <h3>عماد</h3>
-          <p>پیش‌نمایش محلی نئوفیت</p>
+          <h3>{account?.displayName ?? 'کاربر مهمان'}</h3>
+          <p>{account?.email ?? 'داده‌های محلی همین مرورگر'}</p>
         </div>
-        <span className="profile-identity-card__state">بدون حساب آنلاین</span>
+        <span className="profile-identity-card__state">
+          {account ? 'Supabase + RLS' : 'بدون حساب آنلاین'}
+        </span>
       </article>
+
+      {account ? (
+        <article className="account-edit-card">
+          <div>
+            <span>اطلاعات حساب</span>
+            <h3>نام نمایشی</h3>
+          </div>
+          <label htmlFor="profile-display-name">نامی که در نئوفیت می‌بینی</label>
+          <input
+            id="profile-display-name"
+            value={displayName}
+            minLength={1}
+            maxLength={80}
+            onChange={(event) => setDisplayName(event.target.value)}
+          />
+          <button type="button" disabled={working} onClick={saveDisplayName}>
+            {working ? 'در حال ذخیره...' : 'ذخیره نام'}
+          </button>
+        </article>
+      ) : (
+        <article className="account-connect-card">
+          <div>
+            <span>همگام‌سازی شخصی</span>
+            <h3>{supabaseConfigured ? 'حساب نئوفیت آماده است' : 'اتصال این محیط تنظیم نشده'}</h3>
+            <p>
+              {supabaseConfigured
+                ? 'با ورود، هدف و وعده‌ها در فضای شخصی خودت ذخیره می‌شوند.'
+                : 'فعلاً می‌توانی همه صفحات را با دادهٔ محلی بررسی کنی.'}
+            </p>
+          </div>
+          {supabaseConfigured ? <Link href="/auth">ورود یا ساخت حساب</Link> : null}
+        </article>
+      )}
 
       <div className="profile-metrics">
         <article><span>وزن فعلی</span><strong>{faNumber.format(92.2)}<small> kg</small></strong></article>
@@ -61,17 +158,29 @@ export function ProfileScreen() {
 
       <article className="local-data-card">
         <div>
-          <span>داده‌های همین مرورگر</span>
+          <span>{account ? 'داده‌های حساب' : 'داده‌های همین مرورگر'}</span>
           <h3>{faNumber.format(summary.entryCount)} وعدهٔ تغذیه</h3>
-          <p>در این مرحله داده‌ها فقط روی همین دستگاه نگه‌داری می‌شوند.</p>
+          <p>{syncStatus === 'saving' ? 'عملیات ذخیره در حال انجام است.' : syncMessage}</p>
         </div>
-        <button type="button" onClick={clearDemoDiary}>بازنشانی دادهٔ آزمایشی</button>
+        <button type="button" disabled={working} onClick={clearDiary}>
+          {account ? 'حذف ثبت‌های تغذیه حساب' : 'بازنشانی دادهٔ آزمایشی'}
+        </button>
         {message ? <p className="local-data-card__message" role="status">{message}</p> : null}
       </article>
 
+      {account ? (
+        <form action="/auth/signout" method="post" className="signout-form">
+          <button type="submit">خروج از حساب</button>
+        </form>
+      ) : null}
+
       <div className="profile-boundary-note">
-        <NeoFitIcon name="offline" size={18} />
-        <p>ورود واقعی و همگام‌سازی حساب هنوز به این فرانت متصل نشده‌اند؛ این صفحه ادعای حساب آنلاین ندارد.</p>
+        <NeoFitIcon name={account ? 'check' : 'offline'} size={18} />
+        <p>
+          {account
+            ? 'Profile و Nutrition با Session معتبر و Policyهای مالک‌محور Supabase کار می‌کنند.'
+            : 'در حالت مهمان، هیچ داده‌ای به Supabase ارسال نمی‌شود.'}
+        </p>
       </div>
     </section>
   );
