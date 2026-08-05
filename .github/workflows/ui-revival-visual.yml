@@ -22,12 +22,6 @@ jobs:
     timeout-minutes: 35
     env:
       NEXT_TELEMETRY_DISABLED: '1'
-      NEXT_PUBLIC_FIREBASE_API_KEY: 'AIzaSyDemoNeoFitPreviewKey0000000000000'
-      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: 'neofit-preview.firebaseapp.com'
-      NEXT_PUBLIC_FIREBASE_PROJECT_ID: 'neofit-preview'
-      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: 'neofit-preview.appspot.com'
-      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: '000000000000'
-      NEXT_PUBLIC_FIREBASE_APP_ID: '1:000000000000:web:neofitpreview'
 
     steps:
       - name: Checkout
@@ -39,9 +33,10 @@ jobs:
           node-version: 22.13.1
           cache: npm
 
-      - name: Install and build
+      - name: Install and validate
         run: |
           npm ci --no-audit --no-fund
+          npm run typecheck
           npm run build
 
       - name: Install Chromium
@@ -68,20 +63,8 @@ jobs:
           set -euo pipefail
           mkdir -p artifacts/ui-revival/mobile artifacts/ui-revival/desktop
           for route in today nutrition workout progress profile; do
-            npx --yes playwright@1.61.1 screenshot \
-              --browser chromium \
-              --device 'iPhone 13' \
-              --full-page \
-              --wait-for-timeout 1200 \
-              "http://127.0.0.1:3000/$route" \
-              "artifacts/ui-revival/mobile/$route.png"
-            npx --yes playwright@1.61.1 screenshot \
-              --browser chromium \
-              --viewport-size '1440,1000' \
-              --full-page \
-              --wait-for-timeout 1200 \
-              "http://127.0.0.1:3000/$route" \
-              "artifacts/ui-revival/desktop/$route.png"
+            npx --yes playwright@1.61.1 screenshot --browser chromium --device 'iPhone 13' --full-page --wait-for-timeout 1200 "http://127.0.0.1:3000/$route" "artifacts/ui-revival/mobile/$route.png"
+            npx --yes playwright@1.61.1 screenshot --browser chromium --viewport-size '1440,1000' --full-page --wait-for-timeout 1200 "http://127.0.0.1:3000/$route" "artifacts/ui-revival/desktop/$route.png"
           done
           printf '{"commit":"%s","routes":["today","nutrition","workout","progress","profile"],"viewports":["iPhone 13","1440x1000"]}\n' "$GITHUB_SHA" > artifacts/ui-revival/report.json
 
