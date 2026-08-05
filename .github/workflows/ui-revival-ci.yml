@@ -118,6 +118,11 @@ jobs:
           test -s src/app/'(main)'/progress/loading.tsx
           test -s src/app/'(main)'/progress/error.tsx
           test -s src/app/'(main)'/profile/page.tsx
+          test -s src/app/'(main)'/profile/loading.tsx
+          test -s src/app/'(main)'/profile/error.tsx
+          test -s src/app/'(main)'/profile/view/page.tsx
+          test -s src/app/'(main)'/profile/edit/page.tsx
+          test -s src/app/'(main)'/profile/account/page.tsx
           test -s src/app/offline/page.tsx
 
       - name: Install Chromium
@@ -154,6 +159,9 @@ jobs:
 
       - name: Progress overview and trend gate
         run: node scripts/verify-progress-flow.mjs
+
+      - name: Profile view, edit and account gate
+        run: node scripts/verify-profile-flow.mjs
 
       - name: Upload browser evidence
         if: always()
