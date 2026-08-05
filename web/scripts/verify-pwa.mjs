@@ -104,7 +104,7 @@ try {
   await cdp.send('Network.clearBrowserCache');
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.getByRole('heading', { name: 'سلام عماد، روزت چطوره؟' }).waitFor({ state: 'visible' });
+  await page.getByRole('heading', { name: 'سلام، روزت چطوره؟' }).waitFor({ state: 'visible' });
 
   await page.getByRole('link', { name: 'تغذیه', exact: true }).click();
   await page.getByRole('heading', { name: 'چه چیزی خوردی؟' }).waitFor({ state: 'visible' });
