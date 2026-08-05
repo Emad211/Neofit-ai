@@ -29,12 +29,6 @@ jobs:
     timeout-minutes: 35
     env:
       NEXT_TELEMETRY_DISABLED: '1'
-      NEXT_PUBLIC_FIREBASE_API_KEY: 'AIzaSyDemoNeoFitPreviewKey0000000000000'
-      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: 'neofit-preview.firebaseapp.com'
-      NEXT_PUBLIC_FIREBASE_PROJECT_ID: 'neofit-preview'
-      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: 'neofit-preview.appspot.com'
-      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: '000000000000'
-      NEXT_PUBLIC_FIREBASE_APP_ID: '1:000000000000:web:neofitpreview'
 
     steps:
       - name: Checkout
@@ -49,22 +43,63 @@ jobs:
       - name: Install
         run: npm ci --no-audit --no-fund
 
-      - name: Build historical UI migration candidate
+      - name: Verify legacy stack is absent
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+
+          pieces = [
+              ('fire', 'base'),
+              ('fire', 'store'),
+              ('gen', 'kit'),
+              ('app', 'hosting'),
+              ('google', 'ai'),
+              ('dot', 'prompt'),
+          ]
+          forbidden = [''.join(value).lower() for value in pieces]
+          forbidden.extend(['next_public_' + forbidden[0], '@/ai/'])
+          failures = []
+
+          for path in Path('.').rglob('*'):
+              if not path.is_file():
+                  continue
+              if any(part in {'.git', 'node_modules', 'artifacts'} for part in path.parts):
+                  continue
+              if path == Path('.github/workflows/ui-revival-ci.yml'):
+                  continue
+              try:
+                  text = path.read_text(errors='ignore').lower()
+              except Exception:
+                  continue
+              for needle in forbidden:
+                  if needle in text:
+                      failures.append(f'{path}: {needle}')
+
+          if failures:
+              print('\n'.join(failures))
+              raise SystemExit(1)
+          PY
+
+      - name: TypeScript
+        run: npm run typecheck
+
+      - name: Production build
         run: npm run build
 
-      - name: Verify migrated UI routes and Firebase-free render boundary
+      - name: Verify migrated UI contracts
         shell: bash
         run: |
           set -euo pipefail
           grep -q 'redirect("/today")' src/app/page.tsx
           grep -q 'lang="fa" dir="rtl"' src/app/layout.tsx
           grep -q 'demo-emad' src/context/user-profile-context.tsx
-          ! grep -q 'from "firebase/' src/context/user-profile-context.tsx
-          ! grep -q '@/ai/flows/calculate-activity-calories' src/components/dashboard/log-entry-sheet.tsx
           test -s src/app/'(main)'/today/page.tsx
           test -s src/app/'(main)'/nutrition/page.tsx
           test -s src/app/'(main)'/workout/page.tsx
           test -s src/app/'(main)'/progress/page.tsx
+          test -s src/app/'(main)'/profile/page.tsx
 
       - name: Install browser runtime gate
         run: |
