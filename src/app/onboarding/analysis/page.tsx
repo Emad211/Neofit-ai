@@ -1,57 +1,64 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { ArrowLeft, Apple, Dumbbell, CheckCircle2 } from "lucide-react";
-import { demoNutritionPlan, demoWorkoutPlan } from "@/lib/neofit-demo-data";
-import { useUserData } from "@/context/user-profile-context";
+import { useRouter } from "next/navigation";
+import { Activity, ArrowLeft, CheckCircle2, Dumbbell, HeartPulse, Salad, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { OnboardingLoading, OnboardingShell } from "@/components/onboarding/onboarding-shell";
+import { useOnboarding } from "@/context/onboarding-context";
+import { cn } from "@/lib/utils";
+
+const stages = [
+  { title: "بررسی هدف و سرعت پیشرفت", description: "تطبیق هدف اصلی با وزن فعلی و وزن هدف", icon: Sparkles },
+  { title: "اعمال ملاحظات سلامت", description: "اولویت‌دادن به سابقه پزشکی، آسیب‌ها و محدودیت پزشک", icon: HeartPulse },
+  { title: "برآورد انرژی و درشت‌مغذی‌ها", description: "محاسبه نقطه شروع کالری، پروتئین، چربی و کربوهیدرات", icon: Salad },
+  { title: "چینش ساختار تمرین", description: "هماهنگ‌سازی تعداد روز، تجهیزات، تجربه و زمان جلسه", icon: Dumbbell },
+  { title: "کنترل قابلیت اجرا", description: "بررسی خواب، استرس، بودجه، آشپزی و برنامه روزانه", icon: Activity },
+];
 
 export default function OnboardingAnalysisPage() {
-  const { userProfile, savePlans } = useUserData();
-  const [saved, setSaved] = React.useState(false);
+  const router = useRouter();
+  const { isHydrated, completeStep } = useOnboarding();
+  const [activeStage, setActiveStage] = React.useState(0);
 
-  const activatePlan = async () => {
-    await savePlans({ nutritionPlan: demoNutritionPlan, workoutPlan: demoWorkoutPlan });
-    setSaved(true);
+  React.useEffect(() => {
+    if (!isHydrated || activeStage >= stages.length) return;
+    const timer = window.setTimeout(() => setActiveStage((current) => current + 1), 650);
+    return () => window.clearTimeout(timer);
+  }, [activeStage, isHydrated]);
+
+  if (!isHydrated) return <OnboardingLoading />;
+  const finished = activeStage >= stages.length;
+  const percent = Math.min(100, Math.round((activeStage / stages.length) * 100));
+
+  const continueToResult = () => {
+    completeStep(13);
+    router.push("/onboarding/result");
   };
 
   return (
-    <main dir="rtl" className="min-h-screen bg-gradient-to-b from-primary/10 via-background to-background p-4 sm:p-8">
-      <div className="mx-auto max-w-4xl py-10">
-        <header className="mb-10 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg">
-            <CheckCircle2 className="h-8 w-8" />
-          </div>
-          <h1 className="text-4xl font-extrabold">برنامهٔ اولیه آماده است</h1>
-          <p className="mt-3 text-lg text-muted-foreground">
-            این پیشنهاد نمایشی بر اساس مشخصات فعلی {userProfile?.name || "کاربر"} و داده‌های کنترل‌شدهٔ داخل برنامه ساخته شده است.
-          </p>
-        </header>
+    <OnboardingShell step={13} title={finished ? "تحلیل اولیه کامل شد" : "در حال تحلیل اطلاعات شما"} description={finished ? "خروجی مرحله بعد یک نقطه شروع شفاف و قابل ویرایش است؛ نه نسخه پزشکی و نه تصمیم غیرقابل تغییر." : "هر بخش جداگانه بررسی می‌شود تا نتیجه فقط یک عدد کالری یا برنامه عمومی نباشد."} backHref="/onboarding/review">
+      <div className="rounded-3xl border bg-muted/20 p-5 sm:p-6">
+        <div className="mb-5 flex items-center justify-between text-sm"><span className="font-bold">پیشرفت تحلیل</span><span className="text-muted-foreground">{percent}٪</span></div>
+        <div className="mb-7 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${percent}%` }} /></div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2"><Apple className="h-5 w-5 text-primary" />برنامهٔ تغذیه</CardTitle></CardHeader>
-            <CardContent className="space-y-3 text-sm leading-7 text-muted-foreground">
-              <p>سه روز نمونه با غذاهای ایرانی، اندازهٔ سهم و کالری مشخص.</p>
-              <p>مجموع هدف روزانه حدود ۲۲۰۰ کیلوکالری است.</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2"><Dumbbell className="h-5 w-5 text-primary" />برنامهٔ تمرین</CardTitle></CardHeader>
-            <CardContent className="space-y-3 text-sm leading-7 text-muted-foreground">
-              <p>سه جلسهٔ فشار، کشش و پایین‌تنه با ست و تکرار مشخص.</p>
-              <p>تمام جزئیات در نسخهٔ نمایشی قابل مرور هستند.</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-          <Button size="lg" onClick={activatePlan}>{saved ? "برنامه فعال شد" : "فعال‌کردن برنامه"}</Button>
-          <Button size="lg" variant="outline" asChild><Link href="/today">رفتن به داشبورد<ArrowLeft className="mr-2 h-5 w-5" /></Link></Button>
+        <div className="space-y-3">
+          {stages.map((stage, index) => {
+            const isDone = index < activeStage;
+            const isActive = index === activeStage && !finished;
+            return (
+              <div key={stage.title} className={cn("flex items-start gap-4 rounded-2xl border p-4 transition", isDone && "border-emerald-500/30 bg-emerald-500/5", isActive && "border-primary bg-primary/5 shadow-sm", index > activeStage && "opacity-50")}>
+                <div className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-muted text-muted-foreground", isDone && "bg-emerald-500 text-white", isActive && "bg-primary text-primary-foreground")}>
+                  {isDone ? <CheckCircle2 className="h-5 w-5" /> : <stage.icon className={cn("h-5 w-5", isActive && "animate-pulse")} />}
+                </div>
+                <div><p className="font-bold">{stage.title}</p><p className="mt-1 text-sm leading-6 text-muted-foreground">{stage.description}</p></div>
+              </div>
+            );
+          })}
         </div>
       </div>
-    </main>
+
+      {finished ? <Button type="button" size="lg" className="mt-8 h-12 w-full text-base" onClick={continueToResult}>مشاهده نتیجه اولیه<ArrowLeft className="mr-2 h-5 w-5" /></Button> : <p className="mt-6 text-center text-sm text-muted-foreground">این تحلیل روی همین دستگاه و بدون ارسال اطلاعات به سرویس خارجی اجرا می‌شود.</p>}
+    </OnboardingShell>
   );
 }
