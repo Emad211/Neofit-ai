@@ -8,11 +8,13 @@ on:
       - 'supabase/migrations/**'
       - 'web/lib/supabase/database.types.ts'
       - 'web/tests/supabase-identity-schema.test.ts'
+      - 'web/tests/supabase-foundation.test.ts'
       - 'web/package.json'
       - '.github/workflows/supabase-identity-ci.yml'
       - 'docs/NEOFIT_MASTER_PLAN.md'
       - 'docs/NEOFIT_PROGRESS_LOG.md'
       - 'docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md'
+      - 'docs/NEOFIT_STAGE4C_IDENTITY_RLS_EVIDENCE.md'
   pull_request:
     branches:
       - web/pwa-foundation
@@ -20,11 +22,13 @@ on:
       - 'supabase/migrations/**'
       - 'web/lib/supabase/database.types.ts'
       - 'web/tests/supabase-identity-schema.test.ts'
+      - 'web/tests/supabase-foundation.test.ts'
       - 'web/package.json'
       - '.github/workflows/supabase-identity-ci.yml'
       - 'docs/NEOFIT_MASTER_PLAN.md'
       - 'docs/NEOFIT_PROGRESS_LOG.md'
       - 'docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md'
+      - 'docs/NEOFIT_STAGE4C_IDENTITY_RLS_EVIDENCE.md'
   workflow_dispatch:
 
 permissions:
@@ -61,7 +65,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p web/artifacts/supabase-identity
-          printf '{"commit":"%s","status":"preflight","remoteMigrationApplied":false}\n' \
+          printf '{"commit":"%s","status":"repository-preflight","remoteState":"verified-separately"}\n' \
             "$GITHUB_SHA" > web/artifacts/supabase-identity/preflight.json
 
       - name: Identity migration and RLS contracts
@@ -95,7 +99,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          printf '{\n  "commit": "%s",\n  "projectRef": "rjwrobltmjodfarnltal",\n  "migration": "20260805000100_identity_foundation.sql",\n  "tables": ["profiles", "user_settings"],\n  "rlsRequired": true,\n  "nutritionArithmetic": false,\n  "generatedAt": "%s"\n}\n' \
+          printf '{\n  "commit": "%s",\n  "projectRef": "rjwrobltmjodfarnltal",\n  "migration": "20260804232149_identity_foundation.sql",\n  "tables": ["profiles", "user_settings"],\n  "rlsRequired": true,\n  "nutritionArithmetic": false,\n  "remoteState": "verified-separately",\n  "generatedAt": "%s"\n}\n' \
             "$GITHUB_SHA" \
             "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             > web/artifacts/supabase-identity/metadata.json
