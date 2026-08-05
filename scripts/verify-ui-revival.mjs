@@ -2,7 +2,20 @@ import { chromium } from "playwright";
 import fs from "node:fs/promises";
 
 const baseUrl = process.env.NEOFIT_BASE_URL || "http://127.0.0.1:3000";
-const routes = ["today", "nutrition", "workout", "progress", "profile", "profile/account", "auth"];
+const routes = [
+  "today",
+  "nutrition",
+  "workout",
+  "progress",
+  "profile",
+  "profile/account",
+  "auth",
+  "onboarding",
+  "onboarding/goal",
+  "onboarding/basics",
+  "onboarding/body",
+  "onboarding/medical",
+];
 const artifactDir = "artifacts/ui-revival-smoke";
 await fs.mkdir(artifactDir, { recursive: true });
 
