@@ -1,0 +1,124 @@
+name: Public RawGitHack Preview
+
+on:
+  push:
+    branches:
+      - revival/full-ui-front
+    paths:
+      - '.github/workflows/public-rawgithack-preview.yml'
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'next.config.ts'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/public-rawgithack-preview.yml'
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'next.config.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: public-rawgithack-preview
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Configure CDN static export
+        shell: bash
+        run: |
+          cat > next.config.ts <<'EOF'
+          import type { NextConfig } from "next";
+
+          const nextConfig: NextConfig = {
+            output: "export",
+            trailingSlash: true,
+            basePath: "/Emad211/Neofit-ai/public-preview",
+            assetPrefix: "https://raw.githack.com/Emad211/Neofit-ai/public-preview",
+            images: {
+              unoptimized: true,
+              remotePatterns: [
+                {
+                  protocol: "https",
+                  hostname: "placehold.co",
+                  port: "",
+                  pathname: "/**",
+                },
+              ],
+            },
+          };
+
+          export default nextConfig;
+          EOF
+
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path("src/app/(main)/workout-player/[slug]/page.tsx")
+          text = path.read_text()
+          if "generateStaticParams" not in text:
+              text = text.replace(
+                  'import { WorkoutPlayer } from "@/components/workout/workout-player";\n',
+                  'import { WorkoutPlayer } from "@/components/workout/workout-player";\nimport { demoWorkoutPlan } from "@/lib/neofit-demo-data";\n\nexport function generateStaticParams() {\n  return demoWorkoutPlan.map((workout) => ({ slug: workout.id }));\n}\n'
+              )
+          path.write_text(text)
+          PY
+
+      - name: TypeScript
+        run: npm run typecheck
+
+      - name: Build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: npm run build
+
+      - name: Add stable entry page
+        shell: bash
+        run: |
+          cat > out/index.html <<'EOF'
+          <!doctype html>
+          <html lang="fa" dir="rtl">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>NeoFit</title>
+            <meta http-equiv="refresh" content="0; url=./today/index.html">
+            <script>location.replace('./today/index.html')</script>
+          </head>
+          <body><a href="./today/index.html">ورود به نئوفیت</a></body>
+          </html>
+          EOF
+          touch out/.nojekyll
+          test -s out/today/index.html
+          test -s out/nutrition/index.html
+          test -s out/workout/index.html
+          test -s out/profile/index.html
+
+      - name: Publish static branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./out
+          publish_branch: public-preview
+          force_orphan: true
+          enable_jekyll: false
