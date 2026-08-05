@@ -97,14 +97,14 @@ test('authenticated diary writes directly to nutrition_entries and rolls back on
   assert.doesNotMatch(source, /calories\s*[+*\/-]|proteinG\s*[+*\/-]|carbsG\s*[+*\/-]|fatG\s*[+*\/-]/);
 });
 
-test('main routes hydrate dynamically from the server account snapshot', async () => {
+test('main routes hydrate from the optional server account snapshot', async () => {
   const layout = await readWeb('app/(main)/layout.tsx');
   const shell = await readWeb('components/app-shell.tsx');
   const profile = await readWeb('components/profile-screen.tsx');
 
-  assert.match(layout, /export const dynamic = ['"]force-dynamic['"]/);
   assert.match(layout, /loadAccountSnapshot/);
   assert.match(layout, /initialDiary=\{snapshot\.diary\}/);
+  assert.doesNotMatch(layout, /force-dynamic/);
   assert.match(shell, /account\?\.displayName/);
   assert.match(shell, /ورود برای ذخیره در حساب/);
   assert.match(profile, /from\(['"]profiles['"]\)\.upsert/);
