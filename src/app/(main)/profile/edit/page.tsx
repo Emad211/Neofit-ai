@@ -3,8 +3,6 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { ArrowRight, HeartPulse, Loader2, Save, Salad, UserRound, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,25 +15,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useUserData, type UserProfile } from "@/context/user-profile-context";
 
-const schema = z.object({
-  goal: z.enum(["lose_weight", "gain_muscle", "improve_fitness"]),
-  weight: z.coerce.number().min(30, "وزن باید حداقل ۳۰ کیلوگرم باشد.").max(300, "وزن واردشده معتبر نیست."),
-  fitnessLevel: z.enum(["beginner", "intermediate", "advanced"]),
-  trainingDays: z.string().min(1),
-  trainingDuration: z.string().min(1),
-  workoutLocation: z.enum(["home", "gym"]),
-  availableEquipment: z.string().optional(),
-  lifestyle: z.enum(["sedentary", "lightly_active", "moderately_active", "very_active"]),
-  sleepHours: z.string().min(1),
-  stressLevel: z.enum(["low", "medium", "high"]),
-  cookingSkill: z.enum(["beginner", "intermediate", "advanced"]),
-  costLevel: z.enum(["low", "medium", "high"]),
-  eatingHabits: z.string().optional(),
-  performanceGoals: z.string().optional(),
-  medicalHistory: z.string().optional(),
-});
-
-type Values = z.infer<typeof schema>;
+type Values = {
+  goal: UserProfile["goal"];
+  weight: number;
+  fitnessLevel: UserProfile["fitnessLevel"];
+  trainingDays: string;
+  trainingDuration: string;
+  workoutLocation: UserProfile["workoutLocation"];
+  availableEquipment: string;
+  lifestyle: UserProfile["lifestyle"];
+  sleepHours: string;
+  stressLevel: UserProfile["stressLevel"];
+  cookingSkill: UserProfile["cookingSkill"];
+  costLevel: UserProfile["costLevel"];
+  eatingHabits: string;
+  performanceGoals: string;
+  medicalHistory: string;
+};
 
 function valuesFromProfile(profile: UserProfile): Values {
   return {
@@ -63,7 +59,6 @@ export default function EditProfilePage() {
   const { toast } = useToast();
   const [submitting, setSubmitting] = React.useState(false);
   const form = useForm<Values>({
-    resolver: zodResolver(schema),
     defaultValues: {
       goal: "lose_weight",
       weight: 95,
@@ -89,6 +84,11 @@ export default function EditProfilePage() {
 
   const submit = async (values: Values) => {
     if (!userProfile) return;
+    if (!Number.isFinite(values.weight) || values.weight < 30 || values.weight > 300) {
+      form.setError("weight", { message: "وزن باید عددی بین ۳۰ تا ۳۰۰ کیلوگرم باشد." });
+      return;
+    }
+
     setSubmitting(true);
     try {
       await saveUserProfile({ ...userProfile, ...values });
@@ -118,8 +118,8 @@ export default function EditProfilePage() {
             <Card>
               <CardHeader><CardTitle className="flex items-center gap-2"><UserRound className="h-5 w-5 text-primary" />هدف و وضعیت فعلی</CardTitle></CardHeader>
               <CardContent className="grid gap-5 sm:grid-cols-2">
-                <FormField control={form.control} name="goal" render={({ field }) => <FormItem><FormLabel>هدف اصلی</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="lose_weight">کاهش وزن و چربی</SelectItem><SelectItem value="gain_muscle">افزایش عضله</SelectItem><SelectItem value="improve_fitness">بهبود آمادگی جسمانی</SelectItem></SelectContent></Select><FormMessage /></FormItem>} />
-                <FormField control={form.control} name="weight" render={({ field }) => <FormItem><FormLabel>وزن فعلی</FormLabel><FormControl><Input type="number" min={30} max={300} step="0.1" inputMode="decimal" {...field} /></FormControl><FormDescription>کیلوگرم</FormDescription><FormMessage /></FormItem>} />
+                <FormField control={form.control} name="goal" render={({ field }) => <FormItem><FormLabel>هدف اصلی</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="lose_weight">کاهش وزن و چربی</SelectItem><SelectItem value="gain_muscle">افزایش عضله</SelectItem><SelectItem value="improve_fitness">بهبود آمادگی جسمانی</SelectItem></SelectContent></Select></FormItem>} />
+                <FormField control={form.control} name="weight" render={({ field }) => <FormItem><FormLabel>وزن فعلی</FormLabel><FormControl><Input type="number" min={30} max={300} step="0.1" inputMode="decimal" value={Number.isFinite(field.value) ? field.value : ""} onChange={(event) => field.onChange(event.target.value === "" ? Number.NaN : Number(event.target.value))} onBlur={field.onBlur} name={field.name} ref={field.ref} /></FormControl><FormDescription>کیلوگرم</FormDescription><FormMessage /></FormItem>} />
               </CardContent>
             </Card>
 
