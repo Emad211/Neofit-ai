@@ -8,6 +8,7 @@ import './refinements.css';
 import './system-pages.css';
 import './integration.css';
 import './progress-integration.css';
+import './profile-integration.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(publicAppUrl),
