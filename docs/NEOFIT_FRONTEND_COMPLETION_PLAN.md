@@ -95,15 +95,18 @@ Unknown-food values are intentionally not invented. Real values must later come 
 - [x] Dependency-free Service Worker registration
 - [x] Safe cache boundaries for API/Auth/Authorization/non-GET requests
 - [x] Real Service Worker activation/control and offline reload test
+- [x] Static-export-compatible Manifest
 - [x] Final mobile/tablet/desktop and regression matrix
 
 ## 3. Final validation evidence
 
 ```text
-validated runtime head: fd717f49a3f7ee5afd0a2669a0f2ffdd575db237
-UI Revival CI: 30994281464 — success
-artifact: 8925545367
-artifact digest: sha256:452b0847bb32894044ed4a797b5468dce14628e753ef6cdd63babed0ed4f1b76
+validated runtime head: d36a67b001a280fefbba6c676e69fb4f22ff20b2
+UI Revival CI: 30994858208 — success
+artifact: 8925787432
+artifact digest: sha256:9ec152b284c1a375fd5f205a119a526a62c2d1b691996e4ee9d105b89034dc42
+Public Static Export: 30994858276 — success
+Public RawGitHack Preview: 30994858167 — success
 static pages generated: 42/42
 TypeScript: success
 Production build: success
