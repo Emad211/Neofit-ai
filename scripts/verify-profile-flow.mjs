@@ -73,16 +73,19 @@ try {
   await page.waitForTimeout(600);
   const editTitleVisible = await page.getByRole("heading", { name: "ویرایش مشخصات" }).isVisible().catch(() => false);
   const regenerateAbsent = (await page.getByText(/بازسازی برنامه|Regenerate Plan/).count()) === 0;
-  const weightInput = page.getByLabel("وزن فعلی");
-  await weightInput.fill("91.5");
+  await page.getByLabel("وزن فعلی").fill("91.5");
   await page.getByRole("button", { name: "ذخیره تغییرات" }).click();
-  await page.waitForURL("**/profile", { timeout: 10_000 });
-  await page.waitForTimeout(500);
-  const editedWeightVisible = await page.getByText("۹۱٫۵ کیلوگرم", { exact: true }).isVisible().catch(() => false);
+  await page.waitForFunction(() => {
+    const state = JSON.parse(window.localStorage.getItem("neofit-ui-demo-v3") || "{}");
+    return state.profile?.weight === 91.5;
+  }, null, { timeout: 10_000 });
   const persistedEdit = await page.evaluate(() => {
     const state = JSON.parse(window.localStorage.getItem("neofit-ui-demo-v3") || "{}");
     return { weight: state.profile?.weight, goal: state.profile?.goal };
   });
+  await page.goto(`${baseUrl}/profile`, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(500);
+  const editedWeightVisible = await page.getByText("۹۱٫۵ کیلوگرم", { exact: true }).isVisible().catch(() => false);
   const editPassed = editTitleVisible && regenerateAbsent && editedWeightVisible && persistedEdit.weight === 91.5 && persistedEdit.goal === "lose_weight";
   report.checks.edit = { editTitleVisible, regenerateAbsent, editedWeightVisible, persistedEdit, passed: editPassed };
   if (!editPassed) report.passed = false;
@@ -94,7 +97,10 @@ try {
   const editableEmailAbsent = (await page.locator('input[type="email"]').count()) === 0;
   await page.getByLabel("نام نمایشی").fill("عماد جدید");
   await page.getByRole("button", { name: "ذخیره نام" }).click();
-  await page.waitForTimeout(350);
+  await page.waitForFunction(() => {
+    const state = JSON.parse(window.localStorage.getItem("neofit-ui-demo-v3") || "{}");
+    return state.profile?.name === "عماد جدید";
+  }, null, { timeout: 10_000 });
   const persistedAccount = await page.evaluate(() => {
     const state = JSON.parse(window.localStorage.getItem("neofit-ui-demo-v3") || "{}");
     return { name: state.profile?.name };
