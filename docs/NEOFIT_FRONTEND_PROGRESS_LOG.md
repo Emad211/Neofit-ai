@@ -8,11 +8,11 @@ The complete page/feature map, delivery order and frontend Definition of Done ar
 
 - `docs/NEOFIT_FRONTEND_COMPLETION_PLAN.md`
 
-### First onboarding slice
+### First Onboarding slice
 
-- Added one versioned onboarding data model.
+- Added one versioned Onboarding data model.
 - Added persistent local draft, refresh resume and restart support.
-- Added one shared Persian RTL wizard shell and 15-step progress.
+- Added one shared Persian RTL Wizard shell and 15-step progress.
 - Implemented Welcome, Goal, Basic details, Body measurements and Medical history.
 - Redirected legacy `/onboarding/details` to `/onboarding/basics`.
 
@@ -26,7 +26,7 @@ public RawGitHack export: 30969428940 — success
 
 ---
 
-## 2026-08-05 — Phase 1 onboarding completed end-to-end
+## 2026-08-05 — Phase 1 Onboarding completed end-to-end
 
 ### Injury experience
 
@@ -37,17 +37,17 @@ public RawGitHack export: 30969428940 — success
 - Added no-injury path, current pain flag, 0–10 pain scale, general limitations and safety warning.
 - Browser evidence proves 73 interactive SVG body regions; clicking a region changes `aria-pressed` and creates the selected-area editor.
 
-### Remaining onboarding steps implemented
+### Remaining Onboarding steps implemented
 
 - Step 7: occupation, activity, sitting, steps, sleep, stress, smoking and routine.
 - Step 8: meals, diet, allergies, dislikes, Iranian favorites, budget, cooking and kitchen access.
 - Step 9: level, training age, previous sports, recent break, familiar movements and cardio/strength experience.
 - Step 10: home/gym, equipment, training days, session duration, preferred days/time and schedule notes.
 - Step 11: intensity, cardio, training style, variety, nutrition strictness, coaching tone and reminders.
-- Step 12: complete grouped review with edit links.
+- Step 12: grouped review with edit links.
 - Step 13: staged analysis with visible progress and rationale.
 - Step 14: explainable calories/macros/training result and health cautions.
-- Step 15: start date, reminder configuration, final consent, local plan persistence and activation into Today.
+- Step 15: start date, reminders, final consent, local plan persistence and activation into Today.
 
 ### Validation evidence
 
@@ -67,15 +67,15 @@ medical acknowledgement validation: success
 
 ---
 
-## 2026-08-05 — Phase 2 application shell and Today completed
+## 2026-08-05 — Phase 2 App Shell and Today completed
 
 ### Application shell
 
 - Normalized navigation to Today, Workout, Nutrition, Progress and Profile.
 - Added Persian RTL mobile header, sticky bottom navigation, desktop header and collapsible right Sidebar.
-- Added direct NeoFit Coach and Notification Center entries.
-- Added shared persistent unread counter.
-- Added actual offline-state banner and stable `/offline` route.
+- Added direct Coach and Notification Center entries.
+- Added shared persistent unread count.
+- Added actual offline-state banner and `/offline` route.
 - Corrected the Sidebar trigger to expose a real accessible role/name.
 
 ### Notification Center
@@ -97,83 +97,99 @@ medical acknowledgement validation: success
 
 ### Phase 2 responsive closure
 
-The fixed-width responsive gate now proves at tablet `820×1180` and desktop `1440×1000`:
+The fixed-width responsive gate proves at tablet `820×1180` and desktop `1440×1000`:
 
-- Sidebar visibility;
-- expanded-to-collapsed interaction;
+- Sidebar visibility and collapse;
 - desktop header;
-- mobile bottom navigation absence;
-- Today readiness and Notification entry visibility;
-- no horizontal overflow on Today or Notification Center.
-
-Phase 2 was closed only after this gate passed.
+- absence of mobile bottom navigation;
+- Today and Notification entry visibility;
+- no horizontal overflow.
 
 ---
 
-## 2026-08-05 — Phase 3 Workout functional slice delivered
+## 2026-08-05 — Phase 3 Workout completed
 
-### Weekly Workout overview
+### Weekly plan and Day Details
 
 - Rebuilt the Workout landing page in Persian.
 - Added weekly session, minutes, estimated calories and completion summaries.
-- Added active-session resume banner.
-- Added direct Workout History entry.
+- Added active-session resume banner and History entry.
+- Added dedicated statically generated `/workout/[id]` pages.
+- Added warm-up, ordered exercises, sets, repetitions, rest targets and safety notes.
+- Added previous-session performance hints per exercise.
+- Added active injury and medical-limitation summary.
+- Kept separate Detail and Start actions on weekly cards.
 
 ### Persistent Workout Player
 
-- Added Local Storage session persistence under `neofit:active-workout:<id>`.
+- Persisted the active session under `neofit:active-workout:<id>`.
 - Persisted current exercise, current set, weight/reps logs and start time.
 - Restored the exact session after refresh.
 - Added visible save/resume status.
 - Changed exit behavior to preserve-and-return-later or explicit discard.
 - Preserved Rest Timer, exercise guide and alternative-exercise flow.
 
-### Completion and feedback
+### Completion, pain and records
 
-- Removed automatic save on completion.
+- Removed automatic completion save.
 - Added explicit duration, total volume, set and exercise summary.
-- Added RPE, pain scale and note capture.
-- Added a pain warning for moderate/high pain.
-- Persisted completion feedback in Workout logs.
+- Added RPE, pain scale and notes.
+- Added pain warning for moderate/high pain.
 - Cleared the active session only after successful save.
+- Added lightweight personal-record detection using previous Workout logs.
+- Detects max-weight and exercise-volume records.
+- Persists record metadata in `neofit:workout-records:v1`.
+- Displays new records directly after completion.
 
 ### Workout History
 
 - Added `/workout/history`.
-- Added session count, total duration, total volume and average RPE.
-- Added per-session exercises, completed sets, pain/RPE and notes.
-- Added repeat-session action.
-- Added empty state.
+- Added session count, total duration, total volume, average RPE and PR count.
+- Added recent-record cards.
+- Added per-session PR badges.
+- Added exercise list, completed sets, pain/RPE, notes and repeat-session action.
+- Preserved the empty state.
 
-### Complete validation evidence
+### Workout system states
+
+- Added route-level Workout skeleton.
+- Added recoverable Workout error state with retry and return-to-Today.
+- Kept existing no-program and no-history empty states.
+
+### Final validation evidence
 
 ```text
-validated head: 0ecac9e5bc13aa494df89bd48404421c8e647f43
-UI Revival CI: 30974219952 — success
-artifact: 8917688456
-artifact digest: sha256:aa2bf2bf7ffb3898c36d59bab8d9035b68ea083f918fb86cae9d55c69806335c
+validated head: fd47596ef09aed24a6ae5c4cafe0723b3d10efff
+UI Revival CI: 30979117894 — success
+artifact: 8919476022
+artifact digest: sha256:bdc692e02d3a8747e7ef12a853597378260d6fec94bd1582a57b4ae63962841f
 TypeScript: success
 production build: success
-route contracts: success
+static pages generated: 37/37
+Workout Day Details routes: push-a, pull-a, legs-a
 mobile route and interaction gate: success
 tablet responsive gate: success
 desktop responsive gate: success
+Day Details warm-up and previous performance: success
 Workout resume after refresh: success
-exercise guide: success
-alternative exercise selection: success
+exercise guide and alternative selection: success
 Workout completion feedback: success
+personal-record detection and persistence: success
 active-session cleanup after save: success
-Workout history rendering: success
+Workout History and record rendering: success
+page errors: 0
+console errors: 0
 ```
+
+Long-term exercise charts and filtering are intentionally assigned to Phase 5 Progress instead of expanding Workout with duplicated analytics.
 
 ### Exact continuation point
 
-Phase 2 is closed. Phase 3 remains active:
+Phase 3 is closed. Continue with Phase 4 Nutrition:
 
-1. Build `/workout/[id]` day details with warm-up, ordered movements, sets/reps/rest and safety notes.
-2. Route weekly cards and Today through day details before explicit start.
-3. Show previous performance hints in the Player.
-4. Detect and persist personal records during completion.
-5. Add PR badges and exercise progression summaries to History.
-6. Add Workout loading, empty and recoverable error states.
-7. Expand the Workout browser gate for Day Details and PR detection, then close Phase 3.
+1. Read the existing Nutrition page and components before editing.
+2. Preserve current meal-plan, details, alternatives, library and shopping-list work.
+3. Normalize the Nutrition landing page into clear daily totals, remaining calories/macros and daily/weekly hierarchy.
+4. Complete details, alternatives/recipes and logging without creating a second state layer.
+5. Add Nutrition-specific loading/error/empty states and one focused browser flow.
+6. Do not modify completed Onboarding, Shell or Workout contracts except for verified defects.
