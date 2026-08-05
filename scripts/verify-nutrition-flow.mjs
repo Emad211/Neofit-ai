@@ -53,9 +53,13 @@ try {
   const after = await page.evaluate(() => {
     const state = JSON.parse(window.localStorage.getItem("neofit-ui-demo-v3") || "{}");
     const meals = (state.logs || []).filter((log) => log.logType === "meal");
-    return { loggedMeals: (state.loggedMealsState || []).length, mealCalories: meals[0]?.calories || 0 };
+    return {
+      loggedMeals: (state.loggedMealsState || []).length,
+      mealCalories: meals[0]?.calories || 0,
+      mealDescription: meals[0]?.description || "",
+    };
   });
-  const logPassed = after.loggedMeals === before.loggedMeals + 1 && after.mealCalories > 0;
+  const logPassed = after.loggedMeals === before.loggedMeals + 1 && after.mealCalories > 0 && Boolean(after.mealDescription);
   report.checks.logging = { before, after, passed: logPassed };
   if (!logPassed) report.passed = false;
 
@@ -70,6 +74,18 @@ try {
   report.checks.persistence = { persistedBadgeVisible, persistedState, passed: persistencePassed };
   if (!persistencePassed) report.passed = false;
 
+  await page.getByRole("link", { name: "تاریخچه تغذیه" }).click();
+  await page.waitForTimeout(500);
+  const historyTitleVisible = await page.getByRole("heading", { name: "ثبت‌های غذایی روزانه" }).isVisible().catch(() => false);
+  const historyMealVisible = await page.getByText(after.mealDescription, { exact: true }).first().isVisible().catch(() => false);
+  const dailyCaloriesVisible = await page.getByText(/کالری ثبت‌شده/).first().isVisible().catch(() => false);
+  const historyPassed = historyTitleVisible && historyMealVisible && dailyCaloriesVisible;
+  report.checks.history = { historyTitleVisible, historyMealVisible, dailyCaloriesVisible, passed: historyPassed };
+  if (!historyPassed) report.passed = false;
+  await page.screenshot({ path: `${artifactDir}/nutrition-history.png`, fullPage: true });
+
+  await page.goto(`${baseUrl}/nutrition`, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(500);
   await page.getByRole("button", { name: "لیست خرید" }).click();
   const shoppingTitleVisible = await page.getByText("لیست خرید برنامه", { exact: true }).isVisible().catch(() => false);
   report.checks.shoppingList = { shoppingTitleVisible, passed: shoppingTitleVisible };
