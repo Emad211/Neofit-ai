@@ -2,253 +2,199 @@
 
 **نقش:** حافظهٔ عملیاتی و شواهد توسعه  
 **همراه اجباری:** `docs/NEOFIT_MASTER_PLAN.md`  
-**آخرین به‌روزرسانی:** ۵ اوت ۲۰۲۶ — Stage 4C از نظر کد و Remote اثبات شده؛ PR #33 هنوز Draft و unmerged است
-
-## پروتکل
-
-در شروع هر نوبت:
-
-1. Master Plan، این دفتر و Handoff خوانده شوند.
-2. سند Stage فعال و Evidenceهای مرتبط خوانده شوند.
-3. Branch، HEAD، PR، Issue، CI، Review، Vercel و Supabase از ابزار واقعی بررسی شوند.
-4. فقط Exact continuation point اجرا شود.
-
-در پایان هر برش، هدف، Commit، Run، Artifact، Failure، Correction، تصمیم و نقطهٔ ادامه ثبت شود.
+**آخرین به‌روزرسانی:** ۵ اوت ۲۰۲۶ — Auth و Application persistence روی PR #36 پیاده‌سازی و تمام CIها سبز شد؛ Runtime عمومی هنوز Deploy نشده است
 
 ## نمای کلی
 
-| Stage | وضعیت | شواهد |
+| بخش | وضعیت | شواهد |
 |---|---|---|
-| 0 | complete | PR #12 |
-| 1 | complete/accepted | PR #13 |
-| 2A | complete | PR #15 |
-| 2B | active/parallel | Issue #16، Draft PR #28 |
-| 3 | complete | PR #18–#24، Core `52/52`، Web `9/9` |
-| 4A | complete | Project `rjwrobltmjodfarnltal` |
-| 4B | complete/merged | PR #30، merge `17d0e8c…` |
-| 4C | implementation + remote proof complete؛ unmerged | Draft PR #33 |
-| 4D | not started | بعد از Merge 4C |
-| Frontend | complete؛ separate/unmerged | Draft PR #34 |
+| Shared Nutrition Core | complete | `52/52` |
+| Web Nutrition Adapter | complete | `9/9` |
+| Supabase SSR foundation | complete/merged | PR #30 |
+| Identity schema/RLS | complete/merged | PR #33، `c7de309…` |
+| Nutrition persistence | complete/merged | PR #35، `9424176…` |
+| Full frontend reference | complete/separate | PR #34 |
+| Current Web UI integration | active، major routes complete | PR #36 |
+| Auth/Application wiring | implemented، all CI green | `f5f5a6…` |
+| Public Auth runtime | pending | Vercel Env + deployment quota |
 
 ---
 
-## Stage 3 closure
+## Stage 4C closure
 
-- Closure merge: `d1f4c465fc3192cb6c919fca6d4940f1ab75d3d5`.
-- Shared Nutrition Core `52/52`.
-- Web Adapter `9/9`.
-- Issue #17 closed.
+PR #33 Merge شد:
+
+```text
+merge: c7de309fd3f62fe6e58f1e603c3c9745a3013dcd
+migration: 20260804232149_identity_foundation.sql
+```
+
+Remote contract:
+
+- `profiles` و `user_settings`؛
+- RLS و هشت own-row policy؛
+- authenticated grants only؛
+- anon/PUBLIC بدون grant؛
+- Runtime cross-user denial پاس؛
+- Advisors صفر؛
+- cleanup کامل.
 
 ---
 
-## Stage 4A — Supabase Project
+## Stage 4D closure
+
+PR #35 Merge شد:
 
 ```text
-project ref: rjwrobltmjodfarnltal
-organization: yzymkjsfqoohxbqkhzhs
-region: eu-central-1
-status: ACTIVE_HEALTHY
-cost confirmation: 0 monthly
+merge: 942417641f69eeb1c6990a321efef0d9a277a994
+migration: 20260805132201_nutrition_persistence.sql
 ```
 
-- هیچ key value commit نشد.
-- baseline public Application tables هنگام ایجاد: `0`.
+Remote contract:
 
-Authority:
-
-- `docs/NEOFIT_STAGE4A_PROJECT_PROVISIONING_EVIDENCE.md`
+- `nutrition_goals`؛
+- `nutrition_entries`؛
+- Shared Core JSON persistence؛
+- `grams: null` و missing nutrient حفظ می‌شوند؛
+- unique `(user_id, client_mutation_id)`؛
+- own-row RLS؛
+- duplicate/cross-user/ownership denial پاس؛
+- Advisors صفر؛
+- cleanup کامل.
 
 ---
 
-## Stage 4B — SSR foundation complete and merged
+## Frontend integration — PR #36
 
-پیاده‌سازی:
-
-- fail-closed public env parser؛
-- Browser/Server client separation؛
-- cookie-aware SSR client؛
-- Proxy با `getClaims()` و cookie synchronization؛
-- `private, no-store`؛
-- secret-boundary tests.
+Branch:
 
 ```text
-PR #30 implementation merge: 17d0e8c33ed9ba6329f243dee27b8cf8de53056c
-Closure merge: 72202f2f0ff281bf0624b9ebb933ac5afeaad8fc
+web/full-frontend-integration
 ```
 
-Final Stage 4B CI:
+برش‌های سبز پیش از Auth:
+
+- Routeهای واقعی Today، Nutrition و Nutrition Plan؛
+- Shared local diary state؛
+- Workout overview و سه detail route؛
+- Progress سبک؛
+- Profile شفاف مهمان؛
+- Guest PWA و Offline؛
+- بدون کتابخانه یا Table جدید.
+
+آخرین Evidence قبل از Auth:
 
 ```text
-Supabase Foundation CI 30958530329 — success
-Nutrition Core CI 30958530294 — success
-Web CI 30958530262 — success
-Vercel Build Contract 30958530296 — success
+head: 96d2d83cf900e0c6abe9982050b44576cd5c0720
+Web CI 31014490720 — success
+Artifact 8933909171
 ```
-
-Authority:
-
-- `docs/NEOFIT_STAGE4B_SUPABASE_SSR_FOUNDATION_EVIDENCE.md`
 
 ---
 
-## Stage 4C — test-first implementation, drift correction and Remote proof
+## Auth + Application persistence slice
 
-**Issue:** #25  
-**Branch:** `stage4c/identity-schema-rls`  
-**Draft PR:** #33
+### پیاده‌سازی
 
-### Red checkpoint
+- email/password Server Actions؛
+- PKCE callback و email token confirm؛
+- sign-out سروری؛
+- verified-claims Proxy؛
+- typed Browser/Server clients؛
+- account bootstrap برای `profiles`، `user_settings` و `nutrition_goals`؛
+- account snapshot از `profiles`، `nutrition_goals` و `nutrition_entries`؛
+- ثبت/حذف Remote وعده‌ها با RLS؛
+- ویرایش نام نمایشی؛
+- guest local fallback؛
+- optimistic insert + rollback؛
+- no queue/event bus/IndexedDB/background sync؛
+- Auth/private HTML خارج از PWA cache.
 
-در اولین implementation head، دو failure عمدی/واقعی باقی مانده بود:
-
-```text
-head: f2082a050763e5bb9f2171cb1efa2a0da407557b
-Identity CI 30959449583 — failure
-Foundation CI 30959449610 — failure
-```
-
-علت‌ها:
-
-1. `web/lib/supabase/database.types.ts` هنوز تولید نشده بود.
-2. تست قدیمی Stage 4B هنوز به‌اشتباه انتظار صفر migration در تمام Stageهای بعد داشت.
-
-### Corrections
-
-- types مستقیماً از Project زنده تولید و commit شد.
-- Foundation test به قرارداد درست تغییر کرد: Stage 4B migration اضافه نمی‌کند، اما migrationهای versioned Stageهای بعد مجازند؛ secret و permissive RLS همچنان ممنوع‌اند.
-- migration filename با Remote history همگام شد:
+### Failure 1 — TypeScript claims narrowing
 
 ```text
-old planned repository name: 20260805000100_identity_foundation.sql
-actual remote version:       20260804232149
-final repository filename:   20260804232149_identity_foundation.sql
+head: 90d3c5fb9bc659dc5a731f0b08723cfb4f8a75b7
+Web CI 31031537217 — failure
 ```
 
-- SQL دوباره اجرا نشد؛ فقط drift نام فایل رفع شد.
-- CI metadata از ادعای قدیمی `remoteMigrationApplied:false` به `remoteState: verified-separately` اصلاح شد.
-
-### Remote schema
+علت:
 
 ```text
-profiles       RLS enabled
-user_settings  RLS enabled
+claims possibly undefined هنگام خواندن email
 ```
 
-Migration history:
+اصلاح:
 
-```text
-version: 20260804232149
-name: identity_foundation
-```
+- email claim مستقیماً از `claimsData?.claims?.email` narrow شد.
 
-Policies:
+### Failure 2 — Guest PWA cache boundary
 
-- هشت policy own-row؛
-- فقط role `authenticated`؛
-- INSERT دارای `WITH CHECK`؛
-- UPDATE دارای `USING` و `WITH CHECK`؛
-- هیچ policy permissive وجود ندارد.
+پس از سبزشدن TypeScript، Browser gate نشان داد `force-dynamic` Guest shell را هم `no-store` می‌کند.
 
-Grants:
+اصلاح:
 
-- authenticated: SELECT/INSERT/UPDATE/DELETE؛
-- anon/PUBLIC: بدون grant.
+- `force-dynamic` حذف شد؛
+- بدون Supabase Env، main routes Static هستند؛
+- با Env/Cookies، Next مسیر حساب را Dynamic می‌کند؛
+- Proxy فقط Session تأییدشده را `private, no-store` می‌کند؛
+- Service Worker private HTML را skip و guest snapshot قبلی را حذف می‌کند.
 
-Advisors:
+### Failure 3 — outdated greeting assertion
 
-```text
-Security lints: 0
-Performance lints: 0
-```
+PWA route صحیح آفلاین باز شد، ولی تست هنوز متن قدیمی «سلام عماد» را انتظار داشت.
 
-### Runtime RLS proof
+اصلاح:
 
-Project هیچ Auth user نداشت. تست با UUIDهای موقت و cleanup کامل انجام شد؛ هیچ account دائمی ساخته نشد.
-
-Passed:
-
-```text
-anon_read_denied
-user_a_reads_own
-user_a_cannot_read_b
-user_a_cannot_update_b
-user_a_cannot_delete_b
-user_a_cannot_insert_as_b
-ownership_change_denied
-```
-
-Post-test:
-
-```text
-profiles_count: 0
-user_settings_count: 0
-auth_user_count: 0
-```
+- Assertion به greeting خنثی مهمان تغییر کرد؛ کد محصول تغییر نکرد.
 
 ### Green checkpoint
 
 ```text
-validated implementation head: c5cface86f46134a4a0afcfc3c980f7ce613ee7a
+validated code head: f5f5a6f60c15d09793f9ea416f1fe721b6d9e740
 
-Identity CI 30996283909 — success
-Artifact 8926287946
-Digest sha256:192ae440dfb98fb2329249fb3b1f0c881841b5774d2ec642c63efdd6f34fcfe9
+Identity CI 31032483010 — success
+Nutrition Persistence CI 31032481404 — success
+Foundation CI 31032481373 — success
+Vercel Build Contract 31032481435 — success
+Web CI 31032481411 — success
+Artifact 8941255661
+Digest sha256:f0e57c1b940f6b17a67e5562814ddd2ff3f70f13a59a51d11e3efdc25a808172
+```
 
-Foundation CI 30996283993 — success
-Artifact 8926292359
-Digest sha256:528deb7235762d631751f5a6d8b469fe6a7291e49900b6e2f30c7c4f0ee9b549
+Web CI:
 
-Web CI 30996283899 — success
-Artifact 8926312456
-Digest sha256:60064bab80150fcb72c0952d29a2466625d4b11d1dcd667ee2d628d617deecc2
-
-Vercel Build Contract 30996283903 — success
+```text
+TypeScript: success
+Web Adapter: 9/9
+Supabase Application integration: 9/9
+Production build: success
+Visual routes: success
+No-config Auth: success
+PWA guest offline navigation: success
+Private Auth cache boundary: success
 ```
 
 Authority:
 
-- `docs/NEOFIT_STAGE4C_IDENTITY_RLS_EVIDENCE.md`
-
-Stage 4C هنوز Merge نشده است.
+- `docs/NEOFIT_AUTH_PERSISTENCE_INTEGRATION_EVIDENCE.md`
 
 ---
 
-## Frontend completion program — separate branch
+## Runtime boundary
 
-**Branch:** `revival/full-ui-front`  
-**Draft PR:** #34
+کد Current Head روی Vercel عمومی اثبات نشده است.
 
-فرانت فارسی end-to-end کامل و browser-proven شد:
-
-- Onboarding 15 مرحله‌ای و Body Map 73 ناحیه‌ای؛
-- Today، Workout، Nutrition، Progress؛
-- Profile/Settings/Notifications؛
-- Coach محلی و مرز پزشکی؛
-- PWA، Offline، 404، Error و accessibility hardening.
-
-```text
-runtime head: d36a67b001a280fefbba6c676e69fb4f22ff20b2
-UI Revival CI 30994858208 — success
-Public Static Export 30994858276 — success
-Public RawGitHack Preview 30994858167 — success
-routes: 42/42
-```
-
-این Branch معماری فعلی `web/`، Supabase SSR و Shared Core را جایگزین نمی‌کند. انتقال بعدی باید کنترل‌شده باشد؛ Merge مستقیم ممنوع است.
-
----
-
-## Stage 2B parallel state
-
-Vercel HTTPS validation در Issue #16 / Draft PR #28 مستقل و باز است.
-
----
+- آخرین Ready Preview قبل از Current Auth Head است.
+- Deployهای جدید به سقف روزانهٔ Free plan خورده‌اند.
+- Connector موجود امکان ثبت Environment variable در Vercel را ارائه نمی‌دهد.
+- هیچ Publishable key value در Git یا docs ثبت نشده است.
 
 ## Exact continuation point
 
-1. Master Plan، Stage 4 Plan، Handoff، README، Issue #25 و PR #33 با Evidence Stage 4C همگام شوند.
-2. CI documentation head بررسی شود.
-3. PR #33 Draft و unmerged بماند تا تأیید صریح کاربر.
-4. پس از تأیید، PR #33 Merge و Closure evidence ثبت شود.
-5. Stage 4D فقط پس از Merge، با red migration/RLS tests آغاز شود.
-6. برای انتقال فرانت PR #34، branch ادغام جدا از معماری فعلی ساخته شود؛ Merge مستقیم دو شاخه انجام نشود.
+1. Vercel Preview/Production Env برای URL و Publishable key تنظیم شود.
+2. Supabase Redirect URLها با دامنهٔ واقعی همگام شوند.
+3. Current Head بعد از Reset quota Deploy شود.
+4. یک حساب موقت واقعی و Browser round-trip کامل تست شود.
+5. Remote rows و account آزمایشی پاک شوند.
+6. Runtime Evidence به سند Auth اضافه شود.
+7. سپس Workout Player، Onboarding و Coach در PR #36 ادامه یابد؛ بدون Merge/Production زودهنگام.
