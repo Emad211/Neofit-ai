@@ -1,7 +1,16 @@
 const CACHE_PREFIX = 'neofit-app-shell-';
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const SHELL_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}`;
-const SHELL_DOCUMENTS = ['/', '/offline'];
+const SHELL_DOCUMENTS = [
+  '/',
+  '/today',
+  '/nutrition',
+  '/nutrition/plan',
+  '/workout',
+  '/progress',
+  '/profile',
+  '/offline',
+];
 const STATIC_SHELL = [
   '/manifest.webmanifest',
   '/icons/icon-192.png',
@@ -124,7 +133,7 @@ async function navigationResponse(request) {
   const url = new URL(request.url);
   try {
     const response = await fetch(request);
-    if (responseCanBeCached(response) && (url.pathname === '/' || url.pathname === '/offline')) {
+    if (responseCanBeCached(response) && SHELL_DOCUMENTS.includes(url.pathname)) {
       const cache = await caches.open(SHELL_CACHE);
       await cache.put(request, response.clone());
     }
@@ -133,7 +142,7 @@ async function navigationResponse(request) {
     return (
       (await caches.match(request)) ||
       (await caches.match(url.href)) ||
-      (await caches.match(new URL('/', self.location.origin).href)) ||
+      (await caches.match(new URL('/today', self.location.origin).href)) ||
       (await caches.match(new URL('/offline', self.location.origin).href)) ||
       Response.error()
     );
