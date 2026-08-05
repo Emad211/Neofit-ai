@@ -179,7 +179,8 @@ export async function loadAccountSnapshot(): Promise<AccountSnapshot> {
       return { configured: true, account: null, diary: null, goals: null, loadError: null };
     }
 
-    const email = typeof claims.email === 'string' ? claims.email : '';
+    const emailClaim = claimsData?.claims?.email;
+    const email = typeof emailClaim === 'string' ? emailClaim : '';
     const [profileResult, goalsResult, entriesResult] = await Promise.all([
       supabase.from('profiles').select('display_name').eq('id', userId).maybeSingle(),
       supabase.from('nutrition_goals').select('daily').eq('user_id', userId).maybeSingle(),
