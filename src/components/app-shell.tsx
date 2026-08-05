@@ -111,7 +111,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Sidebar side="right" collapsible="icon">{sidebarContent}</Sidebar>
       <SidebarInset>
         <header dir="rtl" className="sticky top-0 z-40 flex h-16 items-center justify-between border-b bg-background/90 px-5 backdrop-blur-xl">
-          <div className="flex items-center gap-3"><SidebarTrigger asChild><Button size="icon" variant="ghost" aria-label="بازکردن منو"><LayoutGrid /></Button></SidebarTrigger><div><p className="font-black">{active?.label || "نئوفیت"}</p><p className="text-xs text-muted-foreground">{dateLabel}</p></div></div>
+          <div className="flex items-center gap-3"><SidebarTrigger aria-label="بازکردن منو" className="h-9 w-9"><LayoutGrid className="h-5 w-5" /></SidebarTrigger><div><p className="font-black">{active?.label || "نئوفیت"}</p><p className="text-xs text-muted-foreground">{dateLabel}</p></div></div>
           <HeaderActions unreadCount={unreadCount} />
         </header>
         {showOffline ? <OfflineBanner /> : null}
