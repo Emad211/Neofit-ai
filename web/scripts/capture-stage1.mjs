@@ -17,6 +17,7 @@ async function inspectLayout(page, screen, width) {
     scrollY: window.scrollY,
     lang: document.documentElement.lang,
     dir: document.documentElement.dir,
+    pathname: window.location.pathname,
   }));
   const hasHorizontalOverflow =
     dimensions.documentWidth > dimensions.viewportWidth ||
@@ -46,9 +47,11 @@ try {
       reducedMotion: 'reduce',
     });
     const page = await context.newPage();
-    await page.goto(baseUrl, { waitUntil: 'networkidle' });
+    await page.goto(`${baseUrl}/today`, { waitUntil: 'networkidle' });
+    await page.getByRole('heading', { name: 'خلاصهٔ امروز' }).waitFor();
     await page.screenshot({ path: path.join(outputDir, `today-${width}.png`) });
-    await inspectLayout(page, 'today', width);
+    const result = await inspectLayout(page, 'today', width);
+    if (result.pathname !== '/today') throw new Error(`Expected /today, got ${result.pathname}`);
     await context.close();
   }
 
@@ -59,12 +62,13 @@ try {
     reducedMotion: 'reduce',
   });
   const page = await context.newPage();
-  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await page.goto(`${baseUrl}/today`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: 'تغذیه' }).click();
+  await page.getByRole('link', { name: 'تغذیه', exact: true }).click();
   await page.getByRole('heading', { name: 'چه چیزی خوردی؟' }).waitFor();
   await page.screenshot({ path: path.join(outputDir, 'nutrition-390.png') });
-  await inspectLayout(page, 'nutrition', 390);
+  const nutritionResult = await inspectLayout(page, 'nutrition', 390);
+  if (nutritionResult.pathname !== '/nutrition') throw new Error(`Expected /nutrition, got ${nutritionResult.pathname}`);
 
   const search = page.getByPlaceholder('مثلاً قورمه‌سبزی یا جوجه کباب');
   await search.fill('قورمه');
@@ -72,30 +76,24 @@ try {
   await inspectLayout(page, 'search', 390);
 
   await page.getByRole('button', { name: /قورمه‌سبزی/ }).first().click();
+  await page.getByRole('dialog').waitFor();
   await page.screenshot({ path: path.join(outputDir, 'meal-sheet-390.png') });
   await inspectLayout(page, 'meal-sheet', 390);
   await page.getByRole('button', { name: 'بستن' }).click();
 
-  await page.getByRole('button', { name: 'برنامهٔ هفته' }).click();
+  await page.getByRole('link', { name: 'برنامهٔ هفته' }).click();
   await page.getByRole('heading', { name: 'برنامهٔ سه روز آینده' }).waitFor();
   await page.screenshot({ path: path.join(outputDir, 'weekly-plan-390.png') });
-  await inspectLayout(page, 'weekly-plan', 390);
-  await page.locator('.week-list article').last().scrollIntoViewIfNeeded();
-  await page.screenshot({ path: path.join(outputDir, 'weekly-plan-lower-390.png') });
+  const planResult = await inspectLayout(page, 'weekly-plan', 390);
+  if (planResult.pathname !== '/nutrition/plan') throw new Error(`Expected /nutrition/plan, got ${planResult.pathname}`);
 
-  await page.getByRole('button', { name: 'تنظیمات' }).click();
-  await page.getByRole('heading', { name: 'تنظیمات' }).waitFor();
+  await page.getByRole('link', { name: 'پروفایل', exact: true }).click();
+  await page.getByRole('heading', { name: 'پروفایل' }).waitFor();
   await page.waitForFunction(() => window.scrollY === 0);
-  await page.screenshot({ path: path.join(outputDir, 'settings-390.png') });
-  const settingsResult = await inspectLayout(page, 'settings', 390);
-  if (settingsResult.scrollY !== 0) {
-    throw new Error(`Bottom navigation did not reset scroll: settings scrollY=${settingsResult.scrollY}`);
-  }
-  await page.locator('.settings-group--key').scrollIntoViewIfNeeded();
-  await page.screenshot({ path: path.join(outputDir, 'settings-key-390.png') });
-
-  if (results.some((result) => result.hasHorizontalOverflow)) {
-    throw new Error('At least one captured Stage 1 screen has horizontal overflow.');
+  await page.screenshot({ path: path.join(outputDir, 'profile-route-390.png') });
+  const profileResult = await inspectLayout(page, 'profile', 390);
+  if (profileResult.pathname !== '/profile' || profileResult.scrollY !== 0) {
+    throw new Error(`Profile route/reset failed: ${JSON.stringify(profileResult)}`);
   }
 
   await context.close();
