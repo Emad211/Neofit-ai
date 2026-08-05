@@ -2,7 +2,7 @@
 
 **نقش:** حافظهٔ عملیاتی و شواهد توسعه  
 **همراه اجباری:** `docs/NEOFIT_MASTER_PLAN.md`  
-**آخرین به‌روزرسانی:** ۵ اوت ۲۰۲۶ — Auth و Application persistence روی PR #36 پیاده‌سازی و تمام CIها سبز شد؛ Runtime عمومی هنوز Deploy نشده است
+**آخرین به‌روزرسانی:** ۵ اوت ۲۰۲۶ — Auth و Application persistence روی PR #36 پیاده‌سازی شده و HEAD نهایی تمام CIها را پاس کرده است؛ Runtime عمومی هنوز Deploy نشده است
 
 ## نمای کلی
 
@@ -15,7 +15,8 @@
 | Nutrition persistence | complete/merged | PR #35، `9424176…` |
 | Full frontend reference | complete/separate | PR #34 |
 | Current Web UI integration | active، major routes complete | PR #36 |
-| Auth/Application wiring | implemented، all CI green | `f5f5a6…` |
+| Auth/Application wiring | implemented، all CI green | code `f5f5a6…` |
+| Final synchronized branch | all CI green | head `6f8cf94…` |
 | Public Auth runtime | pending | Vercel Env + deployment quota |
 
 ---
@@ -82,14 +83,6 @@ web/full-frontend-integration
 - Guest PWA و Offline؛
 - بدون کتابخانه یا Table جدید.
 
-آخرین Evidence قبل از Auth:
-
-```text
-head: 96d2d83cf900e0c6abe9982050b44576cd5c0720
-Web CI 31014490720 — success
-Artifact 8933909171
-```
-
 ---
 
 ## Auth + Application persistence slice
@@ -112,11 +105,6 @@ Artifact 8933909171
 
 ### Failure 1 — TypeScript claims narrowing
 
-```text
-head: 90d3c5fb9bc659dc5a731f0b08723cfb4f8a75b7
-Web CI 31031537217 — failure
-```
-
 علت:
 
 ```text
@@ -129,29 +117,24 @@ claims possibly undefined هنگام خواندن email
 
 ### Failure 2 — Guest PWA cache boundary
 
-پس از سبزشدن TypeScript، Browser gate نشان داد `force-dynamic` Guest shell را هم `no-store` می‌کند.
+`force-dynamic` Guest shell را هم `no-store` می‌کرد.
 
 اصلاح:
 
 - `force-dynamic` حذف شد؛
 - بدون Supabase Env، main routes Static هستند؛
-- با Env/Cookies، Next مسیر حساب را Dynamic می‌کند؛
+- با Env/Cookies، account path Dynamic است؛
 - Proxy فقط Session تأییدشده را `private, no-store` می‌کند؛
-- Service Worker private HTML را skip و guest snapshot قبلی را حذف می‌کند.
+- Service Worker private HTML را skip می‌کند.
 
 ### Failure 3 — outdated greeting assertion
 
-PWA route صحیح آفلاین باز شد، ولی تست هنوز متن قدیمی «سلام عماد» را انتظار داشت.
+PWA صحیح بود، اما Gate متن قدیمی «سلام عماد» را انتظار داشت. Assertion به greeting خنثی مهمان اصلاح شد.
 
-اصلاح:
-
-- Assertion به greeting خنثی مهمان تغییر کرد؛ کد محصول تغییر نکرد.
-
-### Green checkpoint
+### Validated implementation checkpoint
 
 ```text
-validated code head: f5f5a6f60c15d09793f9ea416f1fe721b6d9e740
-
+code head: f5f5a6f60c15d09793f9ea416f1fe721b6d9e740
 Identity CI 31032483010 — success
 Nutrition Persistence CI 31032481404 — success
 Foundation CI 31032481373 — success
@@ -159,6 +142,20 @@ Vercel Build Contract 31032481435 — success
 Web CI 31032481411 — success
 Artifact 8941255661
 Digest sha256:f0e57c1b940f6b17a67e5562814ddd2ff3f70f13a59a51d11e3efdc25a808172
+```
+
+### Final synchronized branch checkpoint
+
+```text
+head: 6f8cf94c87396c5f0ce122b1b5fd33e8e032be05
+Web CI 31033701661 — success
+Artifact 8941729720
+Digest sha256:2d106c58bc9cd098c0e6966128e2bfd3ba66571301cb7b63c7b70aefee7164a6
+Nutrition Core CI 31033701894 — success
+Identity CI 31033701859 — success
+Nutrition Persistence CI 31033701801 — success
+Foundation CI 31033701573 — success
+Vercel Build Contract 31033702707 — success
 ```
 
 Web CI:
@@ -196,5 +193,5 @@ Authority:
 3. Current Head بعد از Reset quota Deploy شود.
 4. یک حساب موقت واقعی و Browser round-trip کامل تست شود.
 5. Remote rows و account آزمایشی پاک شوند.
-6. Runtime Evidence به سند Auth اضافه شود.
+6. Runtime Evidence ثبت شود.
 7. سپس Workout Player، Onboarding و Coach در PR #36 ادامه یابد؛ بدون Merge/Production زودهنگام.
