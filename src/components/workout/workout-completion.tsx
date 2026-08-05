@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Award, Check, Clock, Dumbbell, Gauge, Loader2, Repeat, Weight } from "lucide-react";
+import { AlertTriangle, Award, Check, Clock, Dumbbell, Loader2, Repeat, Trophy, Weight } from "lucide-react";
 import Confetti from "react-confetti";
 import { useWindowSize } from "@uidotdev/usehooks";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { WorkoutSession } from "./workout-player";
-import { useUserData } from "@/context/user-profile-context";
+import { useUserData, type WorkoutLog } from "@/context/user-profile-context";
 import { useToast } from "@/hooks/use-toast";
+import {
+  detectPersonalRecords,
+  formatRecord,
+  persistWorkoutRecords,
+  type PersonalRecord,
+} from "@/lib/workout-records";
 
 interface WorkoutCompletionProps {
   session: WorkoutSession;
@@ -26,13 +32,14 @@ function StatCard({ icon, title, value }: { icon: React.ReactNode; title: string
 export function WorkoutCompletion({ session, totalDuration, onSaved }: WorkoutCompletionProps) {
   const router = useRouter();
   const { width, height } = useWindowSize();
-  const { saveWorkoutLog } = useUserData();
+  const { saveWorkoutLog, combinedLogs } = useUserData();
   const { toast } = useToast();
   const [rpe, setRpe] = React.useState(7);
   const [painScale, setPainScale] = React.useState(0);
   const [notes, setNotes] = React.useState("");
   const [isSaving, setIsSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
+  const [newRecords, setNewRecords] = React.useState<PersonalRecord[]>([]);
 
   const totalVolume = React.useMemo(() => session.exercises.reduce((total, exercise) => total + exercise.logs.reduce((subtotal, log) => {
     const reps = Number.parseInt(log.reps, 10);
@@ -46,6 +53,10 @@ export function WorkoutCompletion({ session, totalDuration, onSaved }: WorkoutCo
     if (isSaving || saved) return;
     setIsSaving(true);
     try {
+      const achievedAt = new Date().toISOString();
+      const previousLogs = combinedLogs.filter((log): log is WorkoutLog => log.logType === "workout");
+      const detectedRecords = detectPersonalRecords({ session, previousLogs, achievedAt });
+
       await saveWorkoutLog({
         workoutId: session.id,
         workoutName: session.title,
@@ -56,9 +67,15 @@ export function WorkoutCompletion({ session, totalDuration, onSaved }: WorkoutCo
         notes: notes.trim(),
         exercises: session.exercises.map((exercise) => ({ id: exercise.id, name: exercise.name, logs: exercise.logs })),
       });
+
+      if (detectedRecords.length) persistWorkoutRecords(detectedRecords);
+      setNewRecords(detectedRecords);
       setSaved(true);
       onSaved?.();
-      toast({ title: "تمرین در تاریخچه ذخیره شد", description: "حجم، ست‌ها و بازخورد جلسه برای بخش پیشرفت محفوظ است." });
+      toast({
+        title: detectedRecords.length ? `${detectedRecords.length.toLocaleString("fa-IR")} رکورد تازه ثبت شد` : "تمرین در تاریخچه ذخیره شد",
+        description: detectedRecords.length ? "رکوردها در تاریخچه تمرین قابل مشاهده‌اند." : "حجم، ست‌ها و بازخورد جلسه برای بخش پیشرفت محفوظ است.",
+      });
     } catch (error) {
       console.error("Failed to save workout log", error);
       toast({ variant: "destructive", title: "ذخیره تمرین ناموفق بود", description: "دوباره تلاش کن؛ جلسه فعال هنوز روی دستگاه محفوظ است." });
@@ -95,7 +112,15 @@ export function WorkoutCompletion({ session, totalDuration, onSaved }: WorkoutCo
               </CardContent>
             </Card>
           ) : (
-            <Card className="border-emerald-500/30 bg-emerald-500/5"><CardContent className="p-7"><div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-500 text-white"><Check className="h-7 w-7" /></div><h2 className="mt-4 text-2xl font-black">جلسه با موفقیت ثبت شد</h2><p className="mt-2 text-sm leading-7 text-muted-foreground">بازخورد این جلسه در تاریخچه تمرین و تحلیل‌های آینده استفاده می‌شود.</p><div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row"><Button onClick={() => router.push("/today")}>بازگشت به امروز</Button><Button variant="outline" onClick={() => router.push("/workout")}>برنامه تمرین</Button></div></CardContent></Card>
+            <div className="space-y-4">
+              {newRecords.length ? (
+                <Card className="border-amber-500/30 bg-amber-500/5 text-right">
+                  <CardHeader><CardTitle className="flex items-center gap-2"><Trophy className="h-5 w-5 text-amber-600" />رکوردهای تازه</CardTitle></CardHeader>
+                  <CardContent className="space-y-2">{newRecords.map((record) => <div key={record.id} className="rounded-2xl border bg-background/80 p-4"><p className="font-black">{record.exerciseName}</p><p className="mt-1 text-sm text-muted-foreground">{formatRecord(record)}</p></div>)}</CardContent>
+                </Card>
+              ) : null}
+              <Card className="border-emerald-500/30 bg-emerald-500/5"><CardContent className="p-7"><div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-500 text-white"><Check className="h-7 w-7" /></div><h2 className="mt-4 text-2xl font-black">جلسه با موفقیت ثبت شد</h2><p className="mt-2 text-sm leading-7 text-muted-foreground">بازخورد این جلسه در تاریخچه تمرین و تحلیل‌های آینده استفاده می‌شود.</p><div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row"><Button onClick={() => router.push("/today")}>بازگشت به امروز</Button><Button variant="outline" onClick={() => router.push("/workout/history")}>مشاهده تاریخچه</Button></div></CardContent></Card>
+            </div>
           )}
         </div>
       </main>
