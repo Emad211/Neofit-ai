@@ -6,6 +6,7 @@ import { WeeklyMealPlan } from "@/components/nutrition/weekly-meal-plan";
 import { ShoppingList } from "@/components/nutrition/shopping-list";
 import { FoodLibrary } from "@/components/nutrition/food-library";
 import { FoodCameraLookup } from "@/components/nutrition/food-camera-lookup";
+import { HydrationSupplementSummary } from "@/components/nutrition/hydration-supplement-summary";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -94,6 +95,8 @@ export default function NutritionPage() {
           </CardContent>
         </Card>
 
+        <HydrationSupplementSummary />
+
         <section className="mt-10">
           <div className="mb-4 flex items-center gap-2"><Wheat className="h-5 w-5 text-emerald-700 dark:text-emerald-300" /><h2 className="text-2xl font-black">برنامه هفتگی</h2></div>
           <WeeklyMealPlan />
@@ -102,7 +105,7 @@ export default function NutritionPage() {
         <section className="mt-10">
           <h2 className="mb-4 text-2xl font-black">ابزارهای تغذیه</h2>
           <div className="grid gap-4 md:grid-cols-2">
-            <NutritionToolCard icon={<Search className="h-5 w-5" />} title="کتابخانه غذا" description="اطلاعات تغذیه‌ای غذاهای موجود در کتابخانه محلی را جست‌وجو کن."><FoodLibrary /></NutritionToolCard>
+            <NutritionToolCard icon={<Search className="h-5 w-5" />} title="کتابخانه غذا" description="اطلاعات تغذیه‌ای غذاهای موجود در کتابخانه محلی را جست‌وجو و با سهم دقیق ثبت کن."><FoodLibrary /></NutritionToolCard>
             <NutritionToolCard icon={<Camera className="h-5 w-5" />} title="ثبت با دوربین" description="فعلاً عکس را برای پیش‌نمایش انتخاب کن؛ تشخیص واقعی بعداً به API متصل می‌شود."><FoodCameraLookup /></NutritionToolCard>
           </div>
         </section>
