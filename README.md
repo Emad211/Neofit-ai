@@ -1,124 +1,151 @@
 # NeoFit AI
 
-NeoFit AI is a Persian-first fitness and nutrition product built around versioned IFKB data, deterministic TypeScript nutrition rules and a secure Supabase persistence foundation.
+NeoFit یک PWA فارسی برای تغذیه و تمرین است که محاسبات تغذیه‌ای قطعی را از Shared Nutrition Core می‌گیرد و دادهٔ شخصی را با Supabase Auth/Postgres/RLS ذخیره می‌کند.
 
-## Active product direction
+## معماری فعلی
 
-The target product is a mobile-first installable PWA:
+- Next.js App Router + strict TypeScript در `web/`
+- فارسی و RTL
+- `packages/nutrition-core` به‌عنوان تنها مرجع Nutrition
+- Supabase Auth + Postgres + own-row RLS
+- IFKB + USDA SR Legacy + FNDDS به‌عنوان منابع داده
+- PWA و Guest offline shell
+- بدون Nutrition arithmetic در SQL یا React
+- بدون Service Role در Browser
 
-- Next.js App Router + strict TypeScript
-- Persian default locale and RTL-first UI
-- `packages/nutrition-core` as the deterministic Nutrition authority
-- Supabase Auth/Postgres/RLS for account and personal-data persistence
-- IFKB + USDA SR Legacy + FNDDS as nutrition sources of truth
-- AI/Vision restricted to identity and plan-language assistance; provider Nutrition is rejected
+## وضعیت فعلی
 
-The Expo application under [`mobile/`](mobile/README.md) remains a frozen reference and migration source.
-
-## Current stage state
-
-- Stage 0 — PWA pivot: complete
-- Stage 1 — Persian RTL UX: complete and accepted
-- Stage 2A — local PWA foundation: complete
-- Stage 2B — protected Vercel HTTPS validation: active/parallel in Issue #16 / PR #28
-- Stage 3 — Shared Nutrition Core and Web parity: complete
-- Stage 4A — Supabase Project: complete
-- Stage 4B — SSR clients and session foundation: complete/merged in PR #30
-- Stage 4C — Identity schema and RLS: implemented and remotely proven in Draft PR #33; not merged
-- Stage 4D — Nutrition persistence: not started; next only after Stage 4C merge
-- Complete Persian frontend: browser-proven in separate Draft PR #34; not yet ported into current `web/` architecture
-- Stage 5–9: not started
-
-## Supabase Project
+### Merge شده
 
 ```text
-name: neofit
-project ref: rjwrobltmjodfarnltal
-region: eu-central-1
-status: ACTIVE_HEALTHY
+Stage 4B SSR/Auth foundation — PR #30
+Stage 4C Identity schema/RLS — PR #33
+Stage 4D Nutrition persistence — PR #35
 ```
 
-Current Supabase foundation:
-
-- fail-closed Browser environment validation;
-- Browser and Server Supabase clients;
-- cookie-aware Proxy using `getClaims()`;
-- `private, no-store` session responses;
-- migration-driven schema authority;
-- live `profiles` and `user_settings` tables;
-- RLS enabled with own-row policies;
-- generated TypeScript database types;
-- zero Security and Performance advisor lints.
-
-No key value is stored in Git. No privileged credential is exposed to Browser code.
-
-Stage 4C evidence:
+Supabase tables:
 
 ```text
-migration: 20260804232149_identity_foundation.sql
-Identity CI: 30996283909 — success
-Foundation CI: 30996283993 — success
-Web CI: 30996283899 — success
-Vercel Build Contract: 30996283903 — success
-Runtime RLS denial scenarios: 7/7 passed
-Post-test rows/users: 0/0/0
+profiles
+user_settings
+nutrition_goals
+nutrition_entries
 ```
 
-## Complete frontend branch
-
-The full Persian UI contract exists on:
+Migrations:
 
 ```text
-branch: revival/full-ui-front
-Draft PR: #34
-runtime head: d36a67b001a280fefbba6c676e69fb4f22ff20b2
-routes: 42/42
+20260804232149_identity_foundation.sql
+20260805132201_nutrition_persistence.sql
 ```
 
-It contains complete Onboarding, Today, Workout, Nutrition, Progress, Profile/Settings, Notifications, local Coach, PWA/offline and accessibility states.
+### در حال توسعه
 
-It must not be merged directly into `web/pwa-foundation`. The later integration must port the proven UI into `web/` while preserving Supabase SSR and Shared Nutrition Core.
+```text
+branch: web/full-frontend-integration
+Draft PR: #36
+```
+
+Routeهای فعلی:
+
+```text
+/today
+/nutrition
+/nutrition/plan
+/workout
+/workout/[id]
+/progress
+/profile
+/auth
+/auth/callback
+/auth/confirm
+/auth/signout
+```
+
+اتصال فعلی:
+
+- Email/password sign-in و sign-up؛
+- PKCE و token confirmation callback؛
+- server sign-out؛
+- bootstrap پروفایل، تنظیمات و هدف تغذیه؛
+- خواندن/نوشتن وعده‌ها در `nutrition_entries`؛
+- ویرایش نام نمایشی؛
+- Guest local fallback؛
+- rollback ثبت هنگام Remote failure؛
+- private account HTML خارج از PWA cache.
+
+## آخرین Evidence کد
+
+```text
+validated head: f5f5a6f60c15d09793f9ea416f1fe721b6d9e740
+
+Supabase Identity Schema CI 31032483010 — success
+Supabase Nutrition Persistence CI 31032481404 — success
+Supabase Foundation CI 31032481373 — success
+Vercel Build Contract 31032481435 — success
+Web CI 31032481411 — success
+
+Artifact 8941255661
+Digest sha256:f0e57c1b940f6b17a67e5562814ddd2ff3f70f13a59a51d11e3efdc25a808172
+```
+
+Web CI پوشش می‌دهد:
+
+- TypeScript؛
+- Web Nutrition Adapter `9/9`؛
+- Supabase Application integration `9/9`؛
+- Production build؛
+- Browser responsive matrix؛
+- safe no-config Auth؛
+- Guest PWA/offline؛
+- private cache boundary؛
+- secret و duplicate-arithmetic rejection.
+
+## Environment
+
+Browser-safe variables:
+
+```text
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+```
+
+مقدار واقعی نباید در Git، docs یا artifact ثبت شود. نبود یا نامعتبر بودن این مقادیر Guest mode را فعال نگه می‌دارد و Auth controls را fail-closed می‌کند.
+
+## Runtime limitation
+
+Current Auth head هنوز روی Vercel عمومی اثبات نشده است:
+
+- Vercel Free-plan daily deployment quota پر شده؛
+- آخرین Ready Preview قبل از Current Auth head است؛
+- Vercel Environment و Supabase Redirect URL باید برای دامنهٔ نهایی تنظیم شوند.
+
+بنابراین هنوز ادعا نمی‌شود که Email confirmation و persistence مرورگر روی Current public deployment پاس شده‌اند.
 
 ## Read first
-
-Operational sources of truth:
 
 - [`docs/NEOFIT_MASTER_PLAN.md`](docs/NEOFIT_MASTER_PLAN.md)
 - [`docs/NEOFIT_PROGRESS_LOG.md`](docs/NEOFIT_PROGRESS_LOG.md)
 - [`docs/DEVELOPMENT_HANDOFF.md`](docs/DEVELOPMENT_HANDOFF.md)
 - [`docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md`](docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md)
-- [`docs/NEOFIT_STAGE4A_PROJECT_PROVISIONING_EVIDENCE.md`](docs/NEOFIT_STAGE4A_PROJECT_PROVISIONING_EVIDENCE.md)
-- [`docs/NEOFIT_STAGE4B_SUPABASE_SSR_FOUNDATION_EVIDENCE.md`](docs/NEOFIT_STAGE4B_SUPABASE_SSR_FOUNDATION_EVIDENCE.md)
-- [`docs/NEOFIT_STAGE4C_IDENTITY_RLS_EVIDENCE.md`](docs/NEOFIT_STAGE4C_IDENTITY_RLS_EVIDENCE.md)
-
-Frontend completion sources on `revival/full-ui-front`:
-
-- `docs/NEOFIT_FRONTEND_COMPLETION_PLAN.md`
-- `docs/NEOFIT_FRONTEND_PROGRESS_LOG.md`
-
-Scientific/data contracts:
-
-- [`docs/NEOFIT_WEB_PWA_ROADMAP_V1_FA.md`](docs/NEOFIT_WEB_PWA_ROADMAP_V1_FA.md)
-- [`docs/NEOFIT_NUTRITION_FINAL_SCOPE_V3.md`](docs/NEOFIT_NUTRITION_FINAL_SCOPE_V3.md)
-- [`docs/releases/NEOFIT_NUTRITION_RELEASE_CANDIDATE_FREEZE_V1.md`](docs/releases/NEOFIT_NUTRITION_RELEASE_CANDIDATE_FREEZE_V1.md)
+- [`docs/NEOFIT_AUTH_PERSISTENCE_INTEGRATION_EVIDENCE.md`](docs/NEOFIT_AUTH_PERSISTENCE_INTEGRATION_EVIDENCE.md)
 
 ## Locked rules
 
-- Canonical IDs, mappings, fingerprints and provenance remain versioned.
-- Missing nutrients are not zero; unknown serving weight remains `null`.
-- Nutrition calculations live in Shared Core.
-- Language and vision models may not invent calories, macronutrients, weights or portions.
-- SQL and React must not duplicate Nutrition arithmetic.
-- Every exposed user-owned table requires RLS before use.
-- privileged credentials must never enter Browser bundles, logs or artifacts.
-- Dashboard edits are not Schema authority; migrations are.
-- Server authorization is not based only on `getSession()`.
-- Divergent frontend and architecture branches are integrated by controlled porting, not direct merge.
+- Shared Core تنها مرجع Nutrition است.
+- Missing nutrient صفر نیست؛ unknown grams برابر `null` است.
+- SQL و UI Nutrition را دوباره محاسبه نمی‌کنند.
+- هر Table کاربرمحور RLS دارد.
+- Browser privileged credential ندارد.
+- Schema فقط با Migration تغییر می‌کند.
+- Guest و Account data path شفاف و جدا هستند.
+- Merge یا Production بدون Runtime Evidence انجام نمی‌شود.
 
-## Exact next work
+## Exact next
 
-1. Keep PR #33 Draft/unmerged until explicit approval.
-2. After approval, merge Stage 4C and record closure evidence.
-3. Start Stage 4D test-first for `nutrition_goals` and `nutrition_entries`.
-4. Plan a separate integration branch to port PR #34 UI into the current `web/` architecture.
-5. Keep Stage 2B Vercel validation independent in Issue #16 / PR #28.
+1. Vercel Preview/Production public Supabase Env تنظیم شود.
+2. Supabase Site/Redirect URL تنظیم شود.
+3. Current head پس از Reset quota Deploy شود.
+4. Temporary real-account signup/signin/meal/profile/signout round-trip تست شود.
+5. Test data پاک و Runtime Evidence ثبت شود.
+6. سپس PR #36 با Workout Player، Onboarding و Coach ادامه یابد.
