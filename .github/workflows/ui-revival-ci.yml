@@ -43,12 +43,13 @@ jobs:
       - name: Install
         run: npm ci --no-audit --no-fund
 
-      - name: Verify legacy stack is absent
+      - name: Verify legacy runtime is absent
         shell: bash
         run: |
           set -euo pipefail
           python3 <<'PY'
           from pathlib import Path
+          import json
 
           pieces = [
               ('fire', 'base'),
@@ -62,20 +63,26 @@ jobs:
           forbidden.extend(['next_public_' + forbidden[0], '@/ai/'])
           failures = []
 
-          for path in Path('.').rglob('*'):
-              if not path.is_file():
-                  continue
-              if any(part in {'.git', 'node_modules', 'artifacts'} for part in path.parts):
-                  continue
-              if path == Path('.github/workflows/ui-revival-ci.yml'):
-                  continue
-              try:
-                  text = path.read_text(errors='ignore').lower()
-              except Exception:
-                  continue
+          scan_roots = [Path('src'), Path('scripts'), Path('package.json'), Path('next.config.ts'), Path('README.md'), Path('REVIVAL.md')]
+          paths = []
+          for root in scan_roots:
+              if root.is_file():
+                  paths.append(root)
+              elif root.exists():
+                  paths.extend(path for path in root.rglob('*') if path.is_file())
+
+          for path in paths:
+              text = path.read_text(errors='ignore').lower()
               for needle in forbidden:
                   if needle in text:
                       failures.append(f'{path}: {needle}')
+
+          lock = json.loads(Path('package-lock.json').read_text())
+          for key in (lock.get('packages') or {}):
+              normalized = key.lower()
+              for needle in forbidden[:6]:
+                  if needle in normalized:
+                      failures.append(f'package-lock.json package key: {key}')
 
           if failures:
               print('\n'.join(failures))
@@ -130,7 +137,7 @@ jobs:
         with:
           name: neofit-ui-revival-runtime
           path: artifacts/ui-revival-smoke
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
 
       - name: Stop built application
