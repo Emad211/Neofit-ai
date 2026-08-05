@@ -76,12 +76,86 @@ draft refresh resume: success
 medical acknowledgement validation: success
 ```
 
+---
+
+## 2026-08-05 — Phase 2 functional shell and Today slice completed
+
+### Application shell
+
+- Normalized main navigation order to Today, Workout, Nutrition, Progress and Profile.
+- Added a shared Persian RTL mobile header and sticky bottom navigation.
+- Added a shared desktop header and collapsible right sidebar.
+- Added direct NeoFit Coach and Notification Center entries.
+- Replaced the static notification marker with a shared persistent unread counter.
+- Added a connection-state banner that appears when the browser goes offline without blocking local logging.
+- Added a stable `/offline` destination for the later PWA/Service Worker phase.
+
+### Notification Center
+
+- Added `/notifications` inside the authenticated application shell.
+- Added workout, meal, water and report notification cards.
+- Added read/unread state, mark-all-read and delete actions.
+- Added one shared local notification store and cross-component update events.
+- Persisted notice state across refresh.
+
+### Today dashboard
+
+- Rebuilt the page hierarchy as readiness → adherence → workout/meal → daily metrics → progress rings → timeline.
+- Added readiness score based on current sleep, steps and profile stress.
+- Added daily adherence summary.
+- Added today’s workout card with direct Workout Player action.
+- Added next-meal card with direct Nutrition action.
+- Added persistent water, steps and sleep cards with inline controls.
+- Added current weight summary and Progress link.
+- Localized and clarified calorie, protein and workout progress rings.
+- Preserved and integrated the historical daily timeline/feed.
+- Fully localized the daily motivation card.
+
+### Quick Add and local records
+
+- Localized meal, activity and weight logging actions.
+- Added one-glass water logging with persistent daily metrics.
+- Added body-measurement logging for waist, hip, neck and body-fat estimate.
+- Added local measurement history contract for the later Progress phase.
+
+### System states
+
+- Added route-specific Today skeleton.
+- Added recoverable Today error state with retry.
+- Preserved empty timeline behavior.
+- Added offline banner and standalone offline page.
+
+### Browser evidence
+
+The Chromium gate now checks:
+
+- every main and onboarding route plus `/notifications` and `/offline`;
+- full legacy injury body-map interaction;
+- onboarding refresh resume and medical acknowledgement validation;
+- Coach and Notification header entries;
+- water Quick Add persistence;
+- body-measurement persistence;
+- offline banner after an actual browser offline event;
+- notification read-state persistence after refresh.
+
+```text
+validated functional head: fc41bb860aa3895b92e2dd34c485f43623367962
+UI Revival CI: 30972241043 — success
+artifact: 8916986681
+artifact digest: sha256:43158f1ef670a88e2511816db213c2b35518ee746feb35354b947015900da6ef
+TypeScript: success
+production build: success
+route contracts: success
+Chromium route and interaction gate: success
+Public Static Export: 30972241028 — success
+Public RawGitHack Preview: 30972241044 — success
+```
+
 ### Exact continuation point
 
-Phase 1 is closed. Continue at Phase 2 using `docs/NEOFIT_FRONTEND_COMPLETION_PLAN.md`:
+Phase 2 is functionally complete on mobile and the shared responsive implementation is present. Before formally closing Phase 2:
 
-1. Normalize the responsive application shell without discarding useful historical UI.
-2. Establish shared mobile/desktop header, notification entry and Quick Add behavior.
-3. Refactor Today into the agreed readiness → calories/macros → workout/meal → daily metrics → timeline/adherence hierarchy.
-4. Add Today loading, empty, error and offline states.
-5. Extend browser evidence to the new shell interactions and responsive breakpoints.
+1. Run explicit tablet and desktop visual evidence at fixed breakpoints and correct any spacing/overflow defects.
+2. Verify sidebar collapse, desktop header and absence of mobile bottom navigation at desktop width.
+3. Review Today hierarchy once at desktop width and update this log with screenshots/evidence.
+4. Then begin Phase 3 from the existing Workout plan and Workout Player: day details, player state, completion summary, alternatives and history.
