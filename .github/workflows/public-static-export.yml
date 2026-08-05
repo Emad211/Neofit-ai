@@ -1,0 +1,95 @@
+name: Public Static Export
+
+on:
+  push:
+    branches:
+      - revival/full-ui-front
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-static-export-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Configure temporary static export
+        shell: bash
+        run: |
+          cat > next.config.ts <<'EOF'
+          import type { NextConfig } from "next";
+
+          const nextConfig: NextConfig = {
+            output: "export",
+            trailingSlash: true,
+            images: {
+              unoptimized: true,
+              remotePatterns: [
+                {
+                  protocol: "https",
+                  hostname: "placehold.co",
+                  port: "",
+                  pathname: "/**",
+                },
+              ],
+            },
+          };
+
+          export default nextConfig;
+          EOF
+
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path("src/app/(main)/workout-player/[slug]/page.tsx")
+          text = path.read_text()
+          if "generateStaticParams" not in text:
+              text = text.replace(
+                  'import { WorkoutPlayer } from "@/components/workout/workout-player";\n',
+                  'import { WorkoutPlayer } from "@/components/workout/workout-player";\nimport { demoWorkoutPlan } from "@/lib/neofit-demo-data";\n\nexport function generateStaticParams() {\n  return demoWorkoutPlan.map((workout) => ({ slug: workout.id }));\n}\n'
+              )
+          path.write_text(text)
+          PY
+
+      - name: TypeScript
+        run: npm run typecheck
+
+      - name: Build static application
+        run: npm run build
+
+      - name: Verify exported routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s out/index.html
+          for route in today nutrition workout progress profile profile/account auth; do
+            test -s "out/$route/index.html"
+          done
+          find out -type f -printf '%P\n' | sort > out/export-files.txt
+
+      - name: Upload static site
+        uses: actions/upload-artifact@v4
+        with:
+          name: neofit-public-static-site
+          path: out
+          if-no-files-found: error
+          retention-days: 7
