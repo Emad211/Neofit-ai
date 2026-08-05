@@ -19,7 +19,7 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     env:
       NEXT_TELEMETRY_DISABLED: '1'
 
@@ -115,6 +115,8 @@ jobs:
           test -s src/app/'(main)'/workout/history/page.tsx
           test -s src/app/'(main)'/workout-player/'[slug]'/page.tsx
           test -s src/app/'(main)'/progress/page.tsx
+          test -s src/app/'(main)'/progress/loading.tsx
+          test -s src/app/'(main)'/progress/error.tsx
           test -s src/app/'(main)'/profile/page.tsx
           test -s src/app/offline/page.tsx
 
@@ -149,6 +151,9 @@ jobs:
 
       - name: Nutrition plan, history and logging gate
         run: node scripts/verify-nutrition-flow.mjs
+
+      - name: Progress overview and trend gate
+        run: node scripts/verify-progress-flow.mjs
 
       - name: Upload browser evidence
         if: always()
