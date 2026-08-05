@@ -102,7 +102,7 @@ try {
   await page.getByRole("button", { name: "جست‌وجوی غذا" }).click();
   await page.locator("#food-portion").selectOption("0.5");
   await page.locator("#food-meal-type").selectOption("lunch");
-  const scaledCaloriesVisible = await page.getByText("۱۴۵", { exact: true }).first().isVisible().catch(() => false);
+  const scaledCaloriesVisible = await page.locator("div.rounded-lg").filter({ hasText: "کالری" }).filter({ hasText: "۱۴۵" }).first().isVisible().catch(() => false);
   await page.getByRole("button", { name: "ثبت این مقدار" }).click();
   await page.waitForTimeout(350);
   const libraryResult = await page.evaluate(() => {
