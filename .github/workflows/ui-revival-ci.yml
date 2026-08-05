@@ -124,6 +124,9 @@ jobs:
           test -s src/app/'(main)'/profile/edit/page.tsx
           test -s src/app/'(main)'/profile/account/page.tsx
           test -s src/app/'(main)'/profile/settings/page.tsx
+          test -s src/app/'(main)'/chat/page.tsx
+          test -s src/app/'(main)'/chat/loading.tsx
+          test -s src/app/'(main)'/chat/error.tsx
           test -s src/app/offline/page.tsx
 
       - name: Install Chromium
@@ -163,6 +166,9 @@ jobs:
 
       - name: Profile view, edit and account gate
         run: node scripts/verify-profile-flow.mjs
+
+      - name: Local Coach guidance and safety gate
+        run: node scripts/verify-coach-flow.mjs
 
       - name: Upload browser evidence
         if: always()
