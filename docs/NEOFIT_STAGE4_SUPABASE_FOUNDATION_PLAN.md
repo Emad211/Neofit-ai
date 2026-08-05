@@ -1,10 +1,10 @@
 # NeoFit Stage 4 — Supabase Auth, Postgres and RLS Foundation Plan
 
-**Status:** Stage 4A و Stage 4B کامل؛ Stage 4C exact next  
+**Status:** Stage 4A و 4B کامل؛ Stage 4C implementation/remote proof کامل ولی unmerged؛ Stage 4D بعد از Merge  
 **Date:** 5 Aug 2026  
 **Issue:** #25  
 **Integration branch:** `web/pwa-foundation`  
-**Stage 4B merge:** `17d0e8c33ed9ba6329f243dee27b8cf8de53056c`  
+**Stage 4C branch/PR:** `stage4c/identity-schema-rls` / #33  
 **Project ref:** `rjwrobltmjodfarnltal`
 
 ## ۱. هدف و حدود
@@ -15,36 +15,9 @@ Stage 4 کوچک‌ترین Foundation امن، migration-driven و قابل‌�
 - IFKB identity/provenance تضعیف شود؛
 - SQL یا UI عدد تغذیه‌ای اختراع کند؛
 - Auth، RLS، migration یا secret handling permissive باشد؛
-- Scope به Catalog کامل، AI/Vision یا IndexedDB گسترش یابد.
+- scope به Catalog کامل، AI/Vision یا IndexedDB گسترش یابد.
 
-## ۲. Stage 4A — Project provisioning complete
-
-Accepted:
-
-```text
-Organization: Emad's Org (yzymkjsfqoohxbqkhzhs)
-Region: eu-central-1
-Cost: 0 monthly
-Project name: neofit
-```
-
-Created:
-
-```text
-project id/ref: rjwrobltmjodfarnltal
-region: eu-central-1
-status: ACTIVE_HEALTHY
-api url: https://rjwrobltmjodfarnltal.supabase.co
-```
-
-Authority:
-
-- `docs/NEOFIT_STAGE4A_PROJECT_PROVISIONING_EVIDENCE.md`.
-- no committed key value.
-- no privileged key request/use.
-- baseline public Application tables: 0.
-
-## ۳. معماری قفل‌شده
+## ۲. معماری قفل‌شده
 
 ```text
 Client Components
@@ -72,7 +45,7 @@ Nutrition
   -> SQL persists output and never recalculates
 ```
 
-## ۴. Environment و Secret contract
+## ۳. Environment و Secret contract
 
 Browser-safe:
 
@@ -81,7 +54,7 @@ NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 ```
 
-Operations-only، فقط در Batchهای آینده و در صورت نیاز:
+Operations-only، فقط در صورت نیاز و خارج از Browser:
 
 ```text
 SUPABASE_SERVICE_ROLE_KEY
@@ -91,13 +64,28 @@ SUPABASE_PROJECT_REF
 
 قواعد:
 
-- هیچ Key واقعی در Git، docs، logs یا artifacts ثبت نشود.
+- هیچ key واقعی در Git، docs، logs یا artifacts ثبت نشود.
 - `.env.example` Supabase values را خالی نگه دارد.
 - Server-only variable با `NEXT_PUBLIC_` شروع نشود.
 - Browser source/bundle privileged identifier/value نداشته باشد.
 - امنیت User data به RLS وابسته است، نه مخفی‌بودن Publishable key.
 
-## ۵. Stage 4B — complete and merged
+## ۴. Stage 4A — Project complete
+
+```text
+organization: yzymkjsfqoohxbqkhzhs
+project: neofit
+project ref: rjwrobltmjodfarnltal
+region: eu-central-1
+status: ACTIVE_HEALTHY
+postgres: 17.6.1.155
+```
+
+Authority:
+
+- `docs/NEOFIT_STAGE4A_PROJECT_PROVISIONING_EVIDENCE.md`
+
+## ۵. Stage 4B — SSR foundation complete and merged
 
 Implemented:
 
@@ -113,159 +101,205 @@ web/tests/supabase-foundation.test.ts
 .github/workflows/supabase-foundation-ci.yml
 ```
 
-Dependencies:
+Pinned dependencies:
 
 ```text
 @supabase/supabase-js 2.110.9
 @supabase/ssr 0.12.3
 ```
 
-Contracts completed:
+Contracts:
 
-1. missing/invalid public env fails closed.
-2. remote URL requires HTTPS؛ HTTP فقط برای localhost/127.0.0.1.
-3. Browser client uses `createBrowserClient`.
-4. Server client is `server-only` and cookie-aware.
-5. Proxy synchronizes request/response cookies.
-6. Proxy uses `auth.getClaims()` and not `getSession()` for authorization.
-7. Session responses are `private, no-store`.
-8. Proxy is scoped to future `/auth/*` and `/account/*` routes.
-9. App/Vercel env contract preserved؛ Supabase values blank.
-10. runtime/config secret scan and Browser-source boundary test pass.
-11. no migration or Application table introduced.
-
-Test-first red:
+1. missing/invalid public env fails closed؛
+2. remote URL requires HTTPS؛ local HTTP فقط localhost/127.0.0.1؛
+3. Browser client uses `createBrowserClient`؛
+4. Server client is `server-only` and cookie-aware؛
+5. Proxy synchronizes request/response cookies؛
+6. Proxy uses `auth.getClaims()` and not `getSession()` for authorization؛
+7. Session responses are `private, no-store`؛
+8. App/Vercel env contract preserved؛ Supabase values blank؛
+9. Stage 4B خودش migration ایجاد نکرد.
 
 ```text
-Head: dc8e718d4a95f0cdf271840578157bf599de3183
-Web CI 30957552355 — failure
-Foundation CI 30957552028 — failure
-First error: missing web/lib/supabase/env.ts
-```
-
-Final head and evidence:
-
-```text
-Head: 7ed955139d51b3546b489c8f649f144f390cb8f0
-
-Supabase Foundation CI 30958530329 — success
-Artifact 8912018526
-Digest sha256:1455fd4ff726ac4ee2a5cbb0a99dd09d3528becb2f86ce9dd858cbdb37e6cba7
-
-Nutrition Core CI 30958530294 — success
-Artifact 8912013429
-Digest sha256:649639a40dc0b20594ea48e6534cc6cd215a170fd251699279032a5a4d68b12c
-
-Web CI 30958530262 — success
-Artifact 8912039816
-Digest sha256:790d13b030e96038be394ec50108da38c601988f8bb9106b57b8153892a83c6a
-
-Vercel Build Contract 30958530296 — success
-```
-
-Merge:
-
-```text
-PR #30
-expected head: 7ed955139d51b3546b489c8f649f144f390cb8f0
-merge SHA: 17d0e8c33ed9ba6329f243dee27b8cf8de53056c
-```
-
-Remote boundary after merge:
-
-```text
-public schema Application tables: 0
+PR #30 merge: 17d0e8c33ed9ba6329f243dee27b8cf8de53056c
+Closure merge: 72202f2f0ff281bf0624b9ebb933ac5afeaad8fc
 ```
 
 Authority:
 
-- `docs/NEOFIT_STAGE4B_SUPABASE_SSR_FOUNDATION_EVIDENCE.md`.
+- `docs/NEOFIT_STAGE4B_SUPABASE_SSR_FOUNDATION_EVIDENCE.md`
 
-## ۶. Stage 4C — Identity schema + RLS
+## ۶. Stage 4C — Identity schema + RLS proven
 
-Stage 4C must use a new focused Branch/PR and begin with red migration/RLS tests before remote DDL.
+Branch/PR:
 
-### Planned `profiles`
-
-- `id uuid primary key references auth.users(id) on delete cascade`.
-- nullable `display_name` with trimmed-length bound.
-- `locale` limited to `fa` or `en`.
-- bounded timezone.
-- created/updated timestamps.
-- ownership: `id = auth.uid()`.
-
-### Planned `user_settings`
-
-- `user_id uuid primary key references auth.users(id) on delete cascade`.
-- bounded theme and units.
-- created/updated timestamps.
-- ownership: `user_id = auth.uid()`.
-
-### Required RLS proof
-
-1. anon cannot read User rows.
-2. User A reads own row.
-3. User A cannot read User B.
-4. User A cannot insert owner=B.
-5. ownership cannot be changed to B.
-6. cross-user update/delete denied.
-7. unauthenticated `auth.uid()` null fails closed.
-
-Policy pattern:
-
-```sql
-using ((select auth.uid()) = user_id)
-with check ((select auth.uid()) = user_id)
+```text
+stage4c/identity-schema-rls
+Draft PR #33
+validated implementation head: c5cface86f46134a4a0afcfc3c980f7ce613ee7a
 ```
 
-For `profiles`, use `id`.
+### Migration authority
 
-Required outputs:
+```text
+repository migration: 20260804232149_identity_foundation.sql
+remote version:       20260804232149
+remote name:          identity_foundation
+```
 
-- timestamped versioned migration.
-- RLS enabled before Application use.
-- generated `web/lib/supabase/database.types.ts`.
-- security/performance advisor review.
-- anon and cross-user denial evidence.
-- no Dashboard-only Schema edits.
+یک filename برنامه‌ریزی‌شدهٔ قدیمی (`20260805000100...`) با Remote history drift داشت. نام فایل Git به version واقعی Remote اصلاح شد؛ SQL دوباره اجرا نشد.
 
-## ۷. Stage 4D — Nutrition persistence
+### `profiles`
 
-After Stage 4C:
+- `id uuid primary key references auth.users(id) on delete cascade`؛
+- nullable bounded `display_name`؛
+- `locale` محدود به `fa | en`؛
+- bounded timezone؛
+- created/updated timestamps؛
+- ownership: `id = auth.uid()`.
 
-- `nutrition_goals`.
+### `user_settings`
+
+- `user_id uuid primary key references auth.users(id) on delete cascade`؛
+- `theme`: `system | light | dark`؛
+- `units`: `metric | imperial`؛
+- created/updated timestamps؛
+- ownership: `user_id = auth.uid()`.
+
+### RLS and grants
+
+Remote state:
+
+- RLS روی هر دو table فعال است؛
+- هشت own-row policy وجود دارد؛
+- INSERT دارای `WITH CHECK`؛
+- UPDATE دارای `USING` و `WITH CHECK`؛
+- DELETE/SELECT دارای ownership predicate؛
+- فقط role `authenticated` grant دارد؛
+- `anon` و `PUBLIC` grant ندارند؛
+- permissive policy وجود ندارد.
+
+### Trigger security
+
+- `public.set_updated_at()`؛
+- `security invoker`؛
+- `search_path = ''`؛
+- function از `public` revoke شده؛
+- BEFORE UPDATE trigger روی هر دو table.
+
+### Generated types
+
+`web/lib/supabase/database.types.ts` مستقیماً از Remote schema تولید شده و فقط identity tables را شامل می‌شود.
+
+### Runtime denial proof
+
+Passed:
+
+```text
+anon_read_denied
+user_a_reads_own
+user_a_cannot_read_b
+user_a_cannot_update_b
+user_a_cannot_delete_b
+user_a_cannot_insert_as_b
+ownership_change_denied
+```
+
+تست با UUIDهای موقت انجام شد؛ هیچ Auth account دائمی ساخته نشد. Cleanup نهایی:
+
+```text
+profiles: 0
+user_settings: 0
+auth.users: 0
+```
+
+### Advisors
+
+```text
+Security lints: 0
+Performance lints: 0
+```
+
+### CI evidence
+
+```text
+Identity CI 30996283909 — success
+Artifact 8926287946
+Digest sha256:192ae440dfb98fb2329249fb3b1f0c881841b5774d2ec642c63efdd6f34fcfe9
+
+Foundation CI 30996283993 — success
+Artifact 8926292359
+Digest sha256:528deb7235762d631751f5a6d8b469fe6a7291e49900b6e2f30c7c4f0ee9b549
+
+Web CI 30996283899 — success
+Artifact 8926312456
+Digest sha256:60064bab80150fcb72c0952d29a2466625d4b11d1dcd667ee2d628d617deecc2
+
+Vercel Build Contract 30996283903 — success
+```
+
+Authority:
+
+- `docs/NEOFIT_STAGE4C_IDENTITY_RLS_EVIDENCE.md`
+
+Stage 4C تا Merge PR #33 از نظر Integration بسته نیست.
+
+## ۷. Stage 4D — Nutrition persistence after Stage 4C merge
+
+حداقل schema:
+
+- `nutrition_goals`؛
 - `nutrition_entries`.
-- versioned Shared Core output persistence.
-- no SQL Nutrition recalculation.
-- preserve absent nutrients and `grams: null`.
-- `client_mutation_id` idempotency foundation.
-- read/write round-trip tests.
 
-## ۸. Claim boundaries
+قفل‌ها:
+
+- migration/RLS tests قبل از Remote DDL؛
+- own-row ownership؛
+- خروجی نسخه‌دار Shared Core persist شود؛
+- SQL Nutrition recalculation نداشته باشد؛
+- missing nutrient و `grams: null` حفظ شود؛
+- `client_mutation_id` برای idempotency؛
+- read/write round-trip؛
+- anon/cross-user denial؛
+- generated types و Advisors.
+
+## ۸. Frontend integration boundary
+
+PR #34 فرانت فارسی کامل و browser-proven را روی `revival/full-ui-front` دارد، اما معماری monorepo و Supabase/Shared Core فعلی روی `web/pwa-foundation` است.
+
+قانون ادغام:
+
+- Merge مستقیم دو شاخه ممنوع؛
+- branch ادغام از معماری فعلی ساخته شود؛
+- UI به `web/` منتقل شود؛
+- Supabase SSR، migration authority و Shared Nutrition Core حفظ شوند؛
+- Local adapter به‌عنوان demo fixture باقی بماند؛
+- Adapterها مرحله‌ای با persistence واقعی جایگزین شوند.
+
+## ۹. Claim boundaries
 
 Proven:
 
-- Project exists and is healthy.
-- Stage 4B client/config foundation is merged.
-- Browser/Server/Proxy contracts are tested.
-- Core/Web/PWA/Vercel Build regressions are green.
-- remote public schema remains empty.
+- Project healthy؛
+- Stage 4B merged؛
+- Stage 4C migration/schema/RLS/types/runtime denial/advisors؛
+- Core/Web/Vercel Build regression green.
 
 Not proven:
 
-- live Login/Signup/callback flow.
-- Vercel Supabase env rollout.
-- remote Auth session end-to-end.
-- migrations، user tables، RLS or generated types.
-- Stage 4C implementation.
+- Stage 4C merge؛
+- live Auth UI/callback؛
+- Vercel Supabase env rollout؛
+- Nutrition persistence؛
+- اتصال فرانت PR #34 به `web/`؛
+- Production data/deployment.
 
-## ۹. Exact continuation point
+## ۱۰. Exact continuation point
 
-1. Merge the Stage 4B closure handoff.
-2. Update Issue #25 with Stage 4B complete / Stage 4C next.
-3. Create `stage4c/identity-schema-rls` from closure Integration head.
-4. Write migration/RLS policy tests before remote DDL.
-5. Add versioned migration for `profiles` and `user_settings`.
-6. Apply only after static/local review.
-7. Generate types، run advisors and prove denial scenarios.
-8. Keep Stage 2B Vercel independent in Issue #16 / PR #28.
+1. اسناد، Issue #25 و PR #33 همگام شوند.
+2. CI آخرین docs head بررسی شود.
+3. PR #33 تا تأیید صریح کاربر Draft/unmerged بماند.
+4. پس از Merge، Closure evidence Stage 4C نوشته شود.
+5. Stage 4D با red migration/RLS contracts در branch متمرکز جدید آغاز شود.
+6. انتقال فرانت PR #34 در branch ادغام جدا برنامه‌ریزی شود؛ نه Merge مستقیم.
+7. Stage 2B Issue #16 / PR #28 مستقل باقی بماند.
