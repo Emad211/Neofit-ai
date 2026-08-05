@@ -2,41 +2,36 @@
 
 **Last verified:** 2026-08-05  
 **Integration branch:** `web/pwa-foundation`  
-**Stage 4B merge:** `17d0e8c33ed9ba6329f243dee27b8cf8de53056c`  
+**Active architecture PR:** #33 — Stage 4C, Draft/unmerged  
+**Completed frontend PR:** #34 — Draft/unmerged  
 **Active Supabase issue:** #25  
 **Parallel Vercel issue/PR:** #16 / #28  
-**Exact next stage:** Stage 4C — Identity schema and RLS
+**Exact next after approval:** merge/close Stage 4C, then start Stage 4D test-first
 
 ## Mandatory read order
 
 1. `docs/NEOFIT_MASTER_PLAN.md`
 2. `docs/NEOFIT_PROGRESS_LOG.md`
 3. `docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md`
-4. `docs/NEOFIT_STAGE4A_PROJECT_PROVISIONING_EVIDENCE.md`
-5. `docs/NEOFIT_STAGE4B_SUPABASE_SSR_FOUNDATION_EVIDENCE.md`
+4. `docs/NEOFIT_STAGE4C_IDENTITY_RLS_EVIDENCE.md`
+5. `docs/NEOFIT_FRONTEND_COMPLETION_PLAN.md` on `revival/full-ui-front`
 6. GitHub Issue/PR/CI state
-7. Supabase and Vercel connector state
+7. Supabase and Vercel live state
 
-Do not continue from this file alone if it conflicts with Master Plan or live tools.
+Do not continue from this file alone if it conflicts with the Master Plan or live tools.
 
-## Proven product state
+## 1. Proven architecture state
 
-### Frozen Mobile/IFKB reference
+### Shared foundations
 
-The Expo application remains under `mobile/` as a frozen reference and migration source. IFKB and scientific contracts remain authoritative.
+- Next.js App Router + strict TypeScript under `web/`.
+- Shared deterministic Nutrition authority: `packages/nutrition-core`.
+- Core parity: `52/52`.
+- Web Adapter parity: `9/9`.
+- IFKB/USDA/FNDDS contracts remain authoritative.
+- SQL and React must not recalculate Nutrition.
 
-### Web/PWA completed
-
-- Persian RTL Product/UX foundation
-- Next.js PWA shell، manifest، icons and Service Worker
-- local visual and offline/cache QA
-- Shared `packages/nutrition-core`
-- Core parity `52/52`
-- Web Adapter tests `9/9`
-
-The current Web UI remains fixture/state based. It has no live account UI، user persistence، IndexedDB catalog sync or Web AI/Vision flow.
-
-## Stage 4A — complete
+### Stage 4A Project
 
 ```text
 name: neofit
@@ -44,159 +39,185 @@ project ref: rjwrobltmjodfarnltal
 organization: yzymkjsfqoohxbqkhzhs
 region: eu-central-1
 status: ACTIVE_HEALTHY
-api url: https://rjwrobltmjodfarnltal.supabase.co
+postgres: 17.6.1.155
 ```
 
-- cost accepted and confirmed at `0 monthly`.
-- key values are not in Git/docs.
-- privileged key was not requested or exposed.
-- baseline public Application tables: 0.
+No key value is committed or documented.
 
-Authority:
-
-- `docs/NEOFIT_STAGE4A_PROJECT_PROVISIONING_EVIDENCE.md`.
-
-## Stage 4B — complete and merged
-
-Implementation PR #30 added:
+### Stage 4B merged
 
 ```text
-supabase/config.toml
-web/lib/supabase/env.ts
-web/lib/supabase/client.ts
-web/lib/supabase/server.ts
-web/lib/supabase/proxy.ts
-web/proxy.ts
-web/.env.example
-web/tests/supabase-foundation.test.ts
-.github/workflows/supabase-foundation-ci.yml
-```
-
-Dependencies:
-
-```text
-@supabase/supabase-js 2.110.9
-@supabase/ssr 0.12.3
+implementation PR: #30
+merge SHA: 17d0e8c33ed9ba6329f243dee27b8cf8de53056c
+closure head: 72202f2f0ff281bf0624b9ebb933ac5afeaad8fc
 ```
 
 Runtime contracts:
 
-- public env validation fails closed.
-- remote URL must use HTTPS؛ local HTTP limited to localhost/127.0.0.1.
-- Browser client uses `createBrowserClient`.
-- Server client imports `server-only` and uses async cookie store.
-- Proxy mirrors refreshed cookies onto request and response.
-- protected identity refresh uses `auth.getClaims()`.
-- authorization does not rely on `getSession()`.
-- session response is `private, no-store`.
-- Proxy currently matches only future `/auth/*` and `/account/*` paths.
-- existing PWA/public routes remain unaffected before environment rollout.
-- `.env.example` keeps existing App/Vercel contract and blank Supabase values.
-- no remote migration، table or RLS policy exists.
+- fail-closed public env parsing؛
+- Browser `createBrowserClient`؛
+- server-only cookie-aware `createServerClient`؛
+- request/response cookie synchronization؛
+- `getClaims()` protected identity refresh؛
+- no authorization based only on `getSession()`؛
+- `private, no-store` session responses؛
+- blank Supabase values in `.env.example`.
 
-### Test-first red proof
+Authority:
+
+- `docs/NEOFIT_STAGE4B_SUPABASE_SSR_FOUNDATION_EVIDENCE.md`
+
+## 2. Stage 4C current truth
+
+**Branch:** `stage4c/identity-schema-rls`  
+**Draft PR:** #33  
+**Validated implementation head:** `c5cface86f46134a4a0afcfc3c980f7ce613ee7a`
+
+Repository migration and Remote history are aligned:
 
 ```text
-Head: dc8e718d4a95f0cdf271840578157bf599de3183
-Web CI: 30957552355 — failure
-Foundation CI: 30957552028 — failure
-First error: missing web/lib/supabase/env.ts
+20260804232149_identity_foundation.sql
+remote version: 20260804232149
+remote name: identity_foundation
 ```
 
-### Final proof
+Remote schema:
 
 ```text
-Head: 7ed955139d51b3546b489c8f649f144f390cb8f0
-
-Foundation CI 30958530329 — success
-Artifact 8912018526
-Digest sha256:1455fd4ff726ac4ee2a5cbb0a99dd09d3528becb2f86ce9dd858cbdb37e6cba7
-
-Nutrition Core CI 30958530294 — success
-Artifact 8912013429
-Digest sha256:649639a40dc0b20594ea48e6534cc6cd215a170fd251699279032a5a4d68b12c
-
-Web CI 30958530262 — success
-Artifact 8912039816
-Digest sha256:790d13b030e96038be394ec50108da38c601988f8bb9106b57b8153892a83c6a
-
-Vercel Build Contract 30958530296 — success
+profiles       RLS enabled
+user_settings  RLS enabled
 ```
 
-Merge:
+Remote security proof:
+
+- exactly eight own-row policies؛
+- INSERT uses `WITH CHECK`؛
+- UPDATE uses `USING` + `WITH CHECK`؛
+- policies target `authenticated` only؛
+- authenticated has SELECT/INSERT/UPDATE/DELETE؛
+- anon and PUBLIC have no table grant؛
+- secure `updated_at` triggers exist؛
+- Security advisors: 0؛
+- Performance advisors: 0.
+
+Runtime denial proof passed:
 
 ```text
-PR #30
-expected head: 7ed955139d51b3546b489c8f649f144f390cb8f0
-merge SHA: 17d0e8c33ed9ba6329f243dee27b8cf8de53056c
+anon_read_denied
+user_a_reads_own
+user_a_cannot_read_b
+user_a_cannot_update_b
+user_a_cannot_delete_b
+user_a_cannot_insert_as_b
+ownership_change_denied
 ```
 
-Remote boundary after merge:
+Post-test cleanup:
 
 ```text
-public schema Application tables: 0
+profiles: 0
+user_settings: 0
+auth.users: 0
+```
+
+Generated types:
+
+```text
+web/lib/supabase/database.types.ts
+```
+
+CI:
+
+```text
+Identity CI 30996283909 — success
+Artifact 8926287946
+Digest sha256:192ae440dfb98fb2329249fb3b1f0c881841b5774d2ec642c63efdd6f34fcfe9
+
+Foundation CI 30996283993 — success
+Artifact 8926292359
+Digest sha256:528deb7235762d631751f5a6d8b469fe6a7291e49900b6e2f30c7c4f0ee9b549
+
+Web CI 30996283899 — success
+Artifact 8926312456
+Digest sha256:60064bab80150fcb72c0952d29a2466625d4b11d1dcd667ee2d628d617deecc2
+
+Vercel Build Contract 30996283903 — success
 ```
 
 Authority:
 
-- `docs/NEOFIT_STAGE4B_SUPABASE_SSR_FOUNDATION_EVIDENCE.md`.
+- `docs/NEOFIT_STAGE4C_IDENTITY_RLS_EVIDENCE.md`
 
-## Stage 4C — exact next
+Important: Stage 4C is implemented and remotely proven, but it is not merged. Do not call it Integration-complete before PR #33 merges.
 
-Create a new focused Branch/PR:
+## 3. Completed frontend branch
+
+**Branch:** `revival/full-ui-front`  
+**Draft PR:** #34
+
+Frontend contract is complete and browser-proven:
 
 ```text
-stage4c/identity-schema-rls
+runtime head: d36a67b001a280fefbba6c676e69fb4f22ff20b2
+UI Revival CI: 30994858208 — success
+Public Static Export: 30994858276 — success
+Public RawGitHack Preview: 30994858167 — success
+routes: 42/42
 ```
 
-Required sequence:
+It includes:
 
-1. write static migration and policy tests before DDL application.
-2. define a single timestamped migration for `profiles` and `user_settings`.
-3. enable RLS before any Application use.
-4. prove own-row access and anon/cross-user denial.
-5. apply remote migration only after static/local review.
-6. generate `web/lib/supabase/database.types.ts`.
-7. run Supabase security and performance advisors.
-8. record migration، generated-type and RLS evidence.
+- 15-step Onboarding and 73-region injury Body Map؛
+- Today, Workout, Nutrition and Progress؛
+- Profile, Settings and Notifications؛
+- local Coach with safety boundary؛
+- PWA/offline/system/accessibility hardening.
 
-Planned ownership:
+This branch is not the current monorepo Web architecture. It must not be merged directly into `web/pwa-foundation`.
 
-- `profiles.id = auth.uid()`.
-- `user_settings.user_id = auth.uid()`.
-- both `using` and `with check` required for write policies.
+Correct later migration:
 
-No Dashboard-only Schema edits are allowed.
+1. create a focused integration branch from current architecture;
+2. port UI routes/components into `web/`;
+3. retain Supabase SSR and Shared Nutrition Core;
+4. retain local adapter as deterministic demo fixture;
+5. replace adapters incrementally with real persistence;
+6. run the same browser matrix after every slice.
 
-## Stage 4D after Stage 4C
+## 4. Stage 4D after Stage 4C merge
 
-- `nutrition_goals` and `nutrition_entries`.
-- persist versioned Shared Core output without SQL recalculation.
-- preserve absent nutrients and `grams: null`.
-- idempotency foundation.
-- round-trip tests.
+Scope:
 
-## Parallel Vercel state
+- `nutrition_goals`؛
+- `nutrition_entries`؛
+- RLS before Application use؛
+- Shared Core output persistence only؛
+- no SQL arithmetic؛
+- preserve missing nutrients and `grams: null`؛
+- `client_mutation_id` idempotency؛
+- generated types؛
+- round-trip and cross-user denial evidence؛
+- Advisors.
 
-Stage 2B protected HTTPS validation remains independent in Issue #16 / PR #28.
+Stage 4D must start with red migration/RLS tests before new Remote DDL.
 
-## Locked contracts
+## 5. Locked contracts
 
 - Shared Core remains Nutrition calculation authority.
-- SQL and React do not recalculate Nutrition.
 - Provider-created Nutrition is rejected.
 - Canonical IDs/fingerprints change only through versioned migration/freeze.
 - Every exposed user-owned table has RLS before use.
-- privileged credentials never enter Browser code، logs or artifacts.
-- Schema changes are migration-driven، not Dashboard-only.
+- privileged credentials never enter Browser, logs or artifacts.
+- Schema changes are migration-driven, not Dashboard-only.
 - Server authorization is not based only on `getSession()`.
+- PR #33 and PR #34 remain Draft/unmerged until explicit approval.
 
-## Exact continuation point
+## 6. Exact continuation point
 
-1. Merge the Stage 4B closure handoff.
-2. Update Issue #25 with Stage 4B complete / Stage 4C next.
-3. Create `stage4c/identity-schema-rls` from closure Integration head.
-4. Write migration/RLS tests before remote DDL.
-5. Apply versioned migration only after review.
-6. Generate types، run advisors and prove denial scenarios.
-7. Keep Stage 2B Vercel independent and open.
+1. Synchronize Issue #25 and PR #33 with Stage 4C evidence.
+2. Verify CI on the final documentation head.
+3. Do not merge PR #33 without explicit user approval.
+4. After approval, merge PR #33 and create Stage 4C closure evidence.
+5. Start Stage 4D in a new focused branch with red contracts.
+6. Plan the complete-frontend port separately; no direct merge of PR #34 into the architecture branch.
+7. Keep Stage 2B Issue #16 / PR #28 independent and open.
