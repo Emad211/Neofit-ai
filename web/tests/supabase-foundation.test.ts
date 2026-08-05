@@ -162,7 +162,7 @@ test('package dependencies use the reviewed Supabase SSR packages', async () => 
   );
 });
 
-test('Stage 4B config identifies NeoFit and introduces no migrations', async () => {
+test('Stage 4B config remains secret-free and later migrations stay versioned', async () => {
   const config = await readFile(resolve(repositoryRoot, 'supabase/config.toml'), 'utf8');
   assert.match(config, /^project_id = ['"]neofit['"]/m);
   assert.match(config, /site_url = ['"]http:\/\/127\.0\.0\.1:3000['"]/);
@@ -173,5 +173,11 @@ test('Stage 4B config identifies NeoFit and introduces no migrations', async () 
     if (error.code === 'ENOENT') return [];
     throw error;
   });
-  assert.deepEqual(entries, []);
+  const migrations = entries.filter((entry) => entry.endsWith('.sql'));
+  for (const migration of migrations) {
+    assert.match(migration, /^\d{14}_[a-z0-9_]+\.sql$/);
+    const sql = await readFile(resolve(migrationsDirectory, migration), 'utf8');
+    assert.doesNotMatch(sql, /SUPABASE_SERVICE_ROLE_KEY|sb_secret_|sb_publishable_/i);
+    assert.doesNotMatch(sql, /using\s*\(\s*true\s*\)|with check\s*\(\s*true\s*\)/i);
+  }
 });
