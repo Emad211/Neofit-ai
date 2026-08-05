@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Apple, Bell, Bot, Dumbbell, LayoutGrid, LineChart, User } from "lucide-react";
+import { Apple, Bell, Bot, Dumbbell, LayoutGrid, LineChart, User, WifiOff } from "lucide-react";
 import {
   SidebarProvider,
   Sidebar,
@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 import { ModeToggle } from "./mode-toggle";
 
 const navItems = [
@@ -50,12 +51,24 @@ function Brand({ compact = false }: { compact?: boolean }) {
   );
 }
 
+function OfflineBanner() {
+  return (
+    <div dir="rtl" role="status" className="flex items-center justify-center gap-2 border-b border-amber-500/25 bg-amber-500/10 px-4 py-2 text-xs font-medium text-amber-900 dark:text-amber-100">
+      <WifiOff className="h-4 w-4" />
+      آفلاین هستی؛ ثبت‌های محلی ادامه دارند و همگام‌سازی بعد از اتصال انجام می‌شود.
+      <Link href="/offline" className="underline underline-offset-4">جزئیات</Link>
+    </div>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isMobile = useIsMobile();
   const { unreadCount } = useNotifications();
+  const { isOnline, isHydrated: connectionHydrated } = useOnlineStatus();
   const active = navItems.find((item) => pathname.startsWith(item.href));
   const dateLabel = new Intl.DateTimeFormat("fa-IR", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
+  const showOffline = connectionHydrated && !isOnline;
 
   const sidebarContent = (
     <>
@@ -78,6 +91,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     return (
       <div dir="rtl" className="min-h-screen bg-background">
         <header className="sticky top-0 z-40 border-b bg-background/90 px-4 py-2.5 backdrop-blur-xl"><div className="mx-auto flex max-w-3xl items-center justify-between"><Brand compact /><HeaderActions unreadCount={unreadCount} /></div></header>
+        {showOffline ? <OfflineBanner /> : null}
         <main className="pb-28">{children}</main>
         <footer className="fixed inset-x-0 bottom-0 z-50 border-t bg-card/95 backdrop-blur-xl">
           <nav className="mx-auto flex max-w-xl items-center justify-around px-1 py-2" aria-label="ناوبری اصلی">
@@ -100,6 +114,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-3"><SidebarTrigger asChild><Button size="icon" variant="ghost" aria-label="بازکردن منو"><LayoutGrid /></Button></SidebarTrigger><div><p className="font-black">{active?.label || "نئوفیت"}</p><p className="text-xs text-muted-foreground">{dateLabel}</p></div></div>
           <HeaderActions unreadCount={unreadCount} />
         </header>
+        {showOffline ? <OfflineBanner /> : null}
         {children}
       </SidebarInset>
     </SidebarProvider>
