@@ -104,34 +104,16 @@ Console errors: 0
 - Persisted planned-meal completion through the existing User Data context.
 - Preserved Camera preview and Shopping List.
 
-### Nutrition History
+### Nutrition History and trusted logging
 
 - Added `/nutrition/history` using existing `MealLog` records only.
-- Grouped logs by day.
-- Added daily logged calories, target, variance, progress and individual meals.
-- Added summary for days, meals, average calories and days near target.
-- Corrected the Persian date formatter discovered by browser QA.
-
-### Trusted Food Library logging
-
-- Reused the existing local Food Library rather than creating a second catalogue.
-- Added 0.5, 1, 1.5 and 2 portion selection.
-- Added meal-type selection.
-- Scaled calories and macros only from trusted catalogue values.
-- Refused to log unknown foods with invented nutrition values.
-- Added direct History logging through the existing `logMeal` action.
-- Added recent foods derived from existing MealLogs.
-- Added a small local saved-food list at `neofit:saved-foods:v1`.
-
-### Water, supplements and states
-
-- Reused the shared daily-metrics store for Nutrition hydration display and one-glass controls.
-- Added an explicit no-active-supplement state.
-- Does not recommend supplements without trusted medical/program data.
-- Added Nutrition loading, empty and recoverable error states.
-- Made Nutrition tool dialogs scrollable on mobile after browser QA found an inaccessible off-screen action.
-
-### Final validation evidence
+- Grouped logs by day and added target variance and individual meals.
+- Reused the existing local Food Library.
+- Added 0.5, 1, 1.5 and 2 portion selection and meal-type selection.
+- Scaled only trusted catalogue values and refused invented values for unknown foods.
+- Added recent and saved trusted foods.
+- Reused shared hydration state and added a safe no-active-supplement state.
+- Made tool dialogs scrollable on mobile after browser QA found an inaccessible action.
 
 ```text
 validated head: bd8c5a3cf3f176f8a9223afe24e6f3002044fe43
@@ -140,31 +122,85 @@ artifact: 8920664801
 artifact digest: sha256:f2d097581a6425b1c1b1d31c047e5ab0dc73cf33234fda4e5bf61e6f287dc631
 TypeScript: success
 Production build: success
+Nutrition History: success
+Trusted half-portion logging: 145 kcal success
+Saved and recent foods: success
+Hydration persistence: success
+Page errors: 0
+Console errors: 0
+```
+
+---
+
+## 2026-08-05 — Phase 5 Progress analytics foundation proven
+
+### Overview and core trends
+
+- Replaced the empty Progress placeholder with a Persian RTL dashboard.
+- Added current weight, weight change and target delta.
+- Added latest waist and valid-measurement count.
+- Added current-week Workout sessions and total volume.
+- Added personal-record and achievement summary.
+- Added weight and waist Line Charts.
+- Added recent Workout-volume Bar Chart.
+- Added Progress loading, meaningful empty-chart states and recoverable error state.
+
+### Nutrition analytics and milestones
+
+- Added daily logged-calorie analytics directly from existing `MealLog` records.
+- Added optional target comparison from `neofit:initial-plan:v1`.
+- Added average calories across logged days.
+- Added six simple milestones derived from existing records:
+  - first Workout;
+  - five Workout sessions;
+  - first personal record;
+  - two-kilogram weight change;
+  - seven meal logs;
+  - two body-measurement records.
+- No Progress store, analytics service or additional data layer was introduced.
+
+### Browser evidence
+
+The focused Progress gate seeds the existing persistence formats and verifies:
+
+- current weight `93 kg` from two WeightLogs;
+- target delta `7 kg` from the Onboarding draft;
+- latest waist `92 cm` from existing measurement logs;
+- two current-week Workout sessions and volume;
+- personal-record data;
+- weight, waist, Workout-volume and calorie charts;
+- earned and locked milestone cards;
+- zero page errors and zero console errors.
+
+```text
+validated head: 7394e134ce9e6fbc4269adefd4c6fca3b5fa98ed
+UI Revival CI: 30983403800 — success
+artifact: 8921133784
+artifact digest: sha256:2a268752ff9fe9f888eb14ac5754389e8df7113c61b72dc66245edb1e50449b0
+TypeScript: success
+Production build: success
 Mobile route and interaction gate: success
 Tablet responsive gate: success
 Desktop responsive gate: success
 Workout regression gate: success
-Nutrition landing/details/recipe: success
-Alternative selection: success
-Planned-meal logging and refresh persistence: success
-Nutrition History and target variance: success
-Shopping List: success
-Trusted half-portion logging: 145 kcal success
-Saved and recent foods: success
-Hydration persistence: success
-Safe supplement empty state: success
+Nutrition regression gate: success
+Progress overview summary: success
+Weight trend: success
+Waist trend: success
+Workout-volume trend: success
+Daily-calorie trend: success
+Milestone rendering: success
 Page errors: 0
 Console errors: 0
 ```
 
 ### Exact continuation point
 
-Phase 4 is closed. Continue with Phase 5 Progress:
+Phase 5 remains active:
 
-1. Read the existing Progress placeholder and chart components.
-2. Reuse `WeightLog`, `WorkoutLog`, `MealLog`, `neofit:measurement-logs:v1` and `neofit:workout-records:v1`.
-3. Build overview metrics plus weight, waist and training-volume trends first.
-4. Derive all Progress views from existing records; do not create another store.
-5. Add Progress loading, empty and error states.
-6. Add one focused browser gate with seeded existing records.
-7. Keep completed Onboarding, Shell, Workout and Nutrition contracts unchanged except for verified defects.
+1. Add exercise-specific progression by grouping existing `WorkoutLog.exercises` records.
+2. Add concise weekly/monthly summary cards from the same records.
+3. Add private local progress-photo preview only after analytics summaries are proven.
+4. Do not add a Progress store or analytics service.
+5. Extend the existing Progress browser gate rather than creating overlapping test infrastructure.
+6. Close Phase 5 after the remaining sections and responsive review pass.
