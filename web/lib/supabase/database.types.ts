@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      nutrition_entries: {
+        Row: {
+          client_mutation_id: string
+          core_schema_version: number
+          created_at: string
+          estimate: Json
+          id: string
+          label: string
+          local_date: string
+          logged_at: string
+          meal_type: string
+          source_id: string
+          source_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_mutation_id: string
+          core_schema_version?: number
+          created_at?: string
+          estimate: Json
+          id?: string
+          label: string
+          local_date: string
+          logged_at?: string
+          meal_type: string
+          source_id: string
+          source_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_mutation_id?: string
+          core_schema_version?: number
+          created_at?: string
+          estimate?: Json
+          id?: string
+          label?: string
+          local_date?: string
+          logged_at?: string
+          meal_type?: string
+          source_id?: string
+          source_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      nutrition_goals: {
+        Row: {
+          core_schema_version: number
+          created_at: string
+          daily: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          core_schema_version?: number
+          created_at?: string
+          daily?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          core_schema_version?: number
+          created_at?: string
+          daily?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
