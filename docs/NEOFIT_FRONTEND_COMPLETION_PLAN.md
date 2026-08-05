@@ -2,32 +2,29 @@
 
 **Status:** Active implementation contract  
 **Primary branch:** `revival/full-ui-front`  
-**Current phase:** Phase 5 — Progress and reports  
-**Strategy:** finish the end-to-end frontend with simple backend-neutral local adapters first; connect Supabase, Nutrition Core and external APIs only after the frontend contract is complete.
+**Current phase:** Phase 6 — Profile, Settings and Notifications  
+**Strategy:** finish the frontend contract with simple backend-neutral local adapters first; connect Supabase, Nutrition Core and external APIs only after the product flows and browser gates are complete.
 
 ## 1. Definition of frontend complete
 
-A user must be able to enter, finish Onboarding, receive and follow a visible plan, execute a workout, inspect and log nutrition, record body data, review progress, manage settings and use the NeoFit assistant without dead actions, untranslated primary flows, missing system states or broken routes.
+A user must be able to enter, finish Onboarding, receive and follow a visible plan, execute a workout, inspect and log nutrition, record body data, review progress, manage account/settings and use the NeoFit assistant without dead actions, untranslated primary flows, missing route states or broken navigation.
 
 Every primary route must support Persian RTL, mobile/tablet/desktop layouts, dark mode, accessible labels and appropriate loading, empty, error, offline and success states.
 
 ## 2. Current proven state
 
-- Historical full Next.js UI remains the visual foundation.
+- The historical full Next.js UI remains the visual foundation.
 - Firebase, Genkit and App Hosting runtime are absent from the active frontend.
-- Phase 1 Onboarding is complete and browser-tested across all 15 steps.
-- The injury step preserves the full old front/back SVG body selector with 73 clickable regions.
-- Phase 2 App Shell, Today, Notification Center, Quick Add and offline/system states are complete.
-- Fixed-width mobile, tablet and desktop gates prove correct navigation, Sidebar collapse and no horizontal overflow.
-- Phase 3 Workout is complete: weekly plan, Day Details, persistent Player, guides, alternatives, completion feedback, History, previous performance, personal records and route states.
-- Phase 4 Nutrition is complete: daily/weekly plan, calorie and target-macro summary, details/recipe, alternatives, persistent logging, History, portion-aware trusted-food logging, recent/saved foods, Shopping List, hydration, safe supplement empty state and route states.
-- Phase 5 Progress now has proven overview metrics, weight and waist trends, Workout-volume trend, daily-calorie analytics, derived achievements and route loading/error states.
-- Progress derives its views directly from `WeightLog`, `WorkoutLog`, `MealLog`, `neofit:measurement-logs:v1`, `neofit:workout-records:v1` and the existing Onboarding result. No Progress store was introduced.
-- The Progress browser gate seeds existing record formats and proves current weight, target delta, waist, weekly sessions, four charts and earned/locked milestones.
-- Exercise-specific progression, progress photos and period reports remain before Phase 5 closure.
-- Profile/Settings, Coach and final PWA/accessibility hardening remain incomplete.
+- Phase 1 Onboarding is complete across all 15 steps, including the original 73-region front/back injury map.
+- Phase 2 App Shell, Today, Notification Center, Quick Add and shared offline behavior are complete.
+- Phase 3 Workout is complete: weekly plan, Day Details, persistent Player, guide/alternatives, Completion, History, previous performance and personal records.
+- Phase 4 Nutrition is complete: daily/weekly plan, details/recipe, alternatives, trusted portion logging, History, saved/recent foods, Shopping List, hydration and safe supplement state.
+- Phase 5 Progress is complete: overview metrics, weight/waist/workout/calorie charts, exercise-specific progression, milestones, 7/30-day reports and private temporary photo previews.
+- Progress reads existing `WeightLog`, `WorkoutLog`, `MealLog`, measurement, personal-record and Onboarding data. No Progress store or analytics service exists.
+- Mobile, tablet and desktop gates prove Progress has no horizontal overflow and exposes all completed sections.
+- Profile/Settings, notification preferences, Coach and final PWA/accessibility hardening remain incomplete.
 
-Remaining estimate before backend integration: **10–22 development hours**, or **18–38 hours including full responsive/accessibility/browser QA**.
+Remaining estimate before backend integration: **8–18 development hours**, or **14–30 hours including full responsive/accessibility/browser QA**.
 
 ## 3. Delivery order
 
@@ -35,8 +32,8 @@ Remaining estimate before backend integration: **10–22 development hours**, or
 2. ~~Complete App Shell and Today.~~ **Completed**
 3. ~~Complete Workout and Workout Player.~~ **Completed**
 4. ~~Complete Nutrition.~~ **Completed**
-5. **Build Progress and reports — active**
-6. Complete Profile, Settings and Notifications.
+5. ~~Complete Progress and reports.~~ **Completed**
+6. **Complete Profile, Settings and Notifications — active**
 7. Complete NeoFit Coach/Chat UI.
 8. Complete system states, offline/PWA and accessibility.
 9. Run the final responsive and interaction matrix.
@@ -53,108 +50,76 @@ Remaining estimate before backend integration: **10–22 development hours**, or
 
 ### 4.2 Onboarding — implemented
 
-1. Welcome and privacy reassurance
-2. Primary/secondary goal and progress pace
-3. Name, age, gender, height, weight, country and units
-4. Waist, hip, neck, body-fat input, target weight and photo opt-in
-5. Conditions, medication, pressure/diabetes/cardiac flags and physician restrictions
-6. Full selectable front/back injury body map, severity, status, painful/forbidden movements and notes
-7. Occupation, activity, sitting, steps, sleep, stress and smoking
-8. Meals, diet, allergies, dislikes, Iranian foods, budget and cooking context
-9. Level, training age, previous sports, break, familiar movements and experience
-10. Home/gym, equipment, days, duration, preferred days/time and schedule notes
-11. Intensity, cardio, training style, variety, nutrition strictness, coach tone and reminders
-12. Editable grouped review
-13. Staged local analysis
-14. Explainable calories, macros, training structure, rationale and safety cautions
-15. Start date, reminders, consent and activation into Today
+- Full 15-step persistent Wizard
+- Goal, identity/body, medical history and lifestyle
+- Complete injury body map and limitations
+- Nutrition/training preferences and availability
+- Editable review, local analysis, explainable result and activation
 
-### 4.3 Main App Shell — implemented
+### 4.3 Main App Shell and Today — implemented
 
-- Mobile sticky header and bottom navigation
-- Desktop sticky header and right collapsible Sidebar
+- Mobile header and bottom navigation
+- Desktop header and collapsible right Sidebar
 - Today, Workout, Nutrition, Progress and Profile navigation
 - Coach and Notification entries
-- Persistent unread count
-- Theme control
+- Persistent unread count and theme control
 - Offline banner and `/offline`
-- Mobile, tablet and desktop browser evidence
+- Readiness, adherence, workout/meal cards and timeline
+- Persistent water, steps, sleep, weight and measurements
+- Quick Add and route-specific states
 
-### 4.4 Today — implemented
+### 4.4 Workout — implemented
 
-- Readiness and adherence
-- Calories/protein/workout progress
-- Workout and next-meal cards
-- Persistent water, steps, sleep and weight
-- Daily timeline and reminders
-- Quick Add for meal, activity, weight, water and measurement
-- Motivation
-- Loading, error, empty and offline behavior
-
-### 4.5 Workout — implemented
-
-- Persian weekly overview, rest days and summary metrics
+- Persian weekly overview and rest days
 - Dedicated `/workout/[id]` Day Details
-- Warm-up, ordered exercises, sets/reps/rest and safety notes
+- Warm-up, exercise order, sets/reps/rest and safety
 - Previous performance hints
-- Explicit detail and start actions
-- Persistent Workout Player, active-session resume and discard
-- Rest timer, exercise guide and constraint-aware alternatives
-- Completion duration, volume, sets and exercise count
-- RPE, pain and notes
-- Personal-record detection for max weight and exercise volume
-- Recent PR cards and per-session PR badges
-- Persistent History and repeat-session action
+- Persistent Player and exact refresh resume
+- Rest Timer, guide and constraint-aware alternatives
+- Explicit Completion with duration, volume, RPE, pain and notes
+- Personal-record detection and `/workout/history`
 - Loading, empty and recoverable error states
-- End-to-end browser evidence
 
-Long-term load/volume charts are assigned to Progress rather than duplicated in Workout.
-
-### 4.6 Nutrition — implemented
+### 4.5 Nutrition — implemented
 
 - Persian daily/weekly hierarchy
-- Daily calorie target, logged calories, remaining calories and meal adherence
-- Initial protein, carbohydrate and fat targets from Onboarding
-- Weekly cards with Persian dates, Today marker and adherence
-- Ingredient quantities and recipe/preparation sheet
-- Equivalent local meal alternatives
+- Daily calories, remaining calories and target macros
+- Meal ingredients, recipe and equivalent alternatives
 - Persistent planned-meal logging
-- Nutrition History grouped by day with target variance and individual meals
-- Trusted Food Library lookup with 0.5/1/1.5/2 portion scaling
-- Meal-type selection and direct History logging
-- Saved and recent trusted foods
-- Shopping List
-- Hydration summary using the shared daily-metrics store
-- Safe supplement empty state without invented recommendations
-- Camera preview retained for later API integration
+- Daily History with target variance
+- Trusted Food Library and portion scaling
+- Recent/saved foods, Shopping List and hydration
+- Safe supplement empty state
 - Loading, empty and recoverable error states
-- Focused end-to-end browser evidence
 
-Actual meal macro totals must come from Nutrition Core; the frontend does not invent nutrition values for unknown foods.
+Actual food macro totals must come from Nutrition Core; the frontend does not invent values for unknown foods.
 
-### 4.7 Progress — active
+### 4.6 Progress — implemented
 
-Implemented:
+- Current weight, change and target delta
+- Latest waist and body-measurement count
+- Weekly workout sessions and volume
+- Weight, waist, workout-volume and daily-calorie charts
+- Exercise selector with max-weight progression and session-volume summary
+- Personal records and six derived milestones
+- 7-day and 30-day summaries for workout, nutrition and weight
+- Private temporary progress-photo preview with no upload or persistent image storage
+- Loading, meaningful empty charts and recoverable error state
+- Mobile/tablet/desktop browser evidence
 
-- Current weight, weight change and target delta
-- Latest waist and measurement count
-- Workout sessions and volume for the current week
-- Personal-record and achievement summary
-- Weight trend chart
-- Waist trend chart
-- Recent Workout-volume chart
-- Daily logged-calorie chart with optional target comparison
-- Average calories across logged days
-- Six derived milestones with earned/locked state
-- Route loading, meaningful empty charts and recoverable error state
-- Focused browser evidence with existing persisted record formats
+### 4.7 Profile, Settings and Notifications — active
 
-Remaining:
+Target contract:
 
-- Exercise-specific load/volume progression using existing Workout logs
-- Weekly/monthly report summary
-- Private local progress-photo preview and comparison
-- Final Progress responsive review after the remaining sections
+- Profile summary and read-only Onboarding data
+- Edit body, health, lifestyle, nutrition, training, equipment and schedule
+- Account identity and local session controls
+- Theme, language, units and week-start settings
+- Per-category notification preferences
+- Data export/delete and account deletion boundaries
+- Consent history, terms and privacy
+- FAQ, support, issue report and version information
+- Profile/Settings loading, empty and recoverable error states
 
 ### 4.8 NeoFit Coach
 
@@ -166,41 +131,20 @@ Remaining:
 - Medical safety boundaries
 - Loading, retry and offline states
 
-### 4.9 Notifications
+### 4.9 System hardening
 
-Implemented:
-
-- Workout, meal, water and report notifications
-- Persistent read/unread, delete and mark-all-read
-- Shared unread counter
-
-Remaining:
-
-- Measurement, program and account notification types
-- Per-category settings
-
-### 4.10 Profile and settings
-
-- Profile summary and read-only Onboarding data
-- Edit body, health, lifestyle, nutrition, training, equipment and schedule
-- Account identity and sessions
-- Theme, language, units, week start and notifications
-- Data export/delete, account deletion and consent history
-- FAQ, support, issue report, version, terms and privacy
-
-### 4.11 System states
-
-Implemented for Onboarding, Today, Shell, Workout, Nutrition and current Progress:
+Implemented through Progress:
 
 - Route-specific loading
 - Recoverable error/retry
 - Meaningful empty states
-- Offline feedback through the shared shell
+- Shared offline feedback
+- Responsive browser evidence
 
 Remaining globally:
 
-- Profile and Coach states
-- Maintenance and expired session
+- Profile and Coach route states
+- Maintenance and expired-session states
 - PWA install and Service Worker integration
 - Final keyboard and screen-reader audit
 
@@ -223,44 +167,39 @@ Remaining globally:
 
 ### Phase 3 — Workout
 
-- [x] Persian weekly overview and active-session banner
-- [x] Dedicated Day Details
-- [x] Persistent Workout Player and rest timer
-- [x] Exercise guide and alternatives
-- [x] Completion and pain/RPE/note capture
+- [x] Weekly overview and Day Details
+- [x] Persistent Player and rest timer
+- [x] Guide and alternatives
+- [x] Completion, pain/RPE/notes and personal records
 - [x] History and repeat session
-- [x] Previous-performance hints and personal records
-- [x] Workout-specific loading, empty and error states
-- [x] End-to-end browser evidence
+- [x] Workout route states and browser evidence
 
 ### Phase 4 — Nutrition
 
-- [x] Daily/weekly hierarchy and initial macro summary
+- [x] Daily/weekly plan and target summary
 - [x] Details, alternatives and recipes
-- [x] Planned-meal logging and Shopping List
-- [x] Daily History and actual-vs-target grouping
-- [x] Portion-aware trusted-food logging
-- [x] Saved and recent foods
+- [x] Planned and trusted-food logging
+- [x] History, saved/recent foods and Shopping List
 - [x] Hydration and safe supplement state
-- [x] Nutrition loading/error/empty states
-- [x] End-to-end browser evidence
+- [x] Nutrition route states and browser evidence
 
 ### Phase 5 — Progress and reports
 
-- [x] Overview metrics from existing local data
+- [x] Overview metrics
 - [x] Weight and body-measurement trends
-- [x] Workout-volume and personal-record summary
-- [x] Nutrition calorie analytics
-- [x] Derived milestones and achievements
-- [x] Progress loading/error/empty states and browser gate
-- [ ] Exercise-specific progression
-- [ ] Progress photos
-- [ ] Weekly/monthly reports and final responsive review
+- [x] Workout-volume, personal records and exercise progression
+- [x] Nutrition analytics
+- [x] Milestones and achievements
+- [x] Weekly/monthly reports
+- [x] Private temporary progress photos
+- [x] Progress route states and mobile/tablet/desktop gates
 
-### Phase 6 — Profile, Notifications and Coach
+### Phase 6 — Profile, Settings, Notifications and Coach
 
-- [ ] Profile/settings/privacy/support
+- [ ] Profile summary and edit flows
+- [ ] Account/settings/privacy/support
 - [ ] Per-category notification settings
+- [ ] Profile/Settings route states and browser gate
 - [ ] Coach UI/history/action cards
 
 ### Phase 7 — Hardening
@@ -272,10 +211,10 @@ Remaining globally:
 
 ## 6. Exact continuation point
 
-1. Add one simple exercise-progression view by grouping existing `WorkoutLog.exercises` entries; do not create an analytics service.
-2. Add a concise weekly/monthly report summary derived from the same existing logs.
-3. Add private local progress-photo preview only after those data summaries are proven.
-4. Keep photos local and explicitly private until a real storage contract exists.
-5. Extend the current Progress gate rather than creating another overlapping test workflow.
-6. Close Phase 5 only after the remaining sections pass responsive/browser QA.
-7. Keep completed Onboarding, Shell, Workout and Nutrition contracts unchanged except for verified defects.
+1. Read `/profile`, `/profile/view`, `/profile/edit` and `/profile/account` before changing them.
+2. Preserve useful existing profile/account UI and remove only verified dead actions.
+3. First normalize the Profile landing page into a clear summary with direct Edit, Account, Settings, Privacy and Support entries.
+4. Reuse the existing User Data context and Onboarding draft; do not create another profile store.
+5. Complete the smallest functional edit/account/settings flows before adding notification preferences.
+6. Add Profile-specific loading/error/empty states and one focused browser gate.
+7. Keep completed Onboarding, Shell, Workout, Nutrition and Progress contracts unchanged except for verified defects.
