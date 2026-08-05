@@ -9,6 +9,7 @@ import {
   FileText,
   MapPin,
   Scale,
+  Settings2,
   ShieldCheck,
   Target,
   UserCog,
@@ -108,6 +109,7 @@ export default function ProfilePage() {
             <CardContent className="divide-y p-0">
               <SettingsItem icon={<UserCog className="h-5 w-5" />} title="مدیریت حساب محلی" description="نام نمایشی و محدودیت‌های حساب نسخهٔ فعلی" href="/profile/account" />
               <SettingsItem icon={<BellRing className="h-5 w-5" />} title="تنظیمات اعلان‌ها" description="تمرین، وعده، آب و گزارش‌های دوره‌ای" href="/notifications#notification-settings" />
+              <SettingsItem icon={<Settings2 className="h-5 w-5" />} title="داده، حریم خصوصی و راهنما" description="خروجی JSON، حذف محلی، FAQ و گزارش فنی" href="/profile/settings" />
               <div className="flex items-center justify-between gap-4 p-4"><div><p className="font-black">حالت نمایش</p><p className="mt-1 text-sm text-muted-foreground">روشن، تاریک یا مطابق دستگاه</p></div><ModeToggle /></div>
             </CardContent>
           </Card>
