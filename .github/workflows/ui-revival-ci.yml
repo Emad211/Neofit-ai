@@ -123,6 +123,7 @@ jobs:
           test -s src/app/'(main)'/profile/view/page.tsx
           test -s src/app/'(main)'/profile/edit/page.tsx
           test -s src/app/'(main)'/profile/account/page.tsx
+          test -s src/app/'(main)'/profile/settings/page.tsx
           test -s src/app/offline/page.tsx
 
       - name: Install Chromium
