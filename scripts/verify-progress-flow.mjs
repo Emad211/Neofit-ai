@@ -32,7 +32,10 @@ try {
       {
         id: "workout-progress-2", logType: "workout", workoutId: "pull-a", workoutName: "کشش بالاتنه",
         loggedAt: new Date(now - day).toISOString(), durationMinutes: 60, totalVolume: 3900, rpe: 8, painScale: 1, notes: "",
-        exercises: [{ id: "lat-pulldown", name: "لت سیم‌کش", logs: [{ set: 1, reps: "10", weight: "45" }] }],
+        exercises: [
+          { id: "bench-press", name: "پرس سینه هالتر", logs: [{ set: 1, reps: "10", weight: "40" }] },
+          { id: "lat-pulldown", name: "لت سیم‌کش", logs: [{ set: 1, reps: "10", weight: "45" }] },
+        ],
       },
       { id: "meal-1", logType: "meal", loggedAt: new Date(now - 3 * day).toISOString(), mealType: "breakfast", description: "صبحانه تست", calories: 400 },
       { id: "meal-2", logType: "meal", loggedAt: new Date(now - 3 * day + 1000).toISOString(), mealType: "lunch", description: "ناهار تست", calories: 700 },
@@ -48,7 +51,7 @@ try {
       { id: "measure-old", loggedAt: new Date(now - 14 * day).toISOString(), waistCm: 96, hipCm: 103, neckCm: 40, bodyFatPercent: 26 },
     ]));
     window.localStorage.setItem("neofit:workout-records:v1", JSON.stringify([
-      { id: "pr-1", exerciseId: "bench-press", exerciseName: "پرس سینه هالتر", workoutId: "push-a", type: "max-weight", value: 35, achievedAt: new Date(now - day).toISOString() },
+      { id: "pr-1", exerciseId: "bench-press", exerciseName: "پرس سینه هالتر", workoutId: "push-a", type: "max-weight", value: 40, achievedAt: new Date(now - day).toISOString() },
     ]));
     const draft = JSON.parse(window.localStorage.getItem("neofit:onboarding-draft:v1") || "{}");
     draft.body = { ...(draft.body || {}), targetWeightKg: 86 };
@@ -56,13 +59,13 @@ try {
     window.localStorage.setItem("neofit:initial-plan:v1", JSON.stringify({ calorieTarget: 2100, proteinGrams: 150, carbohydrateGrams: 220, fatGrams: 70 }));
   });
   await page.reload({ waitUntil: "domcontentloaded" });
-  await page.waitForTimeout(1400);
+  await page.waitForTimeout(1600);
 
   const titleVisible = await page.getByRole("heading", { name: "پیشرفت من" }).isVisible().catch(() => false);
   const currentWeightVisible = await page.getByText("۹۳ کیلوگرم", { exact: true }).isVisible().catch(() => false);
   const targetDeltaVisible = await page.getByText("۷ کیلوگرم", { exact: true }).isVisible().catch(() => false);
   const waistVisible = await page.getByText("۹۲ سانتی‌متر", { exact: true }).isVisible().catch(() => false);
-  const workoutsVisible = await page.getByText("۲ جلسه", { exact: true }).isVisible().catch(() => false);
+  const workoutsVisible = await page.getByText("۲ جلسه", { exact: true }).first().isVisible().catch(() => false);
   const achievementsVisible = await page.getByText("۵ از ۶", { exact: true }).isVisible().catch(() => false);
   const summaryPassed = titleVisible && currentWeightVisible && targetDeltaVisible && waistVisible && workoutsVisible && achievementsVisible;
   report.checks.summary = { titleVisible, currentWeightVisible, targetDeltaVisible, waistVisible, workoutsVisible, achievementsVisible, passed: summaryPassed };
@@ -72,10 +75,27 @@ try {
   const waistChartVisible = await page.locator('[aria-label="نمودار روند دور کمر"]').isVisible().catch(() => false);
   const volumeChartVisible = await page.locator('[aria-label="نمودار حجم جلسات تمرینی"]').isVisible().catch(() => false);
   const nutritionChartVisible = await page.locator('[aria-label="نمودار کالری روزانه"]').isVisible().catch(() => false);
+  const exerciseChartVisible = await page.locator('[aria-label="نمودار پیشرفت حرکت"]').isVisible().catch(() => false);
   const chartSvgCount = await page.locator(".recharts-wrapper svg").count();
-  const chartsPassed = weightChartVisible && waistChartVisible && volumeChartVisible && nutritionChartVisible && chartSvgCount >= 4;
-  report.checks.charts = { weightChartVisible, waistChartVisible, volumeChartVisible, nutritionChartVisible, chartSvgCount, passed: chartsPassed };
+  const chartsPassed = weightChartVisible && waistChartVisible && volumeChartVisible && nutritionChartVisible && exerciseChartVisible && chartSvgCount >= 5;
+  report.checks.charts = { weightChartVisible, waistChartVisible, volumeChartVisible, nutritionChartVisible, exerciseChartVisible, chartSvgCount, passed: chartsPassed };
   if (!chartsPassed) report.passed = false;
+
+  const exerciseSelectValue = await page.getByLabel("انتخاب حرکت برای روند").inputValue().catch(() => "");
+  const bestWeightVisible = await page.getByText("۴۰ کیلوگرم", { exact: true }).isVisible().catch(() => false);
+  const weightIncreaseVisible = await page.getByText(/۵ کیلوگرم افزایش/).isVisible().catch(() => false);
+  const latestVolumeVisible = await page.getByText("۴۰۰", { exact: true }).isVisible().catch(() => false);
+  const exercisePassed = exerciseSelectValue === "bench-press" && bestWeightVisible && weightIncreaseVisible && latestVolumeVisible;
+  report.checks.exerciseProgression = { exerciseSelectValue, bestWeightVisible, weightIncreaseVisible, latestVolumeVisible, passed: exercisePassed };
+  if (!exercisePassed) report.passed = false;
+
+  const weeklyReportVisible = await page.getByText("گزارش ۷ روز اخیر", { exact: true }).isVisible().catch(() => false);
+  const monthlyReportVisible = await page.getByText("گزارش ۳۰ روز اخیر", { exact: true }).isVisible().catch(() => false);
+  const weeklyMinutesVisible = await page.getByText("۱۱۵ دقیقه", { exact: true }).first().isVisible().catch(() => false);
+  const reportVolumeVisible = await page.getByText("۷٬۳۰۰", { exact: true }).first().isVisible().catch(() => false);
+  const reportsPassed = weeklyReportVisible && monthlyReportVisible && weeklyMinutesVisible && reportVolumeVisible;
+  report.checks.periodReports = { weeklyReportVisible, monthlyReportVisible, weeklyMinutesVisible, reportVolumeVisible, passed: reportsPassed };
+  if (!reportsPassed) report.passed = false;
 
   const firstWorkoutMilestone = await page.getByText("اولین تمرین", { exact: true }).isVisible().catch(() => false);
   const firstRecordMilestone = await page.getByText("اولین رکورد شخصی", { exact: true }).isVisible().catch(() => false);
