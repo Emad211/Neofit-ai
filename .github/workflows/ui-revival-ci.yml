@@ -106,6 +106,9 @@ jobs:
           test -s src/app/'(main)'/notifications/page.tsx
           test -s src/app/'(main)'/nutrition/page.tsx
           test -s src/app/'(main)'/workout/page.tsx
+          test -s src/app/'(main)'/workout/loading.tsx
+          test -s src/app/'(main)'/workout/error.tsx
+          test -s src/app/'(main)'/workout/'[id]'/page.tsx
           test -s src/app/'(main)'/workout/history/page.tsx
           test -s src/app/'(main)'/workout-player/'[slug]'/page.tsx
           test -s src/app/'(main)'/progress/page.tsx
@@ -138,7 +141,7 @@ jobs:
       - name: Tablet and desktop responsive gate
         run: node scripts/verify-responsive-shell.mjs
 
-      - name: Workout resume and completion gate
+      - name: Workout day-details, resume and completion gate
         run: node scripts/verify-workout-flow.mjs
 
       - name: Upload browser evidence
