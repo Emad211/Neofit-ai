@@ -39,8 +39,10 @@ export async function updateSupabaseSession(
     },
   });
 
-  await supabase.auth.getClaims();
-  response.headers.set('Cache-Control', 'private, no-store');
+  const { data } = await supabase.auth.getClaims();
+  if (data?.claims?.sub) {
+    response.headers.set('Cache-Control', 'private, no-store');
+  }
 
   return response;
 }
