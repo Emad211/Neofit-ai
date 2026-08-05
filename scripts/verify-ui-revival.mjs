@@ -11,6 +11,7 @@ const routes = [
   "profile",
   "profile/account",
   "auth",
+  "offline",
   "onboarding",
   "onboarding/goal",
   "onboarding/basics",
@@ -119,8 +120,34 @@ try {
     return JSON.parse(window.localStorage.getItem(`neofit:daily-metrics:${date}`) || "{}").waterMl;
   });
   const quickAddPassed = afterWater === beforeWater + 250;
-  report.flows.push({ name: "today-shell-and-water-quick-add", notificationEntryVisible, coachEntryVisible, beforeWater, afterWater, passed: notificationEntryVisible && coachEntryVisible && quickAddPassed });
-  if (!notificationEntryVisible || !coachEntryVisible || !quickAddPassed) report.passed = false;
+
+  await flowPage.getByRole("button", { name: "بازکردن افزودن سریع" }).click();
+  await flowPage.getByRole("button", { name: "ثبت اندازه‌ها" }).click();
+  await flowPage.locator("#measure-waist").fill("93.5");
+  await flowPage.getByRole("button", { name: "ذخیره اندازه‌ها" }).click();
+  await flowPage.waitForTimeout(250);
+  const measurementResult = await flowPage.evaluate(() => {
+    const logs = JSON.parse(window.localStorage.getItem("neofit:measurement-logs:v1") || "[]");
+    return { count: logs.length, waistCm: logs[0]?.waistCm };
+  });
+  const measurementPassed = measurementResult.count >= 1 && measurementResult.waistCm === 93.5;
+
+  await context.setOffline(true);
+  await flowPage.waitForTimeout(250);
+  const offlineBannerVisible = await flowPage.getByText(/آفلاین هستی؛ ثبت‌های محلی ادامه دارند/).isVisible().catch(() => false);
+  await context.setOffline(false);
+
+  report.flows.push({
+    name: "today-shell-quick-add-measurement-offline",
+    notificationEntryVisible,
+    coachEntryVisible,
+    beforeWater,
+    afterWater,
+    measurementResult,
+    offlineBannerVisible,
+    passed: notificationEntryVisible && coachEntryVisible && quickAddPassed && measurementPassed && offlineBannerVisible,
+  });
+  if (!notificationEntryVisible || !coachEntryVisible || !quickAddPassed || !measurementPassed || !offlineBannerVisible) report.passed = false;
   await flowPage.screenshot({ path: `${artifactDir}/today-interaction.png`, fullPage: true });
 
   await flowPage.goto(`${baseUrl}/notifications`, { waitUntil: "domcontentloaded" });
