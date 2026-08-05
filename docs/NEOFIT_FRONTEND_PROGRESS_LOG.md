@@ -128,14 +128,17 @@ artifact digest: sha256:9b59deddc69b618df749a4c46061e1a91521186ea3b1af8ad4b66782
   - cache-first safe static assets.
 - Proved Service Worker registration, activation and page control.
 - Proved `/today` reloads while Chromium is offline.
+- Marked the Manifest route `force-static` so the same PWA contract works in normal Next.js builds and the public Static Export.
 
-### Final browser evidence
+### Final browser and public-export evidence
 
 ```text
-validated runtime head: fd717f49a3f7ee5afd0a2669a0f2ffdd575db237
-UI Revival CI: 30994281464 — success
-artifact: 8925545367
-artifact digest: sha256:452b0847bb32894044ed4a797b5468dce14628e753ef6cdd63babed0ed4f1b76
+validated runtime head: d36a67b001a280fefbba6c676e69fb4f22ff20b2
+UI Revival CI: 30994858208 — success
+artifact: 8925787432
+artifact digest: sha256:9ec152b284c1a375fd5f205a119a526a62c2d1b691996e4ee9d105b89034dc42
+Public Static Export: 30994858276 — success
+Public RawGitHack Preview: 30994858167 — success
 static pages: 42/42
 TypeScript: success
 Production build: success
