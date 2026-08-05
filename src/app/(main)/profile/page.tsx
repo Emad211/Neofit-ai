@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  BellRing,
   ChevronLeft,
   Dumbbell,
   Edit3,
@@ -103,9 +104,10 @@ export default function ProfilePage() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle>حساب و نمایش</CardTitle></CardHeader>
+            <CardHeader><CardTitle>حساب و تنظیمات</CardTitle></CardHeader>
             <CardContent className="divide-y p-0">
               <SettingsItem icon={<UserCog className="h-5 w-5" />} title="مدیریت حساب محلی" description="نام نمایشی و محدودیت‌های حساب نسخهٔ فعلی" href="/profile/account" />
+              <SettingsItem icon={<BellRing className="h-5 w-5" />} title="تنظیمات اعلان‌ها" description="تمرین، وعده، آب و گزارش‌های دوره‌ای" href="/notifications#notification-settings" />
               <div className="flex items-center justify-between gap-4 p-4"><div><p className="font-black">حالت نمایش</p><p className="mt-1 text-sm text-muted-foreground">روشن، تاریک یا مطابق دستگاه</p></div><ModeToggle /></div>
             </CardContent>
           </Card>
