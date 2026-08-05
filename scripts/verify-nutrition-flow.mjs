@@ -24,9 +24,25 @@ try {
   const landingVisible = await page.getByRole("heading", { name: "تغذیه امروز و هفته" }).isVisible().catch(() => false);
   const summaryVisible = await page.getByText("هدف امروز", { exact: true }).isVisible().catch(() => false);
   const todayBadgeVisible = await page.getByText("امروز", { exact: true }).first().isVisible().catch(() => false);
-  const landingPassed = landingVisible && summaryVisible && todayBadgeVisible;
-  report.checks.landing = { landingVisible, summaryVisible, todayBadgeVisible, passed: landingPassed };
+  const supplementStateVisible = await page.getByText("مکمل فعالی در برنامه ثبت نشده است.", { exact: false }).isVisible().catch(() => false);
+  const landingPassed = landingVisible && summaryVisible && todayBadgeVisible && supplementStateVisible;
+  report.checks.landing = { landingVisible, summaryVisible, todayBadgeVisible, supplementStateVisible, passed: landingPassed };
   if (!landingPassed) report.passed = false;
+
+  const waterBefore = await page.evaluate(() => {
+    const date = new Date().toISOString().slice(0, 10);
+    const state = JSON.parse(window.localStorage.getItem(`neofit:daily-metrics:${date}`) || "{}");
+    return state.waterMl ?? 1250;
+  });
+  await page.getByRole("button", { name: "افزودن یک لیوان آب" }).click();
+  await page.waitForTimeout(250);
+  const waterAfter = await page.evaluate(() => {
+    const date = new Date().toISOString().slice(0, 10);
+    return JSON.parse(window.localStorage.getItem(`neofit:daily-metrics:${date}`) || "{}").waterMl;
+  });
+  const hydrationPassed = waterAfter === waterBefore + 250;
+  report.checks.hydration = { waterBefore, waterAfter, passed: hydrationPassed };
+  if (!hydrationPassed) report.passed = false;
 
   await page.getByRole("button", { name: "جزئیات", exact: true }).first().click();
   const ingredientsVisible = await page.getByText("مواد لازم", { exact: true }).isVisible().catch(() => false);
@@ -103,21 +119,27 @@ try {
   await page.locator("#food-portion").selectOption("0.5");
   await page.locator("#food-meal-type").selectOption("lunch");
   const scaledCaloriesVisible = await page.locator("div.rounded-lg").filter({ hasText: "کالری" }).filter({ hasText: "۱۴۵" }).first().isVisible().catch(() => false);
+  await page.getByRole("button", { name: "ذخیره غذا" }).click();
+  const savedControlVisible = await page.getByRole("button", { name: "حذف از غذاهای ذخیره‌شده" }).isVisible().catch(() => false);
   await page.getByRole("button", { name: "ثبت این مقدار" }).click();
   await page.waitForTimeout(350);
+  const recentFoodVisible = await page.getByText("غذاهای اخیر", { exact: true }).isVisible().catch(() => false);
+  const savedFoodVisible = await page.getByText("غذاهای ذخیره‌شده", { exact: true }).isVisible().catch(() => false);
   const libraryResult = await page.evaluate(() => {
     const state = JSON.parse(window.localStorage.getItem("neofit-ui-demo-v3") || "{}");
     const meals = (state.logs || []).filter((log) => log.logType === "meal");
     const logged = meals.find((meal) => meal.description.includes("عدسی") && meal.description.includes("نیم سهم"));
+    const saved = JSON.parse(window.localStorage.getItem("neofit:saved-foods:v1") || "[]");
     return {
       mealCount: meals.length,
       calories: logged?.calories || 0,
       mealType: logged?.mealType || "",
       description: logged?.description || "",
+      saved,
     };
   });
-  const libraryPassed = scaledCaloriesVisible && libraryResult.mealCount === mealCountBeforeLibrary + 1 && libraryResult.calories === 145 && libraryResult.mealType === "lunch";
-  report.checks.portionAwareLibraryLogging = { mealCountBeforeLibrary, scaledCaloriesVisible, libraryResult, passed: libraryPassed };
+  const libraryPassed = scaledCaloriesVisible && savedControlVisible && recentFoodVisible && savedFoodVisible && libraryResult.mealCount === mealCountBeforeLibrary + 1 && libraryResult.calories === 145 && libraryResult.mealType === "lunch" && libraryResult.saved.includes("عدسی");
+  report.checks.portionAwareLibraryLogging = { mealCountBeforeLibrary, scaledCaloriesVisible, savedControlVisible, recentFoodVisible, savedFoodVisible, libraryResult, passed: libraryPassed };
   if (!libraryPassed) report.passed = false;
 
   await page.screenshot({ path: `${artifactDir}/nutrition-flow.png`, fullPage: true });
