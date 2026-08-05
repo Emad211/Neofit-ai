@@ -1,223 +1,172 @@
 # NeoFit Development Handoff
 
 **Last verified:** 2026-08-05  
-**Integration branch:** `web/pwa-foundation`  
-**Active architecture PR:** #33 — Stage 4C, Draft/unmerged  
-**Completed frontend PR:** #34 — Draft/unmerged  
-**Active Supabase issue:** #25  
-**Parallel Vercel issue/PR:** #16 / #28  
-**Exact next after approval:** merge/close Stage 4C, then start Stage 4D test-first
+**Architecture base:** `web/pwa-foundation`  
+**Active product branch:** `web/full-frontend-integration`  
+**Active Draft PR:** #36  
+**Validated code head:** `f5f5a6f60c15d09793f9ea416f1fe721b6d9e740`  
+**Exact next:** Vercel Env + exact-head deploy + real temporary-account Runtime proof
 
 ## Mandatory read order
 
 1. `docs/NEOFIT_MASTER_PLAN.md`
 2. `docs/NEOFIT_PROGRESS_LOG.md`
-3. `docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md`
-4. `docs/NEOFIT_STAGE4C_IDENTITY_RLS_EVIDENCE.md`
-5. `docs/NEOFIT_FRONTEND_COMPLETION_PLAN.md` on `revival/full-ui-front`
-6. GitHub Issue/PR/CI state
-7. Supabase and Vercel live state
+3. `docs/NEOFIT_AUTH_PERSISTENCE_INTEGRATION_EVIDENCE.md`
+4. این Handoff
+5. PR #36، CI، Supabase و Vercel live state
 
-Do not continue from this file alone if it conflicts with the Master Plan or live tools.
+به گزارش مکالمه یا این فایل به‌تنهایی اعتماد نشود.
 
-## 1. Proven architecture state
+## 1. Proven foundation
 
-### Shared foundations
+### Nutrition
 
-- Next.js App Router + strict TypeScript under `web/`.
-- Shared deterministic Nutrition authority: `packages/nutrition-core`.
+- `packages/nutrition-core` تنها مرجع محاسبه است.
 - Core parity: `52/52`.
 - Web Adapter parity: `9/9`.
-- IFKB/USDA/FNDDS contracts remain authoritative.
-- SQL and React must not recalculate Nutrition.
+- SQL و React Nutrition arithmetic را تکرار نمی‌کنند.
+- missing nutrient صفر نیست؛ `grams: null` حفظ می‌شود.
 
-### Stage 4A Project
+### Supabase
 
 ```text
-name: neofit
 project ref: rjwrobltmjodfarnltal
-organization: yzymkjsfqoohxbqkhzhs
-region: eu-central-1
 status: ACTIVE_HEALTHY
-postgres: 17.6.1.155
 ```
 
-No key value is committed or documented.
-
-### Stage 4B merged
-
-```text
-implementation PR: #30
-merge SHA: 17d0e8c33ed9ba6329f243dee27b8cf8de53056c
-closure head: 72202f2f0ff281bf0624b9ebb933ac5afeaad8fc
-```
-
-Runtime contracts:
-
-- fail-closed public env parsing؛
-- Browser `createBrowserClient`؛
-- server-only cookie-aware `createServerClient`؛
-- request/response cookie synchronization؛
-- `getClaims()` protected identity refresh؛
-- no authorization based only on `getSession()`؛
-- `private, no-store` session responses؛
-- blank Supabase values in `.env.example`.
-
-Authority:
-
-- `docs/NEOFIT_STAGE4B_SUPABASE_SSR_FOUNDATION_EVIDENCE.md`
-
-## 2. Stage 4C current truth
-
-**Branch:** `stage4c/identity-schema-rls`  
-**Draft PR:** #33  
-**Validated implementation head:** `c5cface86f46134a4a0afcfc3c980f7ce613ee7a`
-
-Repository migration and Remote history are aligned:
+Merged migrations:
 
 ```text
 20260804232149_identity_foundation.sql
-remote version: 20260804232149
-remote name: identity_foundation
+20260805132201_nutrition_persistence.sql
 ```
 
-Remote schema:
+Merged PRs:
 
 ```text
-profiles       RLS enabled
-user_settings  RLS enabled
+PR #33 -> c7de309fd3f62fe6e58f1e603c3c9745a3013dcd
+PR #35 -> 942417641f69eeb1c6990a321efef0d9a277a994
 ```
 
-Remote security proof:
-
-- exactly eight own-row policies؛
-- INSERT uses `WITH CHECK`؛
-- UPDATE uses `USING` + `WITH CHECK`؛
-- policies target `authenticated` only؛
-- authenticated has SELECT/INSERT/UPDATE/DELETE؛
-- anon and PUBLIC have no table grant؛
-- secure `updated_at` triggers exist؛
-- Security advisors: 0؛
-- Performance advisors: 0.
-
-Runtime denial proof passed:
+Tables:
 
 ```text
-anon_read_denied
-user_a_reads_own
-user_a_cannot_read_b
-user_a_cannot_update_b
-user_a_cannot_delete_b
-user_a_cannot_insert_as_b
-ownership_change_denied
+profiles
+user_settings
+nutrition_goals
+nutrition_entries
 ```
 
-Post-test cleanup:
+RLS، grants، cross-user denial، duplicate mutation denial، Advisors و cleanup اثبات شده‌اند.
+
+## 2. Current frontend integration
+
+PR #36 UI را داخل معماری فعلی `web/` Port کرده است؛ Merge مستقیم PR #34 انجام نشده.
+
+Current routes:
 
 ```text
-profiles: 0
-user_settings: 0
-auth.users: 0
+/today
+/nutrition
+/nutrition/plan
+/workout
+/workout/[id]
+/progress
+/profile
+/auth
+/auth/callback
+/auth/confirm
+/auth/signout
 ```
 
-Generated types:
+Implemented:
+
+- Persian RTL shell and navigation؛
+- Today/Nutrition/Meal plan؛
+- Workout overview/details؛
+- Progress؛
+- Profile guest/account؛
+- Guest PWA/offline؛
+- Email/password Auth؛
+- PKCE/token callbacks؛
+- server sign-out؛
+- account bootstrap؛
+- Remote Nutrition read/write؛
+- display-name persistence؛
+- local guest fallback.
+
+Deliberately absent:
+
+- sync queue/event bus؛
+- IndexedDB/background sync؛
+- new database table؛
+- SQL Nutrition math؛
+- privileged Browser credential؛
+- Production promotion.
+
+## 3. Final code evidence
 
 ```text
-web/lib/supabase/database.types.ts
+code head: f5f5a6f60c15d09793f9ea416f1fe721b6d9e740
+
+Supabase Identity Schema CI 31032483010 — success
+Supabase Nutrition Persistence CI 31032481404 — success
+Supabase Foundation CI 31032481373 — success
+Vercel Build Contract 31032481435 — success
+Web CI 31032481411 — success
+
+Artifact 8941255661
+Digest sha256:f0e57c1b940f6b17a67e5562814ddd2ff3f70f13a59a51d11e3efdc25a808172
 ```
 
-CI:
+Passed:
 
-```text
-Identity CI 30996283909 — success
-Artifact 8926287946
-Digest sha256:192ae440dfb98fb2329249fb3b1f0c881841b5774d2ec642c63efdd6f34fcfe9
+- strict TypeScript؛
+- Web Adapter `9/9`؛
+- Supabase Application integration `9/9`؛
+- Production build؛
+- responsive browser matrix؛
+- no-config Auth safety؛
+- Guest PWA offline navigation؛
+- private account cache boundary؛
+- secret and duplicate-arithmetic rejection.
 
-Foundation CI 30996283993 — success
-Artifact 8926292359
-Digest sha256:528deb7235762d631751f5a6d8b469fe6a7291e49900b6e2f30c7c4f0ee9b549
+## 4. Runtime limitation
 
-Web CI 30996283899 — success
-Artifact 8926312456
-Digest sha256:60064bab80150fcb72c0952d29a2466625d4b11d1dcd667ee2d628d617deecc2
+Current Auth head is not yet publicly runtime-proven.
 
-Vercel Build Contract 30996283903 — success
-```
+Reasons:
 
-Authority:
+1. Vercel Free-plan deployment quota is exhausted.
+2. Latest Ready Preview predates final Auth head.
+3. Vercel public Supabase Environment values must be configured outside Git.
+4. Supabase allowed Site/Redirect URLs must match the deployed domain.
 
-- `docs/NEOFIT_STAGE4C_IDENTITY_RLS_EVIDENCE.md`
+Do not claim:
 
-Important: Stage 4C is implemented and remotely proven, but it is not merged. Do not call it Integration-complete before PR #33 merges.
+- current Auth head is deployed؛
+- email confirmation has completed on Vercel؛
+- browser meal persistence has survived sign-out/sign-in؛
+- multi-device sync is proven.
 
-## 3. Completed frontend branch
+## 5. Exact continuation point
 
-**Branch:** `revival/full-ui-front`  
-**Draft PR:** #34
-
-Frontend contract is complete and browser-proven:
-
-```text
-runtime head: d36a67b001a280fefbba6c676e69fb4f22ff20b2
-UI Revival CI: 30994858208 — success
-Public Static Export: 30994858276 — success
-Public RawGitHack Preview: 30994858167 — success
-routes: 42/42
-```
-
-It includes:
-
-- 15-step Onboarding and 73-region injury Body Map؛
-- Today, Workout, Nutrition and Progress؛
-- Profile, Settings and Notifications؛
-- local Coach with safety boundary؛
-- PWA/offline/system/accessibility hardening.
-
-This branch is not the current monorepo Web architecture. It must not be merged directly into `web/pwa-foundation`.
-
-Correct later migration:
-
-1. create a focused integration branch from current architecture;
-2. port UI routes/components into `web/`;
-3. retain Supabase SSR and Shared Nutrition Core;
-4. retain local adapter as deterministic demo fixture;
-5. replace adapters incrementally with real persistence;
-6. run the same browser matrix after every slice.
-
-## 4. Stage 4D after Stage 4C merge
-
-Scope:
-
-- `nutrition_goals`؛
-- `nutrition_entries`؛
-- RLS before Application use؛
-- Shared Core output persistence only؛
-- no SQL arithmetic؛
-- preserve missing nutrients and `grams: null`؛
-- `client_mutation_id` idempotency؛
-- generated types؛
-- round-trip and cross-user denial evidence؛
-- Advisors.
-
-Stage 4D must start with red migration/RLS tests before new Remote DDL.
-
-## 5. Locked contracts
-
-- Shared Core remains Nutrition calculation authority.
-- Provider-created Nutrition is rejected.
-- Canonical IDs/fingerprints change only through versioned migration/freeze.
-- Every exposed user-owned table has RLS before use.
-- privileged credentials never enter Browser, logs or artifacts.
-- Schema changes are migration-driven, not Dashboard-only.
-- Server authorization is not based only on `getSession()`.
-- PR #33 and PR #34 remain Draft/unmerged until explicit approval.
-
-## 6. Exact continuation point
-
-1. Synchronize Issue #25 and PR #33 with Stage 4C evidence.
-2. Verify CI on the final documentation head.
-3. Do not merge PR #33 without explicit user approval.
-4. After approval, merge PR #33 and create Stage 4C closure evidence.
-5. Start Stage 4D in a new focused branch with red contracts.
-6. Plan the complete-frontend port separately; no direct merge of PR #34 into the architecture branch.
-7. Keep Stage 2B Issue #16 / PR #28 independent and open.
+1. Recheck PR #36 Head and all CI after documentation commits.
+2. In Vercel Project Settings, configure Preview and Production:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+3. In Supabase Auth URL Configuration, add the selected Vercel Site URL and callback/confirm-compatible Redirect URLs.
+4. Wait for/reset Vercel daily deployment quota.
+5. Deploy the exact latest PR #36 head.
+6. Run a temporary real-account browser scenario:
+   - sign up/confirm or sign in؛
+   - verify bootstrap rows؛
+   - add a meal؛
+   - verify Remote `nutrition_entries`؛
+   - edit display name؛
+   - sign out/sign in؛
+   - verify persistence؛
+   - delete test rows/account.
+7. Record Runtime evidence in `NEOFIT_AUTH_PERSISTENCE_INTEGRATION_EVIDENCE.md`.
+8. Keep PR #36 Draft/unmerged until this evidence is green.
+9. After Runtime proof, continue Workout Player, Onboarding and Coach with the same no-overengineering rule.
