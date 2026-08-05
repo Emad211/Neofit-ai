@@ -110,13 +110,27 @@ try {
   if (progressResult.pathname !== '/progress') throw new Error(`Expected /progress, got ${progressResult.pathname}`);
 
   await page.getByRole('link', { name: 'پروفایل', exact: true }).click();
-  await page.getByRole('heading', { name: 'پروفایل' }).waitFor();
+  await page.getByRole('heading', { name: 'پروفایل من' }).waitFor();
+  await page.getByText('بدون حساب آنلاین', { exact: true }).waitFor();
   await page.waitForFunction(() => window.scrollY === 0);
-  await page.screenshot({ path: path.join(outputDir, 'profile-route-390.png') });
+  await page.screenshot({ path: path.join(outputDir, 'profile-route-390.png'), fullPage: true });
   const profileResult = await inspectLayout(page, 'profile', 390);
   if (profileResult.pathname !== '/profile' || profileResult.scrollY !== 0) {
     throw new Error(`Profile route/reset failed: ${JSON.stringify(profileResult)}`);
   }
+
+  await page.goto(`${baseUrl}/auth`, { waitUntil: 'networkidle' });
+  await page.getByRole('heading', { name: 'حساب نئوفیت', level: 1 }).waitFor();
+  await page.getByText(/متغیرهای عمومی Supabase برای این محیط تعریف نشده‌اند/).waitFor();
+  const loginButton = page.getByRole('button', { name: 'ورود به حساب' });
+  const signupButton = page.getByRole('button', { name: 'ساخت حساب امن' });
+  if (!(await loginButton.isDisabled()) || !(await signupButton.isDisabled())) {
+    throw new Error('No-config Auth controls must stay disabled.');
+  }
+  await page.getByRole('link', { name: 'ادامه در حالت مهمان و دادهٔ محلی' }).waitFor();
+  await page.screenshot({ path: path.join(outputDir, 'auth-no-config-390.png'), fullPage: true });
+  const authResult = await inspectLayout(page, 'auth-no-config', 390);
+  if (authResult.pathname !== '/auth') throw new Error(`Expected /auth, got ${authResult.pathname}`);
 
   await context.close();
   await writeFile(
