@@ -20,12 +20,14 @@ Every primary route must support Persian RTL, mobile/tablet/desktop layouts, dar
 - Phase 2 App Shell, Today, Notification Center, Quick Add and offline/system states are complete.
 - Fixed-width mobile, tablet and desktop gates prove correct navigation, Sidebar collapse and no horizontal overflow.
 - Phase 3 Workout is complete: weekly plan, Day Details, persistent Player, guides, alternatives, completion feedback, History, previous performance, personal records and route states.
-- Phase 4 Nutrition is complete at frontend level: daily/weekly plan, calorie and target-macro summary, details/recipe, alternatives, persistent logging, History, portion-aware trusted-food logging, recent/saved foods, Shopping List, hydration, safe supplement empty state and route states.
-- The final Nutrition gate proves planned-meal logging, refresh persistence, daily History, target variance, Shopping List, trusted portion scaling, saved/recent food behavior and water persistence.
-- Actual meal macro totals remain intentionally unavailable until Nutrition Core supplies trusted sourced values.
-- Progress, Profile/Settings, Coach and final PWA/accessibility hardening remain incomplete.
+- Phase 4 Nutrition is complete: daily/weekly plan, calorie and target-macro summary, details/recipe, alternatives, persistent logging, History, portion-aware trusted-food logging, recent/saved foods, Shopping List, hydration, safe supplement empty state and route states.
+- Phase 5 Progress now has proven overview metrics, weight and waist trends, Workout-volume trend, daily-calorie analytics, derived achievements and route loading/error states.
+- Progress derives its views directly from `WeightLog`, `WorkoutLog`, `MealLog`, `neofit:measurement-logs:v1`, `neofit:workout-records:v1` and the existing Onboarding result. No Progress store was introduced.
+- The Progress browser gate seeds existing record formats and proves current weight, target delta, waist, weekly sessions, four charts and earned/locked milestones.
+- Exercise-specific progression, progress photos and period reports remain before Phase 5 closure.
+- Profile/Settings, Coach and final PWA/accessibility hardening remain incomplete.
 
-Remaining estimate before backend integration: **14–28 development hours**, or **24–45 hours including full responsive/accessibility/browser QA**.
+Remaining estimate before backend integration: **10–22 development hours**, or **18–38 hours including full responsive/accessibility/browser QA**.
 
 ## 3. Delivery order
 
@@ -132,16 +134,27 @@ Actual meal macro totals must come from Nutrition Core; the frontend does not in
 
 ### 4.7 Progress — active
 
-Target contract:
+Implemented:
 
-- Current weight, target delta, adherence and workout count
-- Weight and body-measurement trends using existing local records
-- Training duration, volume, PRs and exercise progression
-- Calories and meal-adherence analytics from existing MealLog records
-- Progress photos with private local preview
-- Milestones, streaks and achievements
-- Weekly/monthly summary cards
-- Progress-specific loading, empty and recoverable error states
+- Current weight, weight change and target delta
+- Latest waist and measurement count
+- Workout sessions and volume for the current week
+- Personal-record and achievement summary
+- Weight trend chart
+- Waist trend chart
+- Recent Workout-volume chart
+- Daily logged-calorie chart with optional target comparison
+- Average calories across logged days
+- Six derived milestones with earned/locked state
+- Route loading, meaningful empty charts and recoverable error state
+- Focused browser evidence with existing persisted record formats
+
+Remaining:
+
+- Exercise-specific load/volume progression using existing Workout logs
+- Weekly/monthly report summary
+- Private local progress-photo preview and comparison
+- Final Progress responsive review after the remaining sections
 
 ### 4.8 NeoFit Coach
 
@@ -177,16 +190,16 @@ Remaining:
 
 ### 4.11 System states
 
-Implemented for Onboarding, Today, Shell, Workout and Nutrition:
+Implemented for Onboarding, Today, Shell, Workout, Nutrition and current Progress:
 
 - Route-specific loading
 - Recoverable error/retry
-- Empty states where applicable
+- Meaningful empty states
 - Offline feedback through the shared shell
 
 Remaining globally:
 
-- Progress, Profile and Coach states
+- Profile and Coach states
 - Maintenance and expired session
 - PWA install and Service Worker integration
 - Final keyboard and screen-reader audit
@@ -234,12 +247,15 @@ Remaining globally:
 
 ### Phase 5 — Progress and reports
 
-- [ ] Overview metrics from existing local data
-- [ ] Weight and body-measurement trends
-- [ ] Training volume, PR and exercise progression
-- [ ] Nutrition analytics
-- [ ] Photos, milestones and reports
-- [ ] Progress states and browser gate
+- [x] Overview metrics from existing local data
+- [x] Weight and body-measurement trends
+- [x] Workout-volume and personal-record summary
+- [x] Nutrition calorie analytics
+- [x] Derived milestones and achievements
+- [x] Progress loading/error/empty states and browser gate
+- [ ] Exercise-specific progression
+- [ ] Progress photos
+- [ ] Weekly/monthly reports and final responsive review
 
 ### Phase 6 — Profile, Notifications and Coach
 
@@ -256,10 +272,10 @@ Remaining globally:
 
 ## 6. Exact continuation point
 
-1. Read the current Progress placeholder and existing chart components before changing them.
-2. Reuse only existing data sources: `WeightLog`, `WorkoutLog`, `MealLog`, `neofit:measurement-logs:v1` and `neofit:workout-records:v1`.
-3. Build the first Progress slice as overview metrics plus weight, waist and training-volume trends.
-4. Do not introduce a Progress store; derive the view from existing records.
-5. Add one focused browser gate that seeds existing records and verifies the rendered summaries.
-6. Add Progress loading/error/empty states before moving to photos and milestone polish.
+1. Add one simple exercise-progression view by grouping existing `WorkoutLog.exercises` entries; do not create an analytics service.
+2. Add a concise weekly/monthly report summary derived from the same existing logs.
+3. Add private local progress-photo preview only after those data summaries are proven.
+4. Keep photos local and explicitly private until a real storage contract exists.
+5. Extend the current Progress gate rather than creating another overlapping test workflow.
+6. Close Phase 5 only after the remaining sections pass responsive/browser QA.
 7. Keep completed Onboarding, Shell, Workout and Nutrition contracts unchanged except for verified defects.
