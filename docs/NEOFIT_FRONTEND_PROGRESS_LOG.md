@@ -132,7 +132,7 @@ The fixed-width responsive gate proves at tablet `820×1180` and desktop `1440×
 ### Completion, pain and records
 
 - Removed automatic completion save.
-- Added explicit duration, total volume, set and exercise summary.
+- Added duration, total volume, set and exercise summary.
 - Added RPE, pain scale and notes.
 - Added pain warning for moderate/high pain.
 - Cleared the active session only after successful save.
@@ -145,16 +145,9 @@ The fixed-width responsive gate proves at tablet `820×1180` and desktop `1440×
 
 - Added `/workout/history`.
 - Added session count, total duration, total volume, average RPE and PR count.
-- Added recent-record cards.
-- Added per-session PR badges.
-- Added exercise list, completed sets, pain/RPE, notes and repeat-session action.
+- Added recent-record cards and per-session PR badges.
+- Added exercises, completed sets, pain/RPE, notes and repeat-session action.
 - Preserved the empty state.
-
-### Workout system states
-
-- Added route-level Workout skeleton.
-- Added recoverable Workout error state with retry and return-to-Today.
-- Kept existing no-program and no-history empty states.
 
 ### Final validation evidence
 
@@ -181,15 +174,73 @@ page errors: 0
 console errors: 0
 ```
 
-Long-term exercise charts and filtering are intentionally assigned to Phase 5 Progress instead of expanding Workout with duplicated analytics.
+---
+
+## 2026-08-05 — Phase 4 Nutrition first slice completed
+
+### Nutrition landing and weekly hierarchy
+
+- Replaced the remaining English Nutrition landing copy with a complete Persian RTL hierarchy.
+- Added daily calorie target, logged calories, remaining calories and planned-meal adherence.
+- Read protein, carbohydrate and fat targets from the completed Onboarding result stored at `neofit:initial-plan:v1`.
+- Kept trusted target macros separate from actual meal macros; actual totals remain unavailable until Nutrition Core supplies sourced values.
+- Added a clear weekly section with Persian dates, Today badge, completed-meal ratio and daily total.
+
+### Meal interactions
+
+- Fully localized Meal Cards.
+- Kept Details, Alternative and Log as explicit actions.
+- Removed the dead Remove-from-plan action rather than leaving a non-functional control.
+- Kept ingredient quantities and the local recipe/preparation sheet.
+- Kept equivalent local meal replacement.
+- Persisted planned-meal completion through the existing User Data context.
+- Preserved Food Library, Camera preview and Shopping List rather than rebuilding them.
+
+### Nutrition states
+
+- Added Nutrition route skeleton.
+- Added recoverable Nutrition error state with retry and return-to-Today.
+- Preserved the no-plan empty state.
+
+### Browser evidence
+
+The focused Nutrition gate proves:
+
+- Persian landing and Today hierarchy;
+- meal details and ingredient list;
+- recipe/preparation content;
+- local alternative selection;
+- meal logging to the existing context;
+- logged-meal state after refresh;
+- Shopping List access;
+- zero page errors and zero console errors.
+
+```text
+validated head: 20d9d9a7889724549d327dc84cc37f625cfa35aa
+UI Revival CI: 30980094016 — success
+artifact: 8919837110
+artifact digest: sha256:0376bb3821df441b1f52950168533257ae7106efb4598e25cef7c664946e1610
+TypeScript: success
+production build: success
+mobile route and interaction gate: success
+tablet responsive gate: success
+desktop responsive gate: success
+Workout regression gate: success
+Nutrition landing/details/recipe: success
+Nutrition alternative selection: success
+Nutrition logging and refresh persistence: success
+Shopping List access: success
+page errors: 0
+console errors: 0
+```
 
 ### Exact continuation point
 
-Phase 3 is closed. Continue with Phase 4 Nutrition:
+Phase 4 remains active:
 
-1. Read the existing Nutrition page and components before editing.
-2. Preserve current meal-plan, details, alternatives, library and shopping-list work.
-3. Normalize the Nutrition landing page into clear daily totals, remaining calories/macros and daily/weekly hierarchy.
-4. Complete details, alternatives/recipes and logging without creating a second state layer.
-5. Add Nutrition-specific loading/error/empty states and one focused browser flow.
-6. Do not modify completed Onboarding, Shell or Workout contracts except for verified defects.
+1. Add `/nutrition/history` from the existing `MealLog` list; do not introduce another store.
+2. Group logs by day and show logged calories, target, variance and individual meals.
+3. Add a direct History entry to the Nutrition landing page.
+4. Add one minimal portion-aware logging path by reusing Food Library results.
+5. Add recent/saved foods only through the current persistence contract.
+6. Extend the focused Nutrition gate and decide whether Phase 4 can close.
