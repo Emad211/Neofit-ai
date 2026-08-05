@@ -28,8 +28,7 @@ try {
   report.checks.landing = { landingVisible, summaryVisible, todayBadgeVisible, passed: landingPassed };
   if (!landingPassed) report.passed = false;
 
-  const firstDetails = page.getByRole("button", { name: "جزئیات", exact: true }).first();
-  await firstDetails.click();
+  await page.getByRole("button", { name: "جزئیات", exact: true }).first().click();
   const ingredientsVisible = await page.getByText("مواد لازم", { exact: true }).isVisible().catch(() => false);
   const recipeVisible = await page.getByText("راهنمای آماده‌سازی", { exact: true }).isVisible().catch(() => false);
   const detailsPassed = ingredientsVisible && recipeVisible;
@@ -42,32 +41,33 @@ try {
   const alternativeVisible = await page.getByText("جایگزین وعده", { exact: true }).isVisible().catch(() => false);
   await page.getByRole("button", { name: "انتخاب این وعده" }).click();
   await page.waitForTimeout(300);
-  const alternativePassed = alternativeVisible;
-  report.checks.alternative = { alternativeVisible, passed: alternativePassed };
-  if (!alternativePassed) report.passed = false;
+  report.checks.alternative = { alternativeVisible, passed: alternativeVisible };
+  if (!alternativeVisible) report.passed = false;
 
   const before = await page.evaluate(() => {
     const state = JSON.parse(window.localStorage.getItem("neofit-ui-demo-v3") || "{}");
-    return { logs: (state.logs || []).length, loggedMeals: (state.loggedMealsState || []).length };
+    return { loggedMeals: (state.loggedMealsState || []).length };
   });
-  const logButton = page.getByRole("button", { name: "ثبت وعده", exact: true }).first();
-  await logButton.click();
+  await page.getByRole("button", { name: "ثبت وعده", exact: true }).first().click();
   await page.waitForTimeout(400);
   const after = await page.evaluate(() => {
     const state = JSON.parse(window.localStorage.getItem("neofit-ui-demo-v3") || "{}");
     const meals = (state.logs || []).filter((log) => log.logType === "meal");
-    return { logs: (state.logs || []).length, loggedMeals: (state.loggedMealsState || []).length, mealCalories: meals[0]?.calories || 0 };
+    return { loggedMeals: (state.loggedMealsState || []).length, mealCalories: meals[0]?.calories || 0 };
   });
-  const logPassed = after.logs === before.logs + 1 && after.loggedMeals >= before.loggedMeals && after.mealCalories > 0;
+  const logPassed = after.loggedMeals === before.loggedMeals + 1 && after.mealCalories > 0;
   report.checks.logging = { before, after, passed: logPassed };
   if (!logPassed) report.passed = false;
 
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForTimeout(700);
   const persistedBadgeVisible = await page.getByText("ثبت‌شده", { exact: true }).first().isVisible().catch(() => false);
-  const persistedCaloriesVisible = await page.getByText("ثبت‌شده", { exact: true }).first().isVisible().catch(() => false);
-  const persistencePassed = persistedBadgeVisible && persistedCaloriesVisible;
-  report.checks.persistence = { persistedBadgeVisible, persistedCaloriesVisible, passed: persistencePassed };
+  const persistedState = await page.evaluate(() => {
+    const state = JSON.parse(window.localStorage.getItem("neofit-ui-demo-v3") || "{}");
+    return { loggedMeals: (state.loggedMealsState || []).length };
+  });
+  const persistencePassed = persistedBadgeVisible && persistedState.loggedMeals === after.loggedMeals;
+  report.checks.persistence = { persistedBadgeVisible, persistedState, passed: persistencePassed };
   if (!persistencePassed) report.passed = false;
 
   await page.getByRole("button", { name: "لیست خرید" }).click();
