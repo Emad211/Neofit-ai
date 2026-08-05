@@ -31,7 +31,7 @@ await fs.mkdir(artifactDir, { recursive: true });
 
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: "fa-IR" });
-const report = { baseUrl, routes: [], passed: true };
+const report = { baseUrl, routes: [], flows: [], passed: true };
 
 try {
   for (const route of routes) {
@@ -76,6 +76,31 @@ try {
     if (!passed) report.passed = false;
     await page.close();
   }
+
+  const flowPage = await context.newPage();
+  await flowPage.goto(`${baseUrl}/onboarding/basics`, { waitUntil: "domcontentloaded" });
+  await flowPage.evaluate(() => {
+    window.localStorage.setItem("neofit:onboarding-draft:v1", JSON.stringify({
+      basics: { name: "کاربر تست", age: 31, gender: "male", heightCm: 181, weightKg: 84, country: "ایران", unitSystem: "metric" },
+      completedSteps: [1, 2],
+    }));
+  });
+  await flowPage.reload({ waitUntil: "domcontentloaded" });
+  await flowPage.waitForTimeout(500);
+  const resumedName = await flowPage.locator("#name").inputValue();
+  const resumedAge = await flowPage.locator("#age").inputValue();
+  const resumePassed = resumedName === "کاربر تست" && resumedAge === "31";
+  report.flows.push({ name: "draft-resume-after-refresh", resumedName, resumedAge, passed: resumePassed });
+  if (!resumePassed) report.passed = false;
+
+  await flowPage.goto(`${baseUrl}/onboarding/medical`, { waitUntil: "domcontentloaded" });
+  await flowPage.waitForTimeout(500);
+  await flowPage.getByRole("button", { name: /ادامه به آسیب‌ها/ }).click();
+  const validationVisible = await flowPage.getByText("برای ادامه، این تأیید ضروری است.", { exact: true }).isVisible().catch(() => false);
+  report.flows.push({ name: "medical-safety-validation", validationVisible, passed: validationVisible });
+  if (!validationVisible) report.passed = false;
+  await flowPage.screenshot({ path: `${artifactDir}/onboarding-validation.png`, fullPage: true });
+  await flowPage.close();
 } finally {
   await browser.close();
 }
