@@ -90,6 +90,35 @@ try {
   const shoppingTitleVisible = await page.getByText("لیست خرید برنامه", { exact: true }).isVisible().catch(() => false);
   report.checks.shoppingList = { shoppingTitleVisible, passed: shoppingTitleVisible };
   if (!shoppingTitleVisible) report.passed = false;
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(200);
+
+  const mealCountBeforeLibrary = await page.evaluate(() => {
+    const state = JSON.parse(window.localStorage.getItem("neofit-ui-demo-v3") || "{}");
+    return (state.logs || []).filter((log) => log.logType === "meal").length;
+  });
+  await page.getByRole("button", { name: /کتابخانه غذا/ }).click();
+  await page.getByLabel("نام غذا").fill("عدسی");
+  await page.getByRole("button", { name: "جست‌وجوی غذا" }).click();
+  await page.locator("#food-portion").selectOption("0.5");
+  await page.locator("#food-meal-type").selectOption("lunch");
+  const scaledCaloriesVisible = await page.getByText("۱۴۵", { exact: true }).first().isVisible().catch(() => false);
+  await page.getByRole("button", { name: "ثبت این مقدار" }).click();
+  await page.waitForTimeout(350);
+  const libraryResult = await page.evaluate(() => {
+    const state = JSON.parse(window.localStorage.getItem("neofit-ui-demo-v3") || "{}");
+    const meals = (state.logs || []).filter((log) => log.logType === "meal");
+    const logged = meals.find((meal) => meal.description.includes("عدسی") && meal.description.includes("نیم سهم"));
+    return {
+      mealCount: meals.length,
+      calories: logged?.calories || 0,
+      mealType: logged?.mealType || "",
+      description: logged?.description || "",
+    };
+  });
+  const libraryPassed = scaledCaloriesVisible && libraryResult.mealCount === mealCountBeforeLibrary + 1 && libraryResult.calories === 145 && libraryResult.mealType === "lunch";
+  report.checks.portionAwareLibraryLogging = { mealCountBeforeLibrary, scaledCaloriesVisible, libraryResult, passed: libraryPassed };
+  if (!libraryPassed) report.passed = false;
 
   await page.screenshot({ path: `${artifactDir}/nutrition-flow.png`, fullPage: true });
 } finally {
