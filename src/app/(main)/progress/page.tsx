@@ -7,13 +7,16 @@ import {
   BarChart3,
   CalendarCheck,
   CalendarRange,
+  ImagePlus,
   CheckCircle2,
   Dumbbell,
   Flame,
   LockKeyhole,
   Ruler,
   Scale,
+  ShieldCheck,
   Target,
+  Trash2,
   Trophy,
   TrendingUp,
 } from "lucide-react";
@@ -28,6 +31,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUserData, type MealLog, type WeightLog, type WorkoutLog } from "@/context/user-profile-context";
 import { useWorkoutRecords } from "@/hooks/use-workout-records";
@@ -48,6 +52,13 @@ type ExerciseTrend = {
   id: string;
   name: string;
   points: ExercisePoint[];
+};
+
+type ProgressPhoto = {
+  id: string;
+  name: string;
+  url: string;
+  addedAt: string;
 };
 
 function labelDate(value: string) {
@@ -150,6 +161,9 @@ export default function ProgressPage() {
   const [targetWeight, setTargetWeight] = React.useState<number | null>(null);
   const [calorieTarget, setCalorieTarget] = React.useState<number | null>(null);
   const [selectedExerciseId, setSelectedExerciseId] = React.useState("");
+  const [progressPhotos, setProgressPhotos] = React.useState<ProgressPhoto[]>([]);
+  const [photoError, setPhotoError] = React.useState("");
+  const photoUrls = React.useRef(new Set<string>());
 
   React.useEffect(() => {
     const load = () => {
@@ -167,6 +181,52 @@ export default function ProgressPage() {
     window.addEventListener("neofit:measurement-logs-changed", load);
     return () => window.removeEventListener("neofit:measurement-logs-changed", load);
   }, []);
+
+  React.useEffect(() => {
+    return () => {
+      photoUrls.current.forEach((url) => URL.revokeObjectURL(url));
+      photoUrls.current.clear();
+    };
+  }, []);
+
+  const addProgressPhoto = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setPhotoError("فقط فایل تصویری انتخاب کن.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError("حجم عکس باید کمتر از ۵ مگابایت باشد.");
+      return;
+    }
+
+    setPhotoError("");
+    const url = URL.createObjectURL(file);
+    photoUrls.current.add(url);
+    const photo: ProgressPhoto = {
+      id: `progress-photo-${Date.now()}`,
+      name: file.name,
+      url,
+      addedAt: new Date().toISOString(),
+    };
+
+    setProgressPhotos((current) => {
+      const next = [photo, ...current];
+      next.slice(4).forEach((item) => {
+        URL.revokeObjectURL(item.url);
+        photoUrls.current.delete(item.url);
+      });
+      return next.slice(0, 4);
+    });
+  };
+
+  const removeProgressPhoto = (photo: ProgressPhoto) => {
+    URL.revokeObjectURL(photo.url);
+    photoUrls.current.delete(photo.url);
+    setProgressPhotos((current) => current.filter((item) => item.id !== photo.id));
+  };
 
   const weightLogs = combinedLogs
     .filter((log): log is WeightLog => log.logType === "weight")
@@ -364,6 +424,39 @@ export default function ProgressPage() {
             <ReportCard title="گزارش ۷ روز اخیر" subtitle="تمرین، تغذیه و وزن هفتهٔ جاری" report={weekReport} />
             <ReportCard title="گزارش ۳۰ روز اخیر" subtitle="نمای کلی یک ماه گذشته" report={monthReport} />
           </div>
+        </section>
+
+        <section className="mt-7">
+          <Card>
+            <CardHeader className="gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div><CardTitle className="flex items-center gap-2"><ImagePlus className="h-5 w-5 text-primary" />عکس‌های پیشرفت</CardTitle><p className="mt-1 text-sm text-muted-foreground">برای مقایسهٔ ظاهری، حداکثر چهار عکس را فقط در همین نشست مرورگر پیش‌نمایش کن.</p></div>
+              <label className="inline-flex cursor-pointer items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition hover:bg-primary/90">
+                <ImagePlus className="ml-2 h-4 w-4" />انتخاب عکس
+                <input aria-label="انتخاب عکس پیشرفت" type="file" accept="image/*" className="sr-only" onChange={addProgressPhoto} />
+              </label>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4 flex items-start gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm leading-7 text-muted-foreground">
+                <ShieldCheck className="mt-1 h-5 w-5 shrink-0 text-emerald-600" />
+                <p><strong className="text-foreground">خصوصی و موقت:</strong> عکس‌ها به سرور ارسال نمی‌شوند و با بستن یا تازه‌سازی این صفحه حذف می‌شوند.</p>
+              </div>
+              {photoError ? <p role="alert" className="mb-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-bold text-destructive">{photoError}</p> : null}
+              {progressPhotos.length ? (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="پیش‌نمایش عکس‌های پیشرفت">
+                  {progressPhotos.map((photo) => (
+                    <div key={photo.id} className="overflow-hidden rounded-2xl border bg-card">
+                      <img src={photo.url} alt={`عکس پیشرفت ${photo.name}`} className="aspect-[3/4] w-full object-cover" />
+                      <div className="p-3">
+                        <p className="truncate text-xs font-bold">{photo.name}</p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">{labelDate(photo.addedAt)}</p>
+                        <Button type="button" variant="ghost" size="sm" className="mt-2 w-full text-destructive hover:text-destructive" aria-label={`حذف عکس پیشرفت ${photo.name}`} onClick={() => removeProgressPhoto(photo)}><Trash2 className="ml-1 h-4 w-4" />حذف</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : <div className="grid min-h-44 place-items-center rounded-2xl border border-dashed bg-muted/20 px-6 text-center"><div><ImagePlus className="mx-auto h-10 w-10 text-muted-foreground" /><p className="mt-3 font-black">هنوز عکس پیشرفتی انتخاب نشده است</p><p className="mt-2 text-sm text-muted-foreground">این بخش فقط پیش‌نمایش محلی است و چیزی آپلود نمی‌شود.</p></div></div>}
+            </CardContent>
+          </Card>
         </section>
 
         <section className="mt-7">
