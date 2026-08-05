@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { format } from "date-fns";
-import { Activity, ArrowRight, CalendarDays, Dumbbell, Gauge, History, RefreshCw, Weight } from "lucide-react";
+import { Activity, ArrowRight, CalendarDays, Dumbbell, Gauge, History, RefreshCw, Trophy, Weight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useUserData, type WorkoutLog } from "@/context/user-profile-context";
+import { useWorkoutRecords } from "@/hooks/use-workout-records";
+import { formatRecord } from "@/lib/workout-records";
 
 export default function WorkoutHistoryPage() {
   const { combinedLogs } = useUserData();
+  const { records } = useWorkoutRecords();
   const workouts = combinedLogs
     .filter((log): log is WorkoutLog => log.logType === "workout")
     .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
@@ -18,6 +21,7 @@ export default function WorkoutHistoryPage() {
   const averageRpe = workouts.filter((workout) => workout.rpe).length
     ? workouts.filter((workout) => workout.rpe).reduce((sum, workout) => sum + (workout.rpe || 0), 0) / workouts.filter((workout) => workout.rpe).length
     : 0;
+  const recentRecords = records.slice(0, 6);
 
   return (
     <main dir="rtl" className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background p-4 sm:p-6 lg:p-8">
@@ -27,14 +31,24 @@ export default function WorkoutHistoryPage() {
           <Button asChild variant="outline"><Link href="/workout"><ArrowRight className="ml-2 h-4 w-4" />بازگشت به برنامه</Link></Button>
         </header>
 
-        <section className="mb-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <section className="mb-7 grid grid-cols-2 gap-3 lg:grid-cols-5">
           {[
             { title: "جلسه‌های ثبت‌شده", value: workouts.length.toLocaleString("fa-IR"), icon: CalendarDays },
             { title: "زمان تمرین", value: `${totalMinutes.toLocaleString("fa-IR")} دقیقه`, icon: Activity },
             { title: "حجم کل", value: `${Math.round(totalVolume).toLocaleString("fa-IR")} کیلوگرم`, icon: Weight },
             { title: "میانگین سختی", value: averageRpe ? `${averageRpe.toFixed(1)} از ۱۰` : "—", icon: Gauge },
+            { title: "رکوردهای شخصی", value: records.length.toLocaleString("fa-IR"), icon: Trophy },
           ].map((item) => <Card key={item.title}><CardContent className="p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs text-muted-foreground">{item.title}</p><p className="mt-2 text-xl font-black">{item.value}</p></div><div className="rounded-2xl bg-primary/10 p-2.5 text-primary"><item.icon className="h-5 w-5" /></div></div></CardContent></Card>)}
         </section>
+
+        {recentRecords.length ? (
+          <Card className="mb-6 border-amber-500/30 bg-amber-500/5">
+            <CardHeader><CardTitle className="flex items-center gap-2"><Trophy className="h-5 w-5 text-amber-600" />رکوردهای اخیر</CardTitle></CardHeader>
+            <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {recentRecords.map((record) => <div key={record.id} className="rounded-2xl border bg-background/85 p-4"><p className="font-black">{record.exerciseName}</p><p className="mt-1 text-sm text-muted-foreground">{formatRecord(record)}</p><p className="mt-2 text-xs text-muted-foreground">{new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium" }).format(new Date(record.achievedAt))}</p></div>)}
+            </CardContent>
+          </Card>
+        ) : null}
 
         {workouts.length === 0 ? (
           <Card className="border-dashed"><CardContent className="p-10 text-center"><Dumbbell className="mx-auto h-11 w-11 text-muted-foreground" /><h2 className="mt-4 text-xl font-black">هنوز تمرینی ثبت نشده است</h2><p className="mt-2 text-sm text-muted-foreground">پس از پایان اولین جلسه، خلاصه کامل آن اینجا ظاهر می‌شود.</p><Button asChild className="mt-5"><Link href="/workout">شروع اولین جلسه</Link></Button></CardContent></Card>
@@ -42,9 +56,10 @@ export default function WorkoutHistoryPage() {
           <div className="space-y-4">
             {workouts.map((workout) => {
               const validSets = workout.exercises.reduce((sum, exercise) => sum + exercise.logs.filter((log) => log.reps && log.weight).length, 0);
+              const sessionRecords = records.filter((record) => record.workoutId === workout.workoutId && Math.abs(new Date(record.achievedAt).getTime() - new Date(workout.loggedAt).getTime()) < 15_000);
               return (
                 <Card key={workout.id}>
-                  <CardHeader className="pb-3"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs text-muted-foreground">{new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(workout.loggedAt))}</p><CardTitle className="mt-1 text-xl">{workout.workoutName}</CardTitle></div><Button asChild variant="outline" size="sm"><Link href={`/workout-player/${workout.workoutId}`}><RefreshCw className="ml-2 h-4 w-4" />تکرار جلسه</Link></Button></div></CardHeader>
+                  <CardHeader className="pb-3"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><p className="text-xs text-muted-foreground">{new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(workout.loggedAt))}</p>{sessionRecords.length ? <Badge className="bg-amber-500 text-black hover:bg-amber-500"><Trophy className="ml-1 h-3.5 w-3.5" />{sessionRecords.length.toLocaleString("fa-IR")} رکورد</Badge> : null}</div><CardTitle className="mt-1 text-xl">{workout.workoutName}</CardTitle></div><Button asChild variant="outline" size="sm"><Link href={`/workout-player/${workout.workoutId}`}><RefreshCw className="ml-2 h-4 w-4" />تکرار جلسه</Link></Button></div></CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-3 rounded-2xl bg-muted/35 p-4 sm:grid-cols-4"><div><p className="text-xs text-muted-foreground">مدت</p><p className="mt-1 font-black">{workout.durationMinutes.toLocaleString("fa-IR")} دقیقه</p></div><div><p className="text-xs text-muted-foreground">حجم</p><p className="mt-1 font-black">{Math.round(workout.totalVolume).toLocaleString("fa-IR")} کیلوگرم</p></div><div><p className="text-xs text-muted-foreground">ست‌ها</p><p className="mt-1 font-black">{validSets.toLocaleString("fa-IR")}</p></div><div><p className="text-xs text-muted-foreground">سختی / درد</p><p className="mt-1 font-black">{workout.rpe ?? "—"} / {workout.painScale ?? 0}</p></div></div>
                     <div className="mt-4 space-y-2">{workout.exercises.map((exercise) => <div key={exercise.id} className="flex items-center justify-between gap-3 border-b py-2 text-sm last:border-0"><span className="font-medium">{exercise.name}</span><span className="text-muted-foreground">{exercise.logs.filter((log) => log.reps && log.weight).length.toLocaleString("fa-IR")} ست</span></div>)}</div>
