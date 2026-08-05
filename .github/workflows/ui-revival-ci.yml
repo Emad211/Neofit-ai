@@ -3,17 +3,10 @@ name: UI Revival CI
 on:
   push:
     branches:
-      - revival/firebase-ui-front
+      - 'revival/**'
   pull_request:
     branches:
       - master
-    paths:
-      - 'src/**'
-      - 'scripts/verify-ui-revival.mjs'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'next.config.ts'
-      - '.github/workflows/ui-revival-ci.yml'
   workflow_dispatch:
 
 permissions:
@@ -24,18 +17,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  validate:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
       NEXT_TELEMETRY_DISABLED: '1'
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22.13.1
           cache: npm
@@ -43,7 +34,7 @@ jobs:
       - name: Install
         run: npm ci --no-audit --no-fund
 
-      - name: Verify legacy runtime is absent
+      - name: Verify obsolete runtime is absent
         shell: bash
         run: |
           set -euo pipefail
@@ -51,7 +42,7 @@ jobs:
           from pathlib import Path
           import json
 
-          pieces = [
+          parts = [
               ('fire', 'base'),
               ('fire', 'store'),
               ('gen', 'kit'),
@@ -59,19 +50,26 @@ jobs:
               ('google', 'ai'),
               ('dot', 'prompt'),
           ]
-          forbidden = [''.join(value).lower() for value in pieces]
-          forbidden.extend(['next_public_' + forbidden[0], '@/ai/'])
+          forbidden = [''.join(item).lower() for item in parts]
+          forbidden += ['next_public_' + forbidden[0], '@/ai/']
           failures = []
 
-          scan_roots = [Path('src'), Path('scripts'), Path('package.json'), Path('next.config.ts'), Path('README.md'), Path('REVIVAL.md')]
-          paths = []
-          for root in scan_roots:
+          roots = [
+              Path('src'),
+              Path('scripts'),
+              Path('package.json'),
+              Path('next.config.ts'),
+              Path('README.md'),
+              Path('REVIVAL.md'),
+          ]
+          files = []
+          for root in roots:
               if root.is_file():
-                  paths.append(root)
+                  files.append(root)
               elif root.exists():
-                  paths.extend(path for path in root.rglob('*') if path.is_file())
+                  files.extend(path for path in root.rglob('*') if path.is_file())
 
-          for path in paths:
+          for path in files:
               text = path.read_text(errors='ignore').lower()
               for needle in forbidden:
                   if needle in text:
@@ -79,10 +77,10 @@ jobs:
 
           lock = json.loads(Path('package-lock.json').read_text())
           for key in (lock.get('packages') or {}):
-              normalized = key.lower()
+              lower = key.lower()
               for needle in forbidden[:6]:
-                  if needle in normalized:
-                      failures.append(f'package-lock.json package key: {key}')
+                  if needle in lower:
+                      failures.append(f'package-lock.json: {key}')
 
           if failures:
               print('\n'.join(failures))
@@ -95,7 +93,7 @@ jobs:
       - name: Production build
         run: npm run build
 
-      - name: Verify migrated UI contracts
+      - name: Verify route contracts
         shell: bash
         run: |
           set -euo pipefail
@@ -108,42 +106,42 @@ jobs:
           test -s src/app/'(main)'/progress/page.tsx
           test -s src/app/'(main)'/profile/page.tsx
 
-      - name: Install browser runtime gate
+      - name: Install Chromium
         run: |
           npm install --no-save --no-package-lock playwright@1.61.1
           npx playwright install --with-deps chromium
 
-      - name: Start built application
+      - name: Start application
         shell: bash
         run: |
           set -euo pipefail
-          npm run start -- -H 127.0.0.1 -p 3000 > /tmp/neofit-ui-revival.log 2>&1 &
-          echo $! > /tmp/neofit-ui-revival.pid
+          npm run start -- -H 127.0.0.1 -p 3000 > /tmp/neofit-ui.log 2>&1 &
+          echo $! > /tmp/neofit-ui.pid
           for attempt in $(seq 1 60); do
             if curl --fail --silent http://127.0.0.1:3000/today > /dev/null; then
               exit 0
             fi
             sleep 1
           done
-          cat /tmp/neofit-ui-revival.log
+          cat /tmp/neofit-ui.log
           exit 1
 
-      - name: Verify real browser routes
+      - name: Browser runtime gate
         run: node scripts/verify-ui-revival.mjs
 
-      - name: Upload runtime evidence
+      - name: Upload browser evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: neofit-ui-revival-runtime
+          name: neofit-ui-runtime
           path: artifacts/ui-revival-smoke
           if-no-files-found: warn
           retention-days: 30
 
-      - name: Stop built application
+      - name: Stop application
         if: always()
         shell: bash
         run: |
-          if test -f /tmp/neofit-ui-revival.pid; then
-            kill "$(cat /tmp/neofit-ui-revival.pid)" 2>/dev/null || true
+          if test -f /tmp/neofit-ui.pid; then
+            kill "$(cat /tmp/neofit-ui.pid)" 2>/dev/null || true
           fi
