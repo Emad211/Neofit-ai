@@ -101,10 +101,14 @@ jobs:
           grep -q 'lang="fa" dir="rtl"' src/app/layout.tsx
           grep -q 'demo-emad' src/context/user-profile-context.tsx
           test -s src/app/'(main)'/today/page.tsx
+          test -s src/app/'(main)'/today/loading.tsx
+          test -s src/app/'(main)'/today/error.tsx
+          test -s src/app/'(main)'/notifications/page.tsx
           test -s src/app/'(main)'/nutrition/page.tsx
           test -s src/app/'(main)'/workout/page.tsx
           test -s src/app/'(main)'/progress/page.tsx
           test -s src/app/'(main)'/profile/page.tsx
+          test -s src/app/offline/page.tsx
 
       - name: Install Chromium
         run: |
@@ -126,8 +130,11 @@ jobs:
           cat /tmp/neofit-ui.log
           exit 1
 
-      - name: Browser runtime gate
+      - name: Mobile browser runtime gate
         run: node scripts/verify-ui-revival.mjs
+
+      - name: Tablet and desktop responsive gate
+        run: node scripts/verify-responsive-shell.mjs
 
       - name: Upload browser evidence
         if: always()
