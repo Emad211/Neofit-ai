@@ -6,7 +6,7 @@ const artifactDir = "artifacts/ui-revival-smoke";
 await fs.mkdir(artifactDir, { recursive: true });
 
 const browser = await chromium.launch({ headless: true });
-const context = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: "fa-IR" });
+const context = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: "fa-IR", acceptDownloads: true });
 const page = await context.newPage();
 const pageErrors = [];
 const consoleErrors = [];
@@ -47,6 +47,7 @@ try {
     };
     window.localStorage.setItem("neofit-ui-demo-v3", JSON.stringify(state));
     window.localStorage.removeItem("neofit:notification-preferences:v1");
+    window.localStorage.setItem("neofit:delete-sentinel", "must-disappear");
   });
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForTimeout(900);
@@ -57,8 +58,9 @@ try {
   const trainingVisible = await page.getByText("۶ روز در هفته", { exact: true }).isVisible().catch(() => false);
   const localBoundaryVisible = await page.getByText(/حساب محلی نسخهٔ نمایشی/).isVisible().catch(() => false);
   const notificationSettingsEntryVisible = await page.getByRole("link", { name: /تنظیمات اعلان‌ها/ }).isVisible().catch(() => false);
-  const landingPassed = profileTitleVisible && goalVisible && weightVisible && trainingVisible && localBoundaryVisible && notificationSettingsEntryVisible;
-  report.checks.landing = { profileTitleVisible, goalVisible, weightVisible, trainingVisible, localBoundaryVisible, notificationSettingsEntryVisible, passed: landingPassed };
+  const dataSettingsEntryVisible = await page.getByRole("link", { name: /داده، حریم خصوصی و راهنما/ }).isVisible().catch(() => false);
+  const landingPassed = profileTitleVisible && goalVisible && weightVisible && trainingVisible && localBoundaryVisible && notificationSettingsEntryVisible && dataSettingsEntryVisible;
+  report.checks.landing = { profileTitleVisible, goalVisible, weightVisible, trainingVisible, localBoundaryVisible, notificationSettingsEntryVisible, dataSettingsEntryVisible, passed: landingPassed };
   if (!landingPassed) report.passed = false;
 
   await page.getByRole("link", { name: /مشاهده اطلاعات من/ }).click();
@@ -118,7 +120,6 @@ try {
   await page.waitForTimeout(600);
   const notificationSettingsVisible = await page.getByText("تنظیمات اعلان‌ها", { exact: true }).isVisible().catch(() => false);
   const waterSwitch = page.getByRole("switch", { name: "آب روزانه" });
-  const workoutSwitch = page.getByRole("switch", { name: "تمرین و برنامه" });
   const initialWaterChecked = await waterSwitch.isChecked().catch(() => false);
   await waterSwitch.click();
   await page.waitForFunction(() => {
@@ -137,11 +138,43 @@ try {
 
   await page.goto(`${baseUrl}/profile`, { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(400);
-  const noHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
-  report.checks.mobileLayout = { noHorizontalOverflow, passed: noHorizontalOverflow };
-  if (!noHorizontalOverflow) report.passed = false;
+  await page.getByRole("link", { name: /داده، حریم خصوصی و راهنما/ }).click();
+  await page.waitForTimeout(600);
+  const settingsTitleVisible = await page.getByRole("heading", { name: "تنظیمات، داده و راهنما" }).isVisible().catch(() => false);
+  const privacyBoundaryVisible = await page.getByText("مرز حریم خصوصی نسخهٔ فعلی", { exact: true }).isVisible().catch(() => false);
+  const faqVisible = await page.getByText("راهنما و گزارش مشکل", { exact: true }).isVisible().catch(() => false);
+  const diagnosticsButtonVisible = await page.getByRole("button", { name: "کپی گزارش فنی" }).isVisible().catch(() => false);
 
-  await page.screenshot({ path: `${artifactDir}/profile-flow.png`, fullPage: true });
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "خروجی JSON" }).click();
+  const download = await downloadPromise;
+  const exportFilename = download.suggestedFilename();
+  const exportPath = await download.path();
+  const exportFailure = await download.failure();
+  const exportPassed = exportFilename.startsWith("neofit-local-export-") && exportFilename.endsWith(".json") && Boolean(exportPath) && exportFailure === null;
+
+  await page.getByRole("button", { name: "حذف داده‌های محلی" }).click();
+  const deleteDialogVisible = await page.getByRole("heading", { name: "همه داده‌های محلی حذف شوند؟" }).isVisible().catch(() => false);
+  await page.getByRole("button", { name: "انصراف" }).click();
+  const sentinelSurvivedCancel = await page.evaluate(() => window.localStorage.getItem("neofit:delete-sentinel") === "must-disappear");
+
+  const noHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+  const settingsPassed = settingsTitleVisible && privacyBoundaryVisible && faqVisible && diagnosticsButtonVisible && exportPassed && deleteDialogVisible && sentinelSurvivedCancel && noHorizontalOverflow;
+  report.checks.settingsAndPrivacy = { settingsTitleVisible, privacyBoundaryVisible, faqVisible, diagnosticsButtonVisible, exportFilename, exportPathPresent: Boolean(exportPath), exportFailure, deleteDialogVisible, sentinelSurvivedCancel, noHorizontalOverflow, passed: settingsPassed };
+  if (!settingsPassed) report.passed = false;
+  await page.screenshot({ path: `${artifactDir}/profile-settings.png`, fullPage: true });
+
+  await page.getByRole("button", { name: "حذف داده‌های محلی" }).click();
+  await page.getByRole("button", { name: "تأیید حذف کامل" }).click();
+  await page.waitForURL("**/onboarding", { timeout: 10_000 });
+  const deletionResult = await page.evaluate(() => ({
+    sentinel: window.localStorage.getItem("neofit:delete-sentinel"),
+    profile: window.localStorage.getItem("neofit-ui-demo-v3"),
+    notificationPreferences: window.localStorage.getItem("neofit:notification-preferences:v1"),
+  }));
+  const deletionPassed = deletionResult.sentinel === null && deletionResult.profile === null && deletionResult.notificationPreferences === null;
+  report.checks.localDeletion = { deletionResult, currentPath: new URL(page.url()).pathname, passed: deletionPassed };
+  if (!deletionPassed) report.passed = false;
 } finally {
   await browser.close();
 }
