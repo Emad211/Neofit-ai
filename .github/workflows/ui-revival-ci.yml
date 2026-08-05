@@ -128,6 +128,14 @@ jobs:
           test -s src/app/'(main)'/chat/loading.tsx
           test -s src/app/'(main)'/chat/error.tsx
           test -s src/app/offline/page.tsx
+          test -s src/app/not-found.tsx
+          test -s src/app/global-error.tsx
+          test -s src/app/maintenance/page.tsx
+          test -s src/app/session-expired/page.tsx
+          test -s src/app/manifest.ts
+          test -s src/components/pwa-register.tsx
+          test -s public/sw.js
+          test -s public/neofit-icon.svg
 
       - name: Install Chromium
         run: |
@@ -169,6 +177,9 @@ jobs:
 
       - name: Local Coach guidance and safety gate
         run: node scripts/verify-coach-flow.mjs
+
+      - name: PWA system-state and accessibility gate
+        run: node scripts/verify-hardening-flow.mjs
 
       - name: Upload browser evidence
         if: always()
