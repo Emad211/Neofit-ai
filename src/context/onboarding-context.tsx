@@ -8,7 +8,18 @@ import {
 
 const STORAGE_KEY = "neofit:onboarding-draft:v1";
 
-type SectionName = "goal" | "basics" | "body" | "medical";
+type SectionName =
+  | "goal"
+  | "basics"
+  | "body"
+  | "medical"
+  | "injuries"
+  | "lifestyle"
+  | "nutrition"
+  | "trainingHistory"
+  | "availability"
+  | "preferences"
+  | "confirmation";
 
 type OnboardingContextValue = {
   draft: OnboardingDraft;
@@ -36,6 +47,29 @@ function readStoredDraft(): OnboardingDraft {
       basics: { ...empty.basics, ...parsed.basics },
       body: { ...empty.body, ...parsed.body },
       medical: { ...empty.medical, ...parsed.medical },
+      injuries: { ...empty.injuries, ...parsed.injuries, areas: Array.isArray(parsed.injuries?.areas) ? parsed.injuries.areas : [] },
+      lifestyle: { ...empty.lifestyle, ...parsed.lifestyle },
+      nutrition: {
+        ...empty.nutrition,
+        ...parsed.nutrition,
+        allergies: Array.isArray(parsed.nutrition?.allergies) ? parsed.nutrition.allergies : [],
+        dislikedFoods: Array.isArray(parsed.nutrition?.dislikedFoods) ? parsed.nutrition.dislikedFoods : [],
+        favoriteIranianFoods: Array.isArray(parsed.nutrition?.favoriteIranianFoods) ? parsed.nutrition.favoriteIranianFoods : [],
+      },
+      trainingHistory: {
+        ...empty.trainingHistory,
+        ...parsed.trainingHistory,
+        previousSports: Array.isArray(parsed.trainingHistory?.previousSports) ? parsed.trainingHistory.previousSports : [],
+        familiarMovements: Array.isArray(parsed.trainingHistory?.familiarMovements) ? parsed.trainingHistory.familiarMovements : [],
+      },
+      availability: {
+        ...empty.availability,
+        ...parsed.availability,
+        equipment: Array.isArray(parsed.availability?.equipment) ? parsed.availability.equipment : empty.availability.equipment,
+        preferredDays: Array.isArray(parsed.availability?.preferredDays) ? parsed.availability.preferredDays : [],
+      },
+      preferences: { ...empty.preferences, ...parsed.preferences },
+      confirmation: { ...empty.confirmation, ...parsed.confirmation },
       completedSteps: Array.isArray(parsed.completedSteps) ? parsed.completedSteps : [],
     };
   } catch {
@@ -81,7 +115,11 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   const resetDraft = React.useCallback(() => {
     const empty = createEmptyOnboardingDraft();
     setDraft(empty);
-    if (typeof window !== "undefined") window.localStorage.removeItem(STORAGE_KEY);
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(STORAGE_KEY);
+      window.localStorage.removeItem("neofit:onboarding-completed:v1");
+      window.localStorage.removeItem("neofit:initial-plan:v1");
+    }
   }, []);
 
   const value = React.useMemo(
