@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, Search, Wheat } from "lucide-react";
+import { Bookmark, BookmarkCheck, CheckCircle2, Clock3, Search, Wheat } from "lucide-react";
 import { lookupLocalFood } from "@/lib/neofit-demo-data";
 import type { FoodLookupResult } from "@/lib/neofit-models";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useUserData, type MealLog } from "@/context/user-profile-context";
 import { useToast } from "@/hooks/use-toast";
+
+const SAVED_FOODS_KEY = "neofit:saved-foods:v1";
 
 const Nutrient = ({ label, value, unit }: { label: string; value: number; unit: string }) => (
   <div className="rounded-lg bg-secondary p-3 text-center">
@@ -32,6 +34,10 @@ const mealTypeOptions: Array<{ value: MealLog["mealType"]; label: string }> = [
   { value: "snack", label: "میان‌وعده" },
 ];
 
+function foodNameFromLog(description: string) {
+  return description.split(" — ")[0]?.trim() || description.trim();
+}
+
 export function FoodLibrary() {
   const [query, setQuery] = React.useState("");
   const [result, setResult] = React.useState<FoodLookupResult | null>(null);
@@ -39,8 +45,38 @@ export function FoodLibrary() {
   const [portion, setPortion] = React.useState(1);
   const [mealType, setMealType] = React.useState<MealLog["mealType"]>("snack");
   const [isSaving, setIsSaving] = React.useState(false);
-  const { logMeal } = useUserData();
+  const [savedFoods, setSavedFoods] = React.useState<string[]>([]);
+  const { logMeal, combinedLogs } = useUserData();
   const { toast } = useToast();
+
+  React.useEffect(() => {
+    try {
+      setSavedFoods(JSON.parse(window.localStorage.getItem(SAVED_FOODS_KEY) || "[]"));
+    } catch {
+      setSavedFoods([]);
+    }
+  }, []);
+
+  const recentFoods = React.useMemo(() => {
+    const seen = new Set<string>();
+    return combinedLogs
+      .filter((log): log is MealLog => log.logType === "meal")
+      .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime())
+      .map((log) => foodNameFromLog(log.description))
+      .filter((name) => {
+        if (seen.has(name) || !lookupLocalFood(name)) return false;
+        seen.add(name);
+        return true;
+      })
+      .slice(0, 4);
+  }, [combinedLogs]);
+
+  const chooseFood = (name: string) => {
+    setQuery(name);
+    setResult(lookupLocalFood(name));
+    setSearched(true);
+    setPortion(1);
+  };
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -55,6 +91,15 @@ export function FoodLibrary() {
     carbohydrates: Math.round(result.carbohydrates * portion),
     fat: Math.round(result.fat * portion),
   } : null;
+
+  const toggleSaved = () => {
+    if (!result) return;
+    const next = savedFoods.includes(result.foodName)
+      ? savedFoods.filter((name) => name !== result.foodName)
+      : [result.foodName, ...savedFoods].slice(0, 12);
+    setSavedFoods(next);
+    window.localStorage.setItem(SAVED_FOODS_KEY, JSON.stringify(next));
+  };
 
   const saveFood = async () => {
     if (!result || !scaled || isSaving) return;
@@ -76,8 +121,21 @@ export function FoodLibrary() {
   };
 
   return (
-    <div dir="rtl" className="mx-auto max-w-2xl">
-      <form onSubmit={submit} className="mb-6 flex items-center gap-2">
+    <div dir="rtl" className="mx-auto max-w-2xl space-y-5">
+      {savedFoods.length || recentFoods.length ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl border bg-card p-4">
+            <p className="flex items-center gap-2 text-sm font-black"><BookmarkCheck className="h-4 w-4 text-primary" />غذاهای ذخیره‌شده</p>
+            {savedFoods.length ? <div className="mt-3 flex flex-wrap gap-2">{savedFoods.map((name) => <Button key={name} type="button" size="sm" variant="secondary" onClick={() => chooseFood(name)}>{name}</Button>)}</div> : <p className="mt-2 text-xs text-muted-foreground">هنوز غذایی ذخیره نشده است.</p>}
+          </div>
+          <div className="rounded-2xl border bg-card p-4">
+            <p className="flex items-center gap-2 text-sm font-black"><Clock3 className="h-4 w-4 text-primary" />غذاهای اخیر</p>
+            {recentFoods.length ? <div className="mt-3 flex flex-wrap gap-2">{recentFoods.map((name) => <Button key={name} type="button" size="sm" variant="outline" onClick={() => chooseFood(name)}>{name}</Button>)}</div> : <p className="mt-2 text-xs text-muted-foreground">بعد از ثبت غذاهای کتابخانه، موارد اخیر اینجا می‌آیند.</p>}
+          </div>
+        </div>
+      ) : null}
+
+      <form onSubmit={submit} className="flex items-center gap-2">
         <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="مثلاً قورمه‌سبزی، عدسی یا تخم‌مرغ" aria-label="نام غذا" />
         <Button type="submit" size="icon" aria-label="جست‌وجوی غذا"><Search className="h-5 w-5" /></Button>
       </form>
@@ -85,8 +143,10 @@ export function FoodLibrary() {
       {result && scaled ? (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Wheat className="h-5 w-5 text-primary" />{result.foodName}</CardTitle>
-            <p className="text-sm text-muted-foreground">سهم مرجع: {result.serving} · منبع: {result.source}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div><CardTitle className="flex items-center gap-2"><Wheat className="h-5 w-5 text-primary" />{result.foodName}</CardTitle><p className="mt-2 text-sm text-muted-foreground">سهم مرجع: {result.serving} · منبع: {result.source}</p></div>
+              <Button type="button" size="icon" variant="outline" onClick={toggleSaved} aria-label={savedFoods.includes(result.foodName) ? "حذف از غذاهای ذخیره‌شده" : "ذخیره غذا"}>{savedFoods.includes(result.foodName) ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}</Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
