@@ -19,7 +19,7 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     env:
       NEXT_TELEMETRY_DISABLED: '1'
 
@@ -106,6 +106,8 @@ jobs:
           test -s src/app/'(main)'/notifications/page.tsx
           test -s src/app/'(main)'/nutrition/page.tsx
           test -s src/app/'(main)'/workout/page.tsx
+          test -s src/app/'(main)'/workout/history/page.tsx
+          test -s src/app/'(main)'/workout-player/'[slug]'/page.tsx
           test -s src/app/'(main)'/progress/page.tsx
           test -s src/app/'(main)'/profile/page.tsx
           test -s src/app/offline/page.tsx
@@ -135,6 +137,9 @@ jobs:
 
       - name: Tablet and desktop responsive gate
         run: node scripts/verify-responsive-shell.mjs
+
+      - name: Workout resume and completion gate
+        run: node scripts/verify-workout-flow.mjs
 
       - name: Upload browser evidence
         if: always()
