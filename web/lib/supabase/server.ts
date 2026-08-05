@@ -2,6 +2,7 @@ import 'server-only';
 
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import type { Database } from './database.types';
 import { parseSupabasePublicEnv } from './env';
 
 export async function createClient() {
@@ -12,7 +13,7 @@ export async function createClient() {
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   });
 
-  return createServerClient(url, publishableKey, {
+  return createServerClient<Database>(url, publishableKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
