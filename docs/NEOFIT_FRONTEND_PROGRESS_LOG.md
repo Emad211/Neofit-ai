@@ -33,7 +33,7 @@ public RawGitHack export: 30969428940 — success
 - Restored the old application’s complete front/back SVG body selector instead of replacing it with a simplified list.
 - Preserved the two full anatomical views and direct per-region selection behavior.
 - Added Persian labels without changing the underlying body paths.
-- Added status for current/past injury, mild/moderate/severe severity, painful/forbidden movements and per-area notes.
+- Added current/past injury state, mild/moderate/severe severity, painful/forbidden movements and notes.
 - Added no-injury path, current pain flag, 0–10 pain scale, general limitations and safety warning.
 - Browser evidence proves 73 interactive SVG body regions; clicking a region changes `aria-pressed` and creates the selected-area editor.
 
@@ -46,17 +46,8 @@ public RawGitHack export: 30969428940 — success
 - Step 11: intensity, cardio, training style, variety, nutrition strictness, coaching tone and reminders.
 - Step 12: complete grouped review with edit links.
 - Step 13: staged analysis with visible progress and rationale.
-- Step 14: explainable calorie/macros/training result and health cautions.
+- Step 14: explainable calories/macros/training result and health cautions.
 - Step 15: start date, reminder configuration, final consent, local plan persistence and activation into Today.
-
-### Data and architecture
-
-- Expanded the backend-neutral persistent draft through all 15 steps.
-- Added migration-safe merging for older partial drafts.
-- Added deterministic initial-plan derivation for frontend completion.
-- Kept Firebase/Genkit absent and did not reintroduce external keys.
-- Expanded Chromium coverage to every onboarding route.
-- Added draft-resume-after-refresh and medical-safety-validation flows.
 
 ### Validation evidence
 
@@ -67,8 +58,6 @@ artifact: 8916466012
 artifact digest: sha256:b3208cf01b6d70309512814ab473944a9c9fc87beeee50df5eee654db2f3a871
 TypeScript: success
 production build: success
-route contracts: success
-Chromium route gate: success
 onboarding routes: 15/15 success
 injury body regions: 73
 injury interaction: success
@@ -78,84 +67,113 @@ medical acknowledgement validation: success
 
 ---
 
-## 2026-08-05 — Phase 2 functional shell and Today slice completed
+## 2026-08-05 — Phase 2 application shell and Today completed
 
 ### Application shell
 
-- Normalized main navigation order to Today, Workout, Nutrition, Progress and Profile.
-- Added a shared Persian RTL mobile header and sticky bottom navigation.
-- Added a shared desktop header and collapsible right sidebar.
+- Normalized navigation to Today, Workout, Nutrition, Progress and Profile.
+- Added Persian RTL mobile header, sticky bottom navigation, desktop header and collapsible right Sidebar.
 - Added direct NeoFit Coach and Notification Center entries.
-- Replaced the static notification marker with a shared persistent unread counter.
-- Added a connection-state banner that appears when the browser goes offline without blocking local logging.
-- Added a stable `/offline` destination for the later PWA/Service Worker phase.
+- Added shared persistent unread counter.
+- Added actual offline-state banner and stable `/offline` route.
+- Corrected the Sidebar trigger to expose a real accessible role/name.
 
 ### Notification Center
 
-- Added `/notifications` inside the authenticated application shell.
-- Added workout, meal, water and report notification cards.
-- Added read/unread state, mark-all-read and delete actions.
-- Added one shared local notification store and cross-component update events.
-- Persisted notice state across refresh.
+- Added `/notifications` inside the main shell.
+- Added workout, meal, water and report notices.
+- Added persistent read/unread, mark-all-read and delete.
+- Added one shared local notification store with cross-component updates.
 
 ### Today dashboard
 
-- Rebuilt the page hierarchy as readiness → adherence → workout/meal → daily metrics → progress rings → timeline.
-- Added readiness score based on current sleep, steps and profile stress.
-- Added daily adherence summary.
-- Added today’s workout card with direct Workout Player action.
-- Added next-meal card with direct Nutrition action.
-- Added persistent water, steps and sleep cards with inline controls.
-- Added current weight summary and Progress link.
-- Localized and clarified calorie, protein and workout progress rings.
-- Preserved and integrated the historical daily timeline/feed.
-- Fully localized the daily motivation card.
+- Rebuilt the hierarchy as readiness → adherence → workout/meal → daily metrics → progress → timeline.
+- Added readiness from sleep, steps and profile stress.
+- Added today workout and next-meal actions.
+- Added persistent water, steps and sleep controls.
+- Added current weight and body-measurement logging.
+- Localized progress rings, motivation and Quick Add.
+- Added Today skeleton, recoverable error, empty timeline and offline behavior.
 
-### Quick Add and local records
+### Phase 2 responsive closure
 
-- Localized meal, activity and weight logging actions.
-- Added one-glass water logging with persistent daily metrics.
-- Added body-measurement logging for waist, hip, neck and body-fat estimate.
-- Added local measurement history contract for the later Progress phase.
+The fixed-width responsive gate now proves at tablet `820×1180` and desktop `1440×1000`:
 
-### System states
+- Sidebar visibility;
+- expanded-to-collapsed interaction;
+- desktop header;
+- mobile bottom navigation absence;
+- Today readiness and Notification entry visibility;
+- no horizontal overflow on Today or Notification Center.
 
-- Added route-specific Today skeleton.
-- Added recoverable Today error state with retry.
-- Preserved empty timeline behavior.
-- Added offline banner and standalone offline page.
+Phase 2 was closed only after this gate passed.
 
-### Browser evidence
+---
 
-The Chromium gate now checks:
+## 2026-08-05 — Phase 3 Workout functional slice delivered
 
-- every main and onboarding route plus `/notifications` and `/offline`;
-- full legacy injury body-map interaction;
-- onboarding refresh resume and medical acknowledgement validation;
-- Coach and Notification header entries;
-- water Quick Add persistence;
-- body-measurement persistence;
-- offline banner after an actual browser offline event;
-- notification read-state persistence after refresh.
+### Weekly Workout overview
+
+- Rebuilt the Workout landing page in Persian.
+- Added weekly session, minutes, estimated calories and completion summaries.
+- Added active-session resume banner.
+- Added direct Workout History entry.
+
+### Persistent Workout Player
+
+- Added Local Storage session persistence under `neofit:active-workout:<id>`.
+- Persisted current exercise, current set, weight/reps logs and start time.
+- Restored the exact session after refresh.
+- Added visible save/resume status.
+- Changed exit behavior to preserve-and-return-later or explicit discard.
+- Preserved Rest Timer, exercise guide and alternative-exercise flow.
+
+### Completion and feedback
+
+- Removed automatic save on completion.
+- Added explicit duration, total volume, set and exercise summary.
+- Added RPE, pain scale and note capture.
+- Added a pain warning for moderate/high pain.
+- Persisted completion feedback in Workout logs.
+- Cleared the active session only after successful save.
+
+### Workout History
+
+- Added `/workout/history`.
+- Added session count, total duration, total volume and average RPE.
+- Added per-session exercises, completed sets, pain/RPE and notes.
+- Added repeat-session action.
+- Added empty state.
+
+### Complete validation evidence
 
 ```text
-validated functional head: fc41bb860aa3895b92e2dd34c485f43623367962
-UI Revival CI: 30972241043 — success
-artifact: 8916986681
-artifact digest: sha256:43158f1ef670a88e2511816db213c2b35518ee746feb35354b947015900da6ef
+validated head: 0ecac9e5bc13aa494df89bd48404421c8e647f43
+UI Revival CI: 30974219952 — success
+artifact: 8917688456
+artifact digest: sha256:aa2bf2bf7ffb3898c36d59bab8d9035b68ea083f918fb86cae9d55c69806335c
 TypeScript: success
 production build: success
 route contracts: success
-Chromium route and interaction gate: success
-Public Static Export: 30972241028 — success
-Public RawGitHack Preview: 30972241044 — success
+mobile route and interaction gate: success
+tablet responsive gate: success
+desktop responsive gate: success
+Workout resume after refresh: success
+exercise guide: success
+alternative exercise selection: success
+Workout completion feedback: success
+active-session cleanup after save: success
+Workout history rendering: success
 ```
 
 ### Exact continuation point
 
-Phase 2 is functionally complete on mobile and the shared responsive implementation is present. Before formally closing Phase 2:
+Phase 2 is closed. Phase 3 remains active:
 
-1. Run explicit tablet and desktop visual evidence at fixed breakpoints and correct any spacing/overflow defects.
-2. Verify sidebar collapse, desktop header and absence of mobile bottom navigation at desktop width.
-3. Review Today hierarchy once at desktop width and update this log with screenshots/evidence.
-4. Then begin Phase 3 from the existing Workout plan and Workout Player: day details, player state, completion summary, alternatives and history.
+1. Build `/workout/[id]` day details with warm-up, ordered movements, sets/reps/rest and safety notes.
+2. Route weekly cards and Today through day details before explicit start.
+3. Show previous performance hints in the Player.
+4. Detect and persist personal records during completion.
+5. Add PR badges and exercise progression summaries to History.
+6. Add Workout loading, empty and recoverable error states.
+7. Expand the Workout browser gate for Day Details and PR detection, then close Phase 3.
