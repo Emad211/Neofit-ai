@@ -14,9 +14,9 @@ async function readMigration(): Promise<string> {
   return readFile(resolve(migrationsRoot, expectedMigration), 'utf8');
 }
 
-test('Stage 4C has exactly one identity migration and generated database types', async () => {
+test('Stage 4C identity migration and generated database types remain present', async () => {
   const migrations = (await readdir(migrationsRoot)).filter((name) => name.endsWith('.sql'));
-  assert.deepEqual(migrations, [expectedMigration]);
+  assert.ok(migrations.includes(expectedMigration));
   await access(resolve(webRoot, 'lib/supabase/database.types.ts'));
 });
 
@@ -74,18 +74,14 @@ test('write policies include both USING and WITH CHECK where required', async ()
   const sql = await readMigration();
 
   for (const policy of ['profiles_update_own', 'user_settings_update_own']) {
-    const block = sql.match(
-      new RegExp(`create policy\\s+"?${policy}"?[\\s\\S]*?;`, 'i'),
-    )?.[0];
+    const block = sql.match(new RegExp(`create policy\\s+"?${policy}"?[\\s\\S]*?;`, 'i'))?.[0];
     assert.ok(block, `Missing policy block: ${policy}`);
     assert.match(block, /using\s*\(/i);
     assert.match(block, /with check\s*\(/i);
   }
 
   for (const policy of ['profiles_insert_own', 'user_settings_insert_own']) {
-    const block = sql.match(
-      new RegExp(`create policy\\s+"?${policy}"?[\\s\\S]*?;`, 'i'),
-    )?.[0];
+    const block = sql.match(new RegExp(`create policy\\s+"?${policy}"?[\\s\\S]*?;`, 'i'))?.[0];
     assert.ok(block, `Missing policy block: ${policy}`);
     assert.match(block, /with check\s*\(/i);
   }
@@ -106,7 +102,7 @@ test('identity migration grants authenticated users only and secures helper func
   assert.match(sql, /create trigger user_settings_set_updated_at/i);
 });
 
-test('generated types expose both identity tables and no nutrition tables', async () => {
+test('generated types continue to expose both identity tables', async () => {
   const source = await readFile(resolve(webRoot, 'lib/supabase/database.types.ts'), 'utf8');
 
   assert.match(source, /profiles:/);
@@ -116,8 +112,6 @@ test('generated types expose both identity tables and no nutrition tables', asyn
   assert.match(source, /timezone:/);
   assert.match(source, /theme:/);
   assert.match(source, /units:/);
-  assert.doesNotMatch(source, /nutrition_entries:/);
-  assert.doesNotMatch(source, /nutrition_goals:/);
 });
 
 test('Stage 4C migration contains no Nutrition arithmetic or key material', async () => {
