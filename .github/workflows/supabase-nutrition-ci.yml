@@ -44,8 +44,10 @@ jobs:
         with:
           node-version: 22.13.1
           cache: npm
+          cache-dependency-path: web/package.json
 
-      - name: Install
+      - name: Install Web dependencies
+        working-directory: web
         run: npm install --no-audit --no-fund
 
       - name: Nutrition persistence contract
@@ -79,7 +81,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p web/artifacts/supabase-nutrition
-          printf '{\n  "commit": "%s",\n  "tables": ["nutrition_goals", "nutrition_entries"],\n  "sharedCoreJson": true,\n  "sqlNutritionArithmetic": false,\n  "rlsRequired": true\n}\n' \
+          printf '{\n  "commit": "%s",\n  "migration": "20260805132201_nutrition_persistence.sql",\n  "tables": ["nutrition_goals", "nutrition_entries"],\n  "sharedCoreJson": true,\n  "sqlNutritionArithmetic": false,\n  "rlsRequired": true\n}\n' \
             "$GITHUB_SHA" > web/artifacts/supabase-nutrition/metadata.json
 
       - name: Upload evidence
