@@ -8,6 +8,8 @@ on:
     paths:
       - package.json
       - vercel.json
+      - .vercel-deploy
+      - scripts/vercel-ignore.mjs
       - web/**
       - packages/nutrition-core/**
       - .github/workflows/vercel-build-contract.yml
@@ -17,6 +19,8 @@ on:
     paths:
       - package.json
       - vercel.json
+      - .vercel-deploy
+      - scripts/vercel-ignore.mjs
       - web/**
       - packages/nutrition-core/**
       - .github/workflows/vercel-build-contract.yml
@@ -53,15 +57,22 @@ jobs:
           set -euo pipefail
           test -s package.json
           test -s vercel.json
+          test -s .vercel-deploy
+          test -s scripts/vercel-ignore.mjs
+          node --check scripts/vercel-ignore.mjs
           grep -q '"workspaces"' package.json
           grep -q '"web"' package.json
           grep -q '"packages/nutrition-core"' package.json
           grep -q '"next": "16.2.12"' package.json
           grep -q '"build:web": "npm --workspace @neofit/web run build"' package.json
           grep -q '"framework": "nextjs"' vercel.json
+          grep -q '"ignoreCommand": "node scripts/vercel-ignore.mjs"' vercel.json
           grep -q '"installCommand": "npm install --no-audit --no-fund"' vercel.json
           grep -q '"buildCommand": "npm run build:web"' vercel.json
           grep -q '"outputDirectory": "web/.next"' vercel.json
+          grep -q "CANONICAL_PREVIEW_BRANCH = 'web/full-frontend-integration'" scripts/vercel-ignore.mjs
+          grep -q "process.env.VERCEL_ENV !== 'preview'" scripts/vercel-ignore.mjs
+          grep -q "DEPLOY_MARKER = '.vercel-deploy'" scripts/vercel-ignore.mjs
 
       - name: Install workspace dependencies
         run: npm install --no-audit --no-fund

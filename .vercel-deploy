@@ -1,0 +1,6 @@
+NeoFit canonical Preview release marker
+release: auth-persistence-consolidation-v1
+source-head-before-marker: 590e1185a39b9109f501ba9cedd63ae7bca5c947
+project: neofit-ai
+branch: web/full-frontend-integration
+environment: preview-only
