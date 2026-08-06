@@ -18,21 +18,21 @@ Three temporary diagnostic projects were created while isolating earlier routing
 
 They are not NeoFit product deployments and are safe to delete. `neofit-ai` is the only canonical application project.
 
-## Deployment quota contract
+## Deployment control
 
-Automatic Vercel deployments are disabled for development branches. `vercel.json` allows Git deployments only from:
+The only full Preview build is allowed from `vercel/preview`. Development commits are stopped by the Ignored Build Step before installation and compilation.
 
-```text
-vercel/preview
-```
+Observed Vercel behavior: a skipped development commit still appears as a `CANCELED` deployment record. The guard therefore prevents unnecessary build/compute, but it does not claim to eliminate every deployment record or every possible plan-specific deployment count.
 
-The development branch can receive code and documentation commits without creating Vercel deployment records. When a complete batch is green, the release branch is updated once to the exact tested commit. That explicit update creates one Preview deployment.
+To minimize usage and noise:
 
-`scripts/vercel-ignore.mjs` is the second boundary:
+- one complete product slice = one batched development commit;
+- no per-file commits;
+- reference docs travel in the same batch;
+- one release-branch update after green CI;
+- no Production deployment.
 
-1. Production is skipped.
-2. Branches other than `vercel/preview` are skipped.
-3. The explicit Preview release branch is allowed to build.
+A zero-record workflow would require a Dashboard-managed Git disconnect plus manual Deploy Hook. The current connector cannot create or manage that setting.
 
 ## Proven release
 

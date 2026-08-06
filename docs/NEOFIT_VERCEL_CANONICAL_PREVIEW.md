@@ -1,7 +1,7 @@
 # NeoFit Canonical Vercel Preview
 
 **Date:** 2026-08-06  
-**Status:** one canonical Preview project and one dedicated release branch are active  
+**Status:** one canonical project and one dedicated Preview release branch are active  
 **Production promotion:** prohibited until explicit approval
 
 ## Canonical project
@@ -16,7 +16,7 @@ Preview release branch: vercel/preview
 Stable release alias: neofit-ai-git-vercel-preview-emads-projects-41cb6447.vercel.app
 ```
 
-All NeoFit Preview deployments remain inside this one Git-connected project. Generic `deploy_to_vercel` is prohibited because an unlinked working directory can create a separate project.
+All NeoFit Preview builds remain inside this one Git-connected project. Generic `deploy_to_vercel` is prohibited because an unlinked working directory can create a separate project.
 
 ## Disposable diagnostic projects
 
@@ -36,20 +36,21 @@ Contains one disposable static probe
 
 They are safe to delete and have no dependency from NeoFit code, Supabase or the canonical project.
 
-## Quota-safe release flow
+## Quota-conscious release flow
 
-`vercel.json` disables automatic Vercel deployments for every branch except `vercel/preview`. Normal code and documentation commits on `web/full-frontend-integration` therefore do not create Preview builds or canceled deployment records.
+The dedicated release branch ensures the only full install/build/deploy occurs on `vercel/preview`. Development commits are rejected by `scripts/vercel-ignore.mjs` before dependency installation and Next.js build.
 
-Release flow:
+Important observed boundary: Vercel still creates a short-lived `CANCELED` deployment record before the Ignored Build Step runs. Therefore this setup is proven to eliminate unnecessary builds and compute, but it does not claim that Vercel creates zero deployment records or that canceled records never affect a plan-specific deployment counter.
 
-1. develop and document on `web/full-frontend-integration`;
-2. run all GitHub CI;
-3. choose the exact tested commit;
-4. update `vercel/preview` once;
-5. verify the single resulting Preview;
-6. do not promote to Production.
+Operational mitigation:
 
-`scripts/vercel-ignore.mjs` additionally rejects Production and any non-release branch.
+1. all files for a product slice are batched into one Git commit;
+2. no per-file commits are used;
+3. documentation is included in the same batch;
+4. `vercel/preview` is updated once only after all GitHub CI is green;
+5. Production is never targeted.
+
+Eliminating even canceled records would require a Dashboard-level Git disconnect/manual Deploy Hook workflow, which the connected Vercel tool does not expose.
 
 ## Canonical release evidence
 
@@ -64,7 +65,7 @@ alias: neofit-ai-git-vercel-preview-emads-projects-41cb6447.vercel.app
 
 Build evidence:
 
-- cloned the dedicated `vercel/preview` branch;
+- cloned `vercel/preview`;
 - release-branch safety command explicitly allowed the build;
 - workspace installation completed;
 - Next.js `16.2.12` detected;
@@ -85,7 +86,7 @@ NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 ```
 
-Then configure the stable release alias in Supabase Auth Site URL and Redirect URLs. Environment changes require exactly one later update of `vercel/preview`.
+Then configure the stable release alias in Supabase Auth Site URL and Redirect URLs. Environment changes require exactly one later release update.
 
 ## Deletion procedure
 
@@ -101,5 +102,5 @@ Never delete `neofit-ai`.
 
 1. Delete the three disposable probes in the Dashboard.
 2. Configure the two public Supabase Preview variables and Auth redirects.
-3. Continue development only on `web/full-frontend-integration` with no automatic Vercel deployment.
+3. Continue development in complete batched commits on `web/full-frontend-integration`.
 4. After the next complete slice and green CI, update `vercel/preview` once for the real account/persistence round trip.
