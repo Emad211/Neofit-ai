@@ -1,75 +1,65 @@
 # پلن مادر NeoFit
 
 **وضعیت:** مرجع واحد و اجباری پروژه  
-**آخرین بازبینی:** ۵ اوت ۲۰۲۶ — Schema، RLS و Nutrition persistence ادغام شده‌اند؛ Auth/Application wiring روی PR #36 سبز است و منتظر Runtime عمومی است  
-**Integration branch:** `web/pwa-foundation`  
-**Active product branch/PR:** `web/full-frontend-integration` / Draft PR #36  
-**Frontend reference branch/PR:** `revival/full-ui-front` / Draft PR #34  
+**آخرین بازبینی:** ۶ اوت ۲۰۲۶  
+**Architecture base:** `web/pwa-foundation`  
+**Active branch/PR:** `web/full-frontend-integration` / Draft PR #36  
+**Frontend reference:** `revival/full-ui-front` / Draft PR #34  
 **Supabase project:** `rjwrobltmjodfarnltal`
 
-## ۱. پروتکل اجباری ادامه
+## ۱. پروتکل ادامه
 
 پیش از هر تغییر:
 
-1. این فایل، `NEOFIT_PROGRESS_LOG.md` و `DEVELOPMENT_HANDOFF.md` خوانده شوند.
-2. Evidence مرحلهٔ فعال و وضعیت واقعی Branch/HEAD/PR/CI بررسی شود.
-3. Supabase و Vercel از Connector زنده بررسی شوند.
-4. فقط Exact continuation point اجرا شود.
+1. Master Plan، Progress Log، Active Evidence و Handoff خوانده شوند.
+2. Branch/HEAD/PR/CI و وضعیت زندهٔ Vercel/Supabase بررسی شوند.
+3. فقط Exact continuation point اجرا شود.
+4. یک Product slice کامل در یک Commit تجمیعی نوشته شود.
+5. `vercel/preview` فقط پس از سبزشدن کامل CI و فقط یک بار به‌روزرسانی شود.
 
-در پایان هر برش:
-
-- Master Plan، Progress Log، Handoff و Evidence فعال همگام شوند.
-- Commit، Run، Artifact، Failure و Correction ثبت شوند.
-- هیچ Auth، Deployment، Persistence یا Runtime بدون شاهد اعلام نشود.
+هیچ Auth، Runtime، Persistence، Deployment یا Production بدون شاهد واقعی اعلام نمی‌شود.
 
 ## ۲. قراردادهای قفل‌شده
 
-- Web: Next.js App Router + strict TypeScript در `web/`.
+- Web: Next.js App Router + strict TypeScript.
 - Nutrition authority: فقط `packages/nutrition-core`.
 - Data authority: IFKB + USDA SR Legacy + FNDDS.
 - Missing nutrient صفر نیست؛ وزن نامعلوم `null` است.
 - SQL و React Nutrition arithmetic را تکرار نمی‌کنند.
-- AI/Vision عدد تغذیه‌ای اختراع یا اصلاح نمی‌کند.
-- Schema authority فقط `supabase/migrations/*.sql` است.
-- هر Table کاربرمحور پیش از استفاده RLS دارد.
-- Browser فقط Publishable configuration دریافت می‌کند؛ privileged credential ممنوع است.
+- Schema فقط با Migration نسخه‌دار تغییر می‌کند.
+- تمام Tableهای کاربرمحور RLS مالک‌محور دارند.
+- Browser فقط Publishable configuration دریافت می‌کند.
 - Identity محافظت‌شده از `getClaims()` استفاده می‌کند.
 - HTML حساب وارد Cache عمومی PWA نمی‌شود.
-- فرانت قدیمی مستقیماً Merge نمی‌شود؛ UI داخل معماری فعلی Port می‌شود.
+- PR #34 فقط مرجع UX است و مستقیماً Merge نمی‌شود.
+- Production promotion تا تأیید صریح ممنوع است.
 
 ## ۳. وضعیت مراحل
 
-| Stage | وضعیت | Evidence |
-|---|---|---|
-| 0 Pivot | complete | PR #12 |
-| 1 Persian RTL UX | complete/accepted | PR #13 |
-| 2A PWA Foundation | complete | PR #15 |
-| 2B Vercel HTTPS | parallel/open | Issue #16 / PR #28 |
-| 3 Nutrition Core/Web parity | complete | Core `52/52`، Web `9/9` |
-| 4A Supabase Project | complete | Project `rjwrobltmjodfarnltal` |
-| 4B SSR/Auth foundation | complete/merged | PR #30 |
-| 4C Identity schema/RLS | complete/merged | PR #33، merge `c7de309…` |
-| 4D Nutrition persistence | complete/merged | PR #35، merge `9424176…` |
-| Frontend reference | complete/separate | PR #34، 42 routes |
-| Frontend architecture integration | active، major routes complete | Draft PR #36 |
-| Auth + Application persistence wiring | implemented، all CI green | head `f5f5a6…`، Auth Evidence |
-| Public Auth runtime | not yet proven | نیازمند Vercel Env + deploy جدید |
-| Workout Player/Onboarding/Coach port | remaining | PR #36 ادامه می‌یابد |
+| بخش | وضعیت |
+|---|---|
+| Pivot به Web/PWA | complete |
+| Persian RTL UX foundation | complete/accepted |
+| PWA foundation | complete |
+| Shared Nutrition Core/Web parity | complete |
+| Supabase project + SSR/Auth foundation | complete/merged |
+| Identity schema/RLS | complete/merged |
+| Nutrition persistence | complete/merged |
+| Full local frontend reference | complete/separate on PR #34 |
+| Current architecture UI integration | active on PR #36 |
+| Auth/Application wiring | implemented and CI-proven |
+| Auth/Guest state hardening | active slice |
+| Public real-account runtime | not yet proven |
+| Full Workout Player/Onboarding/Coach port | remaining |
+| Production | prohibited/pending |
 
-## ۴. Supabase Project و Schema
+## ۴. Supabase contract
 
 ```text
 project: neofit
 ref: rjwrobltmjodfarnltal
 region: eu-central-1
 status: ACTIVE_HEALTHY
-```
-
-Migrations:
-
-```text
-20260804232149_identity_foundation.sql
-20260805132201_nutrition_persistence.sql
 ```
 
 Tables:
@@ -81,40 +71,23 @@ nutrition_goals
 nutrition_entries
 ```
 
-همهٔ Tableها:
-
-- owner-linked به `auth.users`؛
-- دارای RLS و own-row policies؛
-- بدون grant برای `anon`/`PUBLIC`؛
-- دارای generated TypeScript types؛
-- بدون SQL Nutrition calculation.
-
-Stage 4C merge:
+Live reconstruction on ۶ اوت ۲۰۲۶ showed:
 
 ```text
-PR #33
-merge: c7de309fd3f62fe6e58f1e603c3c9745a3013dcd
+auth users: 0
+profiles: 0
+user_settings: 0
+nutrition_goals: 0
+nutrition_entries: 0
+security advisors: 0
+performance advisors: 0
 ```
 
-Stage 4D merge:
+این وضعیت ثابت می‌کند هنوز real-account Runtime اجرا نشده است.
 
-```text
-PR #35
-merge: 942417641f69eeb1c6990a321efef0d9a277a994
-```
+## ۵. Current frontend boundary
 
-Runtime RLS، `grams: null`، missing nutrients، duplicate mutation denial و cross-user denial قبلاً اثبات شده‌اند. Security و Performance Advisors هنگام DDL هر دو صفر بودند.
-
-## ۵. فرانت جاری داخل معماری فعلی
-
-Branch/PR:
-
-```text
-web/full-frontend-integration
-Draft PR #36
-```
-
-Routeهای کاربردی فعلی:
+Connected routes:
 
 ```text
 /today
@@ -130,95 +103,80 @@ Routeهای کاربردی فعلی:
 /auth/signout
 ```
 
-پیاده‌سازی فعلی:
+واقعی و متصل:
 
-- پوسته فارسی RTL و Bottom Navigation؛
-- Today و ثبت وعده؛
-- جست‌وجو و Portion بر پایه Shared Core؛
-- برنامه غذایی؛
-- Workout overview/details؛
-- Progress سبک و بدون Chart library؛
-- Profile مهمان/حساب؛
-- PWA و Offline guest shell؛
-- Auth email/password؛
-- PKCE و token confirmation callbacks؛
-- sign-out سروری؛
-- bootstrap `profiles`، `user_settings` و `nutrition_goals`؛
-- read/write واقعی `nutrition_entries` برای حساب؛
-- local Browser fallback برای مهمان؛
-- rollback فوری ثبت غذا هنگام Remote failure؛
-- بدون Queue، Event Bus، IndexedDB یا Background Sync.
+- email/password Auth؛
+- PKCE و token confirmation؛
+- server sign-out؛
+- verified claims؛
+- bootstrap سه ردیف اولیه؛
+- read/write `nutrition_entries`؛
+- display-name persistence؛
+- Guest local diary؛
+- optimistic insert و rollback؛
+- private/no-store account HTML؛
+- Shared Core calculations.
 
-## ۶. Auth و Persistence Evidence
+هنوز Demo یا ناقص:
 
-Validated code head:
+- Catalog فعلی فقط Fixtureهای محدود وب است؛
+- Workout Player فعال نیست؛
+- Progress و برخی Profile metrics نمایشی‌اند؛
+- Onboarding، Body Map، Coach، Notification Center و routeهای کامل PR #34 Port نشده‌اند.
+
+## ۶. Hardening slice فعلی
+
+هدف این برش رفع سه Failure قطعی بدون Schema یا UI redesign است:
+
+1. **Non-destructive bootstrap**  
+   `profiles`، `user_settings` و `nutrition_goals` فقط در صورت فقدان ساخته می‌شوند. Login مجدد دادهٔ موجود را Reset نمی‌کند.
+
+2. **Timezone-correct diary date**  
+   تاریخ UTC slicing حذف و Timezone پروفایل/`Asia/Tehran` استفاده می‌شود. تاریخ هنگام Focus و Visibility change به‌روز می‌شود.
+
+3. **Validated local persistence**  
+   Storage نسخه‌دار، Empty diary معتبر، Legacy migration، محدودیت تعداد/طول و بازسازی Macro/Meal label از Core اضافه می‌شود.
+
+هیچ Table، Queue، Event Bus، IndexedDB یا Background Sync اضافه نمی‌شود.
+
+## ۷. Vercel contract
+
+Canonical project:
 
 ```text
-f5f5a6f60c15d09793f9ea416f1fe721b6d9e740
+neofit-ai
+prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG
 ```
 
-CI:
+Canonical release:
 
 ```text
-Identity CI 31032483010 — success
-Nutrition Persistence CI 31032481404 — success
-Foundation CI 31032481373 — success
-Vercel Build Contract 31032481435 — success
-Web CI 31032481411 — success
-Artifact 8941255661
-Digest sha256:f0e57c1b940f6b17a67e5562814ddd2ff3f70f13a59a51d11e3efdc25a808172
+branch: vercel/preview
+release commit: 32eeb867742e949d7d6e9d5a3002bcff02d11fd1
+deployment: dpl_2VARJ7A2EyEtUkU9aKU2DeTAxEHy
+state: READY
+alias: neofit-ai-git-vercel-preview-emads-projects-41cb6447.vercel.app
 ```
 
-Passed:
+سه Probe هنوز باید دستی حذف شوند. Project Dashboard همچنین باید روی Next.js و Node 22 همگام شود؛ قرارداد Git در حال حاضر Next.js `16.2.12` و Node `22.x` است.
 
-- strict TypeScript؛
-- Web Adapter `9/9`؛
-- Supabase Application integration `9/9`؛
-- Production build؛
-- Browser responsive matrix؛
-- no-config Auth safety؛
-- PWA install/control/offline guest navigation؛
-- عدم Cache شدن Auth و private/no-store HTML؛
-- عدم privileged key یا Nutrition arithmetic تکراری.
+Environment کامل Preview:
 
-Authority:
-
-- `docs/NEOFIT_AUTH_PERSISTENCE_INTEGRATION_EVIDENCE.md`
-
-## ۷. Claim boundaries
-
-ثابت شده است:
-
-- Stage 4C و 4D Merge شده‌اند؛
-- Schema/RLS/Types و Remote denialها صحیح‌اند؛
-- Auth UI/Actions/Callbacks/Sign-out پیاده‌سازی و تست قراردادی شده‌اند؛
-- حساب به چهار Table موجود وصل شده است؛
-- Guest mode بدون Env سالم و آفلاین است؛
-- Current code head تمام CIها را پاس می‌کند.
-
-هنوز ثابت نشده است:
-
-- sign-up/confirmation واقعی روی Current Vercel head؛
-- Cookie round-trip واقعی روی Vercel؛
-- ثبت یک وعده از مرورگر و مشاهدهٔ آن در Remote با Session واقعی؛
-- باقی‌ماندن داده بعد از sign-out/sign-in و دستگاه دوم؛
-- Production promotion؛
-- Workout Player، Onboarding کامل و Coach در معماری جاری.
-
-مانع فعلی Runtime: Vercel Free-plan daily deployment limit. آخرین Ready Preview قبل از Current Auth head ساخته شده است.
+```text
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+NEXT_PUBLIC_APP_URL=<stable Preview alias>
+```
 
 ## ۸. Exact continuation point
 
-1. مقادیر عمومی Supabase در Vercel Preview/Production تنظیم شوند، بدون ثبت مقدار در Git/docs.
-2. Site URL و Redirect URLهای Supabase برای دامنه‌های انتخاب‌شده تنظیم شوند.
-3. Current code head بعد از Reset سهمیه Vercel Deploy شود.
-4. یک حساب موقت واقعی ساخته و مسیر زیر Browser-test شود:
-   - signup/confirm یا signin؛
-   - bootstrap سه ردیف اولیه؛
-   - ثبت وعده در `nutrition_entries`؛
-   - ویرایش نام؛
-   - sign-out/sign-in و persistence؛
-   - cleanup کامل.
-5. Runtime Evidence ثبت شود.
-6. سپس PR #36 با برش‌های باقی‌ماندهٔ Workout Player، Onboarding و Coach ادامه یابد.
-7. بدون Evidence Runtime، PR #36 Merge یا Production نشود.
+1. Hardening slice فعلی TypeScript، unit/contract tests، build و browser gates را پاس کند.
+2. CI evidence در PR #36 ثبت شود.
+3. مالک پروژه سه Probe را در Vercel Dashboard حذف کند.
+4. مالک پروژه Framework/Node و سه Environment را روی `neofit-ai` تنظیم کند.
+5. Supabase Site URL و Redirect URLها روی Alias ثابت تنظیم شوند.
+6. فقط یک‌بار `vercel/preview` به HEAD سبز به‌روزرسانی شود.
+7. temporary account scenario اجرا شود: signup/confirm، bootstrap، add meal، edit name، sign-out/in، persistence.
+8. rows و account آزمایشی پاک و Runtime Evidence ثبت شوند.
+9. سپس Workout Player، Onboarding/Body Map و Coach به‌ترتیب Port شوند.
+10. بدون Runtime proof، PR #36 Merge یا Production نشود.

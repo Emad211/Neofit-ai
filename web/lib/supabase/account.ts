@@ -2,20 +2,20 @@ import 'server-only';
 
 import {
   NUTRIENT_KEYS,
-  NUTRITION_CORE_SCHEMA_VERSION,
   type MealType,
   type NutritionEstimate,
   type NutritionGoals,
   type NutritionRange,
   type NutritionVector,
 } from '@neofit/nutrition-core';
-import type { SupabaseClient } from '@supabase/supabase-js';
 import { dailyTargets } from '@/data/fixtures';
 import {
   mealTypeLabelFa,
   webMacrosFromEstimate,
   type WebDiaryEntry,
 } from '@/lib/nutrition-adapter';
+import { normalizeTimeZone } from '@/lib/local-date';
+import { bootstrapAccount, safeDisplayName } from './bootstrap';
 import { createClient } from './server';
 import type { Database, Json, Tables } from './database.types';
 import { hasSupabasePublicEnv } from './env';
@@ -24,6 +24,7 @@ export interface NeoFitAccount {
   readonly id: string;
   readonly email: string;
   readonly displayName: string;
+  readonly timezone: string;
 }
 
 export interface AccountSnapshot {
@@ -35,10 +36,6 @@ export interface AccountSnapshot {
 }
 
 type NutritionEntryRow = Tables<'nutrition_entries'>;
-
-function asJson(value: unknown): Json {
-  return JSON.parse(JSON.stringify(value)) as Json;
-}
 
 function isJsonObject(value: Json | undefined): value is { [key: string]: Json | undefined } {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -132,38 +129,7 @@ function parseGoals(value: Json | null | undefined): NutritionGoals | null {
   return daily ? { daily } : null;
 }
 
-function safeDisplayName(value: string | null | undefined, email: string): string {
-  const candidate = value?.trim() || email.split('@')[0] || 'کاربر نئوفیت';
-  return candidate.slice(0, 80);
-}
-
-export async function bootstrapAccount(
-  supabase: SupabaseClient<Database>,
-  input: { readonly userId: string; readonly email: string; readonly displayName?: string | null },
-): Promise<void> {
-  const displayName = safeDisplayName(input.displayName, input.email);
-  const [profile, settings, goals] = await Promise.all([
-    supabase.from('profiles').upsert({
-      id: input.userId,
-      display_name: displayName,
-      locale: 'fa',
-      timezone: 'Asia/Tehran',
-    }),
-    supabase.from('user_settings').upsert({
-      user_id: input.userId,
-      theme: 'system',
-      units: 'metric',
-    }),
-    supabase.from('nutrition_goals').upsert({
-      user_id: input.userId,
-      daily: asJson(dailyTargets.daily),
-      core_schema_version: NUTRITION_CORE_SCHEMA_VERSION,
-    }),
-  ]);
-
-  const error = profile.error ?? settings.error ?? goals.error;
-  if (error) throw error;
-}
+export { bootstrapAccount } from './bootstrap';
 
 export async function loadAccountSnapshot(): Promise<AccountSnapshot> {
   if (!hasSupabasePublicEnv()) {
@@ -182,7 +148,7 @@ export async function loadAccountSnapshot(): Promise<AccountSnapshot> {
     const emailClaim = claimsData?.claims?.email;
     const email = typeof emailClaim === 'string' ? emailClaim : '';
     const [profileResult, goalsResult, entriesResult] = await Promise.all([
-      supabase.from('profiles').select('display_name').eq('id', userId).maybeSingle(),
+      supabase.from('profiles').select('display_name, timezone').eq('id', userId).maybeSingle(),
       supabase.from('nutrition_goals').select('daily').eq('user_id', userId).maybeSingle(),
       supabase
         .from('nutrition_entries')
@@ -202,6 +168,7 @@ export async function loadAccountSnapshot(): Promise<AccountSnapshot> {
         id: userId,
         email,
         displayName: safeDisplayName(profileResult.data?.display_name, email),
+        timezone: normalizeTimeZone(profileResult.data?.timezone),
       },
       diary,
       goals: parseGoals(goalsResult.data?.daily) ?? dailyTargets,

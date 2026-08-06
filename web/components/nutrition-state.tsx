@@ -7,6 +7,7 @@ import {
 } from '@neofit/nutrition-core';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { dailyTargets, foodFixtures, initialDiary, type FoodFixture } from '@/data/fixtures';
+import { formatLocalDate } from '@/lib/local-date';
 import {
   buildInitialWebDiary,
   createWebDiaryEntry,
@@ -16,14 +17,15 @@ import {
 } from '@/lib/nutrition-adapter';
 import { createClient } from '@/lib/supabase/client';
 import type { Json } from '@/lib/supabase/database.types';
+import { parseStoredWebDiary, serializeStoredWebDiary } from '@/lib/web-diary-storage';
 
 const STORAGE_KEY = 'neofit:web-diary:v1';
-const LOCAL_DATE = new Date().toISOString().slice(0, 10);
 
 export interface ClientAccount {
   readonly id: string;
   readonly email: string;
   readonly displayName: string;
+  readonly timezone: string;
 }
 
 export type NutritionSyncStatus = 'local' | 'synced' | 'saving' | 'error';
@@ -55,11 +57,11 @@ function asJson(value: unknown): Json {
   return JSON.parse(JSON.stringify(value)) as Json;
 }
 
-function createInitialDiary(): WebDiaryEntry[] {
+function createInitialDiary(localDate: string): WebDiaryEntry[] {
   return buildInitialWebDiary({
     foods: foodFixtures,
     seeds: initialDiary,
-    localDate: LOCAL_DATE,
+    localDate,
     timestamp: new Date().toISOString(),
   });
 }
@@ -73,8 +75,11 @@ export function NutritionStateProvider({
   loadError = null,
 }: NutritionStateProviderProps) {
   const accountMode = account !== null;
+  const [localDate, setLocalDate] = useState(() =>
+    formatLocalDate(new Date(), account?.timezone),
+  );
   const [diary, setDiary] = useState<WebDiaryEntry[]>(() =>
-    initialDiary ? [...initialDiary] : accountMode ? [] : createInitialDiary(),
+    initialDiary ? [...initialDiary] : accountMode ? [] : createInitialDiary(localDate),
   );
   const [hydrated, setHydrated] = useState(accountMode);
   const [syncStatus, setSyncStatus] = useState<NutritionSyncStatus>(
@@ -86,38 +91,76 @@ export function NutritionStateProvider({
   const goals = initialGoals ?? dailyTargets;
 
   useEffect(() => {
-    if (accountMode) {
+    const updateLocalDate = () => {
+      setLocalDate(formatLocalDate(new Date(), account?.timezone));
+    };
+    updateLocalDate();
+    const interval = window.setInterval(updateLocalDate, 60_000);
+    window.addEventListener('focus', updateLocalDate);
+    document.addEventListener('visibilitychange', updateLocalDate);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', updateLocalDate);
+      document.removeEventListener('visibilitychange', updateLocalDate);
+    };
+  }, [account?.timezone]);
+
+  useEffect(() => {
+    if (account) {
+      setDiary(initialDiary ? [...initialDiary] : []);
       setHydrated(true);
+      setSyncStatus(loadError ? 'error' : 'synced');
+      setSyncMessage(loadError ?? 'اطلاعات حساب همگام است.');
       return;
     }
 
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as WebDiaryEntry[];
-        if (Array.isArray(parsed) && parsed.length > 0) setDiary(parsed);
+      if (stored === null) {
+        setDiary(createInitialDiary(localDate));
+      } else {
+        const parsed = parseStoredWebDiary(stored);
+        if (parsed === null) {
+          setDiary(createInitialDiary(localDate));
+          setSyncStatus('error');
+          setSyncMessage('دادهٔ محلی نامعتبر بود و با نمونهٔ امن جایگزین شد.');
+        } else {
+          setDiary(parsed);
+          setSyncStatus('local');
+          setSyncMessage('داده‌ها از همین مرورگر بازیابی شدند.');
+        }
       }
     } catch {
-      setDiary(createInitialDiary());
+      setDiary(createInitialDiary(localDate));
+      setSyncStatus('error');
+      setSyncMessage('خواندن دادهٔ محلی ممکن نشد؛ نمونهٔ امن نمایش داده شد.');
     } finally {
       setHydrated(true);
     }
-  }, [accountMode]);
+  // The account identity is the boundary between Remote and local state.
+  // Server refreshes for the same account must not overwrite optimistic state.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account?.id]);
 
   useEffect(() => {
     if (!hydrated || accountMode) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(diary));
+    try {
+      window.localStorage.setItem(STORAGE_KEY, serializeStoredWebDiary(diary));
+    } catch {
+      setSyncStatus('error');
+      setSyncMessage('ذخیرهٔ پایدار روی این مرورگر ممکن نشد.');
+    }
   }, [accountMode, diary, hydrated]);
 
   const summary = useMemo(
-    () => summarizeWebDiary(diary, LOCAL_DATE, goals),
-    [diary, goals],
+    () => summarizeWebDiary(diary, localDate, goals),
+    [diary, goals, localDate],
   );
 
   const value = useMemo<NutritionStateValue>(() => ({
     diary,
     summary,
-    localDate: LOCAL_DATE,
+    localDate,
     account,
     supabaseConfigured: configured,
     syncStatus,
@@ -132,7 +175,7 @@ export function NutritionStateProvider({
         portionText: `${new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 1 }).format(portionCount)} سهم · ${food.portionLabelFa}`,
         items: [{ foodId: food.id, portionCount }],
         foods: foodFixtures,
-        localDate: LOCAL_DATE,
+        localDate,
         timestamp,
       });
 
@@ -188,7 +231,7 @@ export function NutritionStateProvider({
     },
     async resetDiary() {
       if (!account) {
-        setDiary(createInitialDiary());
+        setDiary(createInitialDiary(localDate));
         setSyncStatus('local');
         setSyncMessage('دادهٔ آزمایشی مرورگر بازنشانی شد.');
         return;
@@ -210,7 +253,7 @@ export function NutritionStateProvider({
       setSyncStatus('synced');
       setSyncMessage('ثبت‌های تغذیه حساب حذف شدند.');
     },
-  }), [account, configured, diary, summary, syncMessage, syncStatus]);
+  }), [account, configured, diary, localDate, summary, syncMessage, syncStatus]);
 
   return <NutritionStateContext.Provider value={value}>{children}</NutritionStateContext.Provider>;
 }

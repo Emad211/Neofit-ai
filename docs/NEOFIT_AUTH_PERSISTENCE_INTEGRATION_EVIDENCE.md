@@ -1,47 +1,17 @@
 # NeoFit Auth and Persistence Integration Evidence
 
-**Date:** 2026-08-05  
+**Date:** 2026-08-06  
 **Branch:** `web/full-frontend-integration`  
 **Draft PR:** #36  
-**Validated code head:** `f5f5a6f60c15d09793f9ea416f1fe721b6d9e740`  
-**Final documentation head before this evidence update:** `0f88dcf87ebc8d0f1a1143dd9c0b4c18fae20f73`  
-**Supabase project:** `rjwrobltmjodfarnltal`
+**Supabase project:** `rjwrobltmjodfarnltal`  
+**Current evidence scope:** code/CI contracts plus Auth and Guest-state hardening; public real-account runtime remains pending
 
-## Scope
-
-This slice connects the integrated Persian Web frontend to the already-merged Supabase foundation without adding tables, queues, services or duplicated Nutrition arithmetic.
-
-Implemented:
-
-- email/password sign-in and sign-up through Server Actions;
-- PKCE callback exchange and email token confirmation routes;
-- verified-claims session refresh through the existing Next.js Proxy;
-- server-side sign-out;
-- first-account bootstrap for `profiles`, `user_settings` and `nutrition_goals`;
-- account snapshot reads from `profiles`, `nutrition_goals` and `nutrition_entries`;
-- authenticated meal inserts and deletes in `nutrition_entries`;
-- Profile display-name persistence in `profiles`;
-- guest fallback using the existing Browser local state;
-- optimistic meal insert with immediate rollback on Remote failure;
-- private/no-store account responses while no-config guest builds remain cacheable;
-- Service Worker exclusion of Auth routes and private account HTML.
-
-Explicitly not added:
-
-- Service Role usage in Browser code;
-- sync queue, event bus, IndexedDB or Background Sync;
-- new database tables;
-- food/catalog/recipe persistence;
-- SQL or React Nutrition recalculation;
-- provider-generated calories/macros;
-- Production promotion.
-
-## Data path
+## Architecture path
 
 ```text
 Guest
   -> Shared Nutrition Core
-  -> Browser local state
+  -> validated Browser-local diary envelope
 
 Authenticated account
   -> Supabase Auth cookies
@@ -49,132 +19,155 @@ Authenticated account
   -> own-row RLS
   -> profiles / user_settings
   -> nutrition_goals / nutrition_entries
-
-Nutrition numbers
-  -> packages/nutrition-core only
-  -> versioned NutritionEstimate JSON persisted unchanged
 ```
 
-## Main files
+Nutrition values are produced only by `packages/nutrition-core` and persisted as versioned estimate JSON.
+
+## Existing connected behavior
+
+- email/password sign-in/sign-up through Server Actions؛
+- PKCE callback and email-token confirmation؛
+- server-side sign-out؛
+- typed Browser/Server Supabase clients؛
+- account snapshot reads؛
+- authenticated Nutrition insert/delete؛
+- display-name persistence؛
+- Guest local fallback؛
+- optimistic insert with rollback؛
+- private/no-store account HTML؛
+- Auth/API/Authorization requests excluded from Service Worker cache.
+
+## Hardening correction 1 — non-destructive bootstrap
+
+Previous behavior used ordinary `upsert` during every Sign-in/Callback. That could overwrite existing:
+
+- `profiles.display_name`/timezone/locale؛
+- `user_settings.theme`/units؛
+- `nutrition_goals.daily`.
+
+Current contract:
 
 ```text
-web/app/auth/actions.ts
-web/app/auth/page.tsx
-web/app/auth/callback/route.ts
-web/app/auth/confirm/route.ts
-web/app/auth/signout/route.ts
-web/lib/supabase/account.ts
-web/lib/supabase/client.ts
-web/lib/supabase/server.ts
-web/lib/supabase/proxy.ts
-web/proxy.ts
-web/components/nutrition-state.tsx
-web/components/nutrition-screen.tsx
-web/components/app-shell.tsx
-web/components/profile-screen.tsx
-web/tests/supabase-app-integration.test.ts
+profiles        onConflict=id      ignoreDuplicates=true
+user_settings   onConflict=user_id ignoreDuplicates=true
+nutrition_goals onConflict=user_id ignoreDuplicates=true
 ```
 
-## Security and cache boundaries
+Only absent rows are created. An existing user-owned row remains authoritative.
 
-- Browser and Server clients use generated `Database` types.
-- Protected identity uses `auth.getClaims()`.
-- Only a verified session receives `Cache-Control: private, no-store`.
-- `/auth/*`, `/api/*` and authorization-bearing requests bypass Service Worker caching.
-- Private/no-store HTML is skipped and any older guest snapshot for that path is removed.
-- Publishable configuration is optional for Preview builds and fails closed when invalid.
-- No key value is committed or written to this document.
+## Hardening correction 2 — local date
 
-## Validated code-head CI
+Previous code derived `local_date` by UTC ISO slicing. Current code:
+
+- reads `profiles.timezone`؛
+- validates IANA timezone names؛
+- falls back to `Asia/Tehran`؛
+- formats `YYYY-MM-DD` with `Intl.DateTimeFormat`؛
+- refreshes date during a long-running client session؛
+- uses the same current Local date for Summary, Add and Reset.
+
+## Hardening correction 3 — local persistence
+
+Current local diary contract:
+
+```json
+{
+  "version": 1,
+  "diary": []
+}
+```
+
+Behavior:
+
+- empty diary is valid؛
+- old plain-array v1 is migrated؛
+- malformed JSON/version/entry fails closed؛
+- count is capped at 1000؛
+- IDs, text lengths, local date, types and timestamps are checked؛
+- Nutrition estimate values must be finite and non-negative؛
+- unknown grams remains `null`؛
+- macro view is reconstructed from validated Core estimate؛
+- Persian meal label is reconstructed from meal type؛
+- localStorage read/write failures are surfaced without crashing the app.
+
+## Tests
+
+Behavioral tests:
 
 ```text
-code head: f5f5a6f60c15d09793f9ea416f1fe721b6d9e740
-
-Supabase Identity Schema CI 31032483010 — success
-Supabase Nutrition Persistence CI 31032481404 — success
-Supabase Foundation CI 31032481373 — success
-Vercel Build Contract 31032481435 — success
-Web CI 31032481411 — success
-
-Web Artifact 8941255661
-Digest sha256:f0e57c1b940f6b17a67e5562814ddd2ff3f70f13a59a51d11e3efdc25a808172
+account-bootstrap.test.ts
+local-date.test.ts
+web-diary-storage.test.ts
 ```
 
-## Final documentation-head CI
+Contract suite:
 
 ```text
-head: 0f88dcf87ebc8d0f1a1143dd9c0b4c18fae20f73
-
-Web CI 31033160546 — success
-Artifact 8941513789
-Digest sha256:a83ac83af1105fa25590cfa61bf93050e41dd401920abd847562b7a55cba0092
-
-Nutrition Core CI 31033158969 — success
-Supabase Identity Schema CI 31033159086 — success
-Supabase Nutrition Persistence CI 31033159397 — success
-Supabase Foundation CI 31033159707 — success
-Vercel Build Contract 31033159050 — success
+supabase-app-integration.test.ts
 ```
 
-Web CI proved:
+`npm run test:supabase-app` executes all four files.
 
-- strict TypeScript;
-- Web Nutrition Adapter parity `9/9`;
-- Supabase Application integration contracts `9/9`;
-- production build;
-- Persian RTL routes and responsive browser matrix;
-- safe no-config Auth screen;
-- guest profile boundary;
-- Service Worker install/control;
-- offline navigation between `/today` and `/nutrition`;
-- no API response in app-shell cache;
-- no privileged key material;
-- no duplicated Nutrition arithmetic.
+Local Source-Bundle preflight passed runtime checks for:
 
-Build route contract with no Supabase Environment:
+- insert-only bootstrap؛
+- error propagation؛
+- UTC vs Asia/Tehran boundary؛
+- invalid timezone fallback؛
+- storage round-trip؛
+- valid empty diary؛
+- Legacy array migration؛
+- negative/tampered estimate rejection؛
+- Core-derived Macro and Meal label normalization؛
+- syntax transpilation of every changed TypeScript file.
+
+GitHub CI remains the final TypeScript/build/browser authority for this commit.
+
+## Live Supabase evidence
+
+Latest read-only live check:
 
 ```text
-/auth             dynamic
-/auth/callback    dynamic
-/auth/confirm     dynamic
-/auth/signout     dynamic
-/today            static guest shell
-/nutrition        static guest shell
-/profile          static guest shell
+project status: ACTIVE_HEALTHY
+security advisors: 0
+performance advisors: 0
+auth users: 0
+profiles: 0
+user_settings: 0
+nutrition_goals: 0
+nutrition_entries: 0
 ```
 
-In a configured deployment, the account path uses Cookies and verified claims; session-bearing responses are private/no-store.
+This proves schema cleanliness but also proves no real-account browser round-trip has happened.
 
 ## Runtime claim boundary
 
-Proven now:
+Proven:
 
-- Auth/SSR/Callback/Sign-out implementation compiles and is contract-tested;
-- account reads and writes target the four merged RLS tables;
-- guest mode remains usable when Supabase Environment is absent;
-- all architecture, schema and browser regression gates pass on the synchronized documentation head.
+- Auth/Application implementation and RLS targets exist؛
+- Shared Core remains sole Nutrition calculator؛
+- Guest state is now validated and Timezone-aware؛
+- Bootstrap no longer has a reset-on-login contract؛
+- Canonical Preview build exists.
 
-Not yet proven on the current Auth head:
+Not yet proven:
 
-- a real public email sign-up and confirmation round trip;
-- a real sign-in Cookie round trip on Vercel;
-- a browser-created meal appearing in the Remote table and surviving a new device/session;
-- Vercel Environment rollout for the two public Supabase variables.
+- Preview environment rollout؛
+- public signup/confirmation؛
+- Cookie/session round-trip؛
+- Remote meal persistence after new session/device؛
+- non-reset behavior against a real previously edited account؛
+- Production.
 
-Reason: the latest Vercel Git deployments are currently blocked by the Free-plan daily deployment limit. The last Ready Preview predates this final Auth head. The repository build contract is green, but this document does not call the current Auth head publicly deployed.
+## Exact runtime procedure
 
-## Exact continuation
+After green CI and external configuration:
 
-1. Configure Vercel Preview/Production values for:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-2. Configure Supabase allowed Site URL/Redirect URLs for the chosen Vercel domains.
-3. Deploy the exact latest PR #36 head after the Vercel quota resets.
-4. Run one temporary real-account browser test:
-   - sign up/confirm or sign in;
-   - verify `profiles`, `user_settings`, `nutrition_goals` bootstrap;
-   - add one meal and verify `nutrition_entries`;
-   - update display name;
-   - sign out/sign in and verify persistence;
-   - delete temporary rows/account.
-5. Record Runtime evidence before merging PR #36.
+1. create one disposable account؛
+2. verify creation of exactly the three missing first-account rows؛
+3. edit display name/settings/goals؛
+4. sign out/in and verify values remain unchanged؛
+5. add a meal and verify Remote row؛
+6. sign out/in and verify Diary persistence؛
+7. delete test rows and Auth user؛
+8. record deployment, run, artifact and cleanup evidence before Merge.

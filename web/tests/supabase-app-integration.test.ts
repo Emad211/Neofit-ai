@@ -19,6 +19,9 @@ const requiredFiles = [
   'app/auth/confirm/route.ts',
   'app/auth/signout/route.ts',
   'lib/supabase/account.ts',
+  'lib/supabase/bootstrap.ts',
+  'lib/local-date.ts',
+  'lib/web-diary-storage.ts',
 ] as const;
 
 test('Auth and account integration files exist', async () => {
@@ -73,14 +76,18 @@ test('email/password Auth uses Server Actions and safe callback routes', async (
 });
 
 test('account bootstrap and snapshot use only the four merged RLS tables', async () => {
-  const source = await readWeb('lib/supabase/account.ts');
+  const account = await readWeb('lib/supabase/account.ts');
+  const bootstrap = await readWeb('lib/supabase/bootstrap.ts');
+  const source = `${account}\n${bootstrap}`;
 
   for (const table of ['profiles', 'user_settings', 'nutrition_goals', 'nutrition_entries']) {
     assert.match(source, new RegExp(`from\\(['"]${table}['"]\\)`));
   }
-  assert.match(source, /NUTRITION_CORE_SCHEMA_VERSION/);
-  assert.match(source, /webMacrosFromEstimate/);
-  assert.match(source, /parseNutritionEstimate/);
+  assert.match(bootstrap, /NUTRITION_CORE_SCHEMA_VERSION/);
+  assert.match(bootstrap, /ignoreDuplicates:\s*true/g);
+  assert.match(account, /webMacrosFromEstimate/);
+  assert.match(account, /parseNutritionEstimate/);
+  assert.match(account, /select\(['"]display_name, timezone['"]\)/);
   assert.doesNotMatch(source, /from\(['"](?:foods|recipes|sync_queue|events)['"]\)/);
   assert.doesNotMatch(source, /service[_-]?role/i);
 });
@@ -95,6 +102,10 @@ test('authenticated diary writes directly to nutrition_entries and rolls back on
   assert.match(source, /\.delete\(\)\s*\n\s*\.eq\(['"]user_id['"], account\.id\)/);
   assert.doesNotMatch(source, /indexedDB|sync[_ -]?queue|event[_ -]?bus|background[_ -]?sync/i);
   assert.doesNotMatch(source, /calories\s*[+*\/-]|proteinG\s*[+*\/-]|carbsG\s*[+*\/-]|fatG\s*[+*\/-]/);
+  assert.match(source, /formatLocalDate/);
+  assert.match(source, /parseStoredWebDiary/);
+  assert.match(source, /serializeStoredWebDiary/);
+  assert.doesNotMatch(source, /toISOString\(\)\.slice\(0, 10\)/);
 });
 
 test('main routes hydrate from the optional server account snapshot', async () => {
@@ -108,7 +119,7 @@ test('main routes hydrate from the optional server account snapshot', async () =
   assert.match(shell, /account\?\.displayName/);
   assert.match(shell, /ورود برای ذخیره در حساب/);
   assert.match(profile, /from\(['"]profiles['"]\)\.upsert/);
-  assert.match(profile, /action=["']\/auth\/signout["']/);
+  assert.match(profile, /action=[#']\/auth\/signout["']/);
 });
 
 test('Service Worker skips private account HTML and keeps Auth outside cache handling', async () => {

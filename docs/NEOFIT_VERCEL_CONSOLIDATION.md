@@ -1,71 +1,65 @@
 # NeoFit Vercel Consolidation
 
-**Date:** 2026-08-06  
-**Canonical Vercel project:** `neofit-ai`  
+**Canonical Project:** `neofit-ai`  
 **Project ID:** `prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG`  
 **Development branch:** `web/full-frontend-integration`  
-**Canonical Preview release branch:** `vercel/preview`  
-**Stable Preview alias:** `neofit-ai-git-vercel-preview-emads-projects-41cb6447.vercel.app`  
-**Production promotion:** prohibited until explicit approval
+**Preview release branch:** `vercel/preview`  
+**Stable alias:** `neofit-ai-git-vercel-preview-emads-projects-41cb6447.vercel.app`
 
-## Why extra projects existed
+## One-Project rule
 
-Three temporary diagnostic projects were created while isolating earlier routing, public-access and file-reference failures:
-
-- `neofit-direct-probe`
-- `neofit-ui-public-probe`
-- `neofit-file-ref-probe`
-
-They are not NeoFit product deployments and are safe to delete. `neofit-ai` is the only canonical application project.
-
-## Deployment control
-
-The only full Preview build is allowed from `vercel/preview`. Development commits are stopped by the Ignored Build Step before installation and compilation.
-
-Observed Vercel behavior: a skipped development commit still appears as a `CANCELED` deployment record. The guard therefore prevents unnecessary build/compute, but it does not claim to eliminate every deployment record or every possible plan-specific deployment count.
-
-To minimize usage and noise:
-
-- one complete product slice = one batched development commit;
-- no per-file commits;
-- reference docs travel in the same batch;
-- one release-branch update after green CI;
-- no Production deployment.
-
-A zero-record workflow would require a Dashboard-managed Git disconnect plus manual Deploy Hook. The current connector cannot create or manage that setting.
-
-## Proven release
+NeoFit has one Product Project only: `neofit-ai`. The following diagnostic Projects are disposable and still require manual deletion:
 
 ```text
-source: 567a29d9f884ed6555de4035a666052f1eb3cfef
-release: 32eeb867742e949d7d6e9d5a3002bcff02d11fd1
-deployment: dpl_2VARJ7A2EyEtUkU9aKU2DeTAxEHy
-state: READY
-alias: neofit-ai-git-vercel-preview-emads-projects-41cb6447.vercel.app
-runtime errors: 0
+neofit-direct-probe
+neofit-file-ref-probe
+neofit-ui-public-probe
 ```
 
-## Operational rule
+The current connector can list and inspect them but cannot delete Projects.
 
-Do not use generic `deploy_to_vercel` for NeoFit. Deploy only through the Git-connected `neofit-ai` project by updating `vercel/preview` to an already-tested development commit.
+## Quota-conscious flow
 
-## Supabase environment boundary
+1. develop on `web/full-frontend-integration`؛
+2. one logical slice = one batched Commit؛
+3. include Authority docs in that Commit؛
+4. run all GitHub CI؛
+5. never release a failing or partially tested head؛
+6. update `vercel/preview` exactly once؛
+7. never call generic `deploy_to_vercel`؛
+8. never promote Production without explicit approval.
 
-No key value is committed. The canonical Vercel project needs these values through Preview Project Settings:
+Ignored development commits can still create a `CANCELED` record, so unnecessary pushes remain prohibited.
+
+## Dashboard cleanup required
+
+Live metadata drift must be corrected:
+
+```text
+current observed Framework: null
+current observed Node: 24.x
+required Framework: Next.js
+required Node: 22.x
+```
+
+## Environment contract
+
+Preview needs three values, not two:
 
 ```text
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+NEXT_PUBLIC_APP_URL=<stable Preview alias>
 ```
 
-Supabase Auth Site URL and Redirect URLs must use the stable release alias before a real account round trip is claimed.
+No value is stored in Git. Supabase Site URL/Redirect URL must match the Alias.
 
-## Probe deletion boundary
-
-The connected Vercel tool can inspect and deploy projects but does not expose project deletion. Delete the three probes in the Dashboard:
+## Current release truth
 
 ```text
-Vercel Dashboard → project → Settings → General → Delete Project
+deployment: dpl_2VARJ7A2EyEtUkU9aKU2DeTAxEHy
+state: READY
+runtime error clusters: 0
 ```
 
-Never delete `neofit-ai`.
+This release proves the canonical build path. It does not prove configured Supabase Auth or a real account round-trip.

@@ -1,7 +1,7 @@
 # NeoFit Canonical Vercel Preview
 
 **Date:** 2026-08-06  
-**Status:** one canonical project and one dedicated Preview release branch are active  
+**Status:** one canonical Product project and one dedicated Preview release branch  
 **Production promotion:** prohibited until explicit approval
 
 ## Canonical project
@@ -16,43 +16,9 @@ Preview release branch: vercel/preview
 Stable release alias: neofit-ai-git-vercel-preview-emads-projects-41cb6447.vercel.app
 ```
 
-All NeoFit Preview builds remain inside this one Git-connected project. Generic `deploy_to_vercel` is prohibited because an unlinked working directory can create a separate project.
+Never use generic `deploy_to_vercel` for NeoFit. It may create an unrelated Project. A release is made only by updating `vercel/preview` to an already-tested development commit.
 
-## Disposable diagnostic projects
-
-```text
-neofit-direct-probe
-Project ID: prj_m6fKI15AZzEN5kxN3QqAjep5UnOq
-Deployment/domain: none
-
-neofit-file-ref-probe
-Project ID: prj_Rm5ndp2XWqTK2hmnxRoARdc1Jkyh
-Deployment/domain: none
-
-neofit-ui-public-probe
-Project ID: prj_27bdfi9G9VYpEFRBmtPTL8Mj57AQ
-Contains one disposable static probe
-```
-
-They are safe to delete and have no dependency from NeoFit code, Supabase or the canonical project.
-
-## Quota-conscious release flow
-
-The dedicated release branch ensures the only full install/build/deploy occurs on `vercel/preview`. Development commits are rejected by `scripts/vercel-ignore.mjs` before dependency installation and Next.js build.
-
-Important observed boundary: Vercel still creates a short-lived `CANCELED` deployment record before the Ignored Build Step runs. Therefore this setup is proven to eliminate unnecessary builds and compute, but it does not claim that Vercel creates zero deployment records or that canceled records never affect a plan-specific deployment counter.
-
-Operational mitigation:
-
-1. all files for a product slice are batched into one Git commit;
-2. no per-file commits are used;
-3. documentation is included in the same batch;
-4. `vercel/preview` is updated once only after all GitHub CI is green;
-5. Production is never targeted.
-
-Eliminating even canceled records would require a Dashboard-level Git disconnect/manual Deploy Hook workflow, which the connected Vercel tool does not expose.
-
-## Canonical release evidence
+## Proven release
 
 ```text
 source development commit: 567a29d9f884ed6555de4035a666052f1eb3cfef
@@ -61,46 +27,77 @@ deployment: dpl_2VARJ7A2EyEtUkU9aKU2DeTAxEHy
 state: READY
 target: Preview
 alias: neofit-ai-git-vercel-preview-emads-projects-41cb6447.vercel.app
+runtime error clusters: 0
 ```
 
-Build evidence:
+Build evidence included workspace install, Next.js `16.2.12`, PWA icons, Turbopack, TypeScript and 18 route outputs.
 
-- cloned `vercel/preview`;
-- release-branch safety command explicitly allowed the build;
-- workspace installation completed;
-- Next.js `16.2.12` detected;
-- four PWA icons generated;
-- Turbopack production compile passed;
-- TypeScript passed;
-- 18 route outputs generated, including Auth, Today, Nutrition, Workout, Progress, Profile, Manifest and Offline;
-- deployment completed successfully;
-- root HTTPS request returned `200` with `lang=fa`, `dir=rtl` and NeoFit metadata;
-- runtime error clusters after release: `0`.
+## Deployment-use contract
 
-## Supabase environment boundary
+- Full build is allowed only on `vercel/preview`.
+- Development commits are skipped before dependency installation/build.
+- Vercel may still create a short `CANCELED` record for a skipped commit.
+- One complete slice must therefore be one batched development commit.
+- Documentation travels in the same commit.
+- Release branch is updated once only after all CI is green.
+- Production is never targeted.
 
-No key value is committed. Before real Auth runtime proof, configure on the canonical Vercel Preview:
+## Disposable projects
+
+These three Projects still existed in the live list on ۶ اوت ۲۰۲۶ and must be deleted manually:
+
+```text
+neofit-direct-probe     prj_m6fKI15AZzEN5kxN3QqAjep5UnOq
+neofit-file-ref-probe   prj_Rm5ndp2XWqTK2hmnxRoARdc1Jkyh
+neofit-ui-public-probe  prj_27bdfi9G9VYpEFRBmtPTL8Mj57AQ
+```
+
+They have no dependency from NeoFit code, Supabase or the canonical Project. Never delete `neofit-ai`.
+
+## Dashboard consistency
+
+Live Project metadata reported:
+
+```text
+framework: null
+nodeVersion: 24.x
+```
+
+Repository authority is:
+
+```text
+framework: Next.js
+Next.js: 16.2.12
+Node: 22.x
+```
+
+The owner should synchronize Framework Preset and Node version in Dashboard before the next release. The repository build contract already pins the intended versions, but Dashboard drift should not remain ambiguous.
+
+## Complete Preview Environment
+
+Configure outside Git:
 
 ```text
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+NEXT_PUBLIC_APP_URL=https://neofit-ai-git-vercel-preview-emads-projects-41cb6447.vercel.app
 ```
 
-Then configure the stable release alias in Supabase Auth Site URL and Redirect URLs. Environment changes require exactly one later release update.
+`NEXT_PUBLIC_APP_URL` is required so email confirmation returns to the stable Preview Alias rather than an unrelated automatic/Production URL.
 
-## Deletion procedure
+Supabase Auth URL Configuration must allow the stable Site URL and callback/confirm routes.
 
-The connected Vercel tool does not expose project deletion. Delete exactly these three projects from `Settings → General → Delete Project`:
+## Protected QA
 
-- `neofit-direct-probe`
-- `neofit-file-ref-probe`
-- `neofit-ui-public-probe`
-
-Never delete `neofit-ai`.
+The Preview is protected. Full automated browser QA requires a Vercel Automation Bypass secret stored only as GitHub secret `VERCEL_AUTOMATION_BYPASS_SECRET`. Secret and Share URL tokens must not enter Git, chat, PR comments, logs or artifacts.
 
 ## Exact continuation
 
-1. Delete the three disposable probes in the Dashboard.
-2. Configure the two public Supabase Preview variables and Auth redirects.
-3. Continue development in complete batched commits on `web/full-frontend-integration`.
-4. After the next complete slice and green CI, update `vercel/preview` once for the real account/persistence round trip.
+1. Delete the three disposable projects.
+2. Align Framework and Node settings.
+3. Configure all three Preview Environment values.
+4. Configure Supabase Site/Redirect URLs.
+5. Wait for the complete hardening slice CI to become green.
+6. Update `vercel/preview` once.
+7. Run protected PWA QA and temporary real-account Auth/persistence proof.
+8. Do not promote Production.

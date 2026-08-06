@@ -1,197 +1,115 @@
 # دفتر پیشرفت NeoFit
 
 **نقش:** حافظهٔ عملیاتی و شواهد توسعه  
-**همراه اجباری:** `docs/NEOFIT_MASTER_PLAN.md`  
-**آخرین به‌روزرسانی:** ۵ اوت ۲۰۲۶ — Auth و Application persistence روی PR #36 پیاده‌سازی شده و HEAD نهایی تمام CIها را پاس کرده است؛ Runtime عمومی هنوز Deploy نشده است
+**آخرین به‌روزرسانی:** ۶ اوت ۲۰۲۶  
+**Active branch:** `web/full-frontend-integration`  
+**Draft PR:** #36
 
-## نمای کلی
-
-| بخش | وضعیت | شواهد |
-|---|---|---|
-| Shared Nutrition Core | complete | `52/52` |
-| Web Nutrition Adapter | complete | `9/9` |
-| Supabase SSR foundation | complete/merged | PR #30 |
-| Identity schema/RLS | complete/merged | PR #33، `c7de309…` |
-| Nutrition persistence | complete/merged | PR #35، `9424176…` |
-| Full frontend reference | complete/separate | PR #34 |
-| Current Web UI integration | active، major routes complete | PR #36 |
-| Auth/Application wiring | implemented، all CI green | code `f5f5a6…` |
-| Final synchronized branch | all CI green | head `6f8cf94…` |
-| Public Auth runtime | pending | Vercel Env + deployment quota |
-
----
-
-## Stage 4C closure
-
-PR #33 Merge شد:
+## وضعیت پایهٔ اثبات‌شده
 
 ```text
-merge: c7de309fd3f62fe6e58f1e603c3c9745a3013dcd
-migration: 20260804232149_identity_foundation.sql
+Shared Nutrition Core: 52/52
+Web Nutrition Adapter: 9/9
+Supabase project: ACTIVE_HEALTHY
+Identity schema/RLS: merged
+Nutrition persistence: merged
+Canonical Vercel Preview: READY
+Vercel runtime error clusters: 0
 ```
 
-Remote contract:
-
-- `profiles` و `user_settings`؛
-- RLS و هشت own-row policy؛
-- authenticated grants only؛
-- anon/PUBLIC بدون grant؛
-- Runtime cross-user denial پاس؛
-- Advisors صفر؛
-- cleanup کامل.
-
----
-
-## Stage 4D closure
-
-PR #35 Merge شد:
+Canonical Preview:
 
 ```text
-merge: 942417641f69eeb1c6990a321efef0d9a277a994
-migration: 20260805132201_nutrition_persistence.sql
+project: neofit-ai
+release branch: vercel/preview
+deployment: dpl_2VARJ7A2EyEtUkU9aKU2DeTAxEHy
+alias: neofit-ai-git-vercel-preview-emads-projects-41cb6447.vercel.app
 ```
 
-Remote contract:
+## Live reconstruction — ۶ اوت ۲۰۲۶
 
-- `nutrition_goals`؛
-- `nutrition_entries`؛
-- Shared Core JSON persistence؛
-- `grams: null` و missing nutrient حفظ می‌شوند؛
-- unique `(user_id, client_mutation_id)`؛
-- own-row RLS؛
-- duplicate/cross-user/ownership denial پاس؛
-- Advisors صفر؛
-- cleanup کامل.
+- PR #36 باز، Draft و Mergeable است.
+- Parent head پیش از Hardening slice: `a85043f608ad35d8971492d6b386d236c20d589b`.
+- تمام Workflowهای Parent head سبز بودند.
+- Supabase Security و Performance Advisors صفر بودند.
+- تعداد Auth user و تمام ردیف‌های چهار جدول صفر بود.
+- سه Vercel Probe هنوز واقعاً وجود داشتند و حذف نشده بودند.
+- Project settings زندهٔ Vercel `framework: null` و `nodeVersion: 24.x` نشان می‌داد، درحالی‌که قرارداد ریپو Next.js و Node 22 است.
 
----
+## یافته‌های Hardening
 
-## Frontend integration — PR #36
+### Failure 1 — destructive account bootstrap
 
-Branch:
-
-```text
-web/full-frontend-integration
-```
-
-برش‌های سبز پیش از Auth:
-
-- Routeهای واقعی Today، Nutrition و Nutrition Plan؛
-- Shared local diary state؛
-- Workout overview و سه detail route؛
-- Progress سبک؛
-- Profile شفاف مهمان؛
-- Guest PWA و Offline؛
-- بدون کتابخانه یا Table جدید.
-
----
-
-## Auth + Application persistence slice
-
-### پیاده‌سازی
-
-- email/password Server Actions؛
-- PKCE callback و email token confirm؛
-- sign-out سروری؛
-- verified-claims Proxy؛
-- typed Browser/Server clients؛
-- account bootstrap برای `profiles`، `user_settings` و `nutrition_goals`؛
-- account snapshot از `profiles`، `nutrition_goals` و `nutrition_entries`؛
-- ثبت/حذف Remote وعده‌ها با RLS؛
-- ویرایش نام نمایشی؛
-- guest local fallback؛
-- optimistic insert + rollback؛
-- no queue/event bus/IndexedDB/background sync؛
-- Auth/private HTML خارج از PWA cache.
-
-### Failure 1 — TypeScript claims narrowing
-
-علت:
-
-```text
-claims possibly undefined هنگام خواندن email
-```
+`bootstrapAccount()` در Sign-in و Callback با `upsert` معمولی اجرا می‌شد و می‌توانست نام، Theme/Units و Nutrition goals ویرایش‌شده را در هر Login به Default برگرداند.
 
 اصلاح:
 
-- email claim مستقیماً از `claimsData?.claims?.email` narrow شد.
+- Bootstrap به ماژول مستقل منتقل شد.
+- `onConflict` صریح برای Primary key هر Table اضافه شد.
+- `ignoreDuplicates: true` اضافه شد.
+- سه insert به‌صورت موازی باقی ماندند.
+- هیچ Migration یا Trigger جدیدی ساخته نشد.
 
-### Failure 2 — Guest PWA cache boundary
+### Failure 2 — UTC diary date
 
-`force-dynamic` Guest shell را هم `no-store` می‌کرد.
+تاریخ با `new Date().toISOString().slice(0, 10)` ساخته می‌شد و نزدیک نیمه‌شب می‌توانست روز اشتباه را ثبت کند.
 
 اصلاح:
 
-- `force-dynamic` حذف شد؛
-- بدون Supabase Env، main routes Static هستند؛
-- با Env/Cookies، account path Dynamic است؛
-- Proxy فقط Session تأییدشده را `private, no-store` می‌کند؛
-- Service Worker private HTML را skip می‌کند.
+- Helper مستقل Timezone-aware اضافه شد.
+- Timezone پروفایل از `profiles.timezone` خوانده می‌شود.
+- fallback برابر `Asia/Tehran` است.
+- تاریخ هنگام Focus، Visibility change و هر ۶۰ ثانیه بازبینی می‌شود.
+- ثبت و Summary از Local date جاری استفاده می‌کنند.
 
-### Failure 3 — outdated greeting assertion
+### Failure 3 — unsafe/incorrect local diary recovery
 
-PWA صحیح بود، اما Gate متن قدیمی «سلام عماد» را انتظار داشت. Assertion به greeting خنثی مهمان اصلاح شد.
+Storage قبلی:
 
-### Validated implementation checkpoint
+- آرایهٔ خالی معتبر را بازیابی نمی‌کرد؛
+- JSON را بدون Shape validation به State می‌داد؛
+- Macro و Meal label ذخیره‌شده را مورد اعتماد قرار می‌داد؛
+- خطای `localStorage.setItem` را مدیریت نمی‌کرد.
 
-```text
-code head: f5f5a6f60c15d09793f9ea416f1fe721b6d9e740
-Identity CI 31032483010 — success
-Nutrition Persistence CI 31032481404 — success
-Foundation CI 31032481373 — success
-Vercel Build Contract 31032481435 — success
-Web CI 31032481411 — success
-Artifact 8941255661
-Digest sha256:f0e57c1b940f6b17a67e5562814ddd2ff3f70f13a59a51d11e3efdc25a808172
-```
+اصلاح:
 
-### Final synchronized branch checkpoint
+- Envelope نسخه‌دار `version: 1`؛
+- Legacy array migration؛
+- پذیرش صحیح Empty diary؛
+- validation برای ID، Date، Meal/source type، Timestamp، Estimate و nutrient values؛
+- محدودیت ۱۰۰۰ Entry و طول متن؛
+- مشتق‌سازی دوبارهٔ Macro و Meal label از Core estimate؛
+- fail-closed fallback و پیام خطای شفاف؛
+- مدیریت خطای Persistent storage.
 
-```text
-head: 6f8cf94c87396c5f0ce122b1b5fd33e8e032be05
-Web CI 31033701661 — success
-Artifact 8941729720
-Digest sha256:2d106c58bc9cd098c0e6966128e2bfd3ba66571301cb7b63c7b70aefee7164a6
-Nutrition Core CI 31033701894 — success
-Identity CI 31033701859 — success
-Nutrition Persistence CI 31033701801 — success
-Foundation CI 31033701573 — success
-Vercel Build Contract 31033702707 — success
-```
-
-Web CI:
+## تست‌های اضافه‌شده
 
 ```text
-TypeScript: success
-Web Adapter: 9/9
-Supabase Application integration: 9/9
-Production build: success
-Visual routes: success
-No-config Auth: success
-PWA guest offline navigation: success
-Private Auth cache boundary: success
+web/tests/account-bootstrap.test.ts
+web/tests/local-date.test.ts
+web/tests/web-diary-storage.test.ts
 ```
 
-Authority:
+`test:supabase-app` اکنون این تست‌های رفتاری را همراه Contract test قبلی اجرا می‌کند.
 
-- `docs/NEOFIT_AUTH_PERSISTENCE_INTEGRATION_EVIDENCE.md`
+Local pre-push validation روی Source Bundle آخرین Web CI:
 
----
+- changed TypeScript files transpile without syntax diagnostics؛
+- Timezone boundary UTC/Asia-Tehran پاس؛
+- invalid timezone fallback پاس؛
+- Storage round-trip و Empty diary پاس؛
+- tampered/negative estimate rejection پاس؛
+- Macro/Meal label normalization پاس؛
+- insert-only Bootstrap contract پاس.
 
-## Runtime boundary
+GitHub CI نتیجهٔ نهایی این Slice را پس از Push تعیین می‌کند؛ تا آن زمان `vercel/preview` تغییر نمی‌کند.
 
-کد Current Head روی Vercel عمومی اثبات نشده است.
+## External manual actions pending
 
-- آخرین Ready Preview قبل از Current Auth Head است.
-- Deployهای جدید به سقف روزانهٔ Free plan خورده‌اند.
-- Connector موجود امکان ثبت Environment variable در Vercel را ارائه نمی‌دهد.
-- هیچ Publishable key value در Git یا docs ثبت نشده است.
+1. حذف `neofit-direct-probe`، `neofit-file-ref-probe` و `neofit-ui-public-probe` از Vercel Dashboard.
+2. همگام‌کردن Framework روی Next.js و Node روی 22.x برایا پروژه `Neofit-ai`.
+3. تنظیم Supabase Site URL و Redirect URL.
 
-## Exact continuation point
+## Exact next
 
-1. Vercel Preview/Production Env برای URL و Publishable key تنظیم شود.
-2. Supabase Redirect URLها با دامنهٔ واقعی همگام شوند.
-3. Current Head بعد از Reset quota Deploy شود.
-4. یک حساب موقت واقعی و Browser round-trip کامل تست شود.
-5. Remote rows و account آزمایشی پاک شوند.
-6. Runtime Evidence ثبت شود.
-7. سپس Workout Player، Onboarding و Coach در PR #36 ادامه یابد؛ بدون Merge/Production زودهنگام.
+پس از سبزشدن CI همین Slice، اقدامات دستی بالا انجام و سپس فقط یک Preview release ساخته می‌شود. بعد از real-account Runtime proof، توسعه با Workout Player ادامه می‌یابد.
