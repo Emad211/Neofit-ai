@@ -1,6 +1,8 @@
 NeoFit canonical Preview release metadata
-release: auth-persistence-consolidation-v2
+release: auth-persistence-consolidation-v2.1
+source-development-commit: 567a29d9f884ed6555de4035a666052f1eb3cfef
 source-development-branch: web/full-frontend-integration
 release-branch: vercel/preview
 project: neofit-ai
 environment: preview-only
+released-at: 2026-08-06
