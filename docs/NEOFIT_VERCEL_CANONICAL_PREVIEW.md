@@ -1,7 +1,7 @@
 # NeoFit Canonical Vercel Preview
 
 **Date:** 2026-08-06  
-**Status:** dedicated Preview release branch configured  
+**Status:** one canonical Preview project and one dedicated release branch are active  
 **Production promotion:** prohibited until explicit approval
 
 ## Canonical project
@@ -13,6 +13,7 @@ Project ID: prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG
 Git repository: Emad211/Neofit-ai
 Development branch: web/full-frontend-integration
 Preview release branch: vercel/preview
+Stable release alias: neofit-ai-git-vercel-preview-emads-projects-41cb6447.vercel.app
 ```
 
 All NeoFit Preview deployments remain inside this one Git-connected project. Generic `deploy_to_vercel` is prohibited because an unlinked working directory can create a separate project.
@@ -37,30 +38,43 @@ They are safe to delete and have no dependency from NeoFit code, Supabase or the
 
 ## Quota-safe release flow
 
-`vercel.json` disables automatic deployment for every branch except `vercel/preview`. This prevents ordinary development commits from creating even canceled Vercel deployment records.
+`vercel.json` disables automatic Vercel deployments for every branch except `vercel/preview`. Normal code and documentation commits on `web/full-frontend-integration` therefore do not create Preview builds or canceled deployment records.
 
 Release flow:
 
 1. develop and document on `web/full-frontend-integration`;
 2. run all GitHub CI;
 3. choose the exact tested commit;
-4. move `vercel/preview` once to that commit;
-5. verify one resulting Preview deployment;
+4. update `vercel/preview` once;
+5. verify the single resulting Preview;
 6. do not promote to Production.
 
 `scripts/vercel-ignore.mjs` additionally rejects Production and any non-release branch.
 
-## Previous proof
-
-The earlier marker-gated release proved the full Vercel build path:
+## Canonical release evidence
 
 ```text
-commit: 9b046725deb893b3fc2c14ee88d07bfbac7441c7
-deployment: dpl_HeBPwDwsjbZGeBHWxfxZufePSadk
+source development commit: 567a29d9f884ed6555de4035a666052f1eb3cfef
+release commit: 32eeb867742e949d7d6e9d5a3002bcff02d11fd1
+deployment: dpl_2VARJ7A2EyEtUkU9aKU2DeTAxEHy
 state: READY
+target: Preview
+alias: neofit-ai-git-vercel-preview-emads-projects-41cb6447.vercel.app
 ```
 
-It completed workspace installation, Next.js `16.2.12`, PWA icon generation, Turbopack, TypeScript and route generation with zero runtime-error clusters. The dedicated release branch now replaces the marker-on-development-branch mechanism to avoid canceled deployment records too.
+Build evidence:
+
+- cloned the dedicated `vercel/preview` branch;
+- release-branch safety command explicitly allowed the build;
+- workspace installation completed;
+- Next.js `16.2.12` detected;
+- four PWA icons generated;
+- Turbopack production compile passed;
+- TypeScript passed;
+- 18 route outputs generated, including Auth, Today, Nutrition, Workout, Progress, Profile, Manifest and Offline;
+- deployment completed successfully;
+- root HTTPS request returned `200` with `lang=fa`, `dir=rtl` and NeoFit metadata;
+- runtime error clusters after release: `0`.
 
 ## Supabase environment boundary
 
@@ -71,7 +85,7 @@ NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 ```
 
-Then configure the final Preview release alias in Supabase Auth Site URL and Redirect URLs.
+Then configure the stable release alias in Supabase Auth Site URL and Redirect URLs. Environment changes require exactly one later update of `vercel/preview`.
 
 ## Deletion procedure
 
@@ -85,8 +99,7 @@ Never delete `neofit-ai`.
 
 ## Exact continuation
 
-1. Create or fast-forward `vercel/preview` to this tested configuration commit.
-2. Verify the single canonical Preview and record its stable alias.
-3. Delete the three probes in the Dashboard.
-4. Configure the two public Supabase Preview variables and Auth redirects.
-5. Continue development on `web/full-frontend-integration` with no automatic Vercel deployments.
+1. Delete the three disposable probes in the Dashboard.
+2. Configure the two public Supabase Preview variables and Auth redirects.
+3. Continue development only on `web/full-frontend-integration` with no automatic Vercel deployment.
+4. After the next complete slice and green CI, update `vercel/preview` once for the real account/persistence round trip.
