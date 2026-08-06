@@ -1,7 +1,4 @@
-import { spawnSync } from 'node:child_process';
-
-const CANONICAL_PREVIEW_BRANCH = 'web/full-frontend-integration';
-const DEPLOY_MARKER = '.vercel-deploy';
+const CANONICAL_RELEASE_BRANCH = 'vercel/preview';
 
 function skip(reason) {
   console.log(`[NeoFit Vercel] skipped: ${reason}`);
@@ -17,22 +14,8 @@ if (process.env.VERCEL_ENV !== 'preview') {
   skip('NeoFit promotion is Preview-only until Production is explicitly approved.');
 }
 
-if (process.env.VERCEL_GIT_COMMIT_REF !== CANONICAL_PREVIEW_BRANCH) {
-  skip(`canonical Preview branch is ${CANONICAL_PREVIEW_BRANCH}.`);
+if (process.env.VERCEL_GIT_COMMIT_REF !== CANONICAL_RELEASE_BRANCH) {
+  skip(`canonical release branch is ${CANONICAL_RELEASE_BRANCH}.`);
 }
 
-const comparison = spawnSync(
-  'git',
-  ['diff', '--quiet', 'HEAD^', 'HEAD', '--', DEPLOY_MARKER],
-  { stdio: 'ignore' },
-);
-
-if (comparison.status === 0) {
-  skip(`${DEPLOY_MARKER} did not change.`);
-}
-
-if (comparison.status === 1) {
-  build(`${DEPLOY_MARKER} changed in this commit.`);
-}
-
-build('marker comparison was unavailable; failing open for the canonical Preview only.');
+build('explicit update of the canonical Preview release branch.');

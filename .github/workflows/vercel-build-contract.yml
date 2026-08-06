@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - web/pwa-foundation
+      - web/full-frontend-integration
+      - vercel/preview
       - 'fix/**'
     paths:
       - package.json
@@ -67,12 +69,14 @@ jobs:
           grep -q '"build:web": "npm --workspace @neofit/web run build"' package.json
           grep -q '"framework": "nextjs"' vercel.json
           grep -q '"ignoreCommand": "node scripts/vercel-ignore.mjs"' vercel.json
+          grep -q '"vercel/preview": true' vercel.json
+          grep -q '"\*": false' vercel.json
           grep -q '"installCommand": "npm install --no-audit --no-fund"' vercel.json
           grep -q '"buildCommand": "npm run build:web"' vercel.json
           grep -q '"outputDirectory": "web/.next"' vercel.json
-          grep -q "CANONICAL_PREVIEW_BRANCH = 'web/full-frontend-integration'" scripts/vercel-ignore.mjs
+          grep -q "CANONICAL_RELEASE_BRANCH = 'vercel/preview'" scripts/vercel-ignore.mjs
           grep -q "process.env.VERCEL_ENV !== 'preview'" scripts/vercel-ignore.mjs
-          grep -q "DEPLOY_MARKER = '.vercel-deploy'" scripts/vercel-ignore.mjs
+          grep -q 'release-branch: vercel/preview' .vercel-deploy
 
       - name: Install workspace dependencies
         run: npm install --no-audit --no-fund

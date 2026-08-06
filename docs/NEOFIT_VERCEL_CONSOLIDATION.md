@@ -3,12 +3,13 @@
 **Date:** 2026-08-06  
 **Canonical Vercel project:** `neofit-ai`  
 **Project ID:** `prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG`  
-**Canonical Preview branch:** `web/full-frontend-integration`  
-**Production promotion:** prohibited until the explicit production gate is approved
+**Development branch:** `web/full-frontend-integration`  
+**Canonical Preview release branch:** `vercel/preview`  
+**Production promotion:** prohibited until explicit approval
 
 ## Why extra projects existed
 
-Three temporary probe projects were created while diagnosing the earlier Vercel routing and file-reference failures:
+Three temporary diagnostic projects were created while isolating earlier routing, public-access and file-reference failures:
 
 - `neofit-direct-probe`
 - `neofit-ui-public-probe`
@@ -16,34 +17,43 @@ Three temporary probe projects were created while diagnosing the earlier Vercel 
 
 They are not NeoFit product deployments and are safe to delete. `neofit-ai` is the only canonical application project.
 
-## Quota protection
+## Deployment quota contract
 
-Git commits no longer need to create a Preview build automatically. The repository-root Vercel contract uses:
+Automatic Vercel deployments are disabled for development branches. `vercel.json` allows Git deployments only from:
 
 ```text
-ignoreCommand: node scripts/vercel-ignore.mjs
-marker: .vercel-deploy
+vercel/preview
 ```
 
-A build is allowed only when all conditions are true:
+The development branch can receive code and documentation commits without creating Vercel deployments or canceled deployment records. When a complete batch is green, the release branch is moved once to the exact tested commit. That explicit branch update creates one Preview deployment.
 
-1. Vercel environment is `preview`;
-2. Git branch is `web/full-frontend-integration`;
-3. `.vercel-deploy` changed in that exact commit.
+`scripts/vercel-ignore.mjs` provides a second safety boundary:
 
-Production and unrelated branches are skipped. During development, code and documentation can be committed without spending Preview deployment quota. When a tested batch is ready, the marker is updated once in the same batched commit.
+1. Production is skipped.
+2. Branches other than `vercel/preview` are skipped.
+3. The explicit Preview release branch is allowed to build.
 
-## Current public-runtime boundary
+## Operational rule
 
-The Auth/persistence code is implemented and CI-proven, but real account runtime proof still requires the two Browser-safe Supabase variables to be configured outside Git in the canonical Vercel project:
+Do not use generic `deploy_to_vercel` for NeoFit. Deploy NeoFit only through the Git-connected `neofit-ai` project by updating `vercel/preview` to an already-tested commit.
+
+## Supabase environment boundary
+
+No key value is committed. The canonical Vercel project needs these values through Preview Project Settings:
 
 ```text
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 ```
 
-No key value is committed. After environment configuration, one deliberate marker update is enough for the exact-head Preview deployment and the temporary real-account round-trip.
+Supabase Auth Site URL and Redirect URLs must use the canonical Preview release alias before a real account round trip is claimed.
 
-## Operational rule
+## Probe deletion boundary
 
-Do not use generic `deploy_to_vercel` for NeoFit. It may create an unrelated standalone project. Deploy NeoFit only through the Git-connected canonical project and the deliberate `.vercel-deploy` marker.
+The connected Vercel tool can inspect and deploy projects but does not expose project deletion. Delete the three probes in the Dashboard:
+
+```text
+Vercel Dashboard → project → Settings → General → Delete Project
+```
+
+Never delete `neofit-ai`.
