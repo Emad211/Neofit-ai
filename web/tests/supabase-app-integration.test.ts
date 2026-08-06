@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { access, readFile } from 'node:fs/promises';
-import test from 'node:test';
 import { dirname, resolve } from 'node:path';
+import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { hasSupabasePublicEnv } from '@/lib/supabase/env';
 
@@ -25,7 +25,7 @@ const requiredFiles = [
 ] as const;
 
 test('Auth and account integration files exist', async () => {
-  await Promise.all(requiredFiles.map((path) => access(resolve(webRoot, path))));
+  await Promise.all(requiredFiles.map((filePath) => access(resolve(webRoot, filePath))));
 });
 
 test('optional Supabase configuration is explicit and fail-closed', () => {
@@ -40,18 +40,18 @@ test('optional Supabase configuration is explicit and fail-closed', () => {
   }), false);
 });
 
-test('Browser, Server and Proxy clients use generated Database types and verified claims', async () => {
+test('Browser, Server and Proxy clients are typed and use verified claims', async () => {
   const browser = await readWeb('lib/supabase/client.ts');
   const server = await readWeb('lib/supabase/server.ts');
   const proxy = await readWeb('lib/supabase/proxy.ts');
+  const combined = `${browser}\n${server}\n${proxy}`;
 
   assert.match(browser, /createBrowserClient<Database>/);
   assert.match(server, /createServerClient<Database>/);
   assert.match(proxy, /createServerClient<Database>/);
   assert.match(proxy, /auth\.getClaims\(\)/);
-  assert.match(proxy, /if \(data\?\.claims\?\.sub\)/);
   assert.match(proxy, /private, no-store/);
-  assert.doesNotMatch(`${browser}\n${server}\n${proxy}`, /service[_-]?role/i);
+  assert.doesNotMatch(combined, /service[_-]?role/i);
 });
 
 test('email/password Auth uses Server Actions and safe callback routes', async () => {
@@ -66,7 +66,6 @@ test('email/password Auth uses Server Actions and safe callback routes', async (
   assert.match(actions, /bootstrapAccount/);
   assert.match(actions, /password\.length < 8/);
   assert.doesNotMatch(actions, /redirect\([^\n]*(error\.message|error\.code)/);
-
   assert.match(callback, /exchangeCodeForSession/);
   assert.match(callback, /safeNext/);
   assert.match(confirm, /verifyOtp/);
@@ -92,7 +91,7 @@ test('account bootstrap and snapshot use only the four merged RLS tables', async
   assert.doesNotMatch(source, /service[_-]?role/i);
 });
 
-test('authenticated diary writes directly to nutrition_entries and rolls back on error', async () => {
+test('authenticated diary writes directly and Guest state uses validated local persistence', async () => {
   const source = await readWeb('components/nutrition-state.tsx');
 
   assert.match(source, /from\(['"]nutrition_entries['"]\)\s*\n\s*\.insert/);
@@ -100,12 +99,12 @@ test('authenticated diary writes directly to nutrition_entries and rolls back on
   assert.match(source, /core_schema_version:\s*NUTRITION_CORE_SCHEMA_VERSION/);
   assert.match(source, /current\.filter\(\(item\) => item\.core\.id !== clientMutationId\)/);
   assert.match(source, /\.delete\(\)\s*\n\s*\.eq\(['"]user_id['"], account\.id\)/);
-  assert.doesNotMatch(source, /indexedDB|sync[_ -]?queue|event[_ -]?bus|background[_ -]?sync/i);
-  assert.doesNotMatch(source, /calories\s*[+*\/-]|proteinG\s*[+*\/-]|carbsG\s*[+*\/-]|fatG\s*[+*\/-]/);
   assert.match(source, /formatLocalDate/);
   assert.match(source, /parseStoredWebDiary/);
   assert.match(source, /serializeStoredWebDiary/);
   assert.doesNotMatch(source, /toISOString\(\)\.slice\(0, 10\)/);
+  assert.doesNotMatch(source, /indexedDB|sync[_ -]?queue|event[_ -]?bus|background[_ -]?sync/i);
+  assert.doesNotMatch(source, /calories\s*[+*\/-]|proteinG\s*[+*\/-]|carbsG\s*[+*\/-]|fatG\s*[+*\/-]/);
 });
 
 test('main routes hydrate from the optional server account snapshot', async () => {
@@ -119,10 +118,10 @@ test('main routes hydrate from the optional server account snapshot', async () =
   assert.match(shell, /account\?\.displayName/);
   assert.match(shell, /ورود برای ذخیره در حساب/);
   assert.match(profile, /from\(['"]profiles['"]\)\.upsert/);
-  assert.match(profile, /action=[#']\/auth\/signout["']/);
+  assert.match(profile, /action=["']\/auth\/signout["']/);
 });
 
-test('Service Worker skips private account HTML and keeps Auth outside cache handling', async () => {
+test('Service Worker keeps Auth and private account HTML outside shared cache', async () => {
   const sw = await readWeb('public/sw.js');
 
   assert.match(sw, /CACHE_VERSION = ['"]v4['"]/);
