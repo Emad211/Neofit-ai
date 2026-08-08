@@ -18,6 +18,7 @@ const requiredFiles = [
   'app/auth/callback/route.ts',
   'app/auth/confirm/route.ts',
   'app/auth/signout/route.ts',
+  'components/account-state.tsx',
   'lib/supabase/account.ts',
   'lib/supabase/bootstrap.ts',
   'lib/local-date.ts',
@@ -74,21 +75,24 @@ test('email/password Auth uses Server Actions and safe callback routes', async (
   assert.match(signout, /auth\.signOut\(\)/);
 });
 
-test('account bootstrap and snapshot use only the four merged RLS tables', async () => {
+test('shared identity and route-scoped nutrition use separate request contracts', async () => {
   const account = await readWeb('lib/supabase/account.ts');
   const bootstrap = await readWeb('lib/supabase/bootstrap.ts');
-  const source = `${account}\n${bootstrap}`;
 
-  for (const table of ['profiles', 'user_settings', 'nutrition_goals', 'nutrition_entries']) {
-    assert.match(source, new RegExp(`from\\(['"]${table}['"]\\)`));
-  }
-  assert.match(bootstrap, /NUTRITION_CORE_SCHEMA_VERSION/);
-  assert.match(bootstrap, /ignoreDuplicates:\s*true/g);
+  assert.match(account, /loadAccountIdentity/);
+  assert.match(account, /loadNutritionSnapshot/);
+  assert.match(account, /from\(['"]profiles['"]\)/);
+  assert.match(account, /from\(['"]nutrition_goals['"]\)/);
+  assert.match(account, /from\(['"]nutrition_entries['"]\)/);
+  assert.match(account, /\.eq\(['"]local_date['"], localDate\)/);
   assert.match(account, /webMacrosFromEstimate/);
   assert.match(account, /parseNutritionEstimate/);
-  assert.match(account, /select\(['"]display_name, timezone['"]\)/);
-  assert.doesNotMatch(source, /from\(['"](?:foods|recipes|sync_queue|events)['"]\)/);
-  assert.doesNotMatch(source, /service[_-]?role/i);
+  assert.doesNotMatch(account, /dailyTargets/);
+  assert.match(bootstrap, /from\(['"]profiles['"]\)/);
+  assert.match(bootstrap, /from\(['"]user_settings['"]\)/);
+  assert.doesNotMatch(bootstrap, /from\(['"]nutrition_goals['"]\)/);
+  assert.doesNotMatch(bootstrap, /NUTRITION_CORE_SCHEMA_VERSION|dailyTargets/);
+  assert.match(bootstrap, /ignoreDuplicates:\s*true/g);
 });
 
 test('authenticated diary writes directly and Guest state uses validated local persistence', async () => {
@@ -102,23 +106,30 @@ test('authenticated diary writes directly and Guest state uses validated local p
   assert.match(source, /formatLocalDate/);
   assert.match(source, /parseStoredWebDiary/);
   assert.match(source, /serializeStoredWebDiary/);
+  assert.match(source, /accountMode \? initialGoals : \(initialGoals \?\? dailyTargets\)/);
   assert.doesNotMatch(source, /toISOString\(\)\.slice\(0, 10\)/);
   assert.doesNotMatch(source, /indexedDB|sync[_ -]?queue|event[_ -]?bus|background[_ -]?sync/i);
   assert.doesNotMatch(source, /calories\s*[+*\/-]|proteinG\s*[+*\/-]|carbsG\s*[+*\/-]|fatG\s*[+*\/-]/);
 });
 
-test('main routes hydrate from the optional server account snapshot', async () => {
+test('main shell is identity-only and Nutrition loads only on routes that need it', async () => {
   const layout = await readWeb('app/(main)/layout.tsx');
+  const today = await readWeb('app/(main)/today/page.tsx');
+  const nutrition = await readWeb('app/(main)/nutrition/page.tsx');
   const shell = await readWeb('components/app-shell.tsx');
   const profile = await readWeb('components/profile-screen.tsx');
 
-  assert.match(layout, /loadAccountSnapshot/);
-  assert.match(layout, /initialDiary=\{snapshot\.diary\}/);
-  assert.doesNotMatch(layout, /force-dynamic/);
-  assert.match(shell, /account\?\.displayName/);
-  assert.match(shell, /ورود برای ذخیره در حساب/);
-  assert.match(profile, /from\(['"]profiles['"]\)\.upsert/);
-  assert.match(profile, /action=["']\/auth\/signout["']/);
+  assert.match(layout, /loadAccountIdentity/);
+  assert.match(layout, /AccountStateProvider/);
+  assert.doesNotMatch(layout, /NutritionStateProvider|initialDiary|loadAccountSnapshot/);
+  assert.match(today, /loadNutritionSnapshot/);
+  assert.match(today, /NutritionStateProvider/);
+  assert.match(nutrition, /NutritionStateProvider/);
+  assert.doesNotMatch(nutrition, /loadNutritionSnapshot/);
+  assert.match(shell, /useAccountState/);
+  assert.doesNotMatch(shell, /useNutritionState/);
+  assert.match(profile, /useAccountState/);
+  assert.doesNotMatch(profile, /useNutritionState|summary\.entryCount|resetDiary/);
 });
 
 test('Service Worker keeps Auth and private account HTML outside shared cache', async () => {
@@ -138,6 +149,7 @@ test('integration contains no privileged key material', async () => {
       ...requiredFiles,
       'components/nutrition-state.tsx',
       'components/profile-screen.tsx',
+      'components/app-shell.tsx',
       'lib/supabase/client.ts',
       'lib/supabase/server.ts',
       'lib/supabase/proxy.ts',
