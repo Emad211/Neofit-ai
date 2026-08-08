@@ -49,8 +49,8 @@ test('password recovery is non-enumerating and bound to signed exact session int
   const intent = await source('lib/auth/recovery-intent.ts');
   assert.match(recovery, /resetPasswordForEmail/);
   assert.match(recovery, /message=sent/);
-  assert.match(recovery, /hasValidRecoveryIntent\(userId, sessionId\)/);
-  assert.match(recovery, /claims\?\.session_id/);
+  assert.match(recovery, /activeAuthSession\(supabase\)/);
+  assert.match(recovery, /hasValidRecoveryIntent\(active\.userId, active\.sessionId\)/);
   assert.match(recovery, /auth\.updateUser\(\{ password \}\)/);
   assert.match(recovery, /scope: 'others'/);
   assert.match(verify, /setRecoveryIntent\(data\.user\.id, sessionId\)/);
@@ -64,10 +64,22 @@ test('password recovery is non-enumerating and bound to signed exact session int
   assert.match(intent, /maxAge:\s*0/);
 });
 
+test('sensitive Auth mutations require both local claims and live Auth-server user validation', async () => {
+  const active = await source('lib/auth/active-session.ts');
+  const security = await source('app/(main)/profile/security/actions.ts');
+  const securityPage = await source('app/(main)/profile/security/page.tsx');
+  const recoveryPage = await source('app/auth/update-password/page.tsx');
+  assert.match(active, /auth\.getClaims\(\)/);
+  assert.match(active, /auth\.getUser\(\)/);
+  assert.match(active, /session_id/);
+  assert.match(security, /activeAuthSession\(supabase\)/);
+  assert.match(securityPage, /activeAuthSession\(supabase\)/);
+  assert.match(recoveryPage, /activeAuthSession\(supabase\)/);
+});
+
 test('signed-in password changes require current password and revoke other refresh sessions', async () => {
   const security = await source('app/(main)/profile/security/actions.ts');
   assert.match(security, /current_password:\s*currentPassword/);
-  assert.match(security, /auth\.getClaims\(\)/);
   assert.match(security, /scope: 'others'/);
 });
 
