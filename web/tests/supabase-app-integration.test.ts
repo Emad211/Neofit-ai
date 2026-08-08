@@ -17,6 +17,7 @@ const requiredFiles = [
   'app/auth/page.tsx',
   'app/auth/callback/route.ts',
   'app/auth/confirm/route.ts',
+  'app/auth/verify/actions.ts',
   'app/auth/signout/route.ts',
   'components/account-state.tsx',
   'lib/supabase/account.ts',
@@ -55,24 +56,29 @@ test('Browser, Server and Proxy clients are typed and use verified claims', asyn
   assert.doesNotMatch(combined, /service[_-]?role/i);
 });
 
-test('email/password Auth uses Server Actions and safe callback routes', async () => {
+test('email/password Auth uses Server Actions and scanner-safe verification', async () => {
   const actions = await readWeb('app/auth/actions.ts');
   const callback = await readWeb('app/auth/callback/route.ts');
   const confirm = await readWeb('app/auth/confirm/route.ts');
+  const verify = await readWeb('app/auth/verify/actions.ts');
+  const password = await readWeb('lib/auth/password.ts');
   const signout = await readWeb('app/auth/signout/route.ts');
 
   assert.match(actions, /^['"]use server['"];?/m);
   assert.match(actions, /signInWithPassword/);
   assert.match(actions, /auth\.signUp/);
   assert.match(actions, /bootstrapAccount/);
-  assert.match(actions, /password\.length < 8/);
+  assert.match(actions, /validNewPassword/);
+  assert.match(password, /AUTH_PASSWORD_MIN_LENGTH = 12/);
   assert.doesNotMatch(actions, /redirect\([^\n]*(error\.message|error\.code)/);
   assert.match(callback, /exchangeCodeForSession/);
-  assert.match(callback, /safeNext/);
-  assert.match(confirm, /verifyOtp/);
-  assert.match(confirm, /token_hash/);
+  assert.match(callback, /safeInternalPath/);
+  assert.doesNotMatch(confirm, /verifyOtp/);
+  assert.match(confirm, /EMAIL_LINK_TOKEN_COOKIE/);
+  assert.match(verify, /verifyOtp/);
+  assert.match(verify, /pendingEmailLinkToken/);
   assert.match(signout, /auth\.getClaims\(\)/);
-  assert.match(signout, /auth\.signOut\(\)/);
+  assert.match(signout, /auth\.signOut\(\{ scope \}\)/);
 });
 
 test('shared identity and route-scoped nutrition use separate request contracts', async () => {
