@@ -11,8 +11,8 @@ Vercel project: neofit-preview-lab
 Project ID: prj_f1DbemcjbEaST2ExvsKvtcGFdG5x
 Team: emads-projects-41cb6447
 Current source branch: stage5/ai-provider-foundation
-Current READY Preview deployment: dpl_46FJXqX6ja4KLCqddAwCN81BSA13
-Preview URL: https://neofit-preview-8uk3ccq1b-emads-projects-41cb6447.vercel.app
+Current READY Preview deployment: dpl_2oojsfYFYT1REtyZ83ugsTEzo5xU
+Preview URL: https://neofit-preview-b3lygl527-emads-projects-41cb6447.vercel.app
 Deployment target: Preview (`target = null` in Vercel deployment metadata)
 Runtime errors after release: 0
 ```
@@ -31,11 +31,15 @@ The old `neofit-ai` project is not the active development target for this phase.
 
 ## Verified build contract
 
-The first successful Preview Lab release built the real NeoFit workspace with Next.js 16.2.12, workspace development dependencies, PWA icon generation, Turbopack compilation, TypeScript validation, all 18 current route outputs and three Node.js runtime functions. Runtime error clusters were zero immediately after deployment.
+The first successful Preview Lab release built the real NeoFit workspace with Next.js 16.2.12, workspace development dependencies, PWA icon generation, Turbopack compilation, TypeScript validation, all 19 current route outputs (including AI provider routes and `/profile/ai`) and three Node.js runtime functions. Runtime error clusters were zero immediately after deployment.
 
 ## Known Vercel creation quirk
 
 When the project was first created through the connected deploy API, Vercel recorded the initial failed creation deployment as `target = production` even though the request specified Preview. That deployment never became READY and serves no Production traffic. Subsequent deployments on the existing project correctly record Preview as `target = null`.
+
+## Node runtime drift
+
+The READY Stage 5C build exposed a QA-only warning: the controlled bootstrap was executed on Node 24 while the repository root contract is Node 22. The source workspaces are now pinned to `22.x`; the next explicit Preview bootstrap must also declare Node `22.x`. Do not spend another deployment only for this documentation/runtime pin; verify it on the next environment-backed QA release.
 
 ## Preview-only environment contract
 
