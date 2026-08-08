@@ -74,7 +74,9 @@ export function ProgressScreen() {
     }
     void load();
     return () => { cancelled = true; };
-  }, [account]);
+  // Measurement loading depends on account identity, not mutable profile fields.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account?.id]);
 
   const weightRows = useMemo(
     () => measurements.filter((row) => row.weightKg !== null).slice(-8),
