@@ -48,7 +48,9 @@
 }
 
 .progress-chart-card,
-.consistency-card {
+.consistency-card,
+.measurement-form,
+.measurement-history {
   padding: 20px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -82,9 +84,21 @@
   font-size: 1rem;
 }
 
+.progress-empty {
+  display: grid;
+  min-block-size: 150px;
+  place-items: center;
+  margin: 18px 0 0;
+  padding: 18px;
+  border: 1px dashed var(--border);
+  border-radius: 18px;
+  color: var(--text-soft);
+  text-align: center;
+  line-height: 1.9;
+}
+
 .weight-bars {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
   align-items: end;
   gap: 7px;
   block-size: 210px;
@@ -124,6 +138,68 @@
   white-space: nowrap;
 }
 
+.measurement-form {
+  display: grid;
+  gap: 14px;
+}
+
+.measurement-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.measurement-grid label,
+.measurement-note {
+  display: grid;
+  gap: 6px;
+  color: var(--text-soft);
+  font-size: .7rem;
+  font-weight: 800;
+}
+
+.measurement-grid input,
+.measurement-note input {
+  min-inline-size: 0;
+  min-block-size: 45px;
+  padding-inline: 12px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  direction: ltr;
+}
+
+.measurement-note input {
+  direction: rtl;
+}
+
+.measurement-form > button {
+  min-block-size: 46px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--primary);
+  color: #fff;
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.measurement-form > button:disabled {
+  opacity: .58;
+  cursor: wait;
+}
+
+.measurement-error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fde7e7;
+  color: #8b2525;
+  font-size: .72rem;
+}
+
 .consistency-card {
   display: grid;
   gap: 18px;
@@ -135,28 +211,49 @@
   font-size: 0.76rem;
 }
 
-.consistency-days {
+.measurement-history {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 6px;
+  gap: 9px;
 }
 
-.consistency-days span {
-  display: grid;
-  place-items: center;
-  aspect-ratio: 1;
-  max-block-size: 44px;
-  border-radius: 13px;
-  background: var(--surface-muted);
+.measurement-history article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 15px;
+  background: var(--surface-soft);
+}
+
+.measurement-history article div {
+  min-inline-size: 0;
+}
+
+.measurement-history article strong {
+  font-size: .8rem;
+}
+
+.measurement-history article p,
+.measurement-history article small {
+  display: block;
+  margin: 3px 0 0;
   color: var(--text-soft);
-  font-size: 0.72rem;
-  font-weight: 800;
+  font-size: .67rem;
+  line-height: 1.6;
 }
 
-.consistency-days span.is-active {
-  background: var(--primary);
-  color: #fff;
-  box-shadow: 0 8px 17px rgba(23, 107, 71, 0.2);
+.measurement-history article button {
+  flex: 0 0 auto;
+  border: 1px solid #e7c6c1;
+  border-radius: 10px;
+  background: #fff;
+  color: #934236;
+  font: inherit;
+  font-size: .68rem;
+  font-weight: 800;
+  padding: 7px 10px;
+  cursor: pointer;
 }
 
 .progress-demo-note {
@@ -166,6 +263,12 @@
   background: var(--surface-soft);
   color: var(--text-soft);
   font-size: 0.7rem;
+}
+
+@media (max-width: 720px) {
+  .measurement-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 420px) {
@@ -188,6 +291,7 @@
 
   .weight-bars {
     gap: 4px;
+    overflow-x: auto;
   }
 
   .weight-bar i {
