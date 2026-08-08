@@ -1,5 +1,6 @@
 import 'server-only';
 
+import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   NUTRIENT_KEYS,
   calculateGoalProgress,
@@ -15,6 +16,60 @@ import { goalLabels, parseOnboardingDraft } from '@/lib/onboarding/model';
 import type { Json } from '@/lib/supabase/database.types';
 import type { AiAuthenticatedContext } from '@/lib/ai/credential-store';
 import type { CoachContextDomain } from './context-router';
+
+type CoachProgressDatabase = {
+  __InternalSupabase: { PostgrestVersion: '14.15' };
+  public: {
+    Tables: {
+      body_measurements: {
+        Row: {
+          id: string;
+          user_id: string;
+          client_mutation_id: string;
+          local_date: string;
+          measured_at: string;
+          weight_kg: number | null;
+          waist_cm: number | null;
+          body_fat_percent: number | null;
+          note: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          client_mutation_id: string;
+          local_date: string;
+          measured_at?: string;
+          weight_kg?: number | null;
+          waist_cm?: number | null;
+          body_fat_percent?: number | null;
+          note?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          client_mutation_id?: string;
+          local_date?: string;
+          measured_at?: string;
+          weight_kg?: number | null;
+          waist_cm?: number | null;
+          body_fat_percent?: number | null;
+          note?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+    };
+    Views: { [_ in never]: never };
+    Functions: { [_ in never]: never };
+    Enums: { [_ in never]: never };
+    CompositeTypes: { [_ in never]: never };
+  };
+};
 
 function isRecord(value: Json | undefined | null): value is { [key: string]: Json | undefined } {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -57,6 +112,10 @@ function macroView(vector: NutritionVector) {
 function bounded(value: string | null | undefined, limit = 500) {
   const text = value?.trim();
   return text ? text.slice(0, limit) : null;
+}
+
+function rounded(value: number | null | undefined) {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.round(value * 10) / 10 : null;
 }
 
 export async function loadCoachContext(
@@ -176,6 +235,48 @@ export async function loadCoachContext(
         recent: sessions.filter((session) => session.status === 'completed').slice(0, 5),
         recentCompletedSetCount: sets.length,
         bestWeights: Array.from(bestWeights.values()).slice(0, 20),
+      };
+    })());
+  }
+
+  if (domains.includes('progress')) {
+    tasks.push((async () => {
+      // Reuse the exact authenticated client/session. The cast only supplies the
+      // Stage 10 table type until the global generated type file is regenerated.
+      const progressClient = supabase as unknown as SupabaseClient<CoachProgressDatabase>;
+      const result = await progressClient
+        .from('body_measurements')
+        .select('local_date,measured_at,weight_kg,waist_cm,body_fat_percent')
+        .eq('user_id', userId)
+        .order('measured_at', { ascending: false })
+        .limit(30);
+      if (result.error) throw new Error('Unable to load Coach progress context.');
+
+      const rows = result.data ?? [];
+      const latestWeight = rows.find((row) => typeof row.weight_kg === 'number') ?? null;
+      const latestWaist = rows.find((row) => typeof row.waist_cm === 'number') ?? null;
+      const latestBodyFat = rows.find((row) => typeof row.body_fat_percent === 'number') ?? null;
+      const weightRows = rows.filter((row) => typeof row.weight_kg === 'number');
+      const newestWeight = weightRows[0] ?? null;
+      const oldestWeight = weightRows.at(-1) ?? null;
+      const weightTrend = newestWeight && oldestWeight && weightRows.length >= 2
+        ? {
+            fromLocalDate: oldestWeight.local_date,
+            toLocalDate: newestWeight.local_date,
+            startWeightKg: rounded(oldestWeight.weight_kg),
+            endWeightKg: rounded(newestWeight.weight_kg),
+            changeKg: rounded((newestWeight.weight_kg ?? 0) - (oldestWeight.weight_kg ?? 0)),
+            sampleCount: weightRows.length,
+          }
+        : null;
+
+      context.progress = {
+        source: 'body_measurements',
+        measurementCount: rows.length,
+        latestWeight: latestWeight ? { localDate: latestWeight.local_date, measuredAt: latestWeight.measured_at, weightKg: rounded(latestWeight.weight_kg) } : null,
+        latestWaist: latestWaist ? { localDate: latestWaist.local_date, measuredAt: latestWaist.measured_at, waistCm: rounded(latestWaist.waist_cm) } : null,
+        latestBodyFat: latestBodyFat ? { localDate: latestBodyFat.local_date, measuredAt: latestBodyFat.measured_at, bodyFatPercent: rounded(latestBodyFat.body_fat_percent) } : null,
+        weightTrend,
       };
     })());
   }
