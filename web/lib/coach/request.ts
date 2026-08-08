@@ -1,0 +1,29 @@
+export type CoachRole = 'user' | 'assistant';
+export interface CoachHistoryMessage { readonly role: CoachRole; readonly content: string }
+
+export const COACH_MESSAGE_LIMIT = 2400;
+export const COACH_HISTORY_MESSAGE_LIMIT = 1400;
+export const COACH_HISTORY_MAX_MESSAGES = 6;
+export const COACH_HISTORY_TOTAL_LIMIT = 6000;
+
+export function parseCoachHistory(value: unknown): CoachHistoryMessage[] {
+  if (!Array.isArray(value)) return [];
+  const messages: CoachHistoryMessage[] = [];
+  let total = 0;
+  for (const item of value.slice(-COACH_HISTORY_MAX_MESSAGES)) {
+    if (!item || typeof item !== 'object') continue;
+    const record = item as Record<string, unknown>;
+    const role = record.role === 'user' || record.role === 'assistant' ? record.role : null;
+    const content = typeof record.content === 'string' ? record.content.trim().slice(0, COACH_HISTORY_MESSAGE_LIMIT) : '';
+    if (!role || !content) continue;
+    if (total + content.length > COACH_HISTORY_TOTAL_LIMIT) break;
+    messages.push({ role, content });
+    total += content.length;
+  }
+  return messages;
+}
+
+export function buildCoachInput(history: readonly CoachHistoryMessage[], message: string): string {
+  const transcript = history.map((item) => `${item.role === 'user' ? 'کاربر' : 'Coach'}: ${item.content}`).join('\n');
+  return `${transcript ? `گفتگوی اخیر (فقط برای پیوستگی مکالمه):\n${transcript}\n\n` : ''}پیام جدید کاربر:\n${message}`;
+}

@@ -2,7 +2,7 @@ import 'server-only';
 
 import { AI_PROVIDER_PRIORITY } from './config';
 import { decryptProviderApiKey } from './credential-vault';
-import { listStoredCredentials, markCredentialFailure } from './credential-store';
+import { listStoredCredentials, markCredentialFailure, type AiAuthenticatedContext } from './credential-store';
 import { generateFromProvider } from './provider-adapter';
 import { ProviderRequestError, cooldownUntilFor, shouldFallback } from './provider-error';
 import type { AiGenerationInput, AiGenerationResult, AiProvider } from './types';
@@ -13,17 +13,16 @@ function cooldownActive(value: string | null): boolean {
 
 export async function generateWithProviderFallback(
   request: AiGenerationInput,
+  context?: AiAuthenticatedContext,
 ): Promise<AiGenerationResult> {
-  const { userId, credentials } = await listStoredCredentials();
+  const { userId, credentials } = await listStoredCredentials(context);
   const byProvider = new Map(credentials.map((credential) => [credential.provider, credential]));
   let fallbackFrom: AiProvider | null = null;
   let lastError: unknown = null;
 
   for (const provider of AI_PROVIDER_PRIORITY) {
     const credential = byProvider.get(provider);
-    if (!credential || credential.status !== 'active' || cooldownActive(credential.cooldownUntil)) {
-      continue;
-    }
+    if (!credential || credential.status !== 'active' || cooldownActive(credential.cooldownUntil)) continue;
 
     const apiKey = decryptProviderApiKey({
       ciphertext: credential.ciphertext,
@@ -48,13 +47,12 @@ export async function generateWithProviderFallback(
     } catch (error) {
       lastError = error;
       if (!(error instanceof ProviderRequestError) || !shouldFallback(error)) throw error;
-
       await markCredentialFailure({
         provider,
         status: error.kind === 'auth' || error.kind === 'unsupported_model' ? 'invalid' : 'active',
         failureCode: error.code,
         cooldownUntil: cooldownUntilFor(error),
-      });
+      }, context);
       fallbackFrom ??= provider;
     }
   }

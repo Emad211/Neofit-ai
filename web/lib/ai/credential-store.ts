@@ -1,7 +1,14 @@
 import 'server-only';
 
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
+import type { Database } from '@/lib/supabase/database.types';
 import type { AiCredentialMetadata, AiProvider } from './types';
+
+export interface AiAuthenticatedContext {
+  readonly supabase: SupabaseClient<Database>;
+  readonly userId: string;
+}
 
 export interface StoredAiCredential extends AiCredentialMetadata {
   readonly userId: string;
@@ -11,12 +18,16 @@ export interface StoredAiCredential extends AiCredentialMetadata {
   readonly keyVersion: number;
 }
 
-async function authenticatedContext() {
+export async function authenticatedAiContext(): Promise<AiAuthenticatedContext> {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
-  if (error || !userId) throw new Error('AI authentication required.');
+  if (error || typeof userId !== 'string' || !userId) throw new Error('AI authentication required.');
   return { supabase, userId };
+}
+
+async function resolveContext(context?: AiAuthenticatedContext) {
+  return context ?? authenticatedAiContext();
 }
 
 function mapCredential(row: {
@@ -49,8 +60,8 @@ function mapCredential(row: {
   };
 }
 
-export async function listStoredCredentials(): Promise<{ userId: string; credentials: StoredAiCredential[] }> {
-  const { supabase, userId } = await authenticatedContext();
+export async function listStoredCredentials(context?: AiAuthenticatedContext): Promise<{ userId: string; credentials: StoredAiCredential[] }> {
+  const { supabase, userId } = await resolveContext(context);
   const { data, error } = await supabase
     .from('encrypted_provider_credentials')
     .select('user_id,provider,ciphertext,iv,auth_tag,key_version,key_hint,model_id,status,cooldown_until,last_validated_at,last_failure_code')
@@ -69,7 +80,7 @@ export async function upsertStoredCredential(input: {
   keyHint: string;
   modelId: string;
 }): Promise<AiCredentialMetadata> {
-  const { supabase, userId } = await authenticatedContext();
+  const { supabase, userId } = await authenticatedAiContext();
   const validatedAt = new Date().toISOString();
   const { data, error } = await supabase
     .from('encrypted_provider_credentials')
@@ -102,7 +113,7 @@ export async function upsertStoredCredential(input: {
 }
 
 export async function deleteStoredCredential(provider: AiProvider): Promise<void> {
-  const { supabase, userId } = await authenticatedContext();
+  const { supabase, userId } = await authenticatedAiContext();
   const { error } = await supabase
     .from('encrypted_provider_credentials')
     .delete()
@@ -112,16 +123,11 @@ export async function deleteStoredCredential(provider: AiProvider): Promise<void
 }
 
 export async function markCredentialValidated(provider: AiProvider): Promise<AiCredentialMetadata> {
-  const { supabase, userId } = await authenticatedContext();
+  const { supabase, userId } = await authenticatedAiContext();
   const validatedAt = new Date().toISOString();
   const { data, error } = await supabase
     .from('encrypted_provider_credentials')
-    .update({
-      status: 'active',
-      cooldown_until: null,
-      last_validated_at: validatedAt,
-      last_failure_code: null,
-    })
+    .update({ status: 'active', cooldown_until: null, last_validated_at: validatedAt, last_failure_code: null })
     .eq('user_id', userId)
     .eq('provider', provider)
     .select('provider,key_hint,model_id,status,cooldown_until,last_validated_at,last_failure_code')
@@ -143,15 +149,11 @@ export async function markCredentialFailure(input: {
   status: 'active' | 'invalid';
   failureCode: string;
   cooldownUntil: string | null;
-}): Promise<void> {
-  const { supabase, userId } = await authenticatedContext();
+}, context?: AiAuthenticatedContext): Promise<void> {
+  const { supabase, userId } = await resolveContext(context);
   await supabase
     .from('encrypted_provider_credentials')
-    .update({
-      status: input.status,
-      last_failure_code: input.failureCode,
-      cooldown_until: input.cooldownUntil,
-    })
+    .update({ status: input.status, last_failure_code: input.failureCode, cooldown_until: input.cooldownUntil })
     .eq('user_id', userId)
     .eq('provider', input.provider);
 }

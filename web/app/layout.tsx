@@ -12,6 +12,7 @@ import './profile-integration.css';
 import './ai-provider-settings.css';
 import './workout-player.css';
 import './onboarding.css';
+import './coach.css';
 import './account-integration.css';
 import './auth.css';
 

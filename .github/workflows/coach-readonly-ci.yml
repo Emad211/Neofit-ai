@@ -1,0 +1,83 @@
+name: Coach Read-Only CI
+
+on:
+  push:
+    branches:
+      - 'stage8/**'
+    paths:
+      - 'web/app/api/ai/coach/**'
+      - 'web/app/(main)/coach/**'
+      - 'web/components/coach-screen.tsx'
+      - 'web/lib/coach/**'
+      - 'web/lib/ai/credential-store.ts'
+      - 'web/lib/ai/provider-router.ts'
+      - 'web/tests/coach-readonly.test.ts'
+      - 'web/package.json'
+      - 'docs/NEOFIT_STAGE8_COACH_READONLY.md'
+      - '.github/workflows/coach-readonly-ci.yml'
+  pull_request:
+    branches:
+      - stage7/onboarding-body-map
+    paths:
+      - 'web/app/api/ai/coach/**'
+      - 'web/app/(main)/coach/**'
+      - 'web/components/coach-screen.tsx'
+      - 'web/lib/coach/**'
+      - 'web/lib/ai/credential-store.ts'
+      - 'web/lib/ai/provider-router.ts'
+      - 'web/tests/coach-readonly.test.ts'
+      - 'web/package.json'
+      - 'docs/NEOFIT_STAGE8_COACH_READONLY.md'
+      - '.github/workflows/coach-readonly-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coach-readonly-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_VERCEL_ENV: preview
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+      - name: Install workspace dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: Coach read-only contract tests
+        working-directory: web
+        run: npm run test:coach
+      - name: TypeScript
+        working-directory: web
+        run: npm run typecheck
+      - name: Production build
+        working-directory: web
+        run: npm run build
+      - name: Verify request and authority boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "AI_PROVIDER_PRIORITY.*google.*avalai" web/lib/ai/config.ts
+          grep -q 'routeCoachDomains' web/app/api/ai/coach/route.ts
+          grep -q 'generateWithProviderFallback' web/app/api/ai/coach/route.ts
+          grep -q '@neofit/nutrition-core' web/lib/coach/context-loader.ts
+          grep -q '@neofit/nutrition-core' web/lib/coach/system-prompt.ts
+          if grep -Eq 'record\.systemInstruction|\.from\([^)]*\)\.(insert|update|delete|upsert)' web/app/api/ai/coach/route.ts; then
+            echo 'Client system instruction or write mutation detected in Coach route.' >&2
+            exit 1
+          fi
