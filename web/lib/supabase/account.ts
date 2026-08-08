@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { cache } from 'react';
 import {
   NUTRIENT_KEYS,
   type MealType,
@@ -8,16 +9,15 @@ import {
   type NutritionRange,
   type NutritionVector,
 } from '@neofit/nutrition-core';
-import { dailyTargets } from '@/data/fixtures';
 import {
   mealTypeLabelFa,
   webMacrosFromEstimate,
   type WebDiaryEntry,
 } from '@/lib/nutrition-adapter';
-import { normalizeTimeZone } from '@/lib/local-date';
+import { formatLocalDate, normalizeTimeZone } from '@/lib/local-date';
 import { bootstrapAccount, safeDisplayName } from './bootstrap';
 import { createClient } from './server';
-import type { Database, Json, Tables } from './database.types';
+import type { Json, Tables } from './database.types';
 import { hasSupabasePublicEnv } from './env';
 
 export interface NeoFitAccount {
@@ -27,12 +27,22 @@ export interface NeoFitAccount {
   readonly timezone: string;
 }
 
-export interface AccountSnapshot {
+export interface AccountIdentitySnapshot {
   readonly configured: boolean;
   readonly account: NeoFitAccount | null;
+  readonly loadError: string | null;
+}
+
+export interface NutritionSnapshot {
   readonly diary: readonly WebDiaryEntry[] | null;
   readonly goals: NutritionGoals | null;
+  readonly localDate: string | null;
   readonly loadError: string | null;
+}
+
+export interface AccountSnapshot extends AccountIdentitySnapshot {
+  readonly diary: readonly WebDiaryEntry[] | null;
+  readonly goals: NutritionGoals | null;
 }
 
 type NutritionEntryRow = Tables<'nutrition_entries'>;
@@ -126,41 +136,41 @@ function rowToDiaryEntry(row: NutritionEntryRow): WebDiaryEntry | null {
 
 function parseGoals(value: Json | null | undefined): NutritionGoals | null {
   const daily = parseNutritionVector(value ?? undefined);
-  return daily ? { daily } : null;
+  if (!daily) return null;
+  // A personalized Web target is configured only when all four displayed
+  // macro targets are actually present. Partial/empty rows remain unconfigured.
+  for (const key of ['energyKcal', 'proteinG', 'carbsG', 'fatG'] as const) {
+    if (daily[key] === undefined || !Number.isFinite(daily[key])) return null;
+  }
+  return { daily };
 }
 
 export { bootstrapAccount } from './bootstrap';
 
-export async function loadAccountSnapshot(): Promise<AccountSnapshot> {
+/**
+ * Shared shell identity only. React cache prevents duplicate identity work when
+ * a route-level server component needs the same account during one render.
+ */
+export const loadAccountIdentity = cache(async (): Promise<AccountIdentitySnapshot> => {
   if (!hasSupabasePublicEnv()) {
-    return { configured: false, account: null, diary: null, goals: null, loadError: null };
+    return { configured: false, account: null, loadError: null };
   }
 
   try {
     const supabase = await createClient();
     const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
-    const claims = claimsData?.claims;
-    const userId = typeof claims?.sub === 'string' ? claims.sub : null;
+    const userId = typeof claimsData?.claims?.sub === 'string' ? claimsData.claims.sub : null;
     if (claimsError || !userId) {
-      return { configured: true, account: null, diary: null, goals: null, loadError: null };
+      return { configured: true, account: null, loadError: null };
     }
 
-    const emailClaim = claimsData?.claims?.email;
+    const emailClaim = claimsData.claims?.email;
     const email = typeof emailClaim === 'string' ? emailClaim : '';
-    const [profileResult, goalsResult, entriesResult] = await Promise.all([
-      supabase.from('profiles').select('display_name, timezone').eq('id', userId).maybeSingle(),
-      supabase.from('nutrition_goals').select('daily').eq('user_id', userId).maybeSingle(),
-      supabase
-        .from('nutrition_entries')
-        .select('*')
-        .eq('user_id', userId)
-        .order('logged_at', { ascending: true }),
-    ]);
-
-    const queryError = profileResult.error ?? goalsResult.error ?? entriesResult.error;
-    const diary = (entriesResult.data ?? [])
-      .map(rowToDiaryEntry)
-      .filter((entry): entry is WebDiaryEntry => entry !== null);
+    const profileResult = await supabase
+      .from('profiles')
+      .select('display_name, timezone')
+      .eq('id', userId)
+      .maybeSingle();
 
     return {
       configured: true,
@@ -170,17 +180,66 @@ export async function loadAccountSnapshot(): Promise<AccountSnapshot> {
         displayName: safeDisplayName(profileResult.data?.display_name, email),
         timezone: normalizeTimeZone(profileResult.data?.timezone),
       },
-      diary,
-      goals: parseGoals(goalsResult.data?.daily) ?? dailyTargets,
-      loadError: queryError ? 'خواندن بخشی از اطلاعات حساب ناموفق بود.' : null,
+      loadError: profileResult.error ? 'خواندن اطلاعات پایه حساب ناموفق بود.' : null,
     };
   } catch {
-    return {
-      configured: true,
-      account: null,
-      diary: null,
-      goals: null,
-      loadError: 'اتصال به حساب نئوفیت در دسترس نبود.',
-    };
+    return { configured: true, account: null, loadError: 'اتصال به حساب نئوفیت در دسترس نبود.' };
   }
+});
+
+/**
+ * Nutrition is route-scoped and date-bounded. It is not part of the shared app
+ * shell anymore, so Workout/Profile/Progress/Coach do not load the diary.
+ */
+export async function loadNutritionSnapshot(): Promise<NutritionSnapshot> {
+  const identity = await loadAccountIdentity();
+  if (!identity.account) {
+    return { diary: null, goals: null, localDate: null, loadError: identity.loadError };
+  }
+
+  try {
+    const supabase = await createClient();
+    const localDate = formatLocalDate(new Date(), identity.account.timezone);
+    const [goalsResult, entriesResult] = await Promise.all([
+      supabase
+        .from('nutrition_goals')
+        .select('daily')
+        .eq('user_id', identity.account.id)
+        .maybeSingle(),
+      supabase
+        .from('nutrition_entries')
+        .select('*')
+        .eq('user_id', identity.account.id)
+        .eq('local_date', localDate)
+        .order('logged_at', { ascending: true }),
+    ]);
+
+    const diary = (entriesResult.data ?? [])
+      .map(rowToDiaryEntry)
+      .filter((entry): entry is WebDiaryEntry => entry !== null);
+    const queryError = goalsResult.error ?? entriesResult.error;
+    return {
+      diary,
+      goals: parseGoals(goalsResult.data?.daily),
+      localDate,
+      loadError: queryError ? 'خواندن بخشی از اطلاعات تغذیه حساب ناموفق بود.' : null,
+    };
+  } catch {
+    return { diary: null, goals: null, localDate: null, loadError: 'خواندن تغذیه حساب در دسترس نبود.' };
+  }
+}
+
+/** Backward-compatible composition used by tests/legacy callers. */
+export async function loadAccountSnapshot(): Promise<AccountSnapshot> {
+  const identity = await loadAccountIdentity();
+  if (!identity.account) {
+    return { ...identity, diary: null, goals: null };
+  }
+  const nutrition = await loadNutritionSnapshot();
+  return {
+    ...identity,
+    diary: nutrition.diary,
+    goals: nutrition.goals,
+    loadError: identity.loadError ?? nutrition.loadError,
+  };
 }
