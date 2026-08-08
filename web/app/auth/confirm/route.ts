@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { EMAIL_LINK_TOKEN_COOKIE, emailLinkTokenCookieOptions } from '@/lib/auth/email-link-intent';
 import { safeInternalPath } from '@/lib/auth/redirect';
-import { setRecoveryIntent } from '@/lib/auth/recovery-intent';
+import { hasRecoveryIntentKey, setRecoveryIntent } from '@/lib/auth/recovery-intent';
 import { bootstrapAccount } from '@/lib/supabase/account';
 import { hasSupabasePublicEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
@@ -26,6 +26,10 @@ export async function GET(request: NextRequest) {
 
   const next = safeInternalPath(request.nextUrl.searchParams.get('next'), '/onboarding');
   const recoveryFlow = next === '/auth/update-password';
+  if (recoveryFlow && !hasRecoveryIntentKey()) {
+    return NextResponse.redirect(new URL('/auth/recover?error=config', request.url), 303);
+  }
+
   if (request.nextUrl.searchParams.get('error')) {
     return recoveryFlow
       ? NextResponse.redirect(new URL('/auth/recover?error=invalid-link', request.url))
