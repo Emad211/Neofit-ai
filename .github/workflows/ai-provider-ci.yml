@@ -1,0 +1,100 @@
+name: AI Provider Foundation CI
+
+on:
+  push:
+    branches:
+      - 'stage5/**'
+    paths:
+      - 'web/lib/ai/**'
+      - 'web/app/api/ai/**'
+      - 'web/tests/ai-provider-foundation.test.ts'
+      - 'web/lib/supabase/database.types.ts'
+      - 'web/.env.example'
+      - 'web/package.json'
+      - 'supabase/migrations/*provider_credentials*.sql'
+      - 'docs/NEOFIT_AI_PROVIDER_*.md'
+      - 'docs/NEOFIT_PREVIEW_LAB.md'
+      - '.github/workflows/ai-provider-ci.yml'
+  pull_request:
+    branches:
+      - web/full-frontend-integration
+    paths:
+      - 'web/lib/ai/**'
+      - 'web/app/api/ai/**'
+      - 'web/tests/ai-provider-foundation.test.ts'
+      - 'web/lib/supabase/database.types.ts'
+      - 'web/.env.example'
+      - 'web/package.json'
+      - 'supabase/migrations/*provider_credentials*.sql'
+      - 'docs/NEOFIT_AI_PROVIDER_*.md'
+      - 'docs/NEOFIT_PREVIEW_LAB.md'
+      - '.github/workflows/ai-provider-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-provider-foundation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+
+      - name: Install workspace dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+
+      - name: AI provider contract tests
+        working-directory: web
+        run: npm run test:ai-provider
+
+      - name: TypeScript
+        working-directory: web
+        run: npm run typecheck
+
+      - name: Production build
+        working-directory: web
+        run: npm run build
+
+      - name: Fail on committed provider secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE \
+            --exclude='*.test.ts' \
+            --exclude='.env.example' \
+            '(AIza[0-9A-Za-z_-]{20,}|aa-[0-9A-Za-z_-]{12,}|avk_[0-9A-Za-z_-]{12,}|NEXT_PUBLIC_AI_CREDENTIAL_ENCRYPTION_KEY)' \
+            web/lib/ai web/app/api/ai supabase docs; then
+            echo 'Potential AI provider secret or public encryption-key exposure found.' >&2
+            exit 1
+          fi
+
+      - name: Verify migration security boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE=supabase/migrations/20260808160000_encrypted_provider_credentials.sql
+          test -s "$FILE"
+          grep -q 'enable row level security' "$FILE"
+          grep -q 'auth.uid()' "$FILE"
+          grep -q 'grant select, insert, update, delete.*authenticated' "$FILE"
+          grep -q "provider in ('google', 'avalai')" "$FILE"
+          ! grep -qiE 'api_key[[:space:]]+text' "$FILE"

@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      encrypted_provider_credentials: {
+        Row: {
+          auth_tag: string
+          ciphertext: string
+          cooldown_until: string | null
+          created_at: string
+          id: string
+          iv: string
+          key_hint: string
+          key_version: number
+          last_failure_code: string | null
+          last_validated_at: string
+          model_id: string
+          provider: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auth_tag: string
+          ciphertext: string
+          cooldown_until?: string | null
+          created_at?: string
+          id?: string
+          iv: string
+          key_hint: string
+          key_version?: number
+          last_failure_code?: string | null
+          last_validated_at?: string
+          model_id: string
+          provider: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auth_tag?: string
+          ciphertext?: string
+          cooldown_until?: string | null
+          created_at?: string
+          id?: string
+          iv?: string
+          key_hint?: string
+          key_version?: number
+          last_failure_code?: string | null
+          last_validated_at?: string
+          model_id?: string
+          provider?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       nutrition_entries: {
         Row: {
           client_mutation_id: string
