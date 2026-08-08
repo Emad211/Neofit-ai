@@ -1,6 +1,14 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
+  "git": {
+    "deploymentEnabled": {
+      "stage2/pwa-vercel-foundation": true,
+      "vercel/preview": true,
+      "*": false
+    }
+  },
+  "ignoreCommand": "node scripts/vercel-ignore.mjs",
   "installCommand": "npm install --no-audit --no-fund",
   "buildCommand": "npm run build:web",
   "devCommand": "npm --workspace @neofit/web run dev",

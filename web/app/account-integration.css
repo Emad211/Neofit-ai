@@ -1,0 +1,106 @@
+.offline-note a {
+  color: inherit;
+  font-weight: 850;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.offline-note[data-sync-status='saving'] {
+  border-color: #eadcb8;
+  background: rgba(255, 249, 229, 0.9);
+  color: #795d22;
+}
+
+.sync-destination-note,
+.meal-submit-error {
+  padding: 10px 12px;
+  margin: 0 0 12px;
+  border-radius: 12px;
+  font-size: .72rem;
+  font-weight: 750;
+}
+
+.sync-destination-note {
+  background: var(--surface-soft);
+  color: var(--primary-strong);
+}
+
+.meal-submit-error {
+  background: #fde7e7;
+  color: #8b2525;
+}
+
+.account-edit-card,
+.account-connect-card {
+  display: grid;
+  gap: 11px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .88);
+}
+
+.account-edit-card span,
+.account-connect-card span {
+  color: var(--primary);
+  font-size: .68rem;
+  font-weight: 850;
+}
+
+.account-edit-card h3,
+.account-connect-card h3 {
+  margin: 3px 0;
+  font-size: .95rem;
+}
+
+.account-edit-card label {
+  color: var(--text-soft);
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.account-edit-card input {
+  min-block-size: 48px;
+  padding-inline: 13px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: #fff;
+}
+
+.account-edit-card button,
+.account-connect-card a,
+.signout-form button {
+  display: inline-flex;
+  min-block-size: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  font: inherit;
+  font-size: .76rem;
+  font-weight: 850;
+}
+
+.account-edit-card button,
+.account-connect-card a {
+  border: 0;
+  background: var(--primary);
+  color: #fff;
+}
+
+.account-edit-card button {
+  cursor: pointer;
+}
+
+.account-connect-card p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: .74rem;
+}
+
+.signout-form button {
+  inline-size: 100%;
+  border: 1px solid rgba(137, 53, 53, .24);
+  background: rgba(255, 244, 244, .92);
+  color: #8a3535;
+  cursor: pointer;
+}

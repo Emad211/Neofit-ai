@@ -6,8 +6,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Stage 4B protects only the future account/auth surface. Public fixture
-  // routes and PWA assets remain outside this matcher: _next/static, sw.js,
-  // manifest.webmanifest and icons are never session-refresh entrypoints.
-  matcher: ['/auth/:path*', '/account/:path*'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2?)$).*)',
+  ],
 };

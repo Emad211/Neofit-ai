@@ -6,6 +6,7 @@ on:
       - web/pwa-foundation
       - stage2/pwa-vercel-foundation
       - 'stage3/**'
+      - 'web/**'
     paths:
       - 'web/**'
       - 'packages/nutrition-core/**'
@@ -67,7 +68,7 @@ jobs:
           mkdir -p artifacts
           printf '{"commit":"%s","status":"preflight"}\n' "$GITHUB_SHA" > artifacts/preflight.json
 
-      - name: Verify product, PWA and nutrition-adapter contracts
+      - name: Verify product, PWA, Auth and nutrition contracts
         working-directory: .
         shell: bash
         run: |
@@ -77,6 +78,7 @@ jobs:
           grep -q 'manifest.webmanifest' web/app/layout.tsx
           grep -q 'PwaRegister' web/app/layout.tsx
           grep -q "url.pathname.startsWith('/api/')" web/public/sw.js
+          grep -q "url.pathname.startsWith('/auth/')" web/public/sw.js
           grep -q "request.headers.has('authorization')" web/public/sw.js
           grep -q 'window.scrollTo' web/components/neofit-prototype.tsx
           grep -q 'NEXT_PUBLIC_VERCEL_ENV' web/lib/environment.ts
@@ -90,6 +92,13 @@ jobs:
           test -s docs/NEOFIT_WEB_NUTRITION_ADAPTER_AUTHORITY_MAP.md
           test -s web/tests/web-nutrition-adapter-golden-v1.ts
           test -s web/tests/web-nutrition-adapter.test.ts
+          test -s web/tests/supabase-app-integration.test.ts
+          test -s web/lib/supabase/account.ts
+          test -s web/app/auth/actions.ts
+          test -s web/app/auth/page.tsx
+          test -s web/app/auth/callback/route.ts
+          test -s web/app/auth/confirm/route.ts
+          test -s web/app/auth/signout/route.ts
           test -s packages/nutrition-core/src/index.ts
           test -s web/app/manifest.ts
           test -s web/app/offline/page.tsx
@@ -104,6 +113,9 @@ jobs:
 
       - name: Web nutrition adapter parity tests
         run: npm run test:adapter
+
+      - name: Supabase Application integration tests
+        run: npm run test:supabase-app
 
       - name: Production build
         run: npm run build
@@ -153,7 +165,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          printf '{\n  "commit": "%s",\n  "package": "@neofit/web",\n  "nutritionCore": "@neofit/nutrition-core",\n  "batch5Merge": "d3c0a28ecf2596e94c86ff74e2f00a0523219433",\n  "webFixtureAuthorityBlob": "08e623948b84e4e4e261528b1c332ae2e76af4b7",\n  "webPrototypeAuthorityBlob": "add0839d207e5b3b12288657fe53077c9a4fda0a",\n  "mobileLegacyUiAdapterBlob": "bbacac7a376ba9edb14b14f673d3d708dfa3319e",\n  "coreLegacyAdapterBlob": "eb4be071cfb3ccc6bb03261abf49aa7ae972028d",\n  "coreSearchBlob": "3dc081e6f22f9d98518ad7411bcbd5c6394cc983",\n  "coreDiaryBlob": "e297eed728a7457b9b46529a761e450bd647e97d",\n  "nutritionArithmetic": "shared-core-only",\n  "webPackageStrategy": "local-file-dependency",\n  "generatedAt": "%s"\n}\n' \
+          printf '{\n  "commit": "%s",\n  "package": "@neofit/web",\n  "nutritionCore": "@neofit/nutrition-core",\n  "batch5Merge": "d3c0a28ecf2596e94c86ff74e2f00a0523219433",\n  "webFixtureAuthorityBlob": "08e623948b84e4e4e261528b1c332ae2e76af4b7",\n  "webPrototypeAuthorityBlob": "add0839d207e5b3b12288657fe53077c9a4fda0a",\n  "mobileLegacyUiAdapterBlob": "bbacac7a376ba9edb14b14f673d3d708dfa3319e",\n  "coreLegacyAdapterBlob": "eb4be071cfb3ccc6bb03261abf49aa7ae972028d",\n  "coreSearchBlob": "3dc081e6f22f9d98518ad7411bcbd5c6394cc983",\n  "coreDiaryBlob": "e297eed728a7457b9b46529a761e450bd647e97d",\n  "nutritionArithmetic": "shared-core-only",\n  "accountPersistence": "optional-supabase-rls",\n  "guestPersistence": "browser-local",\n  "webPackageStrategy": "local-file-dependency",\n  "generatedAt": "%s"\n}\n' \
             "$GITHUB_SHA" \
             "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             > artifacts/web-adapter-metadata.json

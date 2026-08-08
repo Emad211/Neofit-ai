@@ -1,0 +1,8 @@
+NeoFit canonical Vercel release metadata
+release: canonical-production-and-preview-v1
+source-development-branch: web/full-frontend-integration
+production-branch: stage2/pwa-vercel-foundation
+preview-release-branch: vercel/preview
+project: neofit-ai
+production-domain: neofit-ai-rust.vercel.app
+environments: production-and-preview-only

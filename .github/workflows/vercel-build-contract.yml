@@ -4,10 +4,15 @@ on:
   push:
     branches:
       - web/pwa-foundation
+      - web/full-frontend-integration
+      - stage2/pwa-vercel-foundation
+      - vercel/preview
       - 'fix/**'
     paths:
       - package.json
       - vercel.json
+      - .vercel-deploy
+      - scripts/vercel-ignore.mjs
       - web/**
       - packages/nutrition-core/**
       - .github/workflows/vercel-build-contract.yml
@@ -17,6 +22,8 @@ on:
     paths:
       - package.json
       - vercel.json
+      - .vercel-deploy
+      - scripts/vercel-ignore.mjs
       - web/**
       - packages/nutrition-core/**
       - .github/workflows/vercel-build-contract.yml
@@ -53,15 +60,44 @@ jobs:
           set -euo pipefail
           test -s package.json
           test -s vercel.json
+          test -s .vercel-deploy
+          test -s scripts/vercel-ignore.mjs
+          node --check scripts/vercel-ignore.mjs
           grep -q '"workspaces"' package.json
           grep -q '"web"' package.json
           grep -q '"packages/nutrition-core"' package.json
           grep -q '"next": "16.2.12"' package.json
           grep -q '"build:web": "npm --workspace @neofit/web run build"' package.json
           grep -q '"framework": "nextjs"' vercel.json
+          grep -q '"ignoreCommand": "node scripts/vercel-ignore.mjs"' vercel.json
+          grep -q '"stage2/pwa-vercel-foundation": true' vercel.json
+          grep -q '"vercel/preview": true' vercel.json
+          grep -q '"\*": false' vercel.json
           grep -q '"installCommand": "npm install --no-audit --no-fund"' vercel.json
           grep -q '"buildCommand": "npm run build:web"' vercel.json
           grep -q '"outputDirectory": "web/.next"' vercel.json
+          grep -q "CANONICAL_PRODUCTION_BRANCH = 'stage2/pwa-vercel-foundation'" scripts/vercel-ignore.mjs
+          grep -q "CANONICAL_PREVIEW_BRANCH = 'vercel/preview'" scripts/vercel-ignore.mjs
+          grep -q 'production-branch: stage2/pwa-vercel-foundation' .vercel-deploy
+          grep -q 'preview-release-branch: vercel/preview' .vercel-deploy
+          grep -q 'project: neofit-ai' .vercel-deploy
+          grep -q 'production-domain: neofit-ai-rust.vercel.app' .vercel-deploy
+
+          assert_exit() {
+            expected="$1"
+            shift
+            set +e
+            "$@" >/tmp/neofit-vercel-ignore.log 2>&1
+            actual="$?"
+            set -e
+            cat /tmp/neofit-vercel-ignore.log
+            test "$actual" -eq "$expected"
+          }
+
+          assert_exit 1 env VERCEL_ENV=production VERCEL_GIT_COMMIT_REF=stage2/pwa-vercel-foundation node scripts/vercel-ignore.mjs
+          assert_exit 1 env VERCEL_ENV=preview VERCEL_GIT_COMMIT_REF=vercel/preview node scripts/vercel-ignore.mjs
+          assert_exit 0 env VERCEL_ENV=production VERCEL_GIT_COMMIT_REF=web/full-frontend-integration node scripts/vercel-ignore.mjs
+          assert_exit 0 env VERCEL_ENV=preview VERCEL_GIT_COMMIT_REF=web/full-frontend-integration node scripts/vercel-ignore.mjs
 
       - name: Install workspace dependencies
         run: npm install --no-audit --no-fund

@@ -49,6 +49,17 @@ export function parseSupabasePublicEnv(
   };
 }
 
+export function hasSupabasePublicEnv(
+  source: SupabaseEnvironmentSource = process.env,
+): boolean {
+  try {
+    parseSupabasePublicEnv(source);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function readSupabasePublicEnv(): SupabasePublicEnvironment {
   return parseSupabasePublicEnv({
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,

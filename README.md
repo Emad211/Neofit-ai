@@ -1,124 +1,136 @@
 # NeoFit AI
 
-NeoFit AI is a Persian-first fitness and nutrition product built around versioned IFKB data, deterministic TypeScript nutrition rules and a secure Supabase persistence foundation.
+NeoFit یک PWA فارسی و Mobile-first برای تغذیه و تمرین است. رابط وب با Next.js App Router ساخته می‌شود، محاسبات تغذیه فقط از Shared Nutrition Core می‌آیند و دادهٔ حساب با Supabase Auth/Postgres/RLS نگهداری می‌شود.
 
-## Active product direction
-
-The target product is a mobile-first installable PWA:
-
-- Next.js App Router + strict TypeScript
-- Persian default locale and RTL-first UI
-- `packages/nutrition-core` as the deterministic Nutrition authority
-- Supabase Auth/Postgres/RLS for account and personal-data persistence
-- IFKB + USDA SR Legacy + FNDDS as nutrition sources of truth
-- AI/Vision restricted to identity and plan-language assistance; provider Nutrition is rejected
-
-The Expo application under [`mobile/`](mobile/README.md) remains a frozen reference and migration source.
-
-## Current stage state
-
-- Stage 0 — PWA pivot: complete
-- Stage 1 — Persian RTL UX: complete and accepted
-- Stage 2A — local PWA foundation: complete
-- Stage 2B — protected Vercel HTTPS validation: active/parallel in Issue #16 / PR #28
-- Stage 3 — Shared Nutrition Core and Web parity: complete
-- Stage 4A — Supabase Project: complete
-- Stage 4B — SSR clients and session foundation: complete/merged in PR #30
-- Stage 4C — Identity schema and RLS: implemented and remotely proven in Draft PR #33; not merged
-- Stage 4D — Nutrition persistence: not started; next only after Stage 4C merge
-- Complete Persian frontend: browser-proven in separate Draft PR #34; not yet ported into current `web/` architecture
-- Stage 5–9: not started
-
-## Supabase Project
+## مسیر فعال توسعه
 
 ```text
-name: neofit
-project ref: rjwrobltmjodfarnltal
-region: eu-central-1
-status: ACTIVE_HEALTHY
+repository: Emad211/Neofit-ai
+architecture base: web/pwa-foundation
+active branch: web/full-frontend-integration
+active Draft PR: #36
+frontend UX reference: revival/full-ui-front / Draft PR #34
 ```
 
-Current Supabase foundation:
+`master` شاخهٔ ادامهٔ وب نیست. PR #34 مرجع کامل UX محلی است؛ کد Production-connected به‌صورت مرحله‌ای داخل PR #36 Port می‌شود و PR #34 مستقیماً Merge نمی‌شود.
 
-- fail-closed Browser environment validation;
-- Browser and Server Supabase clients;
-- cookie-aware Proxy using `getClaims()`;
-- `private, no-store` session responses;
-- migration-driven schema authority;
-- live `profiles` and `user_settings` tables;
-- RLS enabled with own-row policies;
-- generated TypeScript database types;
-- zero Security and Performance advisor lints.
+## معماری قفل‌شده
 
-No key value is stored in Git. No privileged credential is exposed to Browser code.
+- Next.js App Router + strict TypeScript در `web/`
+- فارسی و RTL
+- `packages/nutrition-core` تنها مرجع محاسبات تغذیه
+- IFKB + USDA SR Legacy + FNDDS به‌عنوان مرجع داده
+- Supabase Auth + Postgres + own-row RLS
+- Guest Browser-local fallback
+- Service Worker فقط برای shell و دادهٔ عمومی قابل Cache
+- بدون Service Role یا Secret سروری در Browser
+- بدون محاسبهٔ دوبارهٔ Nutrition در SQL یا React
+- بدون Queue، Event Bus، IndexedDB یا Background Sync در برش فعلی
 
-Stage 4C evidence:
+## وضعیت پیاده‌سازی
+
+### Merge شده
 
 ```text
-migration: 20260804232149_identity_foundation.sql
-Identity CI: 30996283909 — success
-Foundation CI: 30996283993 — success
-Web CI: 30996283899 — success
-Vercel Build Contract: 30996283903 — success
-Runtime RLS denial scenarios: 7/7 passed
-Post-test rows/users: 0/0/0
+Stage 4B SSR/Auth foundation — PR #30
+Stage 4C Identity schema/RLS — PR #33
+Stage 4D Nutrition persistence — PR #35
 ```
 
-## Complete frontend branch
-
-The full Persian UI contract exists on:
+Supabase tables:
 
 ```text
-branch: revival/full-ui-front
-Draft PR: #34
-runtime head: d36a67b001a280fefbba6c676e69fb4f22ff20b2
-routes: 42/42
+profiles
+user_settings
+nutrition_goals
+nutrition_entries
 ```
 
-It contains complete Onboarding, Today, Workout, Nutrition, Progress, Profile/Settings, Notifications, local Coach, PWA/offline and accessibility states.
+### Routeهای متصل فعلی
 
-It must not be merged directly into `web/pwa-foundation`. The later integration must port the proven UI into `web/` while preserving Supabase SSR and Shared Nutrition Core.
+```text
+/today
+/nutrition
+/nutrition/plan
+/workout
+/workout/[id]
+/progress
+/profile
+/auth
+/auth/callback
+/auth/confirm
+/auth/signout
+```
 
-## Read first
+### پایداری Auth و Guest state
 
-Operational sources of truth:
+برش جاری این موارد را سخت‌سازی می‌کند:
 
-- [`docs/NEOFIT_MASTER_PLAN.md`](docs/NEOFIT_MASTER_PLAN.md)
-- [`docs/NEOFIT_PROGRESS_LOG.md`](docs/NEOFIT_PROGRESS_LOG.md)
-- [`docs/DEVELOPMENT_HANDOFF.md`](docs/DEVELOPMENT_HANDOFF.md)
-- [`docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md`](docs/NEOFIT_STAGE4_SUPABASE_FOUNDATION_PLAN.md)
-- [`docs/NEOFIT_STAGE4A_PROJECT_PROVISIONING_EVIDENCE.md`](docs/NEOFIT_STAGE4A_PROJECT_PROVISIONING_EVIDENCE.md)
-- [`docs/NEOFIT_STAGE4B_SUPABASE_SSR_FOUNDATION_EVIDENCE.md`](docs/NEOFIT_STAGE4B_SUPABASE_SSR_FOUNDATION_EVIDENCE.md)
-- [`docs/NEOFIT_STAGE4C_IDENTITY_RLS_EVIDENCE.md`](docs/NEOFIT_STAGE4C_IDENTITY_RLS_EVIDENCE.md)
+- Bootstrap حساب فقط ردیف‌های مفقود را می‌سازد و Login مجدد نام، Settings یا Nutrition Goals موجود را Reset نمی‌کند.
+- تاریخ Diary با Timezone پروفایل و پیش‌فرض `Asia/Tehran` ساخته می‌شود؛ UTC slicing حذف شده است.
+- تاریخ جاری هنگام Focus، Visibility change و عبور زمان به‌روز می‌شود.
+- Local diary با Envelope نسخه‌دار ذخیره می‌شود.
+- آرایهٔ خالی معتبر بعد از Refresh حفظ می‌شود.
+- Payload محلی پیش از استفاده اعتبارسنجی می‌شود.
+- Meal label و Macro view از دادهٔ معتبر Core دوباره مشتق می‌شوند و مقدار دست‌کاری‌شدهٔ ذخیره‌شده مورد اعتماد نیست.
+- مسیر Legacy array برای مهاجرت Storage قبلی حفظ شده است.
 
-Frontend completion sources on `revival/full-ui-front`:
+## Vercel
 
-- `docs/NEOFIT_FRONTEND_COMPLETION_PLAN.md`
-- `docs/NEOFIT_FRONTEND_PROGRESS_LOG.md`
+تنها پروژهٔ کانونیکال:
 
-Scientific/data contracts:
+```text
+project: neofit-ai
+project id: prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG
+release branch: vercel/preview
+stable Preview alias: neofit-ai-git-vercel-preview-emads-projects-41cb6447.vercel.app
+latest proven release deployment: dpl_2VARJ7A2EyEtUkU9aKU2DeTAxEHy
+state: READY
+```
 
-- [`docs/NEOFIT_WEB_PWA_ROADMAP_V1_FA.md`](docs/NEOFIT_WEB_PWA_ROADMAP_V1_FA.md)
-- [`docs/NEOFIT_NUTRITION_FINAL_SCOPE_V3.md`](docs/NEOFIT_NUTRITION_FINAL_SCOPE_V3.md)
-- [`docs/releases/NEOFIT_NUTRITION_RELEASE_CANDIDATE_FREEZE_V1.md`](docs/releases/NEOFIT_NUTRITION_RELEASE_CANDIDATE_FREEZE_V1.md)
+Development commitها توسط Ignored Build Step قبل از install/build متوقف می‌شوند، ولی Vercel همچنان ممکن است یک رکورد کوتاه `CANCELED` بسازد. بنابراین تغییرات باید Batch شوند و `vercel/preview` فقط یک بار پس از سبزشدن کامل CI به‌روزرسانی شود.
 
-## Locked rules
+این سه Probe هنوز Product نیستند و باید از Dashboard حذف شوند:
 
-- Canonical IDs, mappings, fingerprints and provenance remain versioned.
-- Missing nutrients are not zero; unknown serving weight remains `null`.
-- Nutrition calculations live in Shared Core.
-- Language and vision models may not invent calories, macronutrients, weights or portions.
-- SQL and React must not duplicate Nutrition arithmetic.
-- Every exposed user-owned table requires RLS before use.
-- privileged credentials must never enter Browser bundles, logs or artifacts.
-- Dashboard edits are not Schema authority; migrations are.
-- Server authorization is not based only on `getSession()`.
-- Divergent frontend and architecture branches are integrated by controlled porting, not direct merge.
+```text
+neofit-direct-probe
+neofit-file-ref-probe
+neofit-ui-public-probe
+```
 
-## Exact next work
+## Environment لازم برای Runtime واقعی
 
-1. Keep PR #33 Draft/unmerged until explicit approval.
-2. After approval, merge Stage 4C and record closure evidence.
-3. Start Stage 4D test-first for `nutrition_goals` and `nutrition_entries`.
-4. Plan a separate integration branch to port PR #34 UI into the current `web/` architecture.
-5. Keep Stage 2B Vercel validation independent in Issue #16 / PR #28.
+Preview کانونیکال به هر سه مقدار زیر نیاز دارد:
+
+```text
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+NEXT_PUBLIC_APP_URL=https://neofit-ai-git-vercel-preview-emads-projects-41cb6447.vercel.app
+```
+
+مقادیر واقعی در Git، Docs یا Artifact ثبت نمی‌شوند. Supabase Site URL و Redirect URLها نیز باید با Alias ثابت بالا هماهنگ شوند.
+
+## مرز ادعا
+
+ثابت شده است:
+
+- Build، TypeScript، Shared Core parity، PWA guest flow و قرارداد Auth در CI سبز بوده‌اند.
+- Canonical Preview واقعی Next.js ساخته شده و Runtime error cluster آن صفر بوده است.
+- Schema، RLS و Advisorهای Supabase سالم‌اند.
+
+هنوز ثابت نشده است:
+
+- Signup/confirmation واقعی روی Preview دارای Environment؛
+- Cookie round-trip واقعی؛
+- ثبت وعده در Remote و ماندگاری پس از sign-out/sign-in؛
+- فرانت کامل PR #34 داخل معماری جاری؛
+- Production.
+
+## منابع اجباری
+
+1. `docs/NEOFIT_MASTER_PLAN.md`
+2. `docs/NEOFIT_PROGRESS_LOG.md`
+3. `docs/NEOFIT_AUTH_PERSISTENCE_INTEGRATION_EVIDENCE.md`
+4. `docs/NEOFIT_VERCEL_CANONICAL_PREVIEW.md`
+5. `docs/DEVELOPMENT_HANDOFF.md`
+6. وضعیت زندهٔ PR، CI، Vercel و Supabase

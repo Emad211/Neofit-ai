@@ -17,6 +17,7 @@ async function inspectLayout(page, screen, width) {
     scrollY: window.scrollY,
     lang: document.documentElement.lang,
     dir: document.documentElement.dir,
+    pathname: window.location.pathname,
   }));
   const hasHorizontalOverflow =
     dimensions.documentWidth > dimensions.viewportWidth ||
@@ -46,9 +47,11 @@ try {
       reducedMotion: 'reduce',
     });
     const page = await context.newPage();
-    await page.goto(baseUrl, { waitUntil: 'networkidle' });
+    await page.goto(`${baseUrl}/today`, { waitUntil: 'networkidle' });
+    await page.getByRole('heading', { name: 'خلاصهٔ امروز' }).waitFor();
     await page.screenshot({ path: path.join(outputDir, `today-${width}.png`) });
-    await inspectLayout(page, 'today', width);
+    const result = await inspectLayout(page, 'today', width);
+    if (result.pathname !== '/today') throw new Error(`Expected /today, got ${result.pathname}`);
     await context.close();
   }
 
@@ -59,12 +62,13 @@ try {
     reducedMotion: 'reduce',
   });
   const page = await context.newPage();
-  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await page.goto(`${baseUrl}/today`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: 'تغذیه' }).click();
+  await page.getByRole('link', { name: 'تغذیه', exact: true }).click();
   await page.getByRole('heading', { name: 'چه چیزی خوردی؟' }).waitFor();
   await page.screenshot({ path: path.join(outputDir, 'nutrition-390.png') });
-  await inspectLayout(page, 'nutrition', 390);
+  const nutritionResult = await inspectLayout(page, 'nutrition', 390);
+  if (nutritionResult.pathname !== '/nutrition') throw new Error(`Expected /nutrition, got ${nutritionResult.pathname}`);
 
   const search = page.getByPlaceholder('مثلاً قورمه‌سبزی یا جوجه کباب');
   await search.fill('قورمه');
@@ -72,31 +76,61 @@ try {
   await inspectLayout(page, 'search', 390);
 
   await page.getByRole('button', { name: /قورمه‌سبزی/ }).first().click();
+  await page.getByRole('dialog').waitFor();
   await page.screenshot({ path: path.join(outputDir, 'meal-sheet-390.png') });
   await inspectLayout(page, 'meal-sheet', 390);
   await page.getByRole('button', { name: 'بستن' }).click();
 
-  await page.getByRole('button', { name: 'برنامهٔ هفته' }).click();
+  await page.getByRole('link', { name: 'برنامهٔ هفته' }).click();
   await page.getByRole('heading', { name: 'برنامهٔ سه روز آینده' }).waitFor();
   await page.screenshot({ path: path.join(outputDir, 'weekly-plan-390.png') });
-  await inspectLayout(page, 'weekly-plan', 390);
-  await page.locator('.week-list article').last().scrollIntoViewIfNeeded();
-  await page.screenshot({ path: path.join(outputDir, 'weekly-plan-lower-390.png') });
+  const planResult = await inspectLayout(page, 'weekly-plan', 390);
+  if (planResult.pathname !== '/nutrition/plan') throw new Error(`Expected /nutrition/plan, got ${planResult.pathname}`);
 
-  await page.getByRole('button', { name: 'تنظیمات' }).click();
-  await page.getByRole('heading', { name: 'تنظیمات' }).waitFor();
+  await page.getByRole('link', { name: 'تمرین', exact: true }).click();
+  await page.getByRole('heading', { name: 'تمرین‌های این هفته' }).waitFor();
+  await page.screenshot({ path: path.join(outputDir, 'workout-390.png') });
+  const workoutResult = await inspectLayout(page, 'workout', 390);
+  if (workoutResult.pathname !== '/workout') throw new Error(`Expected /workout, got ${workoutResult.pathname}`);
+
+  await page.getByRole('link', { name: /فشار بالاتنه/ }).first().click();
+  await page.getByRole('heading', { name: 'فشار بالاتنه' }).waitFor();
+  await page.screenshot({ path: path.join(outputDir, 'workout-push-details-390.png'), fullPage: true });
+  const workoutDetailsResult = await inspectLayout(page, 'workout-details', 390);
+  if (workoutDetailsResult.pathname !== '/workout/push-a') {
+    throw new Error(`Expected /workout/push-a, got ${workoutDetailsResult.pathname}`);
+  }
+
+  await page.getByRole('link', { name: 'پیشرفت', exact: true }).click();
+  await page.getByRole('heading', { name: 'پیشرفت', exact: true, level: 2 }).waitFor();
+  await page.getByText('روند وزن', { exact: true }).waitFor();
+  await page.getByText('ثبت غذای امروز', { exact: true }).waitFor();
+  await page.screenshot({ path: path.join(outputDir, 'progress-390.png'), fullPage: true });
+  const progressResult = await inspectLayout(page, 'progress', 390);
+  if (progressResult.pathname !== '/progress') throw new Error(`Expected /progress, got ${progressResult.pathname}`);
+
+  await page.getByRole('link', { name: 'پروفایل', exact: true }).click();
+  await page.getByRole('heading', { name: 'پروفایل من' }).waitFor();
+  await page.getByText('بدون حساب آنلاین', { exact: true }).waitFor();
   await page.waitForFunction(() => window.scrollY === 0);
-  await page.screenshot({ path: path.join(outputDir, 'settings-390.png') });
-  const settingsResult = await inspectLayout(page, 'settings', 390);
-  if (settingsResult.scrollY !== 0) {
-    throw new Error(`Bottom navigation did not reset scroll: settings scrollY=${settingsResult.scrollY}`);
+  await page.screenshot({ path: path.join(outputDir, 'profile-route-390.png'), fullPage: true });
+  const profileResult = await inspectLayout(page, 'profile', 390);
+  if (profileResult.pathname !== '/profile' || profileResult.scrollY !== 0) {
+    throw new Error(`Profile route/reset failed: ${JSON.stringify(profileResult)}`);
   }
-  await page.locator('.settings-group--key').scrollIntoViewIfNeeded();
-  await page.screenshot({ path: path.join(outputDir, 'settings-key-390.png') });
 
-  if (results.some((result) => result.hasHorizontalOverflow)) {
-    throw new Error('At least one captured Stage 1 screen has horizontal overflow.');
+  await page.goto(`${baseUrl}/auth`, { waitUntil: 'networkidle' });
+  await page.getByRole('heading', { name: 'حساب نئوفیت', level: 1 }).waitFor();
+  await page.getByText(/متغیرهای عمومی Supabase برای این محیط تعریف نشده‌اند/).waitFor();
+  const loginButton = page.getByRole('button', { name: 'ورود به حساب' });
+  const signupButton = page.getByRole('button', { name: 'ساخت حساب امن' });
+  if (!(await loginButton.isDisabled()) || !(await signupButton.isDisabled())) {
+    throw new Error('No-config Auth controls must stay disabled.');
   }
+  await page.getByRole('link', { name: 'ادامه در حالت مهمان و دادهٔ محلی' }).waitFor();
+  await page.screenshot({ path: path.join(outputDir, 'auth-no-config-390.png'), fullPage: true });
+  const authResult = await inspectLayout(page, 'auth-no-config', 390);
+  if (authResult.pathname !== '/auth') throw new Error(`Expected /auth, got ${authResult.pathname}`);
 
   await context.close();
   await writeFile(

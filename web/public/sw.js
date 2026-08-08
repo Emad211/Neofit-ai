@@ -1,7 +1,17 @@
 const CACHE_PREFIX = 'neofit-app-shell-';
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v4';
 const SHELL_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}`;
-const SHELL_DOCUMENTS = ['/', '/offline'];
+const REQUIRED_DOCUMENTS = ['/offline'];
+const OPTIONAL_DOCUMENTS = [
+  '/',
+  '/today',
+  '/nutrition',
+  '/nutrition/plan',
+  '/workout',
+  '/progress',
+  '/profile',
+];
+const CACHEABLE_DOCUMENTS = [...REQUIRED_DOCUMENTS, ...OPTIONAL_DOCUMENTS];
 const STATIC_SHELL = [
   '/manifest.webmanifest',
   '/icons/icon-192.png',
@@ -104,8 +114,16 @@ async function precacheDocumentAndAssets(cache, pathname) {
 async function installAppShell() {
   const cache = await caches.open(SHELL_CACHE);
   await Promise.all(STATIC_SHELL.map((asset) => fetchAndCache(cache, asset)));
-  for (const documentPath of SHELL_DOCUMENTS) {
+  for (const documentPath of REQUIRED_DOCUMENTS) {
     await precacheDocumentAndAssets(cache, documentPath);
+  }
+  for (const documentPath of OPTIONAL_DOCUMENTS) {
+    try {
+      await precacheDocumentAndAssets(cache, documentPath);
+    } catch {
+      // Authenticated HTML is private/no-store and must never block installation
+      // or enter the shared application-shell cache.
+    }
   }
 }
 
@@ -124,16 +142,22 @@ async function navigationResponse(request) {
   const url = new URL(request.url);
   try {
     const response = await fetch(request);
-    if (responseCanBeCached(response) && (url.pathname === '/' || url.pathname === '/offline')) {
+    if (CACHEABLE_DOCUMENTS.includes(url.pathname)) {
       const cache = await caches.open(SHELL_CACHE);
-      await cache.put(request, response.clone());
+      if (responseCanBeCached(response)) {
+        await cache.put(request, response.clone());
+      } else {
+        // Remove any older guest snapshot once this route becomes account-private.
+        await cache.delete(request);
+        await cache.delete(url.href);
+      }
     }
     return response;
   } catch {
     return (
       (await caches.match(request)) ||
       (await caches.match(url.href)) ||
-      (await caches.match(new URL('/', self.location.origin).href)) ||
+      (await caches.match(new URL('/today', self.location.origin).href)) ||
       (await caches.match(new URL('/offline', self.location.origin).href)) ||
       Response.error()
     );
