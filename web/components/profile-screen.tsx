@@ -154,6 +154,7 @@ export function ProfileScreen() {
         <Link href="/progress"><span><NeoFitIcon name="chart" />روند پیشرفت</span><NeoFitIcon name="chevron" /></Link>
         <Link href="/workout"><span><NeoFitIcon name="workout" />برنامهٔ تمرین</span><NeoFitIcon name="chevron" /></Link>
         <Link href="/nutrition"><span><NeoFitIcon name="food" />تغذیه و ثبت غذا</span><NeoFitIcon name="chevron" /></Link>
+        <Link href="/profile/ai"><span><NeoFitIcon name="sparkle" />هوش مصنوعی و کلیدهای شخصی</span><NeoFitIcon name="chevron" /></Link>
       </nav>
 
       <article className="local-data-card">

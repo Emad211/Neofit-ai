@@ -1,6 +1,6 @@
 # NeoFit AI Provider Architecture
 
-**Status:** Stage 5 provider foundation in implementation  
+**Status:** Stage 5 provider foundation + BYOK Settings UI in implementation  
 **Primary runtime target:** `neofit-preview-lab` (Preview only)  
 **Primary provider:** Google Gemini  
 **Fallback provider:** AvalAI  
@@ -131,9 +131,8 @@ Nutrition remains stricter: provider-generated calories/macros/weights/portions 
 
 ## 9. Next slices
 
-1. Verify migration live and regenerate Supabase types.
-2. Add Profile/Settings BYOK UI over the provider routes.
-3. Run real Google save/test/inference on Preview.
-4. Run AvalAI fallback scenario on Preview.
-5. Add request audit metrics without prompt/key logging.
-6. Introduce read-only Coach tools after Workout/Onboarding data contracts are stable.
+1. Configure Preview-only Supabase/app URL and encryption secret.
+2. Run real Google Save/Test/inference from the Profile AI Settings UI.
+3. Run AvalAI Save/Test and controlled fallback scenario on Preview.
+4. Add request audit metrics without prompt/key logging.
+5. Introduce read-only Coach tools after Workout/Onboarding data contracts are stable.

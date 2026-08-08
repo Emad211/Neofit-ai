@@ -70,3 +70,19 @@ test('AI secrets remain server-only and API responses are private no-store', asy
   assert.match(providerRoute, /private, no-store/);
   assert.match(respondRoute, /private, no-store/);
 });
+
+test('AI Settings keeps raw keys in ephemeral form state and uses server provider routes', async () => {
+  const screen = await read('components/ai-provider-settings-screen.tsx');
+  const profile = await read('components/profile-screen.tsx');
+  assert.match(screen, /\/api\/ai\/providers/);
+  assert.match(screen, /type="password"/);
+  assert.match(screen, /apiKey:\s*''/);
+  assert.doesNotMatch(screen, /localStorage|sessionStorage|indexedDB/i);
+  assert.match(profile, /href="\/profile\/ai"/);
+});
+
+test('credential save authenticates the NeoFit account before contacting a provider', async () => {
+  const route = await read('app/api/ai/providers/[provider]/route.ts');
+  assert.match(route, /try \{\s*const \{ userId \} = await listStoredCredentials\(\);\s*await validateProviderCredential\(provider, apiKey, modelId\)/s);
+  assert.match(route, /markCredentialValidated\(provider\)/);
+});

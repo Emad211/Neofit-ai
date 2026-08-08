@@ -1,6 +1,6 @@
 # NeoFit AI Provider Foundation Evidence
 
-**Stage:** 5A/5B  
+**Stage:** 5A/5B/5C  
 **Branch:** `stage5/ai-provider-foundation`  
 **PR:** #38  
 **Runtime:** `neofit-preview-lab` only
@@ -18,6 +18,8 @@
 - authenticated CRUD/Test provider API routes.
 - authenticated foundation inference endpoint.
 - dedicated CI contract and secret scan.
+- Profile AI Settings UI for Save/Test/Delete without browser persistence of raw keys.
+- credential save authenticates the NeoFit account before any external provider request.
 
 ## Healthy request budget
 

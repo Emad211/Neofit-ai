@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { DEFAULT_AI_MODELS } from '@/lib/ai/config';
 import { decryptProviderApiKey, encryptProviderApiKey } from '@/lib/ai/credential-vault';
-import { deleteStoredCredential, listStoredCredentials, upsertStoredCredential } from '@/lib/ai/credential-store';
+import { deleteStoredCredential, listStoredCredentials, markCredentialValidated, upsertStoredCredential } from '@/lib/ai/credential-store';
 import { validateProviderCredential } from '@/lib/ai/provider-adapter';
 import { ProviderRequestError } from '@/lib/ai/provider-error';
 import { isAiProvider, type AiProvider } from '@/lib/ai/types';
@@ -39,8 +39,8 @@ export async function PUT(request: Request, context: RouteContext) {
   }
 
   try {
-    await validateProviderCredential(provider, apiKey, modelId);
     const { userId } = await listStoredCredentials();
+    await validateProviderCredential(provider, apiKey, modelId);
     const encrypted = encryptProviderApiKey(apiKey, userId, provider);
     const metadata = await upsertStoredCredential({
       provider,
@@ -74,7 +74,8 @@ export async function POST(_request: Request, context: RouteContext) {
       keyVersion: credential.keyVersion,
     }, userId, provider);
     await validateProviderCredential(provider, apiKey, credential.modelId);
-    return NextResponse.json({ provider, modelId: credential.modelId, ok: true }, {
+    const metadata = await markCredentialValidated(provider);
+    return NextResponse.json({ ...metadata, ok: true }, {
       headers: { 'Cache-Control': 'private, no-store' },
     });
   } catch (error) {

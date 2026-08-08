@@ -111,6 +111,33 @@ export async function deleteStoredCredential(provider: AiProvider): Promise<void
   if (error) throw new Error('Unable to delete AI provider credential.');
 }
 
+export async function markCredentialValidated(provider: AiProvider): Promise<AiCredentialMetadata> {
+  const { supabase, userId } = await authenticatedContext();
+  const validatedAt = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('encrypted_provider_credentials')
+    .update({
+      status: 'active',
+      cooldown_until: null,
+      last_validated_at: validatedAt,
+      last_failure_code: null,
+    })
+    .eq('user_id', userId)
+    .eq('provider', provider)
+    .select('provider,key_hint,model_id,status,cooldown_until,last_validated_at,last_failure_code')
+    .single();
+  if (error || !data) throw new Error('Unable to update AI provider validation state.');
+  return {
+    provider: data.provider as AiProvider,
+    keyHint: data.key_hint,
+    modelId: data.model_id,
+    status: data.status as 'active' | 'invalid',
+    cooldownUntil: data.cooldown_until,
+    lastValidatedAt: data.last_validated_at,
+    lastFailureCode: data.last_failure_code,
+  };
+}
+
 export async function markCredentialFailure(input: {
   provider: AiProvider;
   status: 'active' | 'invalid';
