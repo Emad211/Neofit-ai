@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { activeAuthSession } from '@/lib/auth/active-session';
 import { passwordsMatch, validNewPassword, validSignInPassword } from '@/lib/auth/password';
 import { createClient } from '@/lib/supabase/server';
 
@@ -11,8 +12,8 @@ function value(formData: FormData, name: string): string {
 
 async function authenticatedClient() {
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getClaims();
-  if (error || !data?.claims?.sub) redirect('/auth');
+  const active = await activeAuthSession(supabase);
+  if (!active) redirect('/auth?error=credentials');
   return supabase;
 }
 
