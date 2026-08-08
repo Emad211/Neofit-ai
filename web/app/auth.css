@@ -144,6 +144,57 @@
   background: #a9b7ae;
 }
 
+.auth-resend-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, .65fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 14px;
+  margin-block-start: 14px;
+  border: 1px dashed rgba(23, 107, 71, .28);
+  border-radius: 16px;
+  background: rgba(23, 107, 71, .04);
+}
+
+.auth-resend-form > div {
+  display: grid;
+  gap: 3px;
+}
+
+.auth-resend-form strong {
+  font-size: .78rem;
+}
+
+.auth-resend-form span {
+  color: var(--text-soft);
+  font-size: .72rem;
+}
+
+.auth-resend-form input {
+  min-block-size: 42px;
+  padding-inline: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  direction: ltr;
+}
+
+.auth-resend-form button {
+  min-block-size: 42px;
+  padding-inline: 15px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--primary);
+  color: #fff;
+  font: inherit;
+  font-size: .75rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.auth-resend-form button:disabled {
+  background: #a9b7ae;
+}
+
 .auth-boundary {
   display: flex;
   align-items: flex-start;
@@ -164,7 +215,8 @@
 }
 
 @media (max-width: 720px) {
-  .auth-grid {
+  .auth-grid,
+  .auth-resend-form {
     grid-template-columns: 1fr;
   }
 }
