@@ -3,6 +3,7 @@
   "framework": "nextjs",
   "git": {
     "deploymentEnabled": {
+      "stage2/pwa-vercel-foundation": true,
       "vercel/preview": true,
       "*": false
     }
