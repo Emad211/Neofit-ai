@@ -49,11 +49,12 @@ export interface WebFoodEstimate {
 
 export interface WebDiarySummary {
   readonly macros: WebMacroSet;
-  readonly targets: WebMacroSet;
+  readonly targets: WebMacroSet | null;
   readonly grams: number | null;
   readonly entryCount: number;
-  readonly remainingCalories: number;
-  readonly calorieProgressPercent: number;
+  readonly remainingCalories: number | null;
+  readonly calorieProgressPercent: number | null;
+  readonly targetsConfigured: boolean;
 }
 
 const MEAL_LABELS_FA: Readonly<Record<MealType, string>> = {
@@ -81,6 +82,15 @@ function webMacrosFromVector(vector: NutritionVector): WebMacroSet {
     carbsG: requiredFiniteNutrient(vector, 'carbsG'),
     fatG: requiredFiniteNutrient(vector, 'fatG'),
   };
+}
+
+function configuredTargets(goals: NutritionGoals | null): WebMacroSet | null {
+  if (!goals) return null;
+  try {
+    return webMacrosFromVector(goals.daily);
+  } catch {
+    return null;
+  }
 }
 
 function resolveFood(
@@ -197,22 +207,46 @@ export function buildInitialWebDiary(input: {
 export function summarizeWebDiary(
   entries: readonly WebDiaryEntry[],
   localDate: string,
-  goals: NutritionGoals,
+  goals: NutritionGoals | null,
 ): WebDiarySummary {
   const summary = summarizeDiaryDay(entries.map((entry) => entry.core), localDate);
+  const macros = webMacrosFromEstimate(summary.total);
+  const targets = configuredTargets(goals);
+
+  if (!targets || !goals) {
+    return {
+      macros,
+      targets: null,
+      grams: summary.total.grams,
+      entryCount: summary.entryCount,
+      remainingCalories: null,
+      calorieProgressPercent: null,
+      targetsConfigured: false,
+    };
+  }
+
   const progress = calculateGoalProgress(summary.total.center, goals);
   const energy = progress.find((item) => item.nutrient === 'energyKcal');
   if (!energy || energy.ratio === null || energy.remaining === null) {
-    throw new Error('energyKcal goal progress is unavailable');
+    return {
+      macros,
+      targets: null,
+      grams: summary.total.grams,
+      entryCount: summary.entryCount,
+      remainingCalories: null,
+      calorieProgressPercent: null,
+      targetsConfigured: false,
+    };
   }
 
   return {
-    macros: webMacrosFromEstimate(summary.total),
-    targets: webMacrosFromVector(goals.daily),
+    macros,
+    targets,
     grams: summary.total.grams,
     entryCount: summary.entryCount,
     remainingCalories: Math.max(0, energy.remaining),
     calorieProgressPercent: Math.min(100, Math.max(0, Math.round(energy.ratio * 100))),
+    targetsConfigured: true,
   };
 }
 
