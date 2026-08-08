@@ -6,6 +6,7 @@ on:
       - 'stage13/**'
     paths:
       - 'web/app/auth/**'
+      - 'web/app/api/ai/**'
       - 'web/app/(main)/profile/security/**'
       - 'web/components/profile-screen.tsx'
       - 'web/lib/auth/**'
@@ -27,6 +28,7 @@ on:
       - stage12/coach-progress-context
     paths:
       - 'web/app/auth/**'
+      - 'web/app/api/ai/**'
       - 'web/app/(main)/profile/security/**'
       - 'web/components/profile-screen.tsx'
       - 'web/lib/auth/**'
@@ -119,7 +121,6 @@ jobs:
 
           curl -sS -D /tmp/neofit-confirm.headers -o /dev/null \
             'http://127.0.0.1:3100/auth/confirm?token_hash=dummy-token&type=email&next=/onboarding'
-          cat /tmp/neofit-confirm.headers
           grep -Eq '^HTTP/.* 303' /tmp/neofit-confirm.headers
           grep -qi '^location: http://127\.0\.0\.1:3100/auth/verify?type=email' /tmp/neofit-confirm.headers
           if grep -qi '^location:.*token_hash' /tmp/neofit-confirm.headers; then
@@ -137,13 +138,22 @@ jobs:
             'http://127.0.0.1:3100/auth/verify?type=email&next=/onboarding' \
             -o /tmp/neofit-verify.html
           grep -q 'تأیید ایمیل' /tmp/neofit-verify.html
-          echo 'verification interstitial rendered'
 
-          cross_origin_status=$(curl -sS -o /dev/null -w '%{http_code}' \
+          cross_origin_signout=$(curl -sS -o /dev/null -w '%{http_code}' \
             -X POST -H 'Origin: https://evil.example' \
             http://127.0.0.1:3100/auth/signout)
-          echo "cross-origin signout status=${cross_origin_status}"
-          test "$cross_origin_status" = 403
+          test "$cross_origin_signout" = 403
+
+          cross_origin_coach=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -X POST -H 'Origin: https://evil.example' -H 'Content-Type: application/json' \
+            --data '{"message":"hello"}' \
+            http://127.0.0.1:3100/api/ai/coach)
+          test "$cross_origin_coach" = 403
+
+          cross_origin_byok=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -X DELETE -H 'Origin: https://evil.example' \
+            http://127.0.0.1:3100/api/ai/providers/google)
+          test "$cross_origin_byok" = 403
       - name: Verify non-negotiable Auth boundaries
         shell: bash
         run: |
@@ -154,6 +164,10 @@ jobs:
           grep -q 'createHmac' web/lib/auth/recovery-intent.ts
           grep -q 'auth.getUser()' web/lib/auth/active-session.ts
           grep -q 'activeAuthSession' web/lib/ai/credential-store.ts
+          grep -q 'isSameOriginBrowserMutation' web/app/auth/signout/route.ts
+          grep -q 'isSameOriginBrowserMutation' web/app/api/ai/coach/route.ts
+          grep -q 'isSameOriginBrowserMutation' web/app/api/ai/respond/route.ts
+          grep -q 'isSameOriginBrowserMutation' web/app/api/ai/providers/'[provider]'/route.ts
           grep -q "scope: 'local' | 'global' = 'local'" web/app/auth/signout/route.ts
           grep -q 'current_password' web/app/'(main)'/profile/security/actions.ts
           grep -q 'resetPasswordForEmail' web/app/auth/recovery-actions.ts
