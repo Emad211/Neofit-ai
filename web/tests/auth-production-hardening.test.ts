@@ -43,6 +43,17 @@ test('only explicit verification POST calls verifyOtp with a server-only staged 
   assert.match(tokenCookie, /maxAge:\s*0/);
 });
 
+test('recovery signing config is checked before sending or consuming a one-time recovery token', async () => {
+  const recovery = await source('app/auth/recovery-actions.ts');
+  const verify = await source('app/auth/verify/actions.ts');
+  const confirm = await source('app/auth/confirm/route.ts');
+  assert.match(recovery, /!hasRecoveryIntentKey\(\)/);
+  assert.match(confirm, /recoveryFlow && !hasRecoveryIntentKey\(\)/);
+  const keyCheck = verify.indexOf("typeValue === 'recovery' && !hasRecoveryIntentKey()");
+  const verification = verify.indexOf('auth.verifyOtp');
+  assert.ok(keyCheck >= 0 && verification > keyCheck, 'recovery key must be checked before verifyOtp');
+});
+
 test('password recovery is non-enumerating and bound to signed exact session intent', async () => {
   const recovery = await source('app/auth/recovery-actions.ts');
   const verify = await source('app/auth/verify/actions.ts');
@@ -69,12 +80,14 @@ test('sensitive Auth mutations require both local claims and live Auth-server us
   const security = await source('app/(main)/profile/security/actions.ts');
   const securityPage = await source('app/(main)/profile/security/page.tsx');
   const recoveryPage = await source('app/auth/update-password/page.tsx');
+  const aiCredentials = await source('lib/ai/credential-store.ts');
   assert.match(active, /auth\.getClaims\(\)/);
   assert.match(active, /auth\.getUser\(\)/);
   assert.match(active, /session_id/);
   assert.match(security, /activeAuthSession\(supabase\)/);
   assert.match(securityPage, /activeAuthSession\(supabase\)/);
   assert.match(recoveryPage, /activeAuthSession\(supabase\)/);
+  assert.match(aiCredentials, /activeAuthSession\(supabase\)/);
 });
 
 test('signed-in password changes require current password and revoke other refresh sessions', async () => {
