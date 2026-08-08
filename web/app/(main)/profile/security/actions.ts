@@ -25,7 +25,7 @@ export async function changePassword(formData: FormData): Promise<void> {
   }
 
   const supabase = await authenticatedClient();
-  const { error } = await supabase.auth.updateUser({ password, currentPassword });
+  const { error } = await supabase.auth.updateUser({ password, current_password: currentPassword });
   if (error) redirect('/profile/security?error=password');
 
   const { error: revokeError } = await supabase.auth.signOut({ scope: 'others' });
