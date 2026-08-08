@@ -131,7 +131,8 @@ jobs:
           curl -fsS \
             -H 'Cookie: neofit-email-link-token=dummy-token' \
             'http://127.0.0.1:3100/auth/verify?type=email&next=/onboarding' \
-            | grep -q 'تأیید ایمیل'
+            -o /tmp/neofit-verify.html
+          grep -q 'تأیید ایمیل' /tmp/neofit-verify.html
 
           cross_origin_status=$(curl -sS -o /dev/null -w '%{http_code}' \
             -X POST -H 'Origin: https://evil.example' \
