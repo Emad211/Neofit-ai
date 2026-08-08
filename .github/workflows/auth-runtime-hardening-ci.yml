@@ -1,0 +1,84 @@
+name: Auth Runtime Hardening CI
+
+on:
+  push:
+    branches:
+      - 'stage9/**'
+    paths:
+      - 'web/app/auth/**'
+      - 'web/lib/supabase/bootstrap.ts'
+      - 'web/lib/supabase/proxy.ts'
+      - 'web/proxy.ts'
+      - 'web/tests/auth-runtime-hardening.test.ts'
+      - 'web/app/auth.css'
+      - 'supabase/templates/confirm-signup.html'
+      - 'docs/NEOFIT_STAGE9_AUTH_RUNTIME_HARDENING.md'
+      - '.github/workflows/auth-runtime-hardening-ci.yml'
+  pull_request:
+    branches:
+      - stage8/coach-readonly-tools
+    paths:
+      - 'web/app/auth/**'
+      - 'web/lib/supabase/bootstrap.ts'
+      - 'web/lib/supabase/proxy.ts'
+      - 'web/proxy.ts'
+      - 'web/tests/auth-runtime-hardening.test.ts'
+      - 'web/app/auth.css'
+      - 'supabase/templates/confirm-signup.html'
+      - 'docs/NEOFIT_STAGE9_AUTH_RUNTIME_HARDENING.md'
+      - '.github/workflows/auth-runtime-hardening-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auth-runtime-hardening-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_VERCEL_ENV: preview
+      NEXT_PUBLIC_APP_URL: https://preview.example.test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+      - name: Install workspace dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: Auth hardening contract tests
+        working-directory: web
+        run: node --import tsx --test tests/auth-runtime-hardening.test.ts
+      - name: TypeScript
+        working-directory: web
+        run: npm run typecheck
+      - name: Production build
+        working-directory: web
+        run: npm run build
+      - name: Verify SSR confirmation boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'token_hash={{ .TokenHash }}' supabase/templates/confirm-signup.html
+          grep -q '/auth/confirm' web/app/auth/actions.ts
+          grep -q 'verifyOtp' web/app/auth/confirm/route.ts
+          grep -q 'canonicalPreviewRedirect' web/proxy.ts
+          if grep -q 'emailRedirectTo:.*auth/callback' web/app/auth/actions.ts; then
+            echo 'Signup still targets the fragile PKCE callback endpoint.' >&2
+            exit 1
+          fi
+          if grep -q 'auth.signOut' web/app/auth/callback/route.ts web/app/auth/confirm/route.ts; then
+            echo 'Confirmation flow must not destroy a valid session after bootstrap failure.' >&2
+            exit 1
+          fi
