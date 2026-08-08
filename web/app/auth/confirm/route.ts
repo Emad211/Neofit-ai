@@ -35,8 +35,6 @@ export async function GET(request: NextRequest) {
   const tokenHash = request.nextUrl.searchParams.get('token_hash');
   const type = request.nextUrl.searchParams.get('type');
   if (tokenHash && tokenHash.length <= 4096 && (type === 'email' || type === 'recovery')) {
-    // GET never consumes a one-time token. Stage it in a short-lived HttpOnly
-    // cookie and redirect to a clean URL; only an explicit user POST can verify it.
     return verificationInterstitial(request, tokenHash, type, next);
   }
 
@@ -69,6 +67,17 @@ export async function GET(request: NextRequest) {
     console.error('NeoFit legacy-confirm bootstrap remained incomplete after retry.');
   }
 
-  if (recoveryFlow) await setRecoveryIntent(data.user.id);
+  if (recoveryFlow) {
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+    const sessionId = typeof claimsData?.claims?.session_id === 'string'
+      ? claimsData.claims.session_id
+      : null;
+    if (claimsError || !sessionId) {
+      await supabase.auth.signOut({ scope: 'local' });
+      return NextResponse.redirect(new URL('/auth/recover?error=session', request.url), 303);
+    }
+    await setRecoveryIntent(data.user.id, sessionId);
+  }
+
   return NextResponse.redirect(new URL(next, request.url), 303);
 }
