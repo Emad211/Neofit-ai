@@ -11,109 +11,181 @@ Status: active engineering backlog. This document is the canonical gap inventory
 
 ## P0 — identity / security / data integrity
 
-### Email confirmation/session mismatch — CODE FIXED IN STAGE 9, HOSTED TEMPLATE QA STILL REQUIRED
+### Auth confirmation/recovery architecture — CODE + REAL NEXT HTTP PROOF COMPLETE IN STAGE 13; HOSTED E2E OPEN
 
-Real signup evidence proved Supabase verified the email but NeoFit could not establish the SSR session after crossing Vercel Preview hostnames. Stage 9 adds canonical Preview-origin enforcement, token-hash `/auth/confirm` + `verifyOtp`, resend recovery, and bootstrap resilience.
+The original incident was real: Supabase verified the email, then the Preview app failed to establish the SSR PKCE session because signup and callback crossed Vercel hostnames.
 
-Manual hosted requirement remains until confirmed by the project owner: Supabase Confirm-signup template must point to:
+Stage 13 now has a scanner-safe one-time-link architecture:
 
-`{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/onboarding`
+- GET never calls `verifyOtp`;
+- `token_hash` is staged in a short-lived HttpOnly cookie;
+- the redirect URL is clean and contains no token hash;
+- explicit user POST consumes the token;
+- cookie cleanup uses the same exact Path + Max-Age=0;
+- recovery intent is HMAC-signed and bound to user id + exact session id + timestamp;
+- recovery configuration is checked before sending/consuming a one-time recovery link.
 
-After that, run one fresh signup confirmation through the stable Preview Lab alias.
+A real built Next server HTTP smoke proved the final behavior, including canonical redirect host continuity, no-referrer/no-store headers, verification interstitial rendering and cross-origin signout rejection.
 
-### Leaked-password protection — OPEN / MANUAL
+Hosted mailbox proof remains open because Stage 13 cannot deploy until the Vercel API quota resets.
 
-Supabase Security Advisor reports `auth_leaked_password_protection` as disabled. Enable it in Auth Password Security and re-run the Security Advisor.
+### Canonical Auth origin — CODE FIXED; HOSTED SITE URL MANUAL VERIFY OPEN
+
+The HTTP smoke discovered that framework-derived request URLs could drift from `127.0.0.1` to `localhost`, which would break a host-only staged token cookie. Sensitive Auth redirects now use `NEXT_PUBLIC_APP_URL` / canonical origin directly.
+
+Real Preview password sign-ins are confirmed in Vercel logs, while Supabase Auth logs still showed `referer=http://localhost:3000`. The connector cannot read hosted Auth URL configuration, so manually verify Site URL is exactly:
+
+`https://neofit-preview-lab-emadk50000-9178-emads-projects-41cb6447.vercel.app`
+
+### Sensitive Auth headers — REAL HTTP FIXED IN STAGE 13
+
+The real Next smoke proved that the generic `Referrer-Policy` rule overrode the Route Handler's `no-referrer`. `next.config.ts` now has explicit `/auth/confirm` and `/auth/callback` rules after the generic header contract:
+
+- `Referrer-Policy: no-referrer`
+- `Cache-Control: private, no-store`
+
+The final HTTP smoke verifies the actual emitted headers.
+
+### Password recovery — CODE COMPLETE; HOSTED MAILBOX E2E OPEN
+
+Stage 13 adds:
+
+- generic/non-enumerating recovery request;
+- scanner-safe token verification;
+- signed 15-minute recovery intent;
+- live Auth-server session validation;
+- password update;
+- revoke-other-refresh-sessions behavior.
+
+Manual requirements:
+
+- Vercel Preview `AUTH_RECOVERY_INTENT_KEY`;
+- hosted Recovery email template;
+- real mailbox round-trip after Stage 13 deploy.
+
+### Leaked-password protection — OPEN / HOSTED SETTING
+
+Supabase Security Advisor still reports `auth_leaked_password_protection` as disabled. Enable it if the current plan exposes the feature, then rerun the advisor.
+
+### Session accumulation / duplicate login — REAL EVIDENCE; CODE CONTROL ADDED; MULTI-BROWSER QA OPEN
+
+The one-user project has three `auth.sessions` rows and three refresh-token rows; all observed refresh tokens were unrevoked at audit time. Two successful password sign-ins occurred only seconds apart.
+
+Stage 13 adds pending/disabled Auth submit buttons, local default logout, explicit global logout and revoke-other-sessions controls.
+
+Current session metadata is server-side (`user_agent=node`, Vercel/server IP), so NeoFit intentionally does not fabricate browser/device labels.
+
+All observed sessions are AAL1, MFA factors = 0 and `not_after = null`.
+
+### Locally valid but server-revoked JWT gap — FIXED FOR SENSITIVE/COSTLY ACTIONS
+
+Ordinary navigation remains fast with `getClaims()`. Security-sensitive mutations and BYOK/Coach provider access use `activeAuthSession()` = `getClaims()` + live `getUser()` Auth-server validation.
+
+This intentionally adds one Auth-server request to AI interactions but no extra LLM inference call.
+
+### First-account post-login crash — REAL BUG FIXED IN STAGE 13
+
+Auth QA found two real Stage 12 `/today` errors:
+
+`energyKcal is missing from the Web macro view`
+
+A fresh account had no Nutrition target and no diary entries. Stage 13 treats an empty diary as exactly zero consumed macros while malformed non-empty data still fails closed. The fresh-account case is now in the Supabase app regression suite.
 
 ### First-account bootstrap transient failure — FIXED IN STAGE 9
 
-Observed real runtime: one `user_settings` upsert returned 401 while parallel account writes succeeded. Stage 9 retries only failed idempotent bootstrap writes and never destroys a valid authenticated session solely because bootstrap remains partial.
+Bootstrap retries only failed idempotent writes and never destroys an otherwise valid authenticated session solely because an optional bootstrap write remains partial.
 
 ## P1 — fake or incomplete core user data
 
 ### Synthetic Progress weight trend — FIXED IN STAGE 10
 
-Previous Progress hardcoded six personal-looking weights (`95 → 92.2 kg`). Stage 10 replaces this with `body_measurements`, own-row RLS, account/Guest persistence, real charting and explicit empty states. CI is green; runtime account measurement QA remains.
+Progress uses real `body_measurements` with own-row RLS and explicit empty states. Hosted account measurement QA remains.
 
 ### Synthetic account Nutrition targets — FIXED IN STAGE 11
 
-The demo fixture still intentionally contains `2200 kcal / 140 g protein / 250 g carbs / 70 g fat` for Guest UX testing, but Stage 11 prevents those values from entering a real account:
-
-- first-account bootstrap no longer writes `nutrition_goals`;
-- account reads no longer fall back to `dailyTargets`;
-- Today supports `targets not configured` while still showing real consumed totals;
-- Coach reports `goalsConfigured: false` when a real goal does not exist;
-- the one known untouched bootstrap-generated fixture row from the Auth incident was deleted with a narrow guard.
-
-Legitimate personalized target creation remains a separate future deterministic contract; Stage 11 does not invent a replacement formula.
+Real accounts no longer receive demo targets. Guest fixtures remain explicitly demo-only.
 
 ### Nutrition plan is fixture-backed — OPEN
 
-`NutritionPlanScreen` still renders `weeklyPlan` from `web/data/fixtures.ts`. It is not yet a persisted per-user plan. The catalog/Core boundary is correct, but the plan itself remains demo data.
+The weekly Nutrition plan is still fixture-backed and is not yet a persisted per-user plan.
 
 ### Workout plan is fixture-backed — OPEN
 
-Workout sessions/sets are real and persistent, but the weekly workout plan still comes from static `workout-fixtures.ts`. A future plan schema must preserve exercise identity, versions, user confirmation, and safety constraints.
+Workout sessions/sets are real, but the actual weekly workout plan is still static fixture data.
 
 ### Notifications center / push contract — OPEN
 
-The connected build has no real notification-center persistence/push delivery contract. The full UI reference had notification controls, but push subscription, preferences, delivery policy and privacy behavior are not connected.
+No real notification persistence/push delivery contract exists yet.
 
 ## P1 — request / performance architecture
 
 ### Main app Nutrition over-fetch — FIXED IN STAGE 11
 
-The shared `(main)` layout is now identity-only:
+Shared shell is identity-only; Today loads date-scoped Nutrition data only where needed.
 
-- verified claims + Profile for the shell;
-- Today alone calls `loadNutritionSnapshot()`;
-- Profile, Progress, Workout and Coach UI do not hydrate the Nutrition diary from the global shell;
-- Nutrition catalog/add-food does not preload diary history.
+### Nutrition entry history query unbounded — FIXED FOR TODAY
 
-### Nutrition entry history query unbounded — FIXED FOR TODAY IN STAGE 11
-
-Today now filters account entries by both `user_id` and the account's current `local_date`. Full historical Nutrition UX still needs explicit pagination/range design when history is added; it is no longer accidentally fetched on every route.
+Today's query is user/date bounded. A future history page still needs explicit pagination/range design.
 
 ## P1 — AI runtime proof / observability
 
 ### Google BYOK real request proof — OPEN
 
-Credential vault, Google-first routing and UI exist, but live `encrypted_provider_credentials` count has remained zero in the last database audit. A real user Save/Test + Coach request is still required.
+Vault/router/UI exist, but real hosted Save/Test + Coach provider request is still required.
 
 ### AvalAI controlled fallback proof — OPEN
 
-Fallback/cooldown is implemented and contract-tested, but real runtime Google-failure → AvalAI-success has not yet been proven.
+Fallback/cooldown is contract-tested but has not been proven with a real Google failure followed by AvalAI success.
 
-### AI request audit / user budget — OPEN / NEXT HIGH-VALUE SLICE
+### AI request audit / user budget — OPEN
 
-There is not yet an `ai_request_audit` source of truth for provider/model/latency/fallback/outcome. Add metadata-only auditing without raw prompts or provider keys. Before write-agents, define a request-abuse/budget strategy that does not add hidden provider calls.
+No metadata-only `ai_request_audit` source of truth exists yet. Add it before write agents, without storing raw prompts/provider keys and without adding hidden inference calls.
 
-### Coach Progress context — OPEN / SOURCE READY
+### Coach Progress context — CODE FIXED IN STAGE 12, HOSTED RUNTIME QA OPEN
 
-Stage 10 established `body_measurements` as the real Progress source. Coach can now gain a selectively loaded Progress domain without using fake measurements or global page state.
+Coach loads `body_measurements` only for Progress intent and does not add this query to unrelated prompts.
 
 ## P2 — Auth / abuse / Production hardening
 
-- password reset / recovery UX
-- branded custom SMTP sender for Production
-- CAPTCHA / signup-resend abuse controls
-- optional social providers only if product needs them
-- Production Auth URLs only when Production is intentionally created
-- review MFA expectations if sensitive-account scope expands
+### CAPTCHA / bot protection — OPEN, DO NOT FAKE
+
+No real CAPTCHA token flow exists. Wire Cloudflare Turnstile/hCaptcha only after real provider site key + Supabase provider secret are available. Do not add a visual-only checkbox.
+
+### Password policy — APP HARDENED, HOSTED POLICY VERIFY OPEN
+
+New NeoFit passwords require 12–128 characters while legacy shorter passwords remain sign-in compatible. Supabase-hosted password policy remains a separate control plane.
+
+### Session timeout / inactivity / single-session policy — NOT ACTIVE/NOT PROVEN
+
+Observed `auth.sessions.not_after` values are null. Do not claim time-boxed sessions. Hosted Supabase controls are plan/settings dependent and remain manual.
+
+### Still open before Production
+
+- real Stage 13 Vercel Preview deployment;
+- fresh mailbox signup-confirm E2E;
+- mailbox password-recovery E2E;
+- real multi-browser/session revoke proof;
+- leaked-password hosted setting;
+- CAPTCHA runtime integration;
+- custom SMTP / branded sender;
+- MFA policy/enrollment if product scope requires it;
+- email-change flow;
+- account deletion + reauthentication contract;
+- intentional Production Auth URLs only when Production exists.
 
 ## P2 — product data completeness
 
 ### Food catalog coverage — OPEN
 
-Current connected Web catalog is a small IFKB-shaped fixture set. Nutrition Core authority is correct, but coverage is intentionally limited. Expand through IFKB/FNDDS/SR-backed resolution before claiming broad food search.
+Current Web catalog is a small IFKB-shaped fixture set. Expand through IFKB/FNDDS/SR-backed resolution before claiming broad food search.
 
 ### Body photos / media — OPEN
 
-Progress photos are not yet a persistent privacy-reviewed Storage feature. Add only with explicit consent, private bucket policies, deletion semantics and metadata minimization.
+Progress photos need consent, private Storage policy, deletion semantics and metadata minimization before implementation.
 
 ### Reports — OPEN
 
-Weekly/on-demand reports from the old reference are not connected to the current architecture. They should consume real Progress/Workout/Nutrition sources, not recreate old Firebase/Genkit behavior.
+Reports must consume real Progress/Workout/Nutrition sources and must not resurrect old Firebase/Genkit behavior.
 
 ## P2 — agentic capability
 
@@ -125,32 +197,22 @@ Current Coach is intentionally read-only. Before write tools:
 4. require explicit user confirmation for meaningful plan mutations;
 5. never give the model raw SQL or unrestricted database access.
 
-First controlled write candidates later:
-
-- propose exercise replacement
-- prepare workout adjustment
-- prepare meal alternative resolved through catalog/Core
-- save Coach note
-
-Do not start with autonomous loops or many independent agents.
-
 ## P3 — UX / PWA polish
 
-The service worker correctly excludes `/api/`, `/auth/`, authorization-bearing requests and private/no-store responses. Remaining polish includes broader browser/device QA, accessibility regression coverage, install UX and notification permission UX after notification delivery exists.
+Service Worker excludes `/api/`, `/auth/`, authorization-bearing requests and private/no-store responses. Remaining work includes browser/device QA, accessibility regression coverage, install UX and notification permission UX after real notification delivery exists.
 
 ## Current recommended order
 
-1. Finish Stage 9 hosted Auth actions and fresh-signup runtime proof.
-2. Runtime-prove Stage 10 real body measurements.
-3. Runtime-prove Stage 11 truthful/date-scoped Nutrition account behavior.
-4. Add Coach Progress context and metadata-only AI request audit/budget foundation.
-5. Persist/version workout plans.
-6. Persist/version Nutrition plans through catalog/Core authority.
-7. Notifications.
-8. Password recovery + Production Auth hardening.
-9. Controlled write-agent proposals.
-10. Vision / bounded autonomous workflows only after the above is proven.
+1. Complete the four manual Stage 13 hosted settings: Preview recovery secret, Site URL, Confirm template, Recovery template; enable leaked-password protection if available.
+2. After Vercel quota reset, deploy the same Stage 13 branch to the same `neofit-preview-lab`.
+3. Run fresh mailbox signup-confirm, password recovery, fresh-account `/today`, local/global logout and two-browser revoke E2E.
+4. Runtime-prove body measurements, truthful Nutrition and Google BYOK/Coach.
+5. Add AI request audit/budget foundation.
+6. Persist/version workout plans.
+7. Persist/version Nutrition plans through catalog/Core authority.
+8. Notifications and remaining account lifecycle flows.
+9. Controlled write-agent proposals only after the above.
 
 ## Release rule
 
-All work remains Preview-only in `neofit-preview-lab`. No Production promotion until core P0/P1 runtime proofs are green with a real account.
+All work remains Preview-only in `neofit-preview-lab`. No Production promotion until core P0/P1 hosted proofs are green with a real account.

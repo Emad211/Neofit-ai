@@ -5,6 +5,7 @@ import { deleteStoredCredential, listStoredCredentials, markCredentialValidated,
 import { validateProviderCredential } from '@/lib/ai/provider-adapter';
 import { ProviderRequestError } from '@/lib/ai/provider-error';
 import { isAiProvider, type AiProvider } from '@/lib/ai/types';
+import { isSameOriginBrowserMutation } from '@/lib/auth/request-origin';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +20,16 @@ function jsonError(error: string, status: number) {
   return NextResponse.json({ error }, { status, headers: { 'Cache-Control': 'private, no-store' } });
 }
 
+function mutationAllowed(request: Request) {
+  return isSameOriginBrowserMutation(request)
+    ? null
+    : jsonError('cross_origin_request', 403);
+}
+
 export async function PUT(request: Request, context: RouteContext) {
+  const rejected = mutationAllowed(request);
+  if (rejected) return rejected;
+
   const provider = await providerFrom(context);
   if (!provider) return jsonError('provider_not_supported', 404);
 
@@ -60,7 +70,10 @@ export async function PUT(request: Request, context: RouteContext) {
   }
 }
 
-export async function POST(_request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext) {
+  const rejected = mutationAllowed(request);
+  if (rejected) return rejected;
+
   const provider = await providerFrom(context);
   if (!provider) return jsonError('provider_not_supported', 404);
   try {
@@ -86,7 +99,10 @@ export async function POST(_request: Request, context: RouteContext) {
   }
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
+  const rejected = mutationAllowed(request);
+  if (rejected) return rejected;
+
   const provider = await providerFrom(context);
   if (!provider) return jsonError('provider_not_supported', 404);
   try {

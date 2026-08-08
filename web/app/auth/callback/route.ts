@@ -1,11 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { safeInternalPath } from '@/lib/auth/redirect';
 import { bootstrapAccount } from '@/lib/supabase/account';
 import { hasSupabasePublicEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
-
-function safeNext(value: string | null): string {
-  return value && value.startsWith('/') && !value.startsWith('//') ? value : '/today';
-}
 
 function authRedirect(request: NextRequest, value: string): NextResponse {
   return NextResponse.redirect(new URL(`/auth?${value}`, request.url));
@@ -18,7 +15,7 @@ export async function GET(request: NextRequest) {
   if (explicitProviderError) return authRedirect(request, 'error=callback');
 
   const code = request.nextUrl.searchParams.get('code');
-  const next = safeNext(request.nextUrl.searchParams.get('next'));
+  const next = safeInternalPath(request.nextUrl.searchParams.get('next'), '/today');
 
   // Legacy/default confirmation links can verify the email before reaching this
   // endpoint while leaving no server-readable PKCE material. Do not tell the
@@ -44,5 +41,5 @@ export async function GET(request: NextRequest) {
     console.error('NeoFit callback bootstrap remained incomplete after retry.');
   }
 
-  return NextResponse.redirect(new URL(next, request.url));
+  return NextResponse.redirect(new URL(next, request.url), 303);
 }

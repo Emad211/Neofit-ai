@@ -1,0 +1,179 @@
+name: Auth Production Hardening CI
+
+on:
+  push:
+    branches:
+      - 'stage13/**'
+    paths:
+      - 'web/app/auth/**'
+      - 'web/app/api/ai/**'
+      - 'web/app/(main)/profile/security/**'
+      - 'web/components/profile-screen.tsx'
+      - 'web/lib/auth/**'
+      - 'web/lib/ai/credential-store.ts'
+      - 'web/lib/nutrition-adapter.ts'
+      - 'web/lib/supabase/proxy.ts'
+      - 'web/app/auth.css'
+      - 'web/app/profile-integration.css'
+      - 'web/next.config.ts'
+      - 'web/tests/auth-production-hardening.test.ts'
+      - 'web/tests/account-nutrition-data-truth.test.ts'
+      - 'web/package.json'
+      - 'web/.env.example'
+      - 'supabase/templates/**'
+      - 'docs/NEOFIT_STAGE13_AUTH_PRODUCTION_HARDENING.md'
+      - '.github/workflows/auth-production-hardening-ci.yml'
+  pull_request:
+    branches:
+      - stage12/coach-progress-context
+    paths:
+      - 'web/app/auth/**'
+      - 'web/app/api/ai/**'
+      - 'web/app/(main)/profile/security/**'
+      - 'web/components/profile-screen.tsx'
+      - 'web/lib/auth/**'
+      - 'web/lib/ai/credential-store.ts'
+      - 'web/lib/nutrition-adapter.ts'
+      - 'web/lib/supabase/proxy.ts'
+      - 'web/app/auth.css'
+      - 'web/app/profile-integration.css'
+      - 'web/next.config.ts'
+      - 'web/tests/auth-production-hardening.test.ts'
+      - 'web/tests/account-nutrition-data-truth.test.ts'
+      - 'web/package.json'
+      - 'web/.env.example'
+      - 'supabase/templates/**'
+      - 'docs/NEOFIT_STAGE13_AUTH_PRODUCTION_HARDENING.md'
+      - '.github/workflows/auth-production-hardening-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auth-production-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_VERCEL_ENV: development
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3100
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_test_value
+      AUTH_RECOVERY_INTENT_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+      - name: Install workspace dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: Auth production contract tests
+        working-directory: web
+        run: npm run test:auth-production
+      - name: Supabase app regression
+        working-directory: web
+        run: npm run test:supabase-app
+      - name: TypeScript
+        working-directory: web
+        run: npm run typecheck
+      - name: Production build
+        working-directory: web
+        run: npm run build
+      - name: Real Next Auth runtime smoke
+        working-directory: web
+        shell: bash
+        run: |
+          set -euxo pipefail
+          npm start -- --hostname 127.0.0.1 --port 3100 >/tmp/neofit-auth-runtime.log 2>&1 &
+          APP_PID=$!
+          cleanup() {
+            kill "$APP_PID" 2>/dev/null || true
+            wait "$APP_PID" 2>/dev/null || true
+            cat /tmp/neofit-auth-runtime.log || true
+          }
+          trap cleanup EXIT
+
+          ready=0
+          for _ in $(seq 1 30); do
+            status=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3100/auth 2>/dev/null || true)
+            if [ "$status" = "200" ]; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" != "1" ]; then
+            echo 'Next Auth runtime did not become ready.' >&2
+            exit 1
+          fi
+          curl -fsS http://127.0.0.1:3100/auth/recover >/dev/null
+
+          curl -sS -D /tmp/neofit-confirm.headers -o /dev/null \
+            'http://127.0.0.1:3100/auth/confirm?token_hash=dummy-token&type=email&next=/onboarding'
+          grep -Eq '^HTTP/.* 303' /tmp/neofit-confirm.headers
+          grep -qi '^location: http://127\.0\.0\.1:3100/auth/verify?type=email' /tmp/neofit-confirm.headers
+          if grep -qi '^location:.*token_hash' /tmp/neofit-confirm.headers; then
+            echo 'token_hash leaked into clean verification redirect' >&2
+            exit 1
+          fi
+          grep -qi '^set-cookie: neofit-email-link-token=dummy-token' /tmp/neofit-confirm.headers
+          grep -qi 'Path=/auth/verify' /tmp/neofit-confirm.headers
+          grep -qi 'HttpOnly' /tmp/neofit-confirm.headers
+          grep -qi '^referrer-policy: no-referrer' /tmp/neofit-confirm.headers
+          grep -qi '^cache-control: private, no-store' /tmp/neofit-confirm.headers
+
+          curl -fsS \
+            -H 'Cookie: neofit-email-link-token=dummy-token' \
+            'http://127.0.0.1:3100/auth/verify?type=email&next=/onboarding' \
+            -o /tmp/neofit-verify.html
+          grep -q 'تأیید ایمیل' /tmp/neofit-verify.html
+
+          cross_origin_signout=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -X POST -H 'Origin: https://evil.example' \
+            http://127.0.0.1:3100/auth/signout)
+          test "$cross_origin_signout" = 403
+
+          cross_origin_coach=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -X POST -H 'Origin: https://evil.example' -H 'Content-Type: application/json' \
+            --data '{"message":"hello"}' \
+            http://127.0.0.1:3100/api/ai/coach)
+          test "$cross_origin_coach" = 403
+
+          cross_origin_byok=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -X DELETE -H 'Origin: https://evil.example' \
+            http://127.0.0.1:3100/api/ai/providers/google)
+          test "$cross_origin_byok" = 403
+      - name: Verify non-negotiable Auth boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -q 'verifyOtp' web/app/auth/confirm/route.ts
+          grep -q 'verifyOtp' web/app/auth/verify/actions.ts
+          grep -q 'AUTH_RECOVERY_INTENT_KEY' web/lib/auth/recovery-intent.ts
+          grep -q 'createHmac' web/lib/auth/recovery-intent.ts
+          grep -q 'auth.getUser()' web/lib/auth/active-session.ts
+          grep -q 'activeAuthSession' web/lib/ai/credential-store.ts
+          grep -q 'isSameOriginBrowserMutation' web/app/auth/signout/route.ts
+          grep -q 'isSameOriginBrowserMutation' web/app/api/ai/coach/route.ts
+          grep -q 'isSameOriginBrowserMutation' web/app/api/ai/respond/route.ts
+          grep -q 'isSameOriginBrowserMutation' web/app/api/ai/providers/'[provider]'/route.ts
+          grep -q "scope: 'local' | 'global' = 'local'" web/app/auth/signout/route.ts
+          grep -q 'current_password' web/app/'(main)'/profile/security/actions.ts
+          grep -q 'resetPasswordForEmail' web/app/auth/recovery-actions.ts
+          grep -q "source: '/auth/confirm'" web/next.config.ts
+          grep -q "Referrer-Policy', value: 'no-referrer'" web/next.config.ts
+          if grep -R -E 'service[_-]?role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_' web/app/auth web/lib/auth web/app/'(main)'/profile/security; then
+            echo 'Privileged Supabase key material detected in Auth slice.' >&2
+            exit 1
+          fi

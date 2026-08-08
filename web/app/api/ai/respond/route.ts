@@ -2,10 +2,18 @@ import { NextResponse } from 'next/server';
 import { AI_INPUT_LIMIT, AI_SYSTEM_INSTRUCTION_LIMIT } from '@/lib/ai/config';
 import { generateWithProviderFallback } from '@/lib/ai/provider-router';
 import { ProviderRequestError } from '@/lib/ai/provider-error';
+import { isSameOriginBrowserMutation } from '@/lib/auth/request-origin';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
+  if (!isSameOriginBrowserMutation(request)) {
+    return NextResponse.json({ error: 'cross_origin_request' }, {
+      status: 403,
+      headers: { 'Cache-Control': 'private, no-store' },
+    });
+  }
+
   let body: unknown;
   try {
     body = await request.json();
