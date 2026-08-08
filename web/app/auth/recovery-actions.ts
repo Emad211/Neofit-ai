@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { activeAuthSession } from '@/lib/auth/active-session';
 import { authRedirectUrl } from '@/lib/auth/origin';
 import { passwordsMatch, validNewPassword } from '@/lib/auth/password';
 import { clearRecoveryIntent, hasValidRecoveryIntent } from '@/lib/auth/recovery-intent';
@@ -32,15 +33,13 @@ export async function updateRecoveredPassword(formData: FormData): Promise<void>
   if (!validNewPassword(password) || !passwordsMatch(password, confirmation)) redirect('/auth/update-password?error=input');
 
   const supabase = await createClient();
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
-  const userId = typeof claimsData?.claims?.sub === 'string' ? claimsData.claims.sub : null;
-  const sessionId = typeof claimsData?.claims?.session_id === 'string' ? claimsData.claims.session_id : null;
-  if (claimsError || !userId || !sessionId) {
+  const active = await activeAuthSession(supabase);
+  if (!active) {
     await clearRecoveryIntent();
     redirect('/auth/recover?error=session');
   }
 
-  if (!(await hasValidRecoveryIntent(userId, sessionId))) {
+  if (!(await hasValidRecoveryIntent(active.userId, active.sessionId))) {
     await clearRecoveryIntent();
     redirect('/auth/recover?error=session');
   }
