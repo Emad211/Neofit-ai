@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { resendConfirmation, signIn, signUp } from './actions';
+import { AuthSubmitButton } from './auth-submit-button';
 import { NeoFitIcon } from '@/components/neofit-icons';
 import { AUTH_PASSWORD_MAX_LENGTH, AUTH_PASSWORD_MIN_LENGTH } from '@/lib/auth/password';
 import { createClient } from '@/lib/supabase/server';
@@ -61,7 +62,7 @@ export default async function AuthPage({
             <label htmlFor="signin-password">رمز عبور</label>
             <input id="signin-password" name="password" type="password" autoComplete="current-password" maxLength={AUTH_PASSWORD_MAX_LENGTH} required />
             <div className="auth-form__meta"><Link href="/auth/recover">رمز را فراموش کرده‌ام</Link></div>
-            <button type="submit" disabled={!configured}>ورود به حساب</button>
+            <AuthSubmitButton disabled={!configured} pendingLabel="در حال ورود...">ورود به حساب</AuthSubmitButton>
           </form>
 
           <form action={signUp} className="auth-form auth-form--secondary">
@@ -73,14 +74,14 @@ export default async function AuthPage({
             <label htmlFor="signup-password">رمز عبور</label>
             <input id="signup-password" name="password" type="password" autoComplete="new-password" minLength={AUTH_PASSWORD_MIN_LENGTH} maxLength={AUTH_PASSWORD_MAX_LENGTH} required />
             <p className="auth-field-help">حداقل ۱۲ کاراکتر؛ بهتر است از passphrase منحصربه‌فرد استفاده کنی.</p>
-            <button type="submit" disabled={!configured}>ساخت حساب امن</button>
+            <AuthSubmitButton disabled={!configured} pendingLabel="در حال ساخت حساب...">ساخت حساب امن</AuthSubmitButton>
           </form>
         </div>
 
         <form action={resendConfirmation} className="auth-resend-form">
           <div><strong>ایمیل تأیید به دستت نرسیده؟</strong><span>پاسخ این فرم وجود یا وضعیت حساب را افشا نمی‌کند.</span></div>
           <input name="email" type="email" autoComplete="email" placeholder="email@example.com" aria-label="ایمیل برای ارسال دوباره تأیید" required />
-          <button type="submit" disabled={!configured}>ارسال دوباره</button>
+          <AuthSubmitButton disabled={!configured} pendingLabel="در حال ارسال...">ارسال دوباره</AuthSubmitButton>
         </form>
 
         <div className="auth-boundary"><NeoFitIcon name="check" size={17} /><p>Session روی cookieهای SSR نگه‌داری می‌شود؛ identity سمت سرور با claims امضاشده بررسی می‌شود و داده‌ها زیر Policyهای مالک‌محور قرار دارند.</p></div>
