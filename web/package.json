@@ -2,9 +2,7 @@
   "name": "@neofit/web",
   "version": "0.1.0",
   "private": true,
-  "engines": {
-    "node": "22.x"
-  },
+  "engines": { "node": "22.x" },
   "scripts": {
     "pwa:icons": "node scripts/generate-icons.mjs",
     "predev": "npm run pwa:icons",
@@ -18,10 +16,11 @@
     "test:supabase-foundation": "node --import tsx --test tests/supabase-foundation.test.ts",
     "test:supabase-identity": "node --import tsx --test tests/supabase-identity-schema.test.ts",
     "test:supabase-nutrition": "node --import tsx --test tests/supabase-nutrition-persistence.test.ts",
-    "test:supabase-app": "node --import tsx --test tests/supabase-app-integration.test.ts tests/account-bootstrap.test.ts tests/local-date.test.ts tests/web-diary-storage.test.ts tests/ai-provider-foundation.test.ts tests/workout-player-persistence.test.ts tests/onboarding-foundation.test.ts",
+    "test:supabase-app": "node --import tsx --test tests/supabase-app-integration.test.ts tests/account-bootstrap.test.ts tests/local-date.test.ts tests/web-diary-storage.test.ts tests/ai-provider-foundation.test.ts tests/workout-player-persistence.test.ts tests/onboarding-foundation.test.ts tests/coach-readonly.test.ts",
     "test:ai-provider": "node --import tsx --test tests/ai-provider-foundation.test.ts",
     "test:workout-player": "node --import tsx --test tests/workout-player-persistence.test.ts",
     "test:onboarding": "node --import tsx --test tests/onboarding-foundation.test.ts",
+    "test:coach": "node --import tsx --test tests/coach-readonly.test.ts",
     "check:adapter": "npm run typecheck && npm run test:adapter",
     "visual:capture": "node scripts/capture-stage1.mjs",
     "pwa:verify": "node scripts/verify-pwa.mjs"
