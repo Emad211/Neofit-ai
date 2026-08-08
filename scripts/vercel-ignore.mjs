@@ -1,4 +1,5 @@
-const CANONICAL_RELEASE_BRANCH = 'vercel/preview';
+const CANONICAL_PREVIEW_BRANCH = 'vercel/preview';
+const CANONICAL_PRODUCTION_BRANCH = 'stage2/pwa-vercel-foundation';
 
 function skip(reason) {
   console.log(`[NeoFit Vercel] skipped: ${reason}`);
@@ -10,12 +11,21 @@ function build(reason) {
   process.exit(1);
 }
 
-if (process.env.VERCEL_ENV !== 'preview') {
-  skip('NeoFit promotion is Preview-only until Production is explicitly approved.');
+const environment = process.env.VERCEL_ENV;
+const branch = process.env.VERCEL_GIT_COMMIT_REF;
+
+if (environment === 'production') {
+  if (branch !== CANONICAL_PRODUCTION_BRANCH) {
+    skip(`canonical Production branch is ${CANONICAL_PRODUCTION_BRANCH}.`);
+  }
+  build('explicit update of the canonical NeoFit Production branch.');
 }
 
-if (process.env.VERCEL_GIT_COMMIT_REF !== CANONICAL_RELEASE_BRANCH) {
-  skip(`canonical release branch is ${CANONICAL_RELEASE_BRANCH}.`);
+if (environment === 'preview') {
+  if (branch !== CANONICAL_PREVIEW_BRANCH) {
+    skip(`canonical Preview branch is ${CANONICAL_PREVIEW_BRANCH}.`);
+  }
+  build('explicit update of the canonical NeoFit Preview release branch.');
 }
 
-build('explicit update of the canonical Preview release branch.');
+skip('NeoFit deploys only from the canonical Production or Preview release branch.');
