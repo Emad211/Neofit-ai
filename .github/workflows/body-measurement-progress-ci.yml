@@ -1,0 +1,75 @@
+name: Body Measurement Progress CI
+
+on:
+  push:
+    branches:
+      - 'stage10/**'
+    paths:
+      - 'web/components/progress-screen.tsx'
+      - 'web/lib/progress/**'
+      - 'web/app/progress-integration.css'
+      - 'web/tests/body-measurement-progress.test.ts'
+      - 'supabase/migrations/20260808141651_body_measurement_progress.sql'
+      - 'docs/NEOFIT_STAGE10_BODY_MEASUREMENT_PROGRESS.md'
+      - '.github/workflows/body-measurement-progress-ci.yml'
+  pull_request:
+    branches:
+      - stage9/auth-runtime-hardening
+    paths:
+      - 'web/components/progress-screen.tsx'
+      - 'web/lib/progress/**'
+      - 'web/app/progress-integration.css'
+      - 'web/tests/body-measurement-progress.test.ts'
+      - 'supabase/migrations/20260808141651_body_measurement_progress.sql'
+      - 'docs/NEOFIT_STAGE10_BODY_MEASUREMENT_PROGRESS.md'
+      - '.github/workflows/body-measurement-progress-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: body-measurement-progress-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_VERCEL_ENV: preview
+      NEXT_PUBLIC_APP_URL: https://preview.example.test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+      - name: Install workspace dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: Progress contract tests
+        working-directory: web
+        run: node --import tsx --test tests/body-measurement-progress.test.ts
+      - name: TypeScript
+        working-directory: web
+        run: npm run typecheck
+      - name: Production build
+        working-directory: web
+        run: npm run build
+      - name: Verify real-data ownership boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'body_measurements.*enable row level security\|alter table public.body_measurements enable row level security' supabase/migrations/20260808141651_body_measurement_progress.sql
+          grep -q 'body_measurements_user_measured_idx' supabase/migrations/20260808141651_body_measurement_progress.sql
+          grep -q "\.eq('user_id', account.id)" web/components/progress-screen.tsx
+          if grep -Eq 'weightPoints|95, *94\.4|روند وزن فعلاً داده.*نمایشی' web/components/progress-screen.tsx; then
+            echo 'Synthetic personal progress data returned to Progress.' >&2
+            exit 1
+          fi
