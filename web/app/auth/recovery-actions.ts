@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { activeAuthSession } from '@/lib/auth/active-session';
 import { authRedirectUrl } from '@/lib/auth/origin';
 import { passwordsMatch, validNewPassword } from '@/lib/auth/password';
-import { clearRecoveryIntent, hasValidRecoveryIntent } from '@/lib/auth/recovery-intent';
+import { clearRecoveryIntent, hasRecoveryIntentKey, hasValidRecoveryIntent } from '@/lib/auth/recovery-intent';
 import { hasSupabasePublicEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 
@@ -13,7 +13,7 @@ function value(formData: FormData, name: string): string { return String(formDat
 function validEmail(email: string): boolean { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254; }
 
 export async function requestPasswordReset(formData: FormData): Promise<void> {
-  if (!hasSupabasePublicEnv()) redirect('/auth/recover?error=config');
+  if (!hasSupabasePublicEnv() || !hasRecoveryIntentKey()) redirect('/auth/recover?error=config');
   const email = value(formData, 'email').toLowerCase();
   if (!validEmail(email)) redirect('/auth/recover?error=input');
   try {
@@ -27,7 +27,7 @@ export async function requestPasswordReset(formData: FormData): Promise<void> {
 }
 
 export async function updateRecoveredPassword(formData: FormData): Promise<void> {
-  if (!hasSupabasePublicEnv()) redirect('/auth/update-password?error=config');
+  if (!hasSupabasePublicEnv() || !hasRecoveryIntentKey()) redirect('/auth/update-password?error=config');
   const password = value(formData, 'password');
   const confirmation = value(formData, 'password_confirmation');
   if (!validNewPassword(password) || !passwordsMatch(password, confirmation)) redirect('/auth/update-password?error=input');
@@ -38,7 +38,6 @@ export async function updateRecoveredPassword(formData: FormData): Promise<void>
     await clearRecoveryIntent();
     redirect('/auth/recover?error=session');
   }
-
   if (!(await hasValidRecoveryIntent(active.userId, active.sessionId))) {
     await clearRecoveryIntent();
     redirect('/auth/recover?error=session');
