@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { verifyEmailLink } from './actions';
+import { pendingEmailLinkToken } from '@/lib/auth/email-link-intent';
 import { safeInternalPath } from '@/lib/auth/redirect';
 
 export const dynamic = 'force-dynamic';
@@ -10,10 +11,10 @@ export default async function VerifyAuthLinkPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const tokenHash = typeof params.token_hash === 'string' ? params.token_hash : '';
   const type = typeof params.type === 'string' ? params.type : '';
   const next = safeInternalPath(typeof params.next === 'string' ? params.next : null, '/onboarding');
-  const supported = tokenHash.length > 0 && tokenHash.length <= 4096 && (type === 'email' || type === 'recovery');
+  const tokenPresent = Boolean(await pendingEmailLinkToken());
+  const supported = tokenPresent && (type === 'email' || type === 'recovery');
   const recovery = type === 'recovery';
 
   return (
@@ -35,10 +36,9 @@ export default async function VerifyAuthLinkPage({
                 : 'برای فعال‌سازی حساب و ساخت نشست امن، تأیید را خودت انجام بده.'}
             </p>
             <div className="auth-notice auth-notice--warning" role="status">
-              لینک ایمیل با بازشدن خودکار مصرف نمی‌شود؛ توکن فقط بعد از زدن دکمه زیر استفاده خواهد شد.
+              لینک ایمیل با بازشدن خودکار مصرف نمی‌شود؛ توکن در cookie کوتاه‌عمر و HttpOnly نگه‌داری شده و فقط بعد از زدن دکمه استفاده می‌شود.
             </div>
             <form action={verifyEmailLink} className="auth-confirm-form">
-              <input type="hidden" name="token_hash" value={tokenHash} />
               <input type="hidden" name="type" value={type} />
               <input type="hidden" name="next" value={next} />
               <button type="submit">{recovery ? 'تأیید بازیابی و ادامه' : 'تأیید ایمیل و ورود'}</button>
@@ -46,7 +46,7 @@ export default async function VerifyAuthLinkPage({
           </>
         ) : (
           <>
-            <p className="auth-notice auth-notice--error" role="alert">این لینک ناقص یا نامعتبر است.</p>
+            <p className="auth-notice auth-notice--error" role="alert">این لینک ناقص، منقضی یا بدون توکن معتبر است.</p>
             <Link className="auth-guest-link" href={recovery ? '/auth/recover' : '/auth'}>
               {recovery ? 'درخواست لینک بازیابی جدید' : 'بازگشت به ورود'}
             </Link>
