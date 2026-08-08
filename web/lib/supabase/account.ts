@@ -137,8 +137,6 @@ function rowToDiaryEntry(row: NutritionEntryRow): WebDiaryEntry | null {
 function parseGoals(value: Json | null | undefined): NutritionGoals | null {
   const daily = parseNutritionVector(value ?? undefined);
   if (!daily) return null;
-  // A personalized Web target is configured only when all four displayed
-  // macro targets are actually present. Partial/empty rows remain unconfigured.
   for (const key of ['energyKcal', 'proteinG', 'carbsG', 'fatG'] as const) {
     if (daily[key] === undefined || !Number.isFinite(daily[key])) return null;
   }
@@ -164,7 +162,7 @@ export const loadAccountIdentity = cache(async (): Promise<AccountIdentitySnapsh
       return { configured: true, account: null, loadError: null };
     }
 
-    const emailClaim = claimsData.claims?.email;
+    const emailClaim = claimsData?.claims?.email;
     const email = typeof emailClaim === 'string' ? emailClaim : '';
     const profileResult = await supabase
       .from('profiles')
