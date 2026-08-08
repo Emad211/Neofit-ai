@@ -10,6 +10,7 @@ import './integration.css';
 import './progress-integration.css';
 import './profile-integration.css';
 import './ai-provider-settings.css';
+import './workout-player.css';
 import './account-integration.css';
 import './auth.css';
 

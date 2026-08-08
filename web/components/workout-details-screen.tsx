@@ -52,9 +52,9 @@ export function WorkoutDetailsScreen({ workout }: { workout: WorkoutDay }) {
         <p>قبل از شروع گرم‌کردن انجام بده و حرکتی که درد ایجاد می‌کند متوقف کن.</p>
       </div>
 
-      <button className="primary-button" type="button" disabled>
-        شروع Player در برش بعدی
-      </button>
+      <Link className="primary-button" href={`/workout-player/${workout.id}`}>
+        شروع یا ادامهٔ Player
+      </Link>
     </section>
   );
 }
