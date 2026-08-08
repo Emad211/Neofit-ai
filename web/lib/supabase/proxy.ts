@@ -26,7 +26,7 @@ export async function updateSupabaseSession(
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet, headers) {
         cookiesToSet.forEach(({ name, value }) => {
           request.cookies.set(name, value);
         });
@@ -35,10 +35,15 @@ export async function updateSupabaseSession(
         cookiesToSet.forEach(({ name, value, options }) => {
           response.cookies.set(name, value, options);
         });
+        Object.entries(headers ?? {}).forEach(([key, value]) => {
+          response.headers.set(key, value);
+        });
       },
     },
   });
 
+  // Keep this immediately after client construction. Supabase SSR relies on
+  // getClaims() to refresh/verify the cookie-backed session before rendering.
   const { data } = await supabase.auth.getClaims();
   if (data?.claims?.sub) {
     response.headers.set('Cache-Control', 'private, no-store');
