@@ -1,6 +1,7 @@
 import 'server-only';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { activeAuthSession } from '@/lib/auth/active-session';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/database.types';
 import type { AiCredentialMetadata, AiProvider } from './types';
@@ -8,6 +9,7 @@ import type { AiCredentialMetadata, AiProvider } from './types';
 export interface AiAuthenticatedContext {
   readonly supabase: SupabaseClient<Database>;
   readonly userId: string;
+  readonly sessionId: string;
 }
 
 export interface StoredAiCredential extends AiCredentialMetadata {
@@ -20,10 +22,9 @@ export interface StoredAiCredential extends AiCredentialMetadata {
 
 export async function authenticatedAiContext(): Promise<AiAuthenticatedContext> {
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getClaims();
-  const userId = data?.claims?.sub;
-  if (error || typeof userId !== 'string' || !userId) throw new Error('AI authentication required.');
-  return { supabase, userId };
+  const active = await activeAuthSession(supabase);
+  if (!active) throw new Error('AI authentication required.');
+  return { supabase, userId: active.userId, sessionId: active.sessionId };
 }
 
 async function resolveContext(context?: AiAuthenticatedContext) {
@@ -31,18 +32,9 @@ async function resolveContext(context?: AiAuthenticatedContext) {
 }
 
 function mapCredential(row: {
-  user_id: string;
-  provider: string;
-  ciphertext: string;
-  iv: string;
-  auth_tag: string;
-  key_version: number;
-  key_hint: string;
-  model_id: string;
-  status: string;
-  cooldown_until: string | null;
-  last_validated_at: string;
-  last_failure_code: string | null;
+  user_id: string; provider: string; ciphertext: string; iv: string; auth_tag: string;
+  key_version: number; key_hint: string; model_id: string; status: string;
+  cooldown_until: string | null; last_validated_at: string; last_failure_code: string | null;
 }): StoredAiCredential {
   return {
     userId: row.user_id,
@@ -72,53 +64,32 @@ export async function listStoredCredentials(context?: AiAuthenticatedContext): P
 }
 
 export async function upsertStoredCredential(input: {
-  provider: AiProvider;
-  ciphertext: string;
-  iv: string;
-  authTag: string;
-  keyVersion: number;
-  keyHint: string;
-  modelId: string;
+  provider: AiProvider; ciphertext: string; iv: string; authTag: string;
+  keyVersion: number; keyHint: string; modelId: string;
 }): Promise<AiCredentialMetadata> {
   const { supabase, userId } = await authenticatedAiContext();
   const validatedAt = new Date().toISOString();
   const { data, error } = await supabase
     .from('encrypted_provider_credentials')
     .upsert({
-      user_id: userId,
-      provider: input.provider,
-      ciphertext: input.ciphertext,
-      iv: input.iv,
-      auth_tag: input.authTag,
-      key_version: input.keyVersion,
-      key_hint: input.keyHint,
-      model_id: input.modelId,
-      status: 'active',
-      cooldown_until: null,
-      last_validated_at: validatedAt,
-      last_failure_code: null,
+      user_id: userId, provider: input.provider, ciphertext: input.ciphertext, iv: input.iv,
+      auth_tag: input.authTag, key_version: input.keyVersion, key_hint: input.keyHint,
+      model_id: input.modelId, status: 'active', cooldown_until: null,
+      last_validated_at: validatedAt, last_failure_code: null,
     }, { onConflict: 'user_id,provider' })
     .select('provider,key_hint,model_id,status,cooldown_until,last_validated_at,last_failure_code')
     .single();
   if (error || !data) throw new Error('Unable to save AI provider credential.');
   return {
-    provider: data.provider as AiProvider,
-    keyHint: data.key_hint,
-    modelId: data.model_id,
-    status: data.status as 'active' | 'invalid',
-    cooldownUntil: data.cooldown_until,
-    lastValidatedAt: data.last_validated_at,
-    lastFailureCode: data.last_failure_code,
+    provider: data.provider as AiProvider, keyHint: data.key_hint, modelId: data.model_id,
+    status: data.status as 'active' | 'invalid', cooldownUntil: data.cooldown_until,
+    lastValidatedAt: data.last_validated_at, lastFailureCode: data.last_failure_code,
   };
 }
 
 export async function deleteStoredCredential(provider: AiProvider): Promise<void> {
   const { supabase, userId } = await authenticatedAiContext();
-  const { error } = await supabase
-    .from('encrypted_provider_credentials')
-    .delete()
-    .eq('user_id', userId)
-    .eq('provider', provider);
+  const { error } = await supabase.from('encrypted_provider_credentials').delete().eq('user_id', userId).eq('provider', provider);
   if (error) throw new Error('Unable to delete AI provider credential.');
 }
 
@@ -128,32 +99,22 @@ export async function markCredentialValidated(provider: AiProvider): Promise<AiC
   const { data, error } = await supabase
     .from('encrypted_provider_credentials')
     .update({ status: 'active', cooldown_until: null, last_validated_at: validatedAt, last_failure_code: null })
-    .eq('user_id', userId)
-    .eq('provider', provider)
-    .select('provider,key_hint,model_id,status,cooldown_until,last_validated_at,last_failure_code')
-    .single();
+    .eq('user_id', userId).eq('provider', provider)
+    .select('provider,key_hint,model_id,status,cooldown_until,last_validated_at,last_failure_code').single();
   if (error || !data) throw new Error('Unable to update AI provider validation state.');
   return {
-    provider: data.provider as AiProvider,
-    keyHint: data.key_hint,
-    modelId: data.model_id,
-    status: data.status as 'active' | 'invalid',
-    cooldownUntil: data.cooldown_until,
-    lastValidatedAt: data.last_validated_at,
-    lastFailureCode: data.last_failure_code,
+    provider: data.provider as AiProvider, keyHint: data.key_hint, modelId: data.model_id,
+    status: data.status as 'active' | 'invalid', cooldownUntil: data.cooldown_until,
+    lastValidatedAt: data.last_validated_at, lastFailureCode: data.last_failure_code,
   };
 }
 
 export async function markCredentialFailure(input: {
-  provider: AiProvider;
-  status: 'active' | 'invalid';
-  failureCode: string;
-  cooldownUntil: string | null;
+  provider: AiProvider; status: 'active' | 'invalid'; failureCode: string; cooldownUntil: string | null;
 }, context?: AiAuthenticatedContext): Promise<void> {
   const { supabase, userId } = await resolveContext(context);
   await supabase
     .from('encrypted_provider_credentials')
     .update({ status: input.status, last_failure_code: input.failureCode, cooldown_until: input.cooldownUntil })
-    .eq('user_id', userId)
-    .eq('provider', input.provider);
+    .eq('user_id', userId).eq('provider', input.provider);
 }
