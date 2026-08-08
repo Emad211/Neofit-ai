@@ -5,12 +5,17 @@ import { createClient } from '@/lib/supabase/server';
 
 function sameOriginRequest(request: NextRequest): boolean {
   const origin = request.headers.get('origin');
-  if (!origin) return true;
-  try {
-    return new URL(origin).origin === request.nextUrl.origin;
-  } catch {
-    return false;
+  if (origin) {
+    try {
+      return new URL(origin).origin === request.nextUrl.origin;
+    } catch {
+      return false;
+    }
   }
+
+  // Browser form submissions that omit Origin still carry Fetch Metadata.
+  // This route is browser-only, so ambiguous no-origin/no-metadata POSTs fail closed.
+  return request.headers.get('sec-fetch-site') === 'same-origin';
 }
 
 export async function POST(request: NextRequest) {
@@ -23,7 +28,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     if (formData.get('scope') === 'global') scope = 'global';
   } catch {
-    // Empty POST remains a local sign-out for backward compatibility.
+    // Empty same-origin POST remains a local sign-out for backward compatibility.
   }
 
   if (hasSupabasePublicEnv()) {
