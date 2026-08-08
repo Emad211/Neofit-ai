@@ -1,7 +1,8 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { useNutritionState } from '@/components/nutrition-state';
+import { useAccountState } from '@/components/account-state';
+import { formatLocalDate } from '@/lib/local-date';
 import {
   createLocalMeasurement,
   createMeasurementClient,
@@ -33,7 +34,8 @@ function metric(value: number | null | undefined, unit: string) {
 }
 
 export function ProgressScreen() {
-  const { account, localDate, summary } = useNutritionState();
+  const { account } = useAccountState();
+  const localDate = formatLocalDate(new Date(), account?.timezone);
   const [measurements, setMeasurements] = useState<BodyMeasurement[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -72,6 +74,8 @@ export function ProgressScreen() {
     }
     void load();
     return () => { cancelled = true; };
+  // Measurement loading depends on account identity, not mutable profile fields.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account?.id]);
 
   const weightRows = useMemo(
@@ -210,12 +214,12 @@ export function ProgressScreen() {
       </form>
 
       <article className="consistency-card">
-        <div className="consistency-card__copy"><span>تغذیه امروز</span><h3>{faNumber.format(summary.entryCount)} وعده ثبت شده</h3><p>{faNumber.format(summary.macros.calories)} کیلوکالری از داده‌های واقعی دفترچه امروز.</p></div>
+        <div className="consistency-card__copy"><span>مرز داده</span><h3>فقط اندازه‌گیری واقعی</h3><p>Progress دیگر برای نمایش کارت یا نمودار، Nutrition diary یا وزن‌های fixture را بارگیری نمی‌کند.</p></div>
       </article>
 
       {measurements.length ? <section className="measurement-history" aria-labelledby="measurement-history-heading"><div className="section-heading section-heading--compact"><div><p className="section-kicker">تاریخچه</p><h2 id="measurement-history-heading">آخرین ثبت‌ها</h2></div></div>{[...measurements].reverse().slice(0, 6).map((row) => <article key={row.id}><div><strong>{dateFormatter.format(new Date(row.measuredAt))}</strong><p>{[row.weightKg !== null ? `${faNumber.format(row.weightKg)} kg` : null, row.waistCm !== null ? `${faNumber.format(row.waistCm)} cm کمر` : null, row.bodyFatPercent !== null ? `${faNumber.format(row.bodyFatPercent)}٪ چربی` : null].filter(Boolean).join(' · ')}</p>{row.note ? <small>{row.note}</small> : null}</div><button type="button" onClick={() => void deleteMeasurement(row)}>حذف</button></article>)}</section> : null}
 
-      <p className="progress-demo-note">این صفحه دیگر وزن یا روند ساختگی نمایش نمی‌دهد. مقادیر بالا فقط از ثبت‌های همین کاربر یا همین مرورگر می‌آیند.</p>
+      <p className="progress-demo-note">این صفحه وزن یا روند ساختگی نمایش نمی‌دهد. مقادیر بالا فقط از ثبت‌های همین کاربر یا همین مرورگر می‌آیند.</p>
     </section>
   );
 }

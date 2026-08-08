@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { NeoFitIcon, type NeoFitIconName } from '@/components/neofit-icons';
-import { useNutritionState } from '@/components/nutrition-state';
+import { useAccountState } from '@/components/account-state';
 
 const navigation: readonly { href: string; label: string; icon: NeoFitIconName }[] = [
   { href: '/today', label: 'امروز', icon: 'home' },
@@ -19,6 +19,7 @@ function pageTitle(pathname: string, displayName: string | null): string {
   if (pathname.startsWith('/nutrition')) return 'تغذیه';
   if (pathname.startsWith('/workout')) return 'تمرین';
   if (pathname.startsWith('/progress')) return 'پیشرفت';
+  if (pathname.startsWith('/coach')) return 'مربی نئوفیت';
   if (pathname.startsWith('/profile')) return 'پروفایل';
   return displayName ? `سلام ${displayName}، روزت چطوره؟` : 'سلام، روزت چطوره؟';
 }
@@ -30,7 +31,7 @@ function accountInitial(displayName: string | null, email: string | null): strin
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { account, supabaseConfigured, syncStatus, syncMessage } = useNutritionState();
+  const { account, configured, loadError } = useAccountState();
   const [online, setOnline] = useState(true);
 
   useEffect(() => {
@@ -48,17 +49,19 @@ export function AppShell({ children }: { children: ReactNode }) {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [pathname]);
 
-  const statusClass = !online || syncStatus === 'error'
+  const statusClass = !online || loadError
     ? 'offline-note'
     : 'offline-note offline-note--trusted';
   let statusText: ReactNode;
   if (!online) {
     statusText = account
-      ? 'آفلاین هستی؛ برای ثبت در حساب آنلاین دوباره متصل شو.'
-      : 'آفلاین هستی؛ داده‌های محلی همین مرورگر همچنان در دسترس‌اند.';
+      ? 'آفلاین هستی؛ داده‌های حساب هنگام اتصال دوباره خوانده می‌شوند.'
+      : 'آفلاین هستی؛ داده‌های مهمان همین مرورگر همچنان در دسترس‌اند.';
+  } else if (loadError) {
+    statusText = loadError;
   } else if (account) {
-    statusText = syncMessage;
-  } else if (supabaseConfigured) {
+    statusText = 'حساب متصل است؛ هر بخش فقط داده‌های موردنیاز خودش را می‌خواند.';
+  } else if (configured) {
     statusText = <><span>حالت مهمان فعال است.</span> <Link href="/auth">ورود برای ذخیره در حساب</Link></>;
   } else {
     statusText = 'حالت Preview محلی؛ اتصال حساب برای این محیط تنظیم نشده است.';
@@ -81,8 +84,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Link>
       </header>
 
-      <div className={statusClass} role="status" data-sync-status={syncStatus}>
-        <NeoFitIcon name={!online || syncStatus === 'error' ? 'offline' : 'check'} size={17} />
+      <div className={statusClass} role="status" data-account-state={account ? 'authenticated' : 'guest'}>
+        <NeoFitIcon name={!online || loadError ? 'offline' : 'check'} size={17} />
         <span>{statusText}</span>
       </div>
 

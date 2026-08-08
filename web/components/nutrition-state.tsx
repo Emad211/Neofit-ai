@@ -7,6 +7,7 @@ import {
 } from '@neofit/nutrition-core';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { dailyTargets, foodFixtures, initialDiary, type FoodFixture } from '@/data/fixtures';
+import { useOptionalAccountState, type ClientAccount } from '@/components/account-state';
 import { formatLocalDate } from '@/lib/local-date';
 import {
   buildInitialWebDiary,
@@ -21,13 +22,7 @@ import { parseStoredWebDiary, serializeStoredWebDiary } from '@/lib/web-diary-st
 
 const STORAGE_KEY = 'neofit:web-diary:v1';
 
-export interface ClientAccount {
-  readonly id: string;
-  readonly email: string;
-  readonly displayName: string;
-  readonly timezone: string;
-}
-
+export type { ClientAccount } from '@/components/account-state';
 export type NutritionSyncStatus = 'local' | 'synced' | 'saving' | 'error';
 
 interface NutritionStateValue {
@@ -68,12 +63,15 @@ function createInitialDiary(localDate: string): WebDiaryEntry[] {
 
 export function NutritionStateProvider({
   children,
-  account = null,
-  configured = false,
+  account: accountOverride,
+  configured: configuredOverride,
   initialDiary = null,
   initialGoals = null,
   loadError = null,
 }: NutritionStateProviderProps) {
+  const sharedAccount = useOptionalAccountState();
+  const account = accountOverride === undefined ? sharedAccount?.account ?? null : accountOverride;
+  const configured = configuredOverride === undefined ? sharedAccount?.configured ?? false : configuredOverride;
   const accountMode = account !== null;
   const [localDate, setLocalDate] = useState(() =>
     formatLocalDate(new Date(), account?.timezone),
@@ -88,7 +86,9 @@ export function NutritionStateProvider({
   const [syncMessage, setSyncMessage] = useState(
     loadError ?? (accountMode ? 'اطلاعات حساب همگام است.' : 'داده‌ها فقط در همین مرورگر ذخیره می‌شوند.'),
   );
-  const goals = initialGoals ?? dailyTargets;
+  // Guest mode is an explicit demo and may use demo goals. Account mode must
+  // never silently inherit synthetic personal targets.
+  const goals = accountMode ? initialGoals : (initialGoals ?? dailyTargets);
 
   useEffect(() => {
     const updateLocalDate = () => {

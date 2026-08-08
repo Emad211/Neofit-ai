@@ -28,7 +28,7 @@ function fakeClient(errorTable?: string) {
   return { client, calls };
 }
 
-test('bootstrapAccount creates all first-account rows with insert-only conflict handling', async () => {
+test('bootstrapAccount creates only universally safe identity/settings rows', async () => {
   const { client, calls } = fakeClient();
   await bootstrapAccount(client, {
     userId: '11111111-1111-1111-1111-111111111111',
@@ -36,29 +36,26 @@ test('bootstrapAccount creates all first-account rows with insert-only conflict 
     displayName: '  کاربر تست  ',
   });
 
-  assert.deepEqual(calls.map((call) => call.table), [
-    'profiles',
-    'user_settings',
-    'nutrition_goals',
-  ]);
+  assert.deepEqual(calls.map((call) => call.table), ['profiles', 'user_settings']);
   assert.deepEqual(calls.map((call) => call.options), [
     { onConflict: 'id', ignoreDuplicates: true },
-    { onConflict: 'user_id', ignoreDuplicates: true },
     { onConflict: 'user_id', ignoreDuplicates: true },
   ]);
   assert.equal(calls[0]?.values.display_name, 'کاربر تست');
   assert.equal(calls[0]?.values.timezone, 'Asia/Tehran');
   assert.equal(calls[1]?.values.theme, 'system');
-  assert.equal(calls[2]?.values.core_schema_version, 1);
+  assert.equal(calls.some((call) => call.table === 'nutrition_goals'), false);
 });
 
-test('bootstrapAccount surfaces a failed first-account insert', async () => {
-  const { client } = fakeClient('nutrition_goals');
+test('bootstrapAccount retries then surfaces a failed safe first-account insert', async () => {
+  const { client, calls } = fakeClient('user_settings');
   await assert.rejects(
     bootstrapAccount(client, {
       userId: '22222222-2222-2222-2222-222222222222',
       email: 'person@example.com',
     }),
-    /failed:nutrition_goals/,
+    /failed:user_settings/,
   );
+  assert.equal(calls.filter((call) => call.table === 'user_settings').length, 2);
+  assert.equal(calls.some((call) => call.table === 'nutrition_goals'), false);
 });

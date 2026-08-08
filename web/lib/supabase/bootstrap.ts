@@ -1,11 +1,5 @@
-import { NUTRITION_CORE_SCHEMA_VERSION } from '@neofit/nutrition-core';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { dailyTargets } from '@/data/fixtures';
-import type { Database, Json } from './database.types';
-
-function asJson(value: unknown): Json {
-  return JSON.parse(JSON.stringify(value)) as Json;
-}
+import type { Database } from './database.types';
 
 export function safeDisplayName(
   value: string | null | undefined,
@@ -24,20 +18,17 @@ async function retryBootstrapWrite(
   const first = await operation();
   if (!first.error) return null;
 
-  // First-account writes are idempotent. A single short retry absorbs transient
-  // Auth/Data API propagation failures without adding requests to healthy logins.
   await new Promise((resolve) => setTimeout(resolve, 150));
   const second = await operation();
   return second.error;
 }
 
 /**
- * Creates only the missing first-account rows.
+ * Creates only identity/settings rows that have universally safe defaults.
  *
- * `ignoreDuplicates` is intentional: signing in again must never reset a
- * profile name, user settings, or nutrition goals that the user has edited.
- * Healthy bootstraps still use three parallel writes. Only a failed write is
- * retried once, so normal request cost is unchanged.
+ * Nutrition goals are intentionally NOT bootstrapped. A real account must not
+ * receive fabricated calorie/macronutrient targets. Goal creation belongs to a
+ * later deterministic personalization contract with an explicit source.
  */
 export async function bootstrapAccount(
   supabase: SupabaseClient<Database>,
@@ -48,7 +39,7 @@ export async function bootstrapAccount(
   },
 ): Promise<void> {
   const displayName = safeDisplayName(input.displayName, input.email);
-  const [profileError, settingsError, goalsError] = await Promise.all([
+  const [profileError, settingsError] = await Promise.all([
     retryBootstrapWrite(() => supabase.from('profiles').upsert({
       id: input.userId,
       display_name: displayName,
@@ -66,16 +57,8 @@ export async function bootstrapAccount(
       onConflict: 'user_id',
       ignoreDuplicates: true,
     })),
-    retryBootstrapWrite(() => supabase.from('nutrition_goals').upsert({
-      user_id: input.userId,
-      daily: asJson(dailyTargets.daily),
-      core_schema_version: NUTRITION_CORE_SCHEMA_VERSION,
-    }, {
-      onConflict: 'user_id',
-      ignoreDuplicates: true,
-    })),
   ]);
 
-  const error = profileError ?? settingsError ?? goalsError;
+  const error = profileError ?? settingsError;
   if (error) throw error;
 }

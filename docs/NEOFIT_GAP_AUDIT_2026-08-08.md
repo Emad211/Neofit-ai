@@ -11,17 +11,19 @@ Status: active engineering backlog. This document is the canonical gap inventory
 
 ## P0 — identity / security / data integrity
 
-### Email confirmation/session mismatch — FIXED IN STAGE 9, hosted template action still required
+### Email confirmation/session mismatch — CODE FIXED IN STAGE 9, HOSTED TEMPLATE QA STILL REQUIRED
 
 Real signup evidence proved Supabase verified the email but NeoFit could not establish the SSR session after crossing Vercel Preview hostnames. Stage 9 adds canonical Preview-origin enforcement, token-hash `/auth/confirm` + `verifyOtp`, resend recovery, and bootstrap resilience.
 
-Manual hosted requirement remains: Supabase Confirm-signup template must point to:
+Manual hosted requirement remains until confirmed by the project owner: Supabase Confirm-signup template must point to:
 
 `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/onboarding`
 
+After that, run one fresh signup confirmation through the stable Preview Lab alias.
+
 ### Leaked-password protection — OPEN / MANUAL
 
-Supabase Security Advisor currently reports `auth_leaked_password_protection` as disabled. Enable it in Auth Password Security before Production and preferably during Preview QA.
+Supabase Security Advisor reports `auth_leaked_password_protection` as disabled. Enable it in Auth Password Security and re-run the Security Advisor.
 
 ### First-account bootstrap transient failure — FIXED IN STAGE 9
 
@@ -31,65 +33,64 @@ Observed real runtime: one `user_settings` upsert returned 401 while parallel ac
 
 ### Synthetic Progress weight trend — FIXED IN STAGE 10
 
-Previous Progress hardcoded six personal-looking weights (`95 → 92.2 kg`). Stage 10 replaces this with `body_measurements`, own-row RLS, account/Guest persistence, real charting and explicit empty states.
+Previous Progress hardcoded six personal-looking weights (`95 → 92.2 kg`). Stage 10 replaces this with `body_measurements`, own-row RLS, account/Guest persistence, real charting and explicit empty states. CI is green; runtime account measurement QA remains.
 
-### Synthetic account Nutrition targets — OPEN / NEXT
+### Synthetic account Nutrition targets — FIXED IN STAGE 11
 
-`dailyTargets` currently contains `2200 kcal / 140 g protein / 250 g carbs / 70 g fat`. First-account bootstrap writes these values into `nutrition_goals`, and account reads fall back to them. This is acceptable as an explicit Guest/demo fixture but not as a personalized account target.
+The demo fixture still intentionally contains `2200 kcal / 140 g protein / 250 g carbs / 70 g fat` for Guest UX testing, but Stage 11 prevents those values from entering a real account:
 
-Required outcome:
+- first-account bootstrap no longer writes `nutrition_goals`;
+- account reads no longer fall back to `dailyTargets`;
+- Today supports `targets not configured` while still showing real consumed totals;
+- Coach reports `goalsConfigured: false` when a real goal does not exist;
+- the one known untouched bootstrap-generated fixture row from the Auth incident was deleted with a narrow guard.
 
-- no account receives fabricated targets;
-- account UI can represent `targets not configured` safely;
-- Nutrition arithmetic remains `@neofit/nutrition-core` authority;
-- legitimate target calculation/configuration becomes its own deterministic contract.
+Legitimate personalized target creation remains a separate future deterministic contract; Stage 11 does not invent a replacement formula.
 
 ### Nutrition plan is fixture-backed — OPEN
 
-`NutritionPlanScreen` still renders `weeklyPlan` from `web/data/fixtures.ts`. It is not yet a persisted per-user plan. The catalog/Core boundary is correct, but the plan itself is demo data.
+`NutritionPlanScreen` still renders `weeklyPlan` from `web/data/fixtures.ts`. It is not yet a persisted per-user plan. The catalog/Core boundary is correct, but the plan itself remains demo data.
 
 ### Workout plan is fixture-backed — OPEN
 
-Workout sessions/sets are real and persistent, but the actual weekly workout plan still comes from static `workout-fixtures.ts`. A future plan schema must preserve exercise identity, versions, user confirmation, and safety constraints.
+Workout sessions/sets are real and persistent, but the weekly workout plan still comes from static `workout-fixtures.ts`. A future plan schema must preserve exercise identity, versions, user confirmation, and safety constraints.
 
 ### Notifications center / push contract — OPEN
 
-The current connected build has no `/notifications` route. The full UI reference had notification controls, but persistence, push subscriptions and delivery policy are not connected.
+The connected build has no real notification-center persistence/push delivery contract. The full UI reference had notification controls, but push subscription, preferences, delivery policy and privacy behavior are not connected.
 
 ## P1 — request / performance architecture
 
-### Main app layout over-fetches Nutrition — OPEN / NEXT
+### Main app Nutrition over-fetch — FIXED IN STAGE 11
 
-Every `(main)` route currently executes `loadAccountSnapshot()`, which reads profile + nutrition goals + the entire nutrition diary. That means Profile, Workout, Progress and even Coach page navigation can pay Nutrition-read cost before those screens need it.
+The shared `(main)` layout is now identity-only:
 
-Required outcome:
+- verified claims + Profile for the shell;
+- Today alone calls `loadNutritionSnapshot()`;
+- Profile, Progress, Workout and Coach UI do not hydrate the Nutrition diary from the global shell;
+- Nutrition catalog/add-food does not preload diary history.
 
-- lightweight account identity in the shared shell;
-- Nutrition data loaded only by Today/Nutrition screens that need it;
-- bounded date/range queries instead of unbounded all-history reads;
-- Coach continues using its own selective context loader.
+### Nutrition entry history query unbounded — FIXED FOR TODAY IN STAGE 11
 
-### Nutrition entry history query unbounded — OPEN
-
-`loadAccountSnapshot()` currently orders all `nutrition_entries` by `logged_at` with no date/range limit. This must be date-scoped or paginated before meaningful user history accumulates.
+Today now filters account entries by both `user_id` and the account's current `local_date`. Full historical Nutrition UX still needs explicit pagination/range design when history is added; it is no longer accidentally fetched on every route.
 
 ## P1 — AI runtime proof / observability
 
 ### Google BYOK real request proof — OPEN
 
-Credential vault, Google-first routing and UI exist, but live `encrypted_provider_credentials` count is still zero. A real user Save/Test + Coach request is still required.
+Credential vault, Google-first routing and UI exist, but live `encrypted_provider_credentials` count has remained zero in the last database audit. A real user Save/Test + Coach request is still required.
 
 ### AvalAI controlled fallback proof — OPEN
 
-Fallback/cooldown is implemented and tested at contract level, but real runtime Google-failure → AvalAI-success has not yet been proven.
+Fallback/cooldown is implemented and contract-tested, but real runtime Google-failure → AvalAI-success has not yet been proven.
 
-### AI request audit / user budget — OPEN
+### AI request audit / user budget — OPEN / NEXT HIGH-VALUE SLICE
 
-The architecture roadmap calls for request auditing. There is not yet an `ai_request_audit` source of truth for provider/model/latency/fallback/outcome. Add metadata-only auditing without storing raw prompts or provider keys; pair it with bounded per-user abuse/request controls before write-agents.
+There is not yet an `ai_request_audit` source of truth for provider/model/latency/fallback/outcome. Add metadata-only auditing without raw prompts or provider keys. Before write-agents, define a request-abuse/budget strategy that does not add hidden provider calls.
 
-### Coach Progress context — BLOCKED UNTIL STAGE 10 SOURCE EXISTS, THEN OPEN
+### Coach Progress context — OPEN / SOURCE READY
 
-Read-only Coach can use Profile/Safety/Nutrition/Workout. Real body-measurement Progress context should be added only after `body_measurements` is the source of truth.
+Stage 10 established `body_measurements` as the real Progress source. Coach can now gain a selectively loaded Progress domain without using fake measurements or global page state.
 
 ## P2 — Auth / abuse / Production hardening
 
@@ -102,15 +103,15 @@ Read-only Coach can use Profile/Safety/Nutrition/Workout. Real body-measurement 
 
 ## P2 — product data completeness
 
-### Food catalog coverage
+### Food catalog coverage — OPEN
 
 Current connected Web catalog is a small IFKB-shaped fixture set. Nutrition Core authority is correct, but coverage is intentionally limited. Expand through IFKB/FNDDS/SR-backed resolution before claiming broad food search.
 
-### Body photos / media
+### Body photos / media — OPEN
 
 Progress photos are not yet a persistent privacy-reviewed Storage feature. Add only with explicit consent, private bucket policies, deletion semantics and metadata minimization.
 
-### Reports
+### Reports — OPEN
 
 Weekly/on-demand reports from the old reference are not connected to the current architecture. They should consume real Progress/Workout/Nutrition sources, not recreate old Firebase/Genkit behavior.
 
@@ -139,12 +140,12 @@ The service worker correctly excludes `/api/`, `/auth/`, authorization-bearing r
 
 ## Current recommended order
 
-1. Stage 9 Auth runtime hardening + hosted email template.
-2. Stage 10 real Body Measurement Progress.
-3. Remove fake account Nutrition targets and split shared identity from Nutrition data loading.
-4. Add AI request audit/budget and Progress context to Coach.
+1. Finish Stage 9 hosted Auth actions and fresh-signup runtime proof.
+2. Runtime-prove Stage 10 real body measurements.
+3. Runtime-prove Stage 11 truthful/date-scoped Nutrition account behavior.
+4. Add Coach Progress context and metadata-only AI request audit/budget foundation.
 5. Persist/version workout plans.
-6. Persist/version nutrition plans through catalog/Core authority.
+6. Persist/version Nutrition plans through catalog/Core authority.
 7. Notifications.
 8. Password recovery + Production Auth hardening.
 9. Controlled write-agent proposals.
@@ -152,4 +153,4 @@ The service worker correctly excludes `/api/`, `/auth/`, authorization-bearing r
 
 ## Release rule
 
-All work remains Preview-only in `neofit-preview-lab`. No Production promotion until the core P0/P1 runtime proofs are green with a real account.
+All work remains Preview-only in `neofit-preview-lab`. No Production promotion until core P0/P1 runtime proofs are green with a real account.

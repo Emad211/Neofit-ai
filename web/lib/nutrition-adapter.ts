@@ -47,14 +47,27 @@ export interface WebFoodEstimate {
   readonly portionId: string;
 }
 
-export interface WebDiarySummary {
+interface WebDiarySummaryBase {
   readonly macros: WebMacroSet;
-  readonly targets: WebMacroSet;
   readonly grams: number | null;
   readonly entryCount: number;
+}
+
+export interface ConfiguredWebDiarySummary extends WebDiarySummaryBase {
+  readonly targets: WebMacroSet;
   readonly remainingCalories: number;
   readonly calorieProgressPercent: number;
+  readonly targetsConfigured: true;
 }
+
+export interface UnconfiguredWebDiarySummary extends WebDiarySummaryBase {
+  readonly targets: null;
+  readonly remainingCalories: null;
+  readonly calorieProgressPercent: null;
+  readonly targetsConfigured: false;
+}
+
+export type WebDiarySummary = ConfiguredWebDiarySummary | UnconfiguredWebDiarySummary;
 
 const MEAL_LABELS_FA: Readonly<Record<MealType, string>> = {
   breakfast: 'صبحانه',
@@ -198,8 +211,40 @@ export function summarizeWebDiary(
   entries: readonly WebDiaryEntry[],
   localDate: string,
   goals: NutritionGoals,
+): ConfiguredWebDiarySummary;
+export function summarizeWebDiary(
+  entries: readonly WebDiaryEntry[],
+  localDate: string,
+  goals: null,
+): UnconfiguredWebDiarySummary;
+export function summarizeWebDiary(
+  entries: readonly WebDiaryEntry[],
+  localDate: string,
+  goals: NutritionGoals | null,
+): WebDiarySummary;
+export function summarizeWebDiary(
+  entries: readonly WebDiaryEntry[],
+  localDate: string,
+  goals: NutritionGoals | null,
 ): WebDiarySummary {
   const summary = summarizeDiaryDay(entries.map((entry) => entry.core), localDate);
+  const macros = webMacrosFromEstimate(summary.total);
+
+  if (!goals) {
+    return {
+      macros,
+      targets: null,
+      grams: summary.total.grams,
+      entryCount: summary.entryCount,
+      remainingCalories: null,
+      calorieProgressPercent: null,
+      targetsConfigured: false,
+    };
+  }
+
+  // A non-null goal must contain the four Web macro targets. Invalid persisted
+  // goals fail closed here instead of silently becoming a fabricated target.
+  const targets = webMacrosFromVector(goals.daily);
   const progress = calculateGoalProgress(summary.total.center, goals);
   const energy = progress.find((item) => item.nutrient === 'energyKcal');
   if (!energy || energy.ratio === null || energy.remaining === null) {
@@ -207,12 +252,13 @@ export function summarizeWebDiary(
   }
 
   return {
-    macros: webMacrosFromEstimate(summary.total),
-    targets: webMacrosFromVector(goals.daily),
+    macros,
+    targets,
     grams: summary.total.grams,
     entryCount: summary.entryCount,
     remainingCalories: Math.max(0, energy.remaining),
     calorieProgressPercent: Math.min(100, Math.max(0, Math.round(energy.ratio * 100))),
+    targetsConfigured: true,
   };
 }
 

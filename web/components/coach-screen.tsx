@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
-import { useNutritionState } from '@/components/nutrition-state';
+import { useAccountState } from '@/components/account-state';
 
 type Message = { id: string; role: 'user' | 'assistant'; content: string; meta?: { provider?: string; modelId?: string; latencyMs?: number; fallbackFrom?: string | null; contextDomains?: string[] } };
 
@@ -10,7 +10,7 @@ const starter: Message = { id: 'welcome', role: 'assistant', content: 'سلام.
 const prompts = ['وضعیت تمرین‌های اخیرم را جمع‌بندی کن', 'امروز از نظر تغذیه چه چیزی ثبت کرده‌ام؟', 'با توجه به آسیب‌هایم برای تمرین امروز چه نکته‌ای مهم است؟'];
 
 export function CoachScreen() {
-  const { account } = useNutritionState();
+  const { account } = useAccountState();
   const [messages, setMessages] = useState<Message[]>([starter]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);

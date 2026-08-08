@@ -1,0 +1,110 @@
+name: Account Nutrition Data Truth CI
+
+on:
+  push:
+    branches:
+      - 'stage11/**'
+    paths:
+      - 'web/components/account-state.tsx'
+      - 'web/components/app-shell.tsx'
+      - 'web/components/nutrition-state.tsx'
+      - 'web/components/today-screen.tsx'
+      - 'web/components/profile-screen.tsx'
+      - 'web/components/progress-screen.tsx'
+      - 'web/components/coach-screen.tsx'
+      - 'web/app/(main)/**'
+      - 'web/lib/nutrition-adapter.ts'
+      - 'web/lib/supabase/account.ts'
+      - 'web/lib/supabase/bootstrap.ts'
+      - 'web/lib/coach/context-loader.ts'
+      - 'web/tests/account-nutrition-data-truth.test.ts'
+      - 'web/tests/account-bootstrap.test.ts'
+      - 'web/tests/supabase-app-integration.test.ts'
+      - 'docs/NEOFIT_STAGE11_ACCOUNT_NUTRITION_DATA_TRUTH.md'
+      - '.github/workflows/account-nutrition-data-truth-ci.yml'
+  pull_request:
+    branches:
+      - stage10/body-measurement-progress
+    paths:
+      - 'web/components/account-state.tsx'
+      - 'web/components/app-shell.tsx'
+      - 'web/components/nutrition-state.tsx'
+      - 'web/components/today-screen.tsx'
+      - 'web/components/profile-screen.tsx'
+      - 'web/components/progress-screen.tsx'
+      - 'web/components/coach-screen.tsx'
+      - 'web/app/(main)/**'
+      - 'web/lib/nutrition-adapter.ts'
+      - 'web/lib/supabase/account.ts'
+      - 'web/lib/supabase/bootstrap.ts'
+      - 'web/lib/coach/context-loader.ts'
+      - 'web/tests/account-nutrition-data-truth.test.ts'
+      - 'web/tests/account-bootstrap.test.ts'
+      - 'web/tests/supabase-app-integration.test.ts'
+      - 'docs/NEOFIT_STAGE11_ACCOUNT_NUTRITION_DATA_TRUTH.md'
+      - '.github/workflows/account-nutrition-data-truth-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: account-nutrition-truth-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_VERCEL_ENV: preview
+      NEXT_PUBLIC_APP_URL: https://preview.example.test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+      - name: Install workspace dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: Account/Nutrition truth contract tests
+        working-directory: web
+        run: node --import tsx --test tests/account-nutrition-data-truth.test.ts tests/account-bootstrap.test.ts
+      - name: Nutrition Core adapter regression
+        working-directory: web
+        run: npm run test:adapter
+      - name: Supabase app regression
+        working-directory: web
+        run: npm run test:supabase-app
+      - name: TypeScript
+        working-directory: web
+        run: npm run typecheck
+      - name: Production build
+        working-directory: web
+        run: npm run build
+      - name: Verify request/data-truth boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'loadAccountIdentity' 'web/app/(main)/layout.tsx'
+          if grep -Eq 'NutritionStateProvider|loadNutritionSnapshot|loadAccountSnapshot' 'web/app/(main)/layout.tsx'; then
+            echo 'Shared main layout is loading Nutrition again.' >&2
+            exit 1
+          fi
+          grep -q "\.eq('local_date', localDate)" web/lib/supabase/account.ts
+          if grep -Eq 'dailyTargets|nutrition_goals' web/lib/supabase/bootstrap.ts; then
+            echo 'Synthetic account nutrition target bootstrap detected.' >&2
+            exit 1
+          fi
+          for file in web/components/app-shell.tsx web/components/profile-screen.tsx web/components/progress-screen.tsx web/components/coach-screen.tsx; do
+            if grep -q 'useNutritionState' "$file"; then
+              echo "Global Nutrition dependency returned in $file" >&2
+              exit 1
+            fi
+          done
