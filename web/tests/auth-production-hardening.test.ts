@@ -4,9 +4,7 @@ import test from 'node:test';
 import { AUTH_PASSWORD_MIN_LENGTH, validNewPassword, validSignInPassword } from '@/lib/auth/password';
 import { safeInternalPath } from '@/lib/auth/redirect';
 
-async function source(path: string) {
-  return readFile(new URL(`../${path}`, import.meta.url), 'utf8');
-}
+async function source(path: string) { return readFile(new URL(`../${path}`, import.meta.url), 'utf8'); }
 
 test('internal redirects reject external, protocol-relative and backslash paths', () => {
   assert.equal(safeInternalPath('/today?x=1', '/fallback'), '/today?x=1');
@@ -35,27 +33,35 @@ test('confirmation GET stages token without consuming it and removes token from 
 test('only explicit verification POST calls verifyOtp with a server-only staged token', async () => {
   const page = await source('app/auth/verify/page.tsx');
   const action = await source('app/auth/verify/actions.ts');
+  const tokenCookie = await source('lib/auth/email-link-intent.ts');
   assert.match(page, /pendingEmailLinkToken/);
   assert.doesNotMatch(page, /name=["']token_hash/);
   assert.match(action, /pendingEmailLinkToken\(\)/);
   assert.match(action, /verifyOtp\(\{ token_hash: tokenHash, type \}\)/);
   assert.match(action, /clearPendingEmailLinkToken\(\)/);
+  assert.match(tokenCookie, /path:\s*['"]\/auth\/verify['"]/);
+  assert.match(tokenCookie, /maxAge:\s*0/);
 });
 
-test('password recovery is non-enumerating and gated by signed recovery intent', async () => {
+test('password recovery is non-enumerating and bound to signed exact session intent', async () => {
   const recovery = await source('app/auth/recovery-actions.ts');
+  const verify = await source('app/auth/verify/actions.ts');
   const intent = await source('lib/auth/recovery-intent.ts');
   assert.match(recovery, /resetPasswordForEmail/);
   assert.match(recovery, /message=sent/);
-  assert.match(recovery, /hasValidRecoveryIntent/);
-  assert.match(recovery, /auth\.getClaims\(\)/);
+  assert.match(recovery, /hasValidRecoveryIntent\(userId, sessionId\)/);
+  assert.match(recovery, /claims\?\.session_id/);
   assert.match(recovery, /auth\.updateUser\(\{ password \}\)/);
   assert.match(recovery, /scope: 'others'/);
+  assert.match(verify, /setRecoveryIntent\(data\.user\.id, sessionId\)/);
   assert.match(intent, /AUTH_RECOVERY_INTENT_KEY/);
   assert.match(intent, /createHmac\(['"]sha256['"]/);
   assert.match(intent, /timingSafeEqual/);
+  assert.match(intent, /payloadFor\(userId: string, sessionId: string/);
   assert.match(intent, /httpOnly:\s*true/);
   assert.match(intent, /MAX_AGE_SECONDS = 15 \* 60/);
+  assert.match(intent, /path:\s*['"]\/auth\/update-password['"]/);
+  assert.match(intent, /maxAge:\s*0/);
 });
 
 test('signed-in password changes require current password and revoke other refresh sessions', async () => {
@@ -65,14 +71,27 @@ test('signed-in password changes require current password and revoke other refre
   assert.match(security, /scope: 'others'/);
 });
 
-test('normal logout is local while global logout is explicit and POST-only', async () => {
+test('normal logout is local while global logout is explicit, same-origin and POST-only', async () => {
   const signout = await source('app/auth/signout/route.ts');
   const securityPage = await source('app/(main)/profile/security/page.tsx');
   assert.match(signout, /scope: 'local' \| 'global' = 'local'/);
   assert.match(signout, /scope === 'global'/);
-  assert.match(signout, /sameOriginRequest/);
+  assert.match(signout, /sec-fetch-site/);
+  assert.match(signout, /same-origin/);
   assert.doesNotMatch(signout, /export async function GET/);
   assert.match(securityPage, /name="scope" value="global"/);
+});
+
+test('auth forms disable duplicate submissions while pending', async () => {
+  const button = await source('app/auth/auth-submit-button.tsx');
+  const authPage = await source('app/auth/page.tsx');
+  const recoveryPage = await source('app/auth/recover/page.tsx');
+  const verifyPage = await source('app/auth/verify/page.tsx');
+  assert.match(button, /useFormStatus/);
+  assert.match(button, /disabled=\{disabled \|\| pending\}/);
+  assert.match(authPage, /AuthSubmitButton/);
+  assert.match(recoveryPage, /AuthSubmitButton/);
+  assert.match(verifyPage, /AuthSubmitButton/);
 });
 
 test('Supabase SSR proxy preserves refresh headers and verifies claims immediately', async () => {
