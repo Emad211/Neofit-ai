@@ -17,6 +17,7 @@ Stage 9 fixed the real Vercel Preview PKCE hostname incident, but a deeper Auth 
 - Auth forms had no pending state, allowing duplicate submissions;
 - sensitive actions trusted locally valid claims even after a server-side session revoke;
 - AI/BYOK provider access also used claims-only validation despite user quota/cost impact;
+- cookie-authenticated AI mutation/inference routes had no explicit same-origin request boundary;
 - a fresh authenticated account could crash `/today` because an empty Core nutrient vector was treated as an invalid non-empty macro estimate;
 - recovery misconfiguration could have consumed a one-time token before local signing state was ready.
 
@@ -40,7 +41,7 @@ A security scanner can GET/follow the link without consuming the one-time token;
 
 The token-staging cookie is scoped to `/auth/verify`, expires after 10 minutes, and is cleared with the exact same cookie path + `Max-Age=0` after verification.
 
-## Real HTTP smoke found two framework/runtime bugs
+## Real HTTP smoke found framework/runtime bugs
 
 Source tests, TypeScript and `next build` were not enough. A real built Next server smoke test exposed two issues that would have affected the one-time-link flow:
 
@@ -52,7 +53,7 @@ Stage 13 fixes both at the architecture level:
 - sensitive Auth redirects are built from `canonicalAuthOrigin()` / `NEXT_PUBLIC_APP_URL`, never from a framework-derived request hostname;
 - `next.config.ts` has explicit `/auth/confirm` and `/auth/callback` header rules after the generic rule, enforcing `Referrer-Policy: no-referrer` and `Cache-Control: private, no-store` at framework level.
 
-The final real HTTP smoke starts the built Next server and verifies:
+The real HTTP smoke starts the built Next server and verifies:
 
 - `/auth` and `/auth/recover` render;
 - dummy confirmation GET returns `303`;
@@ -62,12 +63,14 @@ The final real HTTP smoke starts the built Next server and verifies:
 - the actual response contains `Referrer-Policy: no-referrer`;
 - the actual response contains `Cache-Control: private, no-store`;
 - `/auth/verify` really renders the confirmation interstitial when the staged cookie is present;
-- a cross-origin signout POST returns `403`.
+- a cross-origin signout POST returns `403`;
+- a cross-origin Coach POST returns `403` before Auth/context/provider work;
+- a cross-origin BYOK credential DELETE returns `403` before credential access.
 
-Final successful evidence:
+Latest code evidence before this documentation update:
 
-- branch HEAD: `8c9c5783942488212f42d9e668c37e2f5719f6ed`
-- Auth Production Hardening CI: `31272983058`
+- code HEAD: `23db1dd0cf264c156bcd8bc3d691f4ee5291517b`
+- Auth Production Hardening CI: `31273336101`
 - Auth production contract tests: success
 - complete Supabase app regression: success
 - TypeScript: success
@@ -92,19 +95,21 @@ Recovery verification creates a Supabase recovery session and a defense-in-depth
 - compared using constant-time signature comparison;
 - cleared on its exact cookie path with `Max-Age=0`.
 
-`/auth/update-password` requires both a live Supabase Auth session and the matching signed recovery intent. A recovery cookie copied to a different session is insufficient.
+`/auth/update-password` requires both a live Supabase Auth user validation and the matching signed recovery intent. A recovery cookie copied to a different session is insufficient.
 
 After a recovered password change, NeoFit asks Supabase to revoke other refresh sessions while retaining the current recovered session.
 
-## Live-session validation boundary
+## Live server validation boundary
 
 `getClaims()` remains the fast identity primitive for ordinary navigation/read rendering. It verifies JWT signature/expiry locally and avoids putting Auth server in the hot path of every page.
 
-For security-sensitive actions NeoFit uses `activeAuthSession()`:
+For security-sensitive or quota-bearing actions NeoFit uses `activeAuthSession()`:
 
 1. `getClaims()` validates signed `sub` + `session_id`;
-2. `getUser()` performs a live network check against Supabase Auth;
+2. `getUser()` performs a network validation against Supabase Auth;
 3. user ids must agree.
+
+Current Supabase documentation explicitly distinguishes the two: `getClaims()` can validate a JWT locally, while `getUser()` always sends a request to the Auth server and therefore reflects server-side session termination/logout state rather than trusting the browser/local token alone.
 
 This live boundary is used for:
 
@@ -113,7 +118,25 @@ This live boundary is used for:
 - `/profile/security`;
 - AI/BYOK authentication before accessing the user's provider credential or making a provider-backed Coach request.
 
-That last item intentionally adds one Auth-server request per AI interaction. It does **not** add another LLM inference request; it prevents a server-revoked but not-yet-expired access JWT from continuing to spend the user's BYOK quota.
+That last item intentionally adds one Auth-server request per AI interaction. It does **not** add another LLM inference request; it reduces the window in which a server-ended session could continue spending the user's BYOK quota.
+
+## Same-origin mutation boundary
+
+Cookie-authenticated browser mutation routes share `isSameOriginBrowserMutation()`.
+
+The helper accepts a request only when:
+
+- an `Origin` header is present and exactly equals the request origin; or
+- Origin is absent but Fetch Metadata explicitly says `Sec-Fetch-Site: same-origin`.
+
+It is used by:
+
+- `/auth/signout`;
+- BYOK credential PUT/POST/DELETE;
+- `/api/ai/respond`;
+- `/api/ai/coach`.
+
+The HTTP smoke proves cross-origin signout, Coach and BYOK mutation requests are rejected with `403` before sensitive work occurs. This does not replace XSS defenses; it closes the cross-origin browser mutation path instead of relying only on SameSite cookie defaults.
 
 ## Password policy
 
@@ -125,7 +148,7 @@ Hosted Supabase password policy remains a separate control plane. Application va
 
 ## Session semantics and real evidence
 
-Normal Profile logout is `scope=local`. Global logout is explicit. Signout is POST-only and rejects cross-site/ambiguous browser requests using Origin / Fetch Metadata.
+Normal Profile logout is `scope=local`. Global logout is explicit. Signout is POST-only and uses the same-origin mutation boundary above.
 
 The Security Center at `/profile/security` exposes:
 
@@ -141,7 +164,7 @@ All observed sessions are AAL1. There are currently no MFA factors in the projec
 
 The observed session rows have `not_after = null`. Supabase sessions are indefinite by default. Time-box, inactivity timeout and single-session controls are hosted Auth settings and, per current Supabase documentation, are available on Pro plans and above. Do not claim these controls are active in the current project until dashboard configuration proves it.
 
-Refresh-token/session revocation does not instantly invalidate already-issued access JWTs; they may remain usable until normal JWT expiry. NeoFit copy reflects that limitation. Security-sensitive actions use the live Auth boundary above to reduce this gap.
+Refresh-token/session revocation does not instantly invalidate already-issued access JWTs; they may remain usable until normal JWT expiry. NeoFit copy reflects that limitation. Security-sensitive/quota-bearing actions use the live Auth validation boundary above.
 
 ## Fresh-account post-login runtime gap found during Auth QA
 
