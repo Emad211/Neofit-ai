@@ -1,6 +1,8 @@
-NeoFit canonical Preview release metadata
-release: auth-persistence-consolidation-v2
+NeoFit canonical Vercel release metadata
+release: canonical-production-and-preview-v1
 source-development-branch: web/full-frontend-integration
-release-branch: vercel/preview
+production-branch: stage2/pwa-vercel-foundation
+preview-release-branch: vercel/preview
 project: neofit-ai
-environment: preview-only
+production-domain: neofit-ai-rust.vercel.app
+environments: production-and-preview-only
