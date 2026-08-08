@@ -1,17 +1,22 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { EMAIL_LINK_TOKEN_COOKIE, emailLinkTokenCookieOptions } from '@/lib/auth/email-link-intent';
+import { authRedirectUrl, canonicalAuthOrigin } from '@/lib/auth/origin';
 import { safeInternalPath } from '@/lib/auth/redirect';
 import { hasRecoveryIntentKey, setRecoveryIntent } from '@/lib/auth/recovery-intent';
 import { bootstrapAccount } from '@/lib/supabase/account';
 import { hasSupabasePublicEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 
-function authRedirect(request: NextRequest, value: string): NextResponse {
-  return NextResponse.redirect(new URL(`/auth?${value}`, request.url));
+function canonicalUrl(path: string): URL {
+  return new URL(path, canonicalAuthOrigin());
 }
 
-function verificationInterstitial(request: NextRequest, tokenHash: string, type: string, next: string): NextResponse {
-  const destination = new URL('/auth/verify', request.url);
+function authRedirect(value: string, status: 302 | 303 = 302): NextResponse {
+  return NextResponse.redirect(new URL(authRedirectUrl(`/auth?${value}`)), status);
+}
+
+function verificationInterstitial(tokenHash: string, type: string, next: string): NextResponse {
+  const destination = canonicalUrl('/auth/verify');
   destination.searchParams.set('type', type);
   destination.searchParams.set('next', next);
   const response = NextResponse.redirect(destination, 303);
@@ -22,31 +27,31 @@ function verificationInterstitial(request: NextRequest, tokenHash: string, type:
 }
 
 export async function GET(request: NextRequest) {
-  if (!hasSupabasePublicEnv()) return authRedirect(request, 'error=config');
+  if (!hasSupabasePublicEnv()) return authRedirect('error=config');
 
   const next = safeInternalPath(request.nextUrl.searchParams.get('next'), '/onboarding');
   const recoveryFlow = next === '/auth/update-password';
   if (recoveryFlow && !hasRecoveryIntentKey()) {
-    return NextResponse.redirect(new URL('/auth/recover?error=config', request.url), 303);
+    return NextResponse.redirect(canonicalUrl('/auth/recover?error=config'), 303);
   }
 
   if (request.nextUrl.searchParams.get('error')) {
     return recoveryFlow
-      ? NextResponse.redirect(new URL('/auth/recover?error=invalid-link', request.url))
-      : authRedirect(request, 'error=callback');
+      ? NextResponse.redirect(canonicalUrl('/auth/recover?error=invalid-link'))
+      : authRedirect('error=callback');
   }
 
   const tokenHash = request.nextUrl.searchParams.get('token_hash');
   const type = request.nextUrl.searchParams.get('type');
   if (tokenHash && tokenHash.length <= 4096 && (type === 'email' || type === 'recovery')) {
-    return verificationInterstitial(request, tokenHash, type, next);
+    return verificationInterstitial(tokenHash, type, next);
   }
 
   const code = request.nextUrl.searchParams.get('code');
   if (!code) {
     return recoveryFlow
-      ? NextResponse.redirect(new URL('/auth/recover?error=invalid-link', request.url))
-      : authRedirect(request, 'message=confirmed-login');
+      ? NextResponse.redirect(canonicalUrl('/auth/recover?error=invalid-link'))
+      : authRedirect('message=confirmed-login');
   }
 
   // Legacy PKCE compatibility for already-issued links. New email templates use
@@ -55,8 +60,8 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error || !data.user) {
     return recoveryFlow
-      ? NextResponse.redirect(new URL('/auth/recover?error=invalid-link', request.url))
-      : authRedirect(request, 'message=confirmed-login');
+      ? NextResponse.redirect(canonicalUrl('/auth/recover?error=invalid-link'))
+      : authRedirect('message=confirmed-login');
   }
 
   try {
@@ -78,10 +83,10 @@ export async function GET(request: NextRequest) {
       : null;
     if (claimsError || !sessionId) {
       await supabase.auth.signOut({ scope: 'local' });
-      return NextResponse.redirect(new URL('/auth/recover?error=session', request.url), 303);
+      return NextResponse.redirect(canonicalUrl('/auth/recover?error=session'), 303);
     }
     await setRecoveryIntent(data.user.id, sessionId);
   }
 
-  return NextResponse.redirect(new URL(next, request.url), 303);
+  return NextResponse.redirect(canonicalUrl(next), 303);
 }
