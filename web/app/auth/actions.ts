@@ -2,7 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { publicAppUrl } from '@/lib/environment';
+import { authRedirectUrl } from '@/lib/auth/origin';
+import { validNewPassword, validSignInPassword } from '@/lib/auth/password';
 import { bootstrapAccount } from '@/lib/supabase/account';
 import { hasSupabasePublicEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
@@ -15,12 +16,16 @@ function validEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
 }
 
-function authError(code: 'config' | 'input' | 'credentials' | 'signup' | 'resend'): never {
+function authError(code: 'config' | 'input' | 'credentials' | 'signup'): never {
   redirect(`/auth?error=${code}`);
 }
 
 function confirmationRedirect(): string {
-  return `${publicAppUrl}/auth/confirm?next=/onboarding`;
+  try {
+    return authRedirectUrl('/auth/confirm?next=/onboarding');
+  } catch {
+    authError('config');
+  }
 }
 
 async function bootstrapWithoutDestroyingSession(
@@ -41,7 +46,7 @@ export async function signIn(formData: FormData): Promise<void> {
 
   const email = value(formData, 'email').toLowerCase();
   const password = value(formData, 'password');
-  if (!validEmail(email) || password.length < 8 || password.length > 128) authError('input');
+  if (!validEmail(email) || !validSignInPassword(password)) authError('input');
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -69,8 +74,7 @@ export async function signUp(formData: FormData): Promise<void> {
     displayName.length < 1 ||
     displayName.length > 80 ||
     !validEmail(email) ||
-    password.length < 8 ||
-    password.length > 128
+    !validNewPassword(password)
   ) {
     authError('input');
   }
@@ -105,12 +109,18 @@ export async function resendConfirmation(formData: FormData): Promise<void> {
   const email = value(formData, 'email').toLowerCase();
   if (!validEmail(email)) authError('input');
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.resend({
-    type: 'signup',
-    email,
-    options: { emailRedirectTo: confirmationRedirect() },
-  });
-  if (error) authError('resend');
-  redirect('/auth?message=resent');
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: confirmationRedirect() },
+    });
+    if (error) console.warn('NeoFit confirmation resend was not dispatched.');
+  } catch {
+    console.warn('NeoFit confirmation resend was not dispatched.');
+  }
+
+  // Do not reveal whether an address exists or is currently unconfirmed.
+  redirect('/auth?message=resent-generic');
 }
