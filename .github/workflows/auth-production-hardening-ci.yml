@@ -102,13 +102,17 @@ jobs:
 
           ready=0
           for _ in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:3100/auth >/dev/null; then
+            status=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3100/auth 2>/dev/null || true)
+            if [ "$status" = "200" ]; then
               ready=1
               break
             fi
             sleep 1
           done
-          test "$ready" = 1
+          if [ "$ready" != "1" ]; then
+            echo 'Next Auth runtime did not become ready.' >&2
+            exit 1
+          fi
           curl -fsS http://127.0.0.1:3100/auth/recover >/dev/null
 
           curl -sS -D /tmp/neofit-confirm.headers -o /dev/null \
