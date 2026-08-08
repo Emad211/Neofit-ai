@@ -13,7 +13,7 @@ function value(formData: FormData, name: string): string {
 async function authenticatedClient() {
   const supabase = await createClient();
   const active = await activeAuthSession(supabase);
-  if (!active) redirect('/auth?error=credentials');
+  if (!active) redirect('/auth?error=session');
   return supabase;
 }
 
