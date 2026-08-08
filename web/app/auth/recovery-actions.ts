@@ -61,12 +61,10 @@ export async function updateRecoveredPassword(formData: FormData): Promise<void>
   const { error } = await supabase.auth.updateUser({ password });
   if (error) redirect('/auth/update-password?error=provider');
 
-  // A successful recovery should invalidate refresh tokens on other devices
-  // while keeping this just-recovered session active.
   const { error: revokeError } = await supabase.auth.signOut({ scope: 'others' });
   if (revokeError) console.warn('NeoFit could not revoke all other sessions after password recovery.');
 
   await clearRecoveryIntent();
   revalidatePath('/', 'layout');
-  redirect('/profile?message=password-updated');
+  redirect('/profile/security?message=password-updated');
 }
