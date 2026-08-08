@@ -15,8 +15,25 @@ function validEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
 }
 
-function authError(code: 'config' | 'input' | 'credentials' | 'signup' | 'bootstrap'): never {
+function authError(code: 'config' | 'input' | 'credentials' | 'signup' | 'resend'): never {
   redirect(`/auth?error=${code}`);
+}
+
+function confirmationRedirect(): string {
+  return `${publicAppUrl}/auth/confirm?next=/onboarding`;
+}
+
+async function bootstrapWithoutDestroyingSession(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  input: { userId: string; email: string; displayName?: string | null },
+): Promise<void> {
+  try {
+    await bootstrapAccount(supabase, input);
+  } catch {
+    // Authentication already succeeded. A partial first-account bootstrap is
+    // recoverable and idempotent, so never destroy a valid user session here.
+    console.error('NeoFit account bootstrap remained incomplete after retry.');
+  }
 }
 
 export async function signIn(formData: FormData): Promise<void> {
@@ -30,18 +47,13 @@ export async function signIn(formData: FormData): Promise<void> {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error || !data.user) authError('credentials');
 
-  try {
-    await bootstrapAccount(supabase, {
-      userId: data.user.id,
-      email: data.user.email ?? email,
-      displayName: typeof data.user.user_metadata?.display_name === 'string'
-        ? data.user.user_metadata.display_name
-        : null,
-    });
-  } catch {
-    await supabase.auth.signOut();
-    authError('bootstrap');
-  }
+  await bootstrapWithoutDestroyingSession(supabase, {
+    userId: data.user.id,
+    email: data.user.email ?? email,
+    displayName: typeof data.user.user_metadata?.display_name === 'string'
+      ? data.user.user_metadata.display_name
+      : null,
+  });
 
   revalidatePath('/', 'layout');
   redirect('/today');
@@ -69,25 +81,36 @@ export async function signUp(formData: FormData): Promise<void> {
     password,
     options: {
       data: { display_name: displayName },
-      emailRedirectTo: `${publicAppUrl}/auth/callback`,
+      emailRedirectTo: confirmationRedirect(),
     },
   });
   if (error || !data.user) authError('signup');
 
   if (data.session) {
-    try {
-      await bootstrapAccount(supabase, {
-        userId: data.user.id,
-        email: data.user.email ?? email,
-        displayName,
-      });
-    } catch {
-      await supabase.auth.signOut();
-      authError('bootstrap');
-    }
+    await bootstrapWithoutDestroyingSession(supabase, {
+      userId: data.user.id,
+      email: data.user.email ?? email,
+      displayName,
+    });
     revalidatePath('/', 'layout');
-    redirect('/today');
+    redirect('/onboarding');
   }
 
   redirect('/auth?message=confirm');
+}
+
+export async function resendConfirmation(formData: FormData): Promise<void> {
+  if (!hasSupabasePublicEnv()) authError('config');
+
+  const email = value(formData, 'email').toLowerCase();
+  if (!validEmail(email)) authError('input');
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo: confirmationRedirect() },
+  });
+  if (error) authError('resend');
+  redirect('/auth?message=resent');
 }
