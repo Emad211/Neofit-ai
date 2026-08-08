@@ -11,6 +11,7 @@ import './progress-integration.css';
 import './profile-integration.css';
 import './ai-provider-settings.css';
 import './workout-player.css';
+import './onboarding.css';
 import './account-integration.css';
 import './auth.css';
 
@@ -20,11 +21,7 @@ export const metadata: Metadata = {
   description: 'وب‌اپلیکیشن فارسی و راست‌به‌چپ ثبت تغذیه و تمرین نئوفیت',
   applicationName: 'نئوفیت',
   manifest: '/manifest.webmanifest',
-  formatDetection: {
-    telephone: false,
-    email: false,
-    address: false,
-  },
+  formatDetection: { telephone: false, email: false, address: false },
   icons: {
     icon: [
       { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
@@ -32,31 +29,12 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
-  appleWebApp: {
-    capable: true,
-    title: 'نئوفیت',
-    statusBarStyle: 'default',
-  },
-  other: {
-    'mobile-web-app-capable': 'yes',
-  },
+  appleWebApp: { capable: true, title: 'نئوفیت', statusBarStyle: 'default' },
+  other: { 'mobile-web-app-capable': 'yes' },
 };
 
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  viewportFit: 'cover',
-  themeColor: '#176b47',
-  colorScheme: 'light',
-};
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#176b47', colorScheme: 'light' };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
-  return (
-    <html lang="fa" dir="rtl">
-      <body data-deployment-environment={deploymentEnvironment}>
-        {children}
-        <PwaRegister />
-      </body>
-    </html>
-  );
+  return <html lang="fa" dir="rtl"><body data-deployment-environment={deploymentEnvironment}>{children}<PwaRegister /></body></html>;
 }

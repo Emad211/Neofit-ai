@@ -1,0 +1,83 @@
+name: Onboarding Foundation CI
+
+on:
+  push:
+    branches:
+      - 'stage7/**'
+    paths:
+      - 'web/app/onboarding/**'
+      - 'web/components/onboarding/**'
+      - 'web/lib/onboarding/**'
+      - 'web/tests/onboarding-foundation.test.ts'
+      - 'web/lib/supabase/database.types.ts'
+      - 'web/package.json'
+      - 'supabase/migrations/*onboarding*.sql'
+      - 'docs/NEOFIT_STAGE7_ONBOARDING_PLAN.md'
+      - '.github/workflows/onboarding-ci.yml'
+  pull_request:
+    branches:
+      - stage6/workout-player-persistence
+    paths:
+      - 'web/app/onboarding/**'
+      - 'web/components/onboarding/**'
+      - 'web/lib/onboarding/**'
+      - 'web/tests/onboarding-foundation.test.ts'
+      - 'web/lib/supabase/database.types.ts'
+      - 'web/package.json'
+      - 'supabase/migrations/*onboarding*.sql'
+      - 'docs/NEOFIT_STAGE7_ONBOARDING_PLAN.md'
+      - '.github/workflows/onboarding-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: onboarding-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_VERCEL_ENV: preview
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+      - name: Install workspace dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: Onboarding contract tests
+        working-directory: web
+        run: npm run test:onboarding
+      - name: TypeScript
+        working-directory: web
+        run: npm run typecheck
+      - name: Production build
+        working-directory: web
+        run: npm run build
+      - name: Verify onboarding ownership and nutrition boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE=supabase/migrations/20260808132547_user_onboarding_v1.sql
+          grep -q 'alter table public.user_onboarding enable row level security' "$FILE"
+          grep -q 'to authenticated' "$FILE"
+          grep -q '(select auth.uid()) = user_id' "$FILE"
+          grep -q "status in ('draft', 'completed')" "$FILE"
+          grep -q 'current_step between 1 and 15' "$FILE"
+          grep -q 'Nutrition Core' web/lib/onboarding/model.ts
+          if grep -Ei '\b(calorieTarget|proteinGrams|carbohydrateGrams|fatGrams|bmr)\b' web/lib/onboarding/model.ts; then
+            echo 'Legacy nutrition arithmetic detected inside onboarding model.' >&2
+            exit 1
+          fi
