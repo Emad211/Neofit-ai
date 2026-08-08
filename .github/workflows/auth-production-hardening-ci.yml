@@ -90,7 +90,7 @@ jobs:
         working-directory: web
         shell: bash
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           npm start -- --hostname 127.0.0.1 --port 3100 >/tmp/neofit-auth-runtime.log 2>&1 &
           APP_PID=$!
           cleanup() {
@@ -117,6 +117,7 @@ jobs:
 
           curl -sS -D /tmp/neofit-confirm.headers -o /dev/null \
             'http://127.0.0.1:3100/auth/confirm?token_hash=dummy-token&type=email&next=/onboarding'
+          cat /tmp/neofit-confirm.headers
           grep -Eq '^HTTP/.* 303' /tmp/neofit-confirm.headers
           grep -qi '^location: .*\/auth\/verify?type=email' /tmp/neofit-confirm.headers
           if grep -qi '^location:.*token_hash' /tmp/neofit-confirm.headers; then
@@ -133,10 +134,12 @@ jobs:
             'http://127.0.0.1:3100/auth/verify?type=email&next=/onboarding' \
             -o /tmp/neofit-verify.html
           grep -q 'تأیید ایمیل' /tmp/neofit-verify.html
+          echo 'verification interstitial rendered'
 
           cross_origin_status=$(curl -sS -o /dev/null -w '%{http_code}' \
             -X POST -H 'Origin: https://evil.example' \
             http://127.0.0.1:3100/auth/signout)
+          echo "cross-origin signout status=${cross_origin_status}"
           test "$cross_origin_status" = 403
       - name: Verify non-negotiable Auth boundaries
         shell: bash
