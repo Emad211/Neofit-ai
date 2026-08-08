@@ -31,43 +31,49 @@ The old `neofit-ai` project is not the active development target for this phase.
 
 ## Verified build contract
 
-The first successful Preview Lab release built the real NeoFit workspace with:
-
-- Node 22 bootstrap environment;
-- Next.js 16.2.12;
-- workspace installation including dev dependencies;
-- PWA icon generation;
-- Turbopack compilation;
-- TypeScript validation inside Next build;
-- all 18 current route outputs;
-- three Node.js runtime functions;
-- successful Vercel output deployment.
-
-The successful release had no runtime error clusters immediately after deployment.
+The first successful Preview Lab release built the real NeoFit workspace with Next.js 16.2.12, workspace development dependencies, PWA icon generation, Turbopack compilation, TypeScript validation, all 18 current route outputs and three Node.js runtime functions. Runtime error clusters were zero immediately after deployment.
 
 ## Known Vercel creation quirk
 
 When the project was first created through the connected deploy API, Vercel recorded the initial failed creation deployment as `target = production` even though the request specified Preview. That deployment never became READY and serves no Production traffic. Subsequent deployments on the existing project correctly record Preview as `target = null`.
 
-Do not treat the failed creation record as a Production release. The only usable release is the READY Preview deployment listed above.
-
 ## Preview-only environment contract
 
+Set these only for Preview:
+
 ```text
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-NEXT_PUBLIC_APP_URL=<active Preview Lab URL>
-AI_CREDENTIAL_ENCRYPTION_KEY=<server-only, after AI credential vault implementation>
+NEXT_PUBLIC_SUPABASE_URL=https://rjwrobltmjodfarnltal.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<project publishable key>
+NEXT_PUBLIC_APP_URL=<stable Preview Lab URL>
+AI_CREDENTIAL_ENCRYPTION_KEY=<base64 of exactly 32 random bytes>
+```
+
+Generate the encryption secret locally and copy the single-line result into Vercel Preview settings:
+
+```bash
+openssl rand -base64 32
 ```
 
 Never expose `AI_CREDENTIAL_ENCRYPTION_KEY`, provider API keys, Supabase service-role credentials, or any other server secret through `NEXT_PUBLIC_*` variables.
 
+## Supabase Auth URL contract
+
+Use the same stable Preview Lab origin as the Supabase Auth Site URL during QA and allow these exact application callbacks:
+
+```text
+<preview-origin>/auth/callback
+<preview-origin>/auth/confirm
+```
+
+A wildcard Vercel Preview allow-list may be added for development, but exact URLs are preferred for the canonical QA alias.
+
 ## Continuation point
 
 1. Keep `neofit-preview-lab` as the only runtime QA target.
-2. Finish the Stage 5 AI provider foundation on `stage5/ai-provider-foundation`.
-3. Configure Preview-only Supabase environment values and Auth redirect URLs for the active Preview Lab URL.
-4. Implement the server-side AI credential vault and Google-first/AvalAI-fallback provider router.
-5. Run real-account and BYOK runtime scenarios on Preview.
-6. Continue frontend integration slices (Workout Player, Onboarding/Body Map, remaining account data) without Production promotion.
-7. Create a separate Production release decision only after explicit approval and complete runtime evidence.
+2. Finish and CI-prove the Stage 5 provider vault/router on PR #38.
+3. Configure Preview-only Vercel environment values and Supabase Auth URLs.
+4. Run real-account signup/signin and persistence proof.
+5. Save/test a real Google key and run one direct Gemini request.
+6. Save/test AvalAI and deliberately prove Google-first fallback/cooldown.
+7. Add the Profile AI Settings UI and then read-only Coach tools.
+8. Continue Workout Player and Onboarding/Body Map without Production promotion.
