@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { authenticatedAiContext } from '@/lib/ai/credential-store';
 import { ProviderRequestError } from '@/lib/ai/provider-error';
 import { generateWithProviderFallback } from '@/lib/ai/provider-router';
+import { isSameOriginBrowserMutation } from '@/lib/auth/request-origin';
 import { loadCoachContext } from '@/lib/coach/context-loader';
 import { routeCoachDomains } from '@/lib/coach/context-router';
 import { buildCoachInput, COACH_MESSAGE_LIMIT, parseCoachHistory } from '@/lib/coach/request';
@@ -10,6 +11,13 @@ import { buildCoachSystemInstruction } from '@/lib/coach/system-prompt';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
+  if (!isSameOriginBrowserMutation(request)) {
+    return NextResponse.json({ error: 'cross_origin_request' }, {
+      status: 403,
+      headers: { 'Cache-Control': 'private, no-store' },
+    });
+  }
+
   let body: unknown;
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: 'invalid_json' }, { status: 400 }); }
