@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { clearPendingEmailLinkToken, pendingEmailLinkToken } from '@/lib/auth/email-link-intent';
 import { safeInternalPath } from '@/lib/auth/redirect';
-import { setRecoveryIntent } from '@/lib/auth/recovery-intent';
+import { hasRecoveryIntentKey, setRecoveryIntent } from '@/lib/auth/recovery-intent';
 import { bootstrapAccount } from '@/lib/supabase/account';
 import { hasSupabasePublicEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
@@ -22,6 +22,12 @@ export async function verifyEmailLink(formData: FormData): Promise<void> {
   if (!tokenHash || !supportedType(typeValue)) {
     await clearPendingEmailLinkToken();
     redirect(typeValue === 'recovery' ? '/auth/recover?error=invalid-link' : '/auth?error=callback');
+  }
+
+  // Recovery needs a server signing key after verification. Refuse before
+  // consuming the one-time Supabase token if that local contract is not ready.
+  if (typeValue === 'recovery' && !hasRecoveryIntentKey()) {
+    redirect('/auth/recover?error=config');
   }
 
   const type: EmailOtpType = typeValue;
