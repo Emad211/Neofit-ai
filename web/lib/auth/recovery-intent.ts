@@ -9,6 +9,7 @@ const MAX_AGE_SECONDS = 15 * 60;
 function cookieOptions() {
   return { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, path: '/auth/update-password', maxAge: MAX_AGE_SECONDS };
 }
+
 function recoveryIntentKey(): Buffer {
   const encoded = process.env.AUTH_RECOVERY_INTENT_KEY?.trim();
   if (!encoded) throw new Error('AUTH_RECOVERY_INTENT_KEY is required for password recovery.');
@@ -16,6 +17,16 @@ function recoveryIntentKey(): Buffer {
   if (key.length !== 32) throw new Error('AUTH_RECOVERY_INTENT_KEY must decode to exactly 32 bytes.');
   return key;
 }
+
+export function hasRecoveryIntentKey(): boolean {
+  try {
+    recoveryIntentKey();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function payloadFor(userId: string, sessionId: string, issuedAtSeconds: number): string { return `${userId}.${sessionId}.${issuedAtSeconds}`; }
 function signatureFor(payload: string): string { return createHmac('sha256', recoveryIntentKey()).update(payload).digest('base64url'); }
 function signedValueFor(userId: string, sessionId: string, issuedAtSeconds: number): string {
