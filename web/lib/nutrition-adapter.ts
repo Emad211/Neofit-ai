@@ -47,15 +47,27 @@ export interface WebFoodEstimate {
   readonly portionId: string;
 }
 
-export interface WebDiarySummary {
+interface WebDiarySummaryBase {
   readonly macros: WebMacroSet;
-  readonly targets: WebMacroSet | null;
   readonly grams: number | null;
   readonly entryCount: number;
-  readonly remainingCalories: number | null;
-  readonly calorieProgressPercent: number | null;
-  readonly targetsConfigured: boolean;
 }
+
+export interface ConfiguredWebDiarySummary extends WebDiarySummaryBase {
+  readonly targets: WebMacroSet;
+  readonly remainingCalories: number;
+  readonly calorieProgressPercent: number;
+  readonly targetsConfigured: true;
+}
+
+export interface UnconfiguredWebDiarySummary extends WebDiarySummaryBase {
+  readonly targets: null;
+  readonly remainingCalories: null;
+  readonly calorieProgressPercent: null;
+  readonly targetsConfigured: false;
+}
+
+export type WebDiarySummary = ConfiguredWebDiarySummary | UnconfiguredWebDiarySummary;
 
 const MEAL_LABELS_FA: Readonly<Record<MealType, string>> = {
   breakfast: 'صبحانه',
@@ -82,15 +94,6 @@ function webMacrosFromVector(vector: NutritionVector): WebMacroSet {
     carbsG: requiredFiniteNutrient(vector, 'carbsG'),
     fatG: requiredFiniteNutrient(vector, 'fatG'),
   };
-}
-
-function configuredTargets(goals: NutritionGoals | null): WebMacroSet | null {
-  if (!goals) return null;
-  try {
-    return webMacrosFromVector(goals.daily);
-  } catch {
-    return null;
-  }
 }
 
 function resolveFood(
@@ -207,13 +210,27 @@ export function buildInitialWebDiary(input: {
 export function summarizeWebDiary(
   entries: readonly WebDiaryEntry[],
   localDate: string,
+  goals: NutritionGoals,
+): ConfiguredWebDiarySummary;
+export function summarizeWebDiary(
+  entries: readonly WebDiaryEntry[],
+  localDate: string,
+  goals: null,
+): UnconfiguredWebDiarySummary;
+export function summarizeWebDiary(
+  entries: readonly WebDiaryEntry[],
+  localDate: string,
+  goals: NutritionGoals | null,
+): WebDiarySummary;
+export function summarizeWebDiary(
+  entries: readonly WebDiaryEntry[],
+  localDate: string,
   goals: NutritionGoals | null,
 ): WebDiarySummary {
   const summary = summarizeDiaryDay(entries.map((entry) => entry.core), localDate);
   const macros = webMacrosFromEstimate(summary.total);
-  const targets = configuredTargets(goals);
 
-  if (!targets || !goals) {
+  if (!goals) {
     return {
       macros,
       targets: null,
@@ -225,18 +242,13 @@ export function summarizeWebDiary(
     };
   }
 
+  // A non-null goal must contain the four Web macro targets. Invalid persisted
+  // goals fail closed here instead of silently becoming a fabricated target.
+  const targets = webMacrosFromVector(goals.daily);
   const progress = calculateGoalProgress(summary.total.center, goals);
   const energy = progress.find((item) => item.nutrient === 'energyKcal');
   if (!energy || energy.ratio === null || energy.remaining === null) {
-    return {
-      macros,
-      targets: null,
-      grams: summary.total.grams,
-      entryCount: summary.entryCount,
-      remainingCalories: null,
-      calorieProgressPercent: null,
-      targetsConfigured: false,
-    };
+    throw new Error('energyKcal goal progress is unavailable');
   }
 
   return {
