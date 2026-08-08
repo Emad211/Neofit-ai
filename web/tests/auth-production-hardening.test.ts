@@ -28,6 +28,7 @@ test('confirmation GET stages token without consuming it and removes token from 
   assert.match(confirm, /Referrer-Policy', 'no-referrer/);
   assert.doesNotMatch(confirm, /destination\.searchParams\.set\(['"]token_hash/);
   assert.doesNotMatch(confirm, /verifyOtp/);
+  assert.match(confirm, /canonicalAuthOrigin/);
 });
 
 test('only explicit verification POST calls verifyOtp with a server-only staged token', async () => {
@@ -96,14 +97,30 @@ test('signed-in password changes require current password and revoke other refre
   assert.match(security, /scope: 'others'/);
 });
 
-test('normal logout is local while global logout is explicit, same-origin and POST-only', async () => {
+test('cookie-authenticated mutation routes share a fail-closed same-origin guard', async () => {
+  const origin = await source('lib/auth/request-origin.ts');
+  const signout = await source('app/auth/signout/route.ts');
+  const provider = await source('app/api/ai/providers/[provider]/route.ts');
+  const respond = await source('app/api/ai/respond/route.ts');
+  const coach = await source('app/api/ai/coach/route.ts');
+
+  assert.match(origin, /origin/);
+  assert.match(origin, /sec-fetch-site/);
+  assert.match(origin, /same-origin/);
+  for (const route of [signout, provider, respond, coach]) {
+    assert.match(route, /isSameOriginBrowserMutation/);
+  }
+  assert.doesNotMatch(signout, /export async function GET/);
+  assert.match(provider, /cross_origin_request/);
+  assert.match(respond, /cross_origin_request/);
+  assert.match(coach, /cross_origin_request/);
+});
+
+test('normal logout is local while global logout is explicit', async () => {
   const signout = await source('app/auth/signout/route.ts');
   const securityPage = await source('app/(main)/profile/security/page.tsx');
   assert.match(signout, /scope: 'local' \| 'global' = 'local'/);
   assert.match(signout, /scope === 'global'/);
-  assert.match(signout, /sec-fetch-site/);
-  assert.match(signout, /same-origin/);
-  assert.doesNotMatch(signout, /export async function GET/);
   assert.match(securityPage, /name="scope" value="global"/);
 });
 
