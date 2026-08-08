@@ -1,0 +1,95 @@
+name: Auth Production Hardening CI
+
+on:
+  push:
+    branches:
+      - 'stage13/**'
+    paths:
+      - 'web/app/auth/**'
+      - 'web/app/(main)/profile/security/**'
+      - 'web/components/profile-screen.tsx'
+      - 'web/lib/auth/**'
+      - 'web/lib/supabase/proxy.ts'
+      - 'web/app/auth.css'
+      - 'web/app/profile-integration.css'
+      - 'web/tests/auth-production-hardening.test.ts'
+      - 'web/package.json'
+      - 'web/.env.example'
+      - 'supabase/templates/**'
+      - 'docs/NEOFIT_STAGE13_AUTH_PRODUCTION_HARDENING.md'
+      - '.github/workflows/auth-production-hardening-ci.yml'
+  pull_request:
+    branches:
+      - stage12/coach-progress-context
+    paths:
+      - 'web/app/auth/**'
+      - 'web/app/(main)/profile/security/**'
+      - 'web/components/profile-screen.tsx'
+      - 'web/lib/auth/**'
+      - 'web/lib/supabase/proxy.ts'
+      - 'web/app/auth.css'
+      - 'web/app/profile-integration.css'
+      - 'web/tests/auth-production-hardening.test.ts'
+      - 'web/package.json'
+      - 'web/.env.example'
+      - 'supabase/templates/**'
+      - 'docs/NEOFIT_STAGE13_AUTH_PRODUCTION_HARDENING.md'
+      - '.github/workflows/auth-production-hardening-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auth-production-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_VERCEL_ENV: preview
+      NEXT_PUBLIC_APP_URL: https://preview.example.test
+      AUTH_RECOVERY_INTENT_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+      - name: Install workspace dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: Auth production contract tests
+        working-directory: web
+        run: npm run test:auth-production
+      - name: Supabase app regression
+        working-directory: web
+        run: npm run test:supabase-app
+      - name: TypeScript
+        working-directory: web
+        run: npm run typecheck
+      - name: Production build
+        working-directory: web
+        run: npm run build
+      - name: Verify non-negotiable Auth boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -q 'verifyOtp' web/app/auth/confirm/route.ts
+          grep -q 'verifyOtp' web/app/auth/verify/actions.ts
+          grep -q 'AUTH_RECOVERY_INTENT_KEY' web/lib/auth/recovery-intent.ts
+          grep -q 'createHmac' web/lib/auth/recovery-intent.ts
+          grep -q "scope: 'local' | 'global' = 'local'" web/app/auth/signout/route.ts
+          grep -q 'current_password' web/app/'(main)'/profile/security/actions.ts
+          grep -q 'resetPasswordForEmail' web/app/auth/recovery-actions.ts
+          if grep -R -E 'service[_-]?role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_' web/app/auth web/lib/auth web/app/'(main)'/profile/security; then
+            echo 'Privileged Supabase key material detected in Auth slice.' >&2
+            exit 1
+          fi
