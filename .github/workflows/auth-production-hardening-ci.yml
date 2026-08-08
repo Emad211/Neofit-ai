@@ -14,6 +14,7 @@ on:
       - 'web/lib/supabase/proxy.ts'
       - 'web/app/auth.css'
       - 'web/app/profile-integration.css'
+      - 'web/next.config.ts'
       - 'web/tests/auth-production-hardening.test.ts'
       - 'web/tests/account-nutrition-data-truth.test.ts'
       - 'web/package.json'
@@ -34,6 +35,7 @@ on:
       - 'web/lib/supabase/proxy.ts'
       - 'web/app/auth.css'
       - 'web/app/profile-integration.css'
+      - 'web/next.config.ts'
       - 'web/tests/auth-production-hardening.test.ts'
       - 'web/tests/account-nutrition-data-truth.test.ts'
       - 'web/package.json'
@@ -119,7 +121,7 @@ jobs:
             'http://127.0.0.1:3100/auth/confirm?token_hash=dummy-token&type=email&next=/onboarding'
           cat /tmp/neofit-confirm.headers
           grep -Eq '^HTTP/.* 303' /tmp/neofit-confirm.headers
-          grep -qi '^location: .*\/auth\/verify?type=email' /tmp/neofit-confirm.headers
+          grep -qi '^location: http://127\.0\.0\.1:3100/auth/verify?type=email' /tmp/neofit-confirm.headers
           if grep -qi '^location:.*token_hash' /tmp/neofit-confirm.headers; then
             echo 'token_hash leaked into clean verification redirect' >&2
             exit 1
@@ -128,6 +130,7 @@ jobs:
           grep -qi 'Path=/auth/verify' /tmp/neofit-confirm.headers
           grep -qi 'HttpOnly' /tmp/neofit-confirm.headers
           grep -qi '^referrer-policy: no-referrer' /tmp/neofit-confirm.headers
+          grep -qi '^cache-control: private, no-store' /tmp/neofit-confirm.headers
 
           curl -fsS \
             -H 'Cookie: neofit-email-link-token=dummy-token' \
@@ -154,6 +157,8 @@ jobs:
           grep -q "scope: 'local' | 'global' = 'local'" web/app/auth/signout/route.ts
           grep -q 'current_password' web/app/'(main)'/profile/security/actions.ts
           grep -q 'resetPasswordForEmail' web/app/auth/recovery-actions.ts
+          grep -q "source: '/auth/confirm'" web/next.config.ts
+          grep -q "Referrer-Policy', value: 'no-referrer'" web/next.config.ts
           if grep -R -E 'service[_-]?role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_' web/app/auth web/lib/auth web/app/'(main)'/profile/security; then
             echo 'Privileged Supabase key material detected in Auth slice.' >&2
             exit 1
