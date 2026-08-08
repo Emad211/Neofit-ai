@@ -1,6 +1,6 @@
 # NeoFit Stage 13 — Auth Recovery & Abuse Hardening
 
-Status: implementation / Preview-only QA
+Status: code + local real-Next runtime proof complete; hosted Preview/mailbox QA pending Vercel quota reset and manual Auth settings.
 
 ## Why this stage exists
 
@@ -16,7 +16,9 @@ Stage 9 fixed the real Vercel Preview PKCE hostname incident, but a deeper Auth 
 - account security/session controls were absent;
 - Auth forms had no pending state, allowing duplicate submissions;
 - sensitive actions trusted locally valid claims even after a server-side session revoke;
-- a fresh authenticated account could crash `/today` because an empty Core nutrient vector was treated as an invalid non-empty macro estimate.
+- AI/BYOK provider access also used claims-only validation despite user quota/cost impact;
+- a fresh authenticated account could crash `/today` because an empty Core nutrient vector was treated as an invalid non-empty macro estimate;
+- recovery misconfiguration could have consumed a one-time token before local signing state was ready.
 
 ## Scanner-safe one-time links
 
@@ -38,9 +40,46 @@ A security scanner can GET/follow the link without consuming the one-time token;
 
 The token-staging cookie is scoped to `/auth/verify`, expires after 10 minutes, and is cleared with the exact same cookie path + `Max-Age=0` after verification.
 
+## Real HTTP smoke found two framework/runtime bugs
+
+Source tests, TypeScript and `next build` were not enough. A real built Next server smoke test exposed two issues that would have affected the one-time-link flow:
+
+1. A request to `127.0.0.1` could produce a redirect `Location` on `localhost` when the route derived the destination from `request.url`. Because the staged token cookie is host-only, that hostname drift could lose the cookie before `/auth/verify`.
+2. The Route Handler set `Referrer-Policy: no-referrer`, but the generic Next header rule overwrote the actual HTTP response with `strict-origin-when-cross-origin`.
+
+Stage 13 fixes both at the architecture level:
+
+- sensitive Auth redirects are built from `canonicalAuthOrigin()` / `NEXT_PUBLIC_APP_URL`, never from a framework-derived request hostname;
+- `next.config.ts` has explicit `/auth/confirm` and `/auth/callback` header rules after the generic rule, enforcing `Referrer-Policy: no-referrer` and `Cache-Control: private, no-store` at framework level.
+
+The final real HTTP smoke starts the built Next server and verifies:
+
+- `/auth` and `/auth/recover` render;
+- dummy confirmation GET returns `303`;
+- `Location` stays exactly on the configured canonical origin;
+- `token_hash` is absent from the clean redirect URL;
+- `neofit-email-link-token` is HttpOnly and scoped to `/auth/verify`;
+- the actual response contains `Referrer-Policy: no-referrer`;
+- the actual response contains `Cache-Control: private, no-store`;
+- `/auth/verify` really renders the confirmation interstitial when the staged cookie is present;
+- a cross-origin signout POST returns `403`.
+
+Final successful evidence:
+
+- branch HEAD: `8c9c5783942488212f42d9e668c37e2f5719f6ed`
+- Auth Production Hardening CI: `31272983058`
+- Auth production contract tests: success
+- complete Supabase app regression: success
+- TypeScript: success
+- Next.js production build: success
+- Real Next Auth runtime smoke: success
+- non-negotiable Auth boundary gate: success
+
 ## Password recovery
 
 `/auth/recover` sends `resetPasswordForEmail` using the canonical hosted origin. UI output is deliberately generic for existing/non-existing addresses.
+
+Before sending a recovery email or consuming a recovery OTP, NeoFit verifies that the local recovery signing contract is configured. A missing or malformed `AUTH_RECOVERY_INTENT_KEY` therefore fails before a one-time recovery link is sent/consumed instead of burning the token and then failing.
 
 Recovery verification creates a Supabase recovery session and a defense-in-depth recovery-intent cookie that is:
 
@@ -61,7 +100,7 @@ After a recovered password change, NeoFit asks Supabase to revoke other refresh 
 
 `getClaims()` remains the fast identity primitive for ordinary navigation/read rendering. It verifies JWT signature/expiry locally and avoids putting Auth server in the hot path of every page.
 
-For security-sensitive actions NeoFit now uses `activeAuthSession()`:
+For security-sensitive actions NeoFit uses `activeAuthSession()`:
 
 1. `getClaims()` validates signed `sub` + `session_id`;
 2. `getUser()` performs a live network check against Supabase Auth;
@@ -94,15 +133,15 @@ The Security Center at `/profile/security` exposes:
 - revoke other sessions;
 - explicit global logout.
 
-A runtime audit of the current one-user Preview project found **three `auth.sessions` rows and three refresh tokens**. Two successful password sign-ins were only seconds apart. Auth forms therefore now use `useFormStatus()` to disable duplicate submissions while pending.
+A runtime audit of the current one-user Preview project found **three `auth.sessions` rows and three refresh tokens**. All three observed refresh-token rows were unrevoked at audit time. Two successful password sign-ins were only seconds apart. Auth forms therefore use `useFormStatus()` to disable duplicate submissions while pending.
 
-Current session metadata also proved why NeoFit must not invent a “device list”: sessions created through server-side password actions record `user_agent=node` and Vercel/server IP metadata, not reliable browser-device identity. The UI therefore controls sessions without falsely labeling them as Chrome/iPhone/etc.
+Current session metadata also proved why NeoFit must not invent a “device list”: sessions created through server-side password actions record `user_agent=node` and Vercel/server IP metadata, not reliable browser-device identity. The UI controls sessions without falsely labeling them as Chrome/iPhone/etc.
 
 All observed sessions are AAL1. There are currently no MFA factors in the project.
 
 The observed session rows have `not_after = null`. Supabase sessions are indefinite by default. Time-box, inactivity timeout and single-session controls are hosted Auth settings and, per current Supabase documentation, are available on Pro plans and above. Do not claim these controls are active in the current project until dashboard configuration proves it.
 
-Refresh-token/session revocation does not instantly invalidate already-issued access JWTs; they may remain usable until normal JWT expiry. NeoFit copy reflects that limitation.
+Refresh-token/session revocation does not instantly invalidate already-issued access JWTs; they may remain usable until normal JWT expiry. NeoFit copy reflects that limitation. Security-sensitive actions use the live Auth boundary above to reduce this gap.
 
 ## Fresh-account post-login runtime gap found during Auth QA
 
@@ -112,21 +151,22 @@ The Auth audit found two real `/today` runtime errors on the Stage 12 Preview:
 
 The account had zero Nutrition goals and zero diary entries. Shared Nutrition Core correctly represented the empty day sparsely, but the Web view incorrectly treated missing macro keys as an invalid non-empty estimate.
 
-Stage 13 now treats an **empty diary** as exactly zero consumed calories/protein/carbs/fat while preserving fail-closed behavior for malformed non-empty entries. A regression test covers a newly authenticated account with zero entries and zero configured targets.
+Stage 13 treats an **empty diary** as exactly zero consumed calories/protein/carbs/fat while preserving fail-closed behavior for malformed non-empty entries. A regression test covers a newly authenticated account with zero entries and zero configured targets and is included in the broader Supabase app regression.
 
-This is an important release principle: successful Auth is not considered proven if the first authenticated destination crashes.
+Successful Auth is not considered proven if the first authenticated destination crashes.
 
 ## Redirect and origin rules
 
 - Hosted Auth requires explicit `NEXT_PUBLIC_APP_URL`.
 - Preview interactive traffic continues to canonicalize to one stable origin.
+- sensitive Auth redirects use that same canonical origin directly;
 - `next` destinations use a shared strict internal-path sanitizer and reject external, protocol-relative and backslash-based confusion values.
 
 Real Preview password sign-ins are visible in Vercel logs, while Supabase Auth logs still showed `referer=http://localhost:3000`. The connector cannot read hosted Site URL configuration, so the dashboard Site URL must be manually verified instead of assumed correct.
 
 ## SSR cookie refresh
 
-The Supabase proxy keeps `getClaims()` immediately after client creation and now propagates both cookie mutations and response headers returned through `setAll`. This matters because recent `@supabase/ssr` versions provide cache-protection headers during refresh; dropping them can make authenticated Set-Cookie responses unsafe behind a CDN.
+The Supabase proxy keeps `getClaims()` immediately after client creation and propagates both cookie mutations and response headers returned through `setAll`. This matters because recent `@supabase/ssr` versions provide cache-protection headers during refresh; dropping them can make authenticated Set-Cookie responses unsafe behind a CDN.
 
 ## Manual hosted configuration still required
 
@@ -188,7 +228,9 @@ CAPTCHA is intentionally not faked in code without a real site key + Supabase pr
 
 ## Vercel Preview deployment constraint
 
-Stage 13 code/CI can be completed now, but Vercel's API deployment quota for the current Free project reached `100/100` during this audit. The platform reported reset around 2026-08-09 21:58 Iran time. No extra project is being created to bypass the quota; deploy resumes on the same Preview Lab after reset.
+Stage 13 code/CI/local-real-Next proof is complete, but Vercel's API deployment quota for the current Free project reached `100/100` during this audit. The platform reported reset around 2026-08-09 21:58 Iran time. No extra project is being created to bypass the quota; deploy resumes on the same Preview Lab after reset.
+
+The currently hosted Preview therefore remains Stage 12. Do not call Stage 13 “hosted-proven” until the same Preview Lab accepts a new deployment and mailbox flows are run against it.
 
 ## Explicitly still open
 
@@ -196,6 +238,7 @@ Stage 13 code/CI can be completed now, but Vercel's API deployment quota for the
 - real recovery email end-to-end QA after hosted template + secret installation;
 - fresh signup + scanner-safe explicit confirmation end-to-end QA;
 - real multi-browser/session revoke QA;
+- manual verification/fix of hosted Site URL;
 - leaked-password hosted setting;
 - Cloudflare Turnstile/hCaptcha runtime integration;
 - custom SMTP / branded sender;
