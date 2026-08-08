@@ -23,5 +23,8 @@ export async function pendingEmailLinkToken(): Promise<string | null> {
 
 export async function clearPendingEmailLinkToken(): Promise<void> {
   const store = await cookies();
-  store.delete(EMAIL_LINK_TOKEN_COOKIE);
+  store.set(EMAIL_LINK_TOKEN_COOKIE, '', {
+    ...emailLinkTokenCookieOptions(),
+    maxAge: 0,
+  });
 }
