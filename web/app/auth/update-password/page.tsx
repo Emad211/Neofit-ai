@@ -13,26 +13,21 @@ const errors: Readonly<Record<string, string>> = {
   provider: 'تغییر رمز انجام نشد. ممکن است سیاست رمز عبور پروژه سخت‌گیرانه‌تر باشد؛ دوباره تلاش کن.',
 };
 
-export default async function UpdatePasswordPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+export default async function UpdatePasswordPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   if (!hasSupabasePublicEnv()) redirect('/auth/recover?error=config');
-
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
   const userId = typeof claimsData?.claims?.sub === 'string' ? claimsData.claims.sub : null;
-  if (claimsError || !userId || !(await hasValidRecoveryIntent(userId))) redirect('/auth/recover?error=session');
+  const sessionId = typeof claimsData?.claims?.session_id === 'string' ? claimsData.claims.session_id : null;
+  if (claimsError || !userId || !sessionId || !(await hasValidRecoveryIntent(userId, sessionId))) redirect('/auth/recover?error=session');
 
   const params = await searchParams;
   const errorCode = typeof params.error === 'string' ? params.error : '';
-
   return (
     <main className="auth-page" id="main-content">
       <section className="auth-card auth-card--compact" aria-labelledby="update-password-heading">
         <div className="auth-brand"><span aria-hidden="true">N</span><div><p>NeoFit</p><h1 id="update-password-heading">رمز جدید</h1></div></div>
-        <p className="auth-intro">این صفحه فقط بعد از تأیید لینک recovery و برای مدت کوتاه باز می‌شود.</p>
+        <p className="auth-intro">این صفحه فقط برای همان recovery session تأییدشده و برای مدت کوتاه باز می‌شود.</p>
         {errors[errorCode] ? <p className="auth-notice auth-notice--error" role="alert">{errors[errorCode]}</p> : null}
         <form action={updateRecoveredPassword} className="auth-form auth-form--single">
           <label htmlFor="new-password">رمز جدید</label>
