@@ -1,0 +1,74 @@
+name: Coach Progress Context CI
+
+on:
+  push:
+    branches:
+      - 'stage12/**'
+    paths:
+      - 'web/lib/coach/**'
+      - 'web/tests/coach-readonly.test.ts'
+      - 'docs/NEOFIT_STAGE12_COACH_PROGRESS_CONTEXT.md'
+      - '.github/workflows/coach-progress-context-ci.yml'
+  pull_request:
+    branches:
+      - stage11/account-nutrition-data-truth
+    paths:
+      - 'web/lib/coach/**'
+      - 'web/tests/coach-readonly.test.ts'
+      - 'docs/NEOFIT_STAGE12_COACH_PROGRESS_CONTEXT.md'
+      - '.github/workflows/coach-progress-context-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coach-progress-context-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_VERCEL_ENV: preview
+      NEXT_PUBLIC_APP_URL: https://preview.example.test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+      - name: Install workspace dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: Coach Progress contract tests
+        working-directory: web
+        run: npm run test:coach
+      - name: Body measurement source regression
+        working-directory: web
+        run: node --import tsx --test tests/body-measurement-progress.test.ts
+      - name: TypeScript
+        working-directory: web
+        run: npm run typecheck
+      - name: Production build
+        working-directory: web
+        run: npm run build
+      - name: Verify selective Progress request boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "'progress'" web/lib/coach/context-router.ts
+          grep -q "domains.includes('progress')" web/lib/coach/context-loader.ts
+          grep -q "from('body_measurements')" web/lib/coach/context-loader.ts
+          grep -q "\.limit(30)" web/lib/coach/context-loader.ts
+          grep -q 'source: .body_measurements.' web/lib/coach/context-loader.ts
+          if grep -Eq 'insert\(|update\(|delete\(|upsert\(' web/lib/coach/context-loader.ts; then
+            echo 'Coach context loader acquired a write path.' >&2
+            exit 1
+          fi
