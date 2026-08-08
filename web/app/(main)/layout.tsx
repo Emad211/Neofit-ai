@@ -1,20 +1,18 @@
 import type { ReactNode } from 'react';
+import { AccountStateProvider } from '@/components/account-state';
 import { AppShell } from '@/components/app-shell';
-import { NutritionStateProvider } from '@/components/nutrition-state';
-import { loadAccountSnapshot } from '@/lib/supabase/account';
+import { loadAccountIdentity } from '@/lib/supabase/account';
 
 export default async function MainLayout({ children }: { children: ReactNode }) {
-  const snapshot = await loadAccountSnapshot();
+  const identity = await loadAccountIdentity();
 
   return (
-    <NutritionStateProvider
-      account={snapshot.account}
-      configured={snapshot.configured}
-      initialDiary={snapshot.diary}
-      initialGoals={snapshot.goals}
-      loadError={snapshot.loadError}
+    <AccountStateProvider
+      account={identity.account}
+      configured={identity.configured}
+      loadError={identity.loadError}
     >
       <AppShell>{children}</AppShell>
-    </NutritionStateProvider>
+    </AccountStateProvider>
   );
 }
