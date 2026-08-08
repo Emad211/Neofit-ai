@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { signIn, signUp } from './actions';
+import { resendConfirmation, signIn, signUp } from './actions';
 import { NeoFitIcon } from '@/components/neofit-icons';
 import { createClient } from '@/lib/supabase/server';
 import { hasSupabasePublicEnv } from '@/lib/supabase/env';
@@ -10,12 +10,15 @@ const errorMessages: Readonly<Record<string, string>> = {
   input: 'نام، ایمیل و رمز عبور را با فرمت درست وارد کن. رمز باید حداقل ۸ کاراکتر باشد.',
   credentials: 'ایمیل یا رمز عبور درست نیست.',
   signup: 'ساخت حساب انجام نشد. ممکن است این ایمیل قبلاً استفاده شده باشد.',
+  resend: 'ارسال دوباره ایمیل تأیید انجام نشد. کمی بعد دوباره تلاش کن.',
   bootstrap: 'ورود انجام شد، اما ساخت داده‌های اولیه حساب کامل نشد. دوباره تلاش کن.',
-  callback: 'تأیید ایمیل یا ساخت نشست معتبر انجام نشد.',
+  callback: 'لینک تأیید معتبر نبود یا منقضی شده است. می‌توانی ایمیل تأیید را دوباره ارسال کنی.',
 };
 
 const messageTexts: Readonly<Record<string, string>> = {
   confirm: 'حساب ساخته شد. ایمیل تأیید را باز کن تا ورود کامل شود.',
+  resent: 'ایمیل تأیید دوباره ارسال شد. جدیدترین ایمیل را باز کن.',
+  'confirmed-login': 'ایمیل تأیید شده است. برای ساخت نشست امن، یک‌بار با رمز عبور وارد شو.',
   signedout: 'با موفقیت از حساب خارج شدی.',
 };
 
@@ -88,6 +91,15 @@ export default async function AuthPage({
             <button type="submit" disabled={!configured}>ساخت حساب امن</button>
           </form>
         </div>
+
+        <form action={resendConfirmation} className="auth-resend-form">
+          <div>
+            <strong>ایمیل تأیید به دستت نرسیده یا لینک قبلی مشکل داشت؟</strong>
+            <span>ایمیل حساب را وارد کن؛ فقط یک لینک تأیید جدید ارسال می‌شود.</span>
+          </div>
+          <input name="email" type="email" autoComplete="email" placeholder="email@example.com" aria-label="ایمیل برای ارسال دوباره تأیید" required />
+          <button type="submit" disabled={!configured}>ارسال دوباره</button>
+        </form>
 
         <div className="auth-boundary">
           <NeoFitIcon name="check" size={17} />
