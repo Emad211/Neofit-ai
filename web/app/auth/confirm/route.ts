@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { EMAIL_LINK_TOKEN_COOKIE, emailLinkTokenCookieOptions } from '@/lib/auth/email-link-intent';
 import { safeInternalPath } from '@/lib/auth/redirect';
 import { setRecoveryIntent } from '@/lib/auth/recovery-intent';
 import { bootstrapAccount } from '@/lib/supabase/account';
@@ -11,10 +12,13 @@ function authRedirect(request: NextRequest, value: string): NextResponse {
 
 function verificationInterstitial(request: NextRequest, tokenHash: string, type: string, next: string): NextResponse {
   const destination = new URL('/auth/verify', request.url);
-  destination.searchParams.set('token_hash', tokenHash);
   destination.searchParams.set('type', type);
   destination.searchParams.set('next', next);
-  return NextResponse.redirect(destination, 303);
+  const response = NextResponse.redirect(destination, 303);
+  response.cookies.set(EMAIL_LINK_TOKEN_COOKIE, tokenHash, emailLinkTokenCookieOptions());
+  response.headers.set('Cache-Control', 'private, no-store');
+  response.headers.set('Referrer-Policy', 'no-referrer');
+  return response;
 }
 
 export async function GET(request: NextRequest) {
@@ -30,9 +34,9 @@ export async function GET(request: NextRequest) {
 
   const tokenHash = request.nextUrl.searchParams.get('token_hash');
   const type = request.nextUrl.searchParams.get('type');
-  if (tokenHash && type) {
-    // GET must never consume a one-time token. Email security scanners commonly
-    // prefetch links; only the explicit POST on /auth/verify is allowed to call verifyOtp.
+  if (tokenHash && tokenHash.length <= 4096 && (type === 'email' || type === 'recovery')) {
+    // GET never consumes a one-time token. Stage it in a short-lived HttpOnly
+    // cookie and redirect to a clean URL; only an explicit user POST can verify it.
     return verificationInterstitial(request, tokenHash, type, next);
   }
 
