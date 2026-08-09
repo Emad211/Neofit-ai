@@ -1,0 +1,98 @@
+name: Workout Plan Persistence CI
+
+on:
+  push:
+    branches:
+      - 'stage16/**'
+    paths:
+      - 'web/app/(main)/workout/**'
+      - 'web/app/workout-player/**'
+      - 'web/components/workout-*.tsx'
+      - 'web/data/workout-fixtures.ts'
+      - 'web/lib/workout-*.ts'
+      - 'web/lib/supabase/workout-plan-data.ts'
+      - 'web/lib/supabase/database.types.ts'
+      - 'web/tests/workout-plan-persistence.test.ts'
+      - 'web/tests/workout-player-persistence.test.ts'
+      - 'web/package.json'
+      - 'supabase/migrations/20260809133914_workout_plan_versioning.sql'
+      - 'supabase/migrations/20260809133953_index_workout_session_plan_fk.sql'
+      - 'supabase/migrations/20260809134603_guard_workout_plan_activation_during_session.sql'
+      - 'docs/NEOFIT_STAGE16_WORKOUT_PLAN_PERSISTENCE.md'
+      - 'docs/NEOFIT_GAP_AUDIT_2026-08-08.md'
+      - '.github/workflows/workout-plan-persistence-ci.yml'
+  pull_request:
+    branches:
+      - stage15/ai-request-audit-budget
+
+permissions:
+  contents: read
+
+concurrency:
+  group: workout-plan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_VERCEL_ENV: preview
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_test_value
+      AI_CREDENTIAL_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+      AUTH_RECOVERY_INTENT_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+      - name: Install workspace dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: Workout plan contracts
+        working-directory: web
+        run: npm run test:workout-plan
+      - name: Workout Player regression
+        working-directory: web
+        run: npm run test:workout-player
+      - name: Full Supabase app regression
+        working-directory: web
+        run: npm run test:supabase-app
+      - name: TypeScript
+        working-directory: web
+        run: npm run typecheck
+      - name: Production build
+        working-directory: web
+        run: npm run build
+      - name: Verify workout plan data-truth boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          migration='supabase/migrations/20260809133914_workout_plan_versioning.sql'
+          guard='supabase/migrations/20260809134603_guard_workout_plan_activation_during_session.sql'
+          grep -q 'create table public.workout_plans' "$migration"
+          grep -q 'enable row level security' "$migration"
+          grep -q 'security invoker' "$migration"
+          grep -q 'grant update (status, activated_at, archived_at)' "$migration"
+          ! grep -qi 'grant delete' "$migration"
+          grep -q 'active_workout_session_exists' "$guard"
+          grep -q 'workout_plans:' web/lib/supabase/database.types.ts
+          grep -q 'workout_plan_id: string | null' web/lib/supabase/database.types.ts
+          grep -q 'loadWorkoutPlanSnapshot' web/app/'(main)'/workout/page.tsx
+          grep -q 'loadWorkoutPlanSnapshot' web/app/'(main)'/workout/'[id]'/page.tsx
+          grep -q 'loadWorkoutPlanSnapshot' web/app/workout-player/'[id]'/page.tsx
+          ! grep -q 'workout-fixtures' web/app/'(main)'/workout/page.tsx
+          ! grep -q 'workout-fixtures' web/app/'(main)'/workout/'[id]'/page.tsx
+          ! grep -q 'workout-fixtures' web/app/workout-player/'[id]'/page.tsx
+          ! grep -R -E '\.calories|kcal' web/components/workout-screen.tsx web/components/workout-details-screen.tsx
+          grep -q 'workout_plan_id: planId' web/lib/workout-persistence.ts
+          grep -q 'workout_plan_version: planVersion' web/lib/workout-persistence.ts
