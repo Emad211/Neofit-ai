@@ -1,9 +1,11 @@
 import 'server-only';
 
+import type { Database } from '@/lib/supabase/database.types';
 import type { AiAuthenticatedContext } from './credential-store';
 import type { AiProvider } from './types';
 
 export type AiRequestKind = 'coach' | 'respond';
+type CompleteAiRequestArgs = Database['public']['Functions']['complete_ai_request']['Args'];
 
 export interface AiAuditReservation {
   readonly requestId: string;
@@ -134,7 +136,7 @@ export async function completeAiRequest(input: {
   failureCode?: string | null;
 }): Promise<void> {
   const usage = normalizeAiUsage(input.usage);
-  const args: Parameters<typeof input.context.supabase.rpc<'complete_ai_request'>>[1] = {
+  const args: CompleteAiRequestArgs = {
     p_request_id: input.reservation.requestId,
     p_status: input.status,
     p_attempt_count: input.attemptCount,
