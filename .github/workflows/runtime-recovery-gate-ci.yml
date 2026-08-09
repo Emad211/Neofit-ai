@@ -85,7 +85,7 @@ jobs:
         run: |
           set -euo pipefail
           env -u NEXT_PUBLIC_SUPABASE_URL -u NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY \
-            ./node_modules/.bin/next start -H 127.0.0.1 -p 3100 >/tmp/neofit-runtime-recovery.log 2>&1 &
+            ../node_modules/.bin/next start -H 127.0.0.1 -p 3100 >/tmp/neofit-runtime-recovery.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID || true' EXIT
 
@@ -109,7 +109,6 @@ jobs:
           test "$ROOT_STATUS" = "307"
           grep -Eiq '^location: /today\r?$' /tmp/root.headers
 
-          grep -q 'neofit-app-shell-' /tmp/neofit-runtime-recovery-sw.tmp 2>/dev/null || true
           curl -sS http://127.0.0.1:3100/sw.js -o /tmp/neofit-runtime-recovery-sw.tmp
           grep -q 'neofit-app-shell-' /tmp/neofit-runtime-recovery-sw.tmp
       - name: Hard recovery boundaries
