@@ -109,17 +109,24 @@ function exerciseView(exercise: WorkoutPlanExerciseDocument): WorkoutExercise {
   };
 }
 
-export function workoutDayView(day: WorkoutPlanDayDocument): WorkoutDay {
+export function workoutDayView(
+  day: WorkoutPlanDayDocument,
+  plan?: { readonly planId: string; readonly planVersion: number },
+): WorkoutDay {
   return {
     id: day.id,
     day: day.day,
     title: day.title,
     focus: day.focus,
     duration: `${fa(day.durationMinutes)} دقیقه`,
+    ...(plan ? { planId: plan.planId, planVersion: plan.planVersion } : {}),
     exercises: day.exercises.map(exerciseView),
   };
 }
 
-export function workoutPlanViews(document: WorkoutPlanDocument): readonly WorkoutDay[] {
-  return document.days.map(workoutDayView);
+export function workoutPlanViews(
+  document: WorkoutPlanDocument,
+  plan?: { readonly planId: string; readonly planVersion: number },
+): readonly WorkoutDay[] {
+  return document.days.map((day) => workoutDayView(day, plan));
 }
