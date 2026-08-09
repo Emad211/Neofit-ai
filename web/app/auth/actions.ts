@@ -61,7 +61,9 @@ export async function signIn(formData: FormData): Promise<void> {
   });
 
   revalidatePath('/', 'layout');
-  redirect('/today');
+  // The root route performs the live-session + Onboarding lifecycle decision.
+  // Do not hard-code /today here; a new/incomplete account belongs in Onboarding.
+  redirect('/');
 }
 
 export async function signUp(formData: FormData): Promise<void> {
