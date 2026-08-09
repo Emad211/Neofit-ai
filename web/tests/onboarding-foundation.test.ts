@@ -5,28 +5,34 @@ import { getBodyPart } from '@/components/onboarding/body-map/body-parts';
 import {
   NUTRITION_AUTHORITY_NOTE,
   ONBOARDING_SCHEMA_VERSION,
+  ONBOARDING_TOTAL_STEPS,
   PROGRAM_DURATION_MAX_DAYS,
   PROGRAM_DURATION_MIN_DAYS,
   buildTrainingPreview,
   createEmptyOnboardingDraft,
+  equipmentOptions,
   markStepCompleted,
   migrateLegacyOnboardingDraft,
   onboardingSteps,
   parseOnboardingDraft,
   validateOnboardingStep,
+  weekdayOptions,
 } from '@/lib/onboarding/model';
 
 async function source(path: string) {
   return readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 }
 
-test('Onboarding v2 keeps the 15-step product flow and starts with the AI gate', () => {
+test('Onboarding v2 uses a focused 13-step journey and starts with the AI gate', () => {
   assert.equal(ONBOARDING_SCHEMA_VERSION, 2);
-  assert.equal(onboardingSteps.length, 15);
-  assert.deepEqual(onboardingSteps.map((step) => step.number), Array.from({ length: 15 }, (_, index) => index + 1));
-  assert.equal(new Set(onboardingSteps.map((step) => step.slug)).size, 15);
+  assert.equal(ONBOARDING_TOTAL_STEPS, 13);
+  assert.equal(onboardingSteps.length, 13);
+  assert.deepEqual(onboardingSteps.map((step) => step.number), Array.from({ length: 13 }, (_, index) => index + 1));
+  assert.equal(new Set(onboardingSteps.map((step) => step.slug)).size, 13);
   assert.equal(onboardingSteps[0]?.slug, 'welcome');
   assert.equal(onboardingSteps[0]?.label, 'اتصال مربی');
+  assert.equal(onboardingSteps.at(-1)?.slug, 'confirmation');
+  assert.ok(!onboardingSteps.some((step) => step.slug === 'analysis' || step.slug === 'result'));
 });
 
 test('injury body map retains exactly 73 unique front/back regions', () => {
@@ -44,11 +50,11 @@ test('mobile injury map uses one-face navigation and collapsible detail cards', 
   assert.match(map, /role="tablist"/);
   assert.match(map, /<details/);
   assert.match(css, /figure\.is-active/);
-  assert.match(css, /max-height:min\(59dvh|59dvh/);
+  assert.match(css, /59dvh/);
   assert.match(css, /safe-area-inset-bottom/);
 });
 
-test('empty v2 draft does not preselect self-report or course duration', () => {
+test('empty v2 draft does not preselect self-report or future-only preferences', () => {
   const draft = createEmptyOnboardingDraft();
   assert.equal(draft.version, 2);
   assert.equal(draft.goal.primaryGoal, null);
@@ -66,10 +72,18 @@ test('empty v2 draft does not preselect self-report or course duration', () => {
   assert.equal(draft.availability.daysPerWeek, null);
   assert.equal(draft.availability.sessionDuration, null);
   assert.equal(draft.preferences.coachingTone, null);
+  assert.equal(draft.preferences.reminderLevel, null);
   assert.equal(draft.confirmation.programDurationDays, null);
 });
 
-test('legacy v1 migration preserves unambiguous entries but resets ambiguous defaults', () => {
+test('availability stores stable locale-independent weekday and equipment ids', () => {
+  assert.deepEqual(weekdayOptions.map((item) => item.value), ['sat', 'sun', 'mon', 'tue', 'wed', 'thu', 'fri']);
+  assert.ok(equipmentOptions.some((item) => item.value === 'bodyweight'));
+  assert.ok(equipmentOptions.some((item) => item.value === 'full-gym'));
+  assert.equal(new Set(equipmentOptions.map((item) => item.value)).size, equipmentOptions.length);
+});
+
+test('legacy v1 migration preserves unambiguous entries, maps availability ids and resets ambiguous defaults', () => {
   const legacy = {
     version: 1,
     startedAt: '2026-08-01T00:00:00.000Z',
@@ -82,7 +96,7 @@ test('legacy v1 migration preserves unambiguous entries but resets ambiguous def
     lifestyle: { occupation: 'desk', activityLevel: 'sedentary', sittingHours: 8, dailySteps: 5000, sleepHours: 7, sleepQuality: 'average', stressLevel: 'medium', smoking: 'never', routineNotes: '' },
     nutrition: { mealsPerDay: 3, dietType: 'balanced', allergies: ['peanut'], dislikedFoods: [], favoriteIranianFoods: [], budget: 'balanced', cookingAbility: 'intermediate', kitchenAccess: true, eatingOutFrequency: 'weekly', notes: '' },
     trainingHistory: { level: 'beginner', trainingAgeMonths: 12, previousSports: [], recentBreakWeeks: 2, familiarMovements: [], cardioExperience: 'basic', strengthExperience: 'basic', notes: '' },
-    availability: { location: 'gym', equipment: ['دمبل'], customEquipment: '', daysPerWeek: 3, sessionDuration: 60, preferredDays: ['شنبه'], preferredTime: 'flexible', scheduleNotes: '' },
+    availability: { location: 'gym', equipment: ['دمبل', 'دستگاه‌های باشگاه'], customEquipment: '', daysPerWeek: 3, sessionDuration: 60, preferredDays: ['سه‌شنبه'], preferredTime: 'flexible', scheduleNotes: '' },
     preferences: { intensity: 'moderate', cardioPreference: 'balanced', trainingStyle: 'mixed', variety: 'balanced', nutritionStrictness: 'structured', coachingTone: 'supportive', reminderLevel: 'normal' },
     confirmation: { startDate: '2026-08-10', workoutReminders: true, mealReminders: true, waterReminders: false, weeklyReport: true, finalConsent: true, completedAt: '2026-08-09T00:00:00.000Z' },
   };
@@ -92,6 +106,8 @@ test('legacy v1 migration preserves unambiguous entries but resets ambiguous def
   assert.equal(migrated.basics.age, 30);
   assert.equal(migrated.goal.primaryGoal, 'muscle-gain');
   assert.deepEqual(migrated.nutrition.allergies, ['peanut']);
+  assert.deepEqual(migrated.availability.equipment, ['dumbbell', 'full-gym']);
+  assert.deepEqual(migrated.availability.preferredDays, ['tue']);
   assert.equal(migrated.lifestyle.activityLevel, null);
   assert.equal(migrated.lifestyle.smoking, null);
   assert.equal(migrated.trainingHistory.level, null);
@@ -126,21 +142,25 @@ test('v2 parser accepts valid explicit values and rejects malformed self-report 
   }];
   assert.equal(parseOnboardingDraft(malformedInjury), null);
 
+  const badAvailability = structuredClone(draft) as unknown as Record<string, unknown>;
+  (badAvailability.availability as { equipment: string[] }).equipment = ['دمبل'];
+  assert.equal(parseOnboardingDraft(badAvailability), null);
+
   const oversized = structuredClone(draft);
   oversized.medical.physicianRestrictions = 'x'.repeat(2001);
   assert.equal(parseOnboardingDraft(oversized), null);
 });
 
-test('step validation requires explicit choices and a bounded course duration', () => {
+test('step validation requires explicit choices, equipment truth and bounded course duration', () => {
   const draft = createEmptyOnboardingDraft();
   assert.ok(validateOnboardingStep(draft, 2).length > 0);
   assert.ok(validateOnboardingStep(draft, 5).length > 0);
   assert.ok(validateOnboardingStep(draft, 7).length > 0);
   assert.ok(validateOnboardingStep(draft, 8).length > 0);
   assert.ok(validateOnboardingStep(draft, 9).length > 0);
-  assert.ok(validateOnboardingStep(draft, 10).length > 0);
+  assert.ok(validateOnboardingStep(draft, 10).some((item) => item.includes('تجهیزات')));
   assert.ok(validateOnboardingStep(draft, 11).length > 0);
-  assert.ok(validateOnboardingStep(draft, 15).length > 0);
+  assert.ok(validateOnboardingStep(draft, ONBOARDING_TOTAL_STEPS).length > 0);
   assert.equal(PROGRAM_DURATION_MIN_DAYS, 14);
   assert.equal(PROGRAM_DURATION_MAX_DAYS, 84);
 });
@@ -167,11 +187,13 @@ test('training preview only materializes from explicit availability and nutritio
   assert.doesNotMatch(model, /\b(calorieTarget|proteinGrams|carbohydrateGrams|fatGrams|\bbmr\b)\b/i);
 });
 
-test('AI key is gated inside Onboarding without entering draft or Browser storage', async () => {
+test('AI key setup is mobile actionable without persisting raw secrets', async () => {
   const gate = await source('components/onboarding/onboarding-ai-gate.tsx');
   const screen = await source('components/onboarding/onboarding-screen.tsx');
   assert.match(gate, /\/api\/ai\/providers/);
-  assert.match(gate, /DEFAULT_AI_MODELS\.google|DEFAULT_AI_MODELS\[provider\]/);
+  assert.match(gate, /aistudio\.google\.com\/app\/apikey/);
+  assert.match(gate, /SecretField/);
+  assert.match(gate, /aria-pressed=\{revealed\}/);
   assert.match(gate, /AvalAI/);
   assert.doesNotMatch(gate, /localStorage|sessionStorage/);
   assert.match(screen, /mode === 'account'.*!googleReady/s);
@@ -193,17 +215,23 @@ test('account draft persistence uses optimistic concurrency instead of silent up
   assert.match(persistence, /OnboardingConflictError/);
   assert.match(persistence, /\.eq\('updated_at', input\.expectedDatabaseUpdatedAt\)/);
   assert.match(persistence, /\.insert\(payload\)/);
+  assert.doesNotMatch(persistence, /\.upsert\(\{\s*user_id: input\.userId/s);
   assert.match(context, /databaseUpdatedAt/);
   assert.match(context, /OnboardingConflictError/);
 });
 
-test('final onboarding asks only for real course inputs and review has direct edit affordances', async () => {
+test('review owns safety readiness and final onboarding asks only for real course inputs', async () => {
   const screen = await source('components/onboarding/onboarding-screen.tsx');
   assert.match(screen, /programDurationDays/);
   assert.match(screen, /editHref="\/onboarding\/goal"/);
   assert.match(screen, /editHref="\/onboarding\/availability"/);
+  assert.match(screen, /قواعد ایمنی فعال/);
+  assert.doesNotMatch(screen, /if \(step === 13\).*کنترل ایمنی/s);
+  assert.doesNotMatch(screen, /if \(step === 14\)/);
   assert.doesNotMatch(screen, /draft\.confirmation\.workoutReminders/);
   assert.doesNotMatch(screen, /draft\.confirmation\.mealReminders/);
+  assert.doesNotMatch(screen, /draft\.preferences\.reminderLevel/);
+  assert.doesNotMatch(screen, /progressPhotoOptIn/);
   assert.doesNotMatch(screen, /<option value="imperial">/);
   assert.match(screen, /errorsRef\.current\?\.focus\(\)/);
 });
