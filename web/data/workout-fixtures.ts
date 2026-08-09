@@ -12,10 +12,14 @@ export interface WorkoutDay {
   readonly title: string;
   readonly focus: string;
   readonly duration: string;
-  readonly calories: number;
+  readonly calories?: number;
   readonly exercises: readonly WorkoutExercise[];
 }
 
+/**
+ * Guest-only demo plan. Authenticated accounts must never treat this fixture as
+ * the user's prescribed plan; they load an active version from Supabase.
+ */
 export const workoutPlan: readonly WorkoutDay[] = [
   {
     id: 'push-a',
