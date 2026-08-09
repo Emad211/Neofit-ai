@@ -32,7 +32,9 @@ test('Onboarding v2 uses a focused 13-step journey and starts with the AI gate',
   assert.equal(onboardingSteps[0]?.slug, 'welcome');
   assert.equal(onboardingSteps[0]?.label, 'اتصال مربی');
   assert.equal(onboardingSteps.at(-1)?.slug, 'confirmation');
-  assert.ok(!onboardingSteps.some((step) => step.slug === 'analysis' || step.slug === 'result'));
+  const slugs = onboardingSteps.map((step) => String(step.slug));
+  assert.ok(!slugs.includes('analysis'));
+  assert.ok(!slugs.includes('result'));
 });
 
 test('injury body map retains exactly 73 unique front/back regions', () => {
