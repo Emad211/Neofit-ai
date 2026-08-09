@@ -6,7 +6,7 @@ import { NUTRITION_CORE_SCHEMA_VERSION } from '@neofit/nutrition-core';
 import { foodFixtures } from '@/data/fixtures';
 import { createWebDiaryEntry } from '@/lib/nutrition-adapter';
 import { parseNutritionPlanDocument, resolveNutritionPlanDocument } from '@/lib/nutrition-plan-core';
-import type { Database } from './database.types';
+import type { Database, Json } from './database.types';
 
 export class NutritionPlanLogError extends Error {
   readonly code: 'invalid_date' | 'plan_missing' | 'plan_invalid' | 'meal_missing' | 'write_failed';
@@ -23,6 +23,12 @@ function validLocalDate(value: string): boolean {
   const [year, month, day] = value.split('-').map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
+function databaseJson(value: unknown): Json {
+  const serialized = JSON.stringify(value);
+  if (serialized === undefined) throw new NutritionPlanLogError('plan_invalid');
+  return JSON.parse(serialized) as Json;
 }
 
 function mutationId(input: {
@@ -123,7 +129,7 @@ export async function persistActiveNutritionPlanMeal(input: {
       local_date: diaryEntry.core.localDate,
       logged_at: loggedAt,
       core_schema_version: NUTRITION_CORE_SCHEMA_VERSION,
-      estimate: diaryEntry.core.estimate,
+      estimate: databaseJson(diaryEntry.core.estimate),
       nutrition_plan_id: row.id,
       nutrition_plan_version: row.version,
       nutrition_plan_meal_id: meal.id,
