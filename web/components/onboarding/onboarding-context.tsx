@@ -46,13 +46,15 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
       try {
         const supabase = createClient();
-        const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
-        const userId = typeof claimsData?.claims?.sub === 'string' ? claimsData.claims.sub : null;
-        if (claimsError || !userId) {
+        // Direct navigation into Onboarding must not trust a stale JWT alone.
+        // getUser() validates the account against the Auth server before RLS-backed writes.
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        const userId = userData.user?.id ?? null;
+        if (userError || !userId) {
           if (cancelled) return;
           setDraft(readGuestOnboardingDraft() ?? createEmptyOnboardingDraft());
           setMode('guest');
-          setMessage('حالت مهمان: با ورود، Onboarding در حساب شخصی ذخیره می‌شود.');
+          setMessage('حالت مهمان: برای ساخت دوره AI شخصی وارد حساب شو.');
           return;
         }
 
@@ -61,7 +63,15 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         setAccountId(userId);
         setDraft(remote?.draft ?? createEmptyOnboardingDraft());
         setMode('account');
-        setMessage(remote?.status === 'completed' ? 'Onboarding این حساب قبلاً تکمیل شده است؛ می‌توانی اطلاعات را مرور یا اصلاح کنی.' : 'ذخیره امن حساب با RLS فعال است.');
+        if (remote?.migratedFromVersion === 1) {
+          setMessage('داده‌های قابل‌تشخیص نسخه قبلی حفظ شدند؛ پاسخ‌های مبهم باید در Onboarding v2 دوباره صریحاً انتخاب شوند.');
+        } else if (remote && !remote.draft) {
+          setMessage('نسخه ذخیره‌شده قابل اعتماد نیست؛ برای جلوگیری از حدس‌زدن پاسخ‌های شخصی، Onboarding از نو بررسی می‌شود.');
+        } else if (remote?.status === 'completed') {
+          setMessage('Onboarding v2 این حساب تکمیل شده است؛ می‌توانی اطلاعات را مرور یا اصلاح کنی.');
+        } else {
+          setMessage('ذخیره امن حساب با RLS فعال است.');
+        }
       } catch {
         if (cancelled) return;
         setMode('error');
@@ -109,13 +119,13 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         const result = await completeRemoteOnboarding(createClient(), accountId, completedDraft);
         clearGuestOnboardingDraft();
         setDraft(result.draft);
-        setMessage(result.metadataSyncWarning ? 'Onboarding ذخیره شد؛ همگام‌سازی بخشی از تنظیمات پروفایل نیاز به تلاش بعدی دارد.' : 'Onboarding با موفقیت در حساب تکمیل شد.');
+        setMessage(result.metadataSyncWarning ? 'Onboarding ذخیره شد؛ همگام‌سازی بخشی از تنظیمات پروفایل نیاز به تلاش بعدی دارد.' : 'Onboarding v2 با موفقیت تکمیل شد.');
         return result;
       }
       if (mode === 'guest') {
         writeGuestOnboardingDraft(completedDraft);
         setDraft(completedDraft);
-        setMessage('Onboarding مهمان تکمیل شد و در همین مرورگر باقی می‌ماند.');
+        setMessage('Onboarding مهمان تکمیل شد؛ این مسیر Demo است و برنامه AI شخصی ایجاد نمی‌کند.');
         return { draft: completedDraft, metadataSyncWarning: false };
       }
       throw new Error('Onboarding persistence is unavailable.');
