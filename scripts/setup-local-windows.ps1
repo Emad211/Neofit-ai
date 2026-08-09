@@ -12,6 +12,8 @@ $Repo = 'https://github.com/Emad211/Neofit-ai.git'
 $Branch = 'stage21/onboarding-self-report-v2'
 $SupabaseUrl = 'https://rjwrobltmjodfarnltal.supabase.co'
 $RunflareNpmRegistry = 'https://mirror-npm.runflare.com'
+$PortableNodeVersion = '22.13.1'
+$NodeDistBase = 'https://nodejs.org/dist'
 
 function Say([string]$Text) {
   Write-Host "[NeoFit Local] $Text" -ForegroundColor Cyan
@@ -39,32 +41,116 @@ function New-Base64Key {
   return [Convert]::ToBase64String($bytes)
 }
 
-function Install-Dependencies {
+function Get-NodeArchiveArchitecture {
+  $architecture = $env:PROCESSOR_ARCHITEW6432
+  if (-not $architecture) {
+    $architecture = $env:PROCESSOR_ARCHITECTURE
+  }
+
+  switch ($architecture.ToUpperInvariant()) {
+    'AMD64' { return 'x64' }
+    'ARM64' { return 'arm64' }
+    'X86' { return 'x86' }
+    default { Fail "Unsupported Windows architecture: $architecture" }
+  }
+}
+
+function Download-File([string]$Url, [string]$Destination) {
+  [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+  try {
+    Say "Downloading $Url"
+    Invoke-WebRequest -UseBasicParsing -Uri $Url -OutFile $Destination
+    return
+  } catch {
+    Write-Host '[NeoFit Local] PowerShell download failed. Retrying with curl.exe...' -ForegroundColor Yellow
+  }
+
+  if (Get-Command curl.exe -ErrorAction SilentlyContinue) {
+    & curl.exe -fL --retry 2 --connect-timeout 20 -o $Destination $Url
+    if ($LASTEXITCODE -eq 0) {
+      return
+    }
+  }
+
+  Fail "Could not download $Url"
+}
+
+function Ensure-Node22([string]$ProjectRoot) {
+  $existingNode = Get-Command node -ErrorAction SilentlyContinue
+  if ($existingNode) {
+    try {
+      $existingVersion = (& node -p "process.versions.node").Trim()
+      $existingMajor = [int]($existingVersion.Split('.')[0])
+      if ($existingMajor -eq 22) {
+        Say "System Node.js $existingVersion is compatible."
+        $systemNpm = Get-Command npm.cmd -ErrorAction SilentlyContinue
+        if (-not $systemNpm) {
+          $systemNpm = Get-Command npm -ErrorAction SilentlyContinue
+        }
+        if (-not $systemNpm) {
+          Fail 'npm was not found next to the compatible Node.js installation.'
+        }
+        return $systemNpm.Source
+      }
+      Say "System Node.js $existingVersion is not used by NeoFit local."
+    } catch {
+      Say 'Existing Node.js could not be inspected; preparing a local Node 22 runtime.'
+    }
+  }
+
+  $arch = Get-NodeArchiveArchitecture
+  $folderName = "node-v$PortableNodeVersion-win-$arch"
+  $toolsDir = Join-Path $ProjectRoot '.tools'
+  $nodeHome = Join-Path $toolsDir $folderName
+  $nodeExe = Join-Path $nodeHome 'node.exe'
+  $npmCmd = Join-Path $nodeHome 'npm.cmd'
+
+  if (-not (Test-Path $nodeExe)) {
+    New-Item -ItemType Directory -Force -Path $toolsDir | Out-Null
+    $zipPath = Join-Path $toolsDir "$folderName.zip"
+    if (Test-Path $zipPath) {
+      Remove-Item -Force $zipPath
+    }
+
+    $downloadUrl = "$NodeDistBase/v$PortableNodeVersion/$folderName.zip"
+    Download-File $downloadUrl $zipPath
+
+    Say "Extracting portable Node.js $PortableNodeVersion..."
+    Expand-Archive -LiteralPath $zipPath -DestinationPath $toolsDir -Force
+    Remove-Item -Force $zipPath
+  }
+
+  if (-not (Test-Path $nodeExe) -or -not (Test-Path $npmCmd)) {
+    Fail 'Portable Node.js extraction is incomplete.'
+  }
+
+  $env:Path = "$nodeHome;$env:Path"
+  $portableVersion = (& $nodeExe -p "process.versions.node").Trim()
+  if (-not $portableVersion.StartsWith('22.')) {
+    Fail "Portable Node.js validation failed: $portableVersion"
+  }
+
+  Say "Portable Node.js $portableVersion activated for this NeoFit session."
+  return $npmCmd
+}
+
+function Install-Dependencies([string]$NpmCommand) {
   Say 'Installing workspace dependencies from the default npm registry...'
-  & npm install --no-audit --no-fund
+  & $NpmCommand install --no-audit --no-fund
   if ($LASTEXITCODE -eq 0) {
     return
   }
 
   Write-Host ''
   Write-Host '[NeoFit Local] Default npm registry failed. Retrying with Runflare mirror...' -ForegroundColor Yellow
-  & npm install --no-audit --no-fund --registry=$RunflareNpmRegistry
+  & $NpmCommand install --no-audit --no-fund --registry=$RunflareNpmRegistry
   if ($LASTEXITCODE -ne 0) {
     Fail "npm install failed on both the default registry and Runflare mirror ($RunflareNpmRegistry)."
   }
 }
 
-Say 'Checking Git, Node.js and npm...'
+Say 'Checking Git and preparing the local runtime...'
 Require-Command git
-Require-Command node
-Require-Command npm
-
-$nodeVersion = (& node -p "process.versions.node").Trim()
-$nodeMajor = [int]($nodeVersion.Split('.')[0])
-if ($nodeMajor -ne 22) {
-  Fail "Node.js 22.x is required. Current version: $nodeVersion"
-}
-Say "Node.js $nodeVersion detected."
 
 $current = (Get-Location).Path
 $gitDir = Join-Path $current '.git'
@@ -97,6 +183,12 @@ if (-not (Test-Path $gitDir)) {
     Fail 'git pull --ff-only failed.'
   }
 }
+
+$npmCommand = Ensure-Node22 $current
+$activeNodeVersion = (& node -p "process.versions.node").Trim()
+$activeNpmVersion = (& $npmCommand -v).Trim()
+Say "Active Node.js: $activeNodeVersion"
+Say "Active npm: $activeNpmVersion"
 
 if (-not $SupabasePublishableKey.Trim()) {
   Write-Host ''
@@ -142,12 +234,12 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 Say 'Local environment written to web\.env.local'
 
 if (-not $SkipInstall) {
-  Install-Dependencies
+  Install-Dependencies $npmCommand
 }
 
 if (-not $SkipTypecheck) {
   Say 'Running Web TypeScript check...'
-  & npm run typecheck:web
+  & $npmCommand run typecheck:web
   if ($LASTEXITCODE -ne 0) {
     Fail 'TypeScript check failed.'
   }
@@ -162,6 +254,7 @@ Write-Host '------------------------------------------------------------' -Foreg
 Write-Host ''
 Write-Host 'Notes:' -ForegroundColor Yellow
 Write-Host '- This local build uses the shared remote Supabase project.'
+Write-Host '- Node 24 on the machine was not uninstalled or changed.'
 Write-Host '- Local encryption/signing keys were generated locally and were not printed.'
 Write-Host '- Do not commit or share web\.env.local.'
 Write-Host '- Supabase hosted email templates currently use the hosted SiteURL, so local email confirmation may still return to Preview.'
@@ -169,4 +262,4 @@ Write-Host ''
 
 Say "Starting Next.js dev server on port $Port ..."
 Set-Location (Join-Path $current 'web')
-& npm run dev -- -H 127.0.0.1 -p $Port
+& $npmCommand run dev -- -H 127.0.0.1 -p $Port
