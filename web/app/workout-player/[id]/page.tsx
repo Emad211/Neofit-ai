@@ -1,16 +1,12 @@
 import { notFound } from 'next/navigation';
 import { WorkoutPlayer } from '@/components/workout-player';
-import { findWorkout, workoutPlan } from '@/data/workout-fixtures';
-import { loadWorkoutIdentity } from '@/lib/supabase/workout-identity';
+import { findWorkoutInSnapshot, loadWorkoutPlanSnapshot } from '@/lib/supabase/workout-plan-data';
 
-export function generateStaticParams() {
-  return workoutPlan.map((workout) => ({ id: workout.id }));
-}
+export const dynamic = 'force-dynamic';
 
 export default async function WorkoutPlayerPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const workout = findWorkout(id);
+  const [{ id }, snapshot] = await Promise.all([params, loadWorkoutPlanSnapshot()]);
+  const workout = findWorkoutInSnapshot(snapshot, id);
   if (!workout) notFound();
-  const identity = await loadWorkoutIdentity();
-  return <WorkoutPlayer workout={workout} userId={identity.userId} />;
+  return <WorkoutPlayer workout={workout} userId={snapshot.userId} />;
 }
