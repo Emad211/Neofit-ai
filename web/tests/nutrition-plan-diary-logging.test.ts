@@ -56,15 +56,16 @@ test('persistence reloads active plan under RLS and builds each estimate through
   assert.doesNotMatch(persistence, /formData|request\.json|input\.estimate/);
 });
 
-test('one meal is written as one bulk idempotent upsert without duplicate pre-read', async () => {
+test('one meal is written as one bulk idempotent upsert without duplicate diary pre-read', async () => {
   const persistence = await web('lib/supabase/nutrition-plan-persistence.ts');
   assert.match(persistence, /createHash\('sha256'\)/);
   assert.match(persistence, /`plan:\$\{digest\}`/);
   assert.equal((persistence.match(/\.from\('nutrition_entries'\)/g) ?? []).length, 1);
-  assert.match(persistence, /\.upsert\(rows, \{/);
-  assert.match(persistence, /onConflict: 'user_id,client_mutation_id'/);
-  assert.match(persistence, /ignoreDuplicates: true/);
-  assert.doesNotMatch(persistence, /\.select\([^)]*nutrition_entries|\.maybeSingle\(\)[\s\S]*nutrition_entries/);
+  const diaryWrite = persistence.slice(persistence.indexOf(".from('nutrition_entries')"));
+  assert.match(diaryWrite, /\.upsert\(rows, \{/);
+  assert.match(diaryWrite, /onConflict: 'user_id,client_mutation_id'/);
+  assert.match(diaryWrite, /ignoreDuplicates: true/);
+  assert.doesNotMatch(diaryWrite, /\.select\(|\.maybeSingle\(|\.single\(/);
 });
 
 test('every planned diary item stores exact plan provenance', async () => {
