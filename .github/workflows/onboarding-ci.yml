@@ -7,12 +7,16 @@ on:
     paths:
       - 'web/app/onboarding/**'
       - 'web/app/page.tsx'
+      - 'web/app/api/ai/providers/**'
       - 'web/components/onboarding/**'
       - 'web/lib/onboarding/**'
+      - 'web/lib/ai/**'
       - 'web/tests/onboarding-foundation.test.ts'
+      - 'web/tests/ai-provider-foundation.test.ts'
       - 'web/lib/supabase/database.types.ts'
       - 'web/package.json'
       - 'supabase/migrations/*onboarding*.sql'
+      - 'supabase/migrations/*provider_credentials*.sql'
       - 'docs/NEOFIT_STAGE21_ONBOARDING_SELF_REPORT_V2.md'
       - 'docs/NEOFIT_COACH_PROGRAM_LIFECYCLE_ARCHITECTURE.md'
       - '.github/workflows/onboarding-ci.yml'
@@ -22,12 +26,16 @@ on:
     paths:
       - 'web/app/onboarding/**'
       - 'web/app/page.tsx'
+      - 'web/app/api/ai/providers/**'
       - 'web/components/onboarding/**'
       - 'web/lib/onboarding/**'
+      - 'web/lib/ai/**'
       - 'web/tests/onboarding-foundation.test.ts'
+      - 'web/tests/ai-provider-foundation.test.ts'
       - 'web/lib/supabase/database.types.ts'
       - 'web/package.json'
       - 'supabase/migrations/*onboarding*.sql'
+      - 'supabase/migrations/*provider_credentials*.sql'
       - 'docs/NEOFIT_STAGE21_ONBOARDING_SELF_REPORT_V2.md'
       - 'docs/NEOFIT_COACH_PROGRAM_LIFECYCLE_ARCHITECTURE.md'
       - '.github/workflows/onboarding-ci.yml'
@@ -42,7 +50,7 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     env:
       NEXT_TELEMETRY_DISABLED: '1'
       NEXT_PUBLIC_VERCEL_ENV: preview
@@ -64,6 +72,9 @@ jobs:
       - name: Onboarding v2 contract tests
         working-directory: web
         run: npm run test:onboarding
+      - name: AI provider regression
+        working-directory: web
+        run: npm run test:ai-provider
       - name: Full Supabase app regression
         working-directory: web
         run: npm run test:supabase-app
@@ -77,15 +88,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          FILE=supabase/migrations/20260808132547_user_onboarding_v1.sql
-          grep -q 'alter table public.user_onboarding enable row level security' "$FILE"
-          grep -q 'to authenticated' "$FILE"
-          grep -q '(select auth.uid()) = user_id' "$FILE"
-          grep -q "status in ('draft', 'completed')" "$FILE"
-          grep -q 'current_step between 1 and 15' "$FILE"
+          ONBOARDING_FILE=supabase/migrations/20260808132547_user_onboarding_v1.sql
+          CREDENTIAL_FILE=supabase/migrations/20260808160000_encrypted_provider_credentials.sql
+          grep -q 'alter table public.user_onboarding enable row level security' "$ONBOARDING_FILE"
+          grep -q 'to authenticated' "$ONBOARDING_FILE"
+          grep -q '(select auth.uid()) = user_id' "$ONBOARDING_FILE"
+          grep -q "status in ('draft', 'completed')" "$ONBOARDING_FILE"
+          grep -q 'current_step between 1 and 15' "$ONBOARDING_FILE"
+          grep -q 'enable row level security' "$CREDENTIAL_FILE"
+          grep -q "provider in ('google', 'avalai')" "$CREDENTIAL_FILE"
           grep -q 'ONBOARDING_SCHEMA_VERSION = 2' web/lib/onboarding/model.ts
           grep -q 'programDurationDays' web/lib/onboarding/model.ts
           grep -q '/api/ai/providers' web/components/onboarding/onboarding-ai-gate.tsx
+          grep -q "google: 'gemini-3.5-flash-lite'" web/lib/ai/config.ts
+          grep -q "avalai: 'gemini-flash-latest'" web/lib/ai/config.ts
           ! grep -q '/onboarding/ai' web/app/page.tsx
           ! grep -Eq 'localStorage|sessionStorage' web/components/onboarding/onboarding-ai-gate.tsx
           grep -q 'Nutrition Core' web/lib/onboarding/model.ts
