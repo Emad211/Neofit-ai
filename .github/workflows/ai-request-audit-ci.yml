@@ -1,0 +1,114 @@
+name: AI Request Audit Budget CI
+
+on:
+  push:
+    branches:
+      - 'stage15/**'
+    paths:
+      - 'web/app/api/ai/**'
+      - 'web/lib/ai/**'
+      - 'web/lib/supabase/database.types.ts'
+      - 'web/tests/ai-request-audit.test.ts'
+      - 'web/package.json'
+      - 'web/.env.example'
+      - 'supabase/migrations/20260809131359_ai_request_audit_budget.sql'
+      - 'supabase/migrations/20260809132552_harden_ai_request_audit_rpc_invoker.sql'
+      - 'docs/NEOFIT_STAGE15_AI_REQUEST_AUDIT_BUDGET.md'
+      - 'docs/NEOFIT_GAP_AUDIT_2026-08-08.md'
+      - '.github/workflows/ai-request-audit-ci.yml'
+  pull_request:
+    branches:
+      - stage14/auth-account-lifecycle
+    paths:
+      - 'web/app/api/ai/**'
+      - 'web/lib/ai/**'
+      - 'web/lib/supabase/database.types.ts'
+      - 'web/tests/ai-request-audit.test.ts'
+      - 'web/package.json'
+      - 'web/.env.example'
+      - 'supabase/migrations/20260809131359_ai_request_audit_budget.sql'
+      - 'supabase/migrations/20260809132552_harden_ai_request_audit_rpc_invoker.sql'
+      - 'docs/NEOFIT_STAGE15_AI_REQUEST_AUDIT_BUDGET.md'
+      - 'docs/NEOFIT_GAP_AUDIT_2026-08-08.md'
+      - '.github/workflows/ai-request-audit-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-request-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_VERCEL_ENV: preview
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_test_value
+      AI_CREDENTIAL_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+      AUTH_RECOVERY_INTENT_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+      AI_REQUEST_BURST_PER_MINUTE: '12'
+      AI_REQUESTS_PER_HOUR: '120'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+      - name: Install workspace dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: AI audit contract tests
+        working-directory: web
+        run: npm run test:ai-audit
+      - name: Full Supabase app regression
+        working-directory: web
+        run: npm run test:supabase-app
+      - name: TypeScript
+        working-directory: web
+        run: npm run typecheck
+      - name: Production build
+        working-directory: web
+        run: npm run build
+      - name: Verify audit, privacy and request-budget boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          migration='supabase/migrations/20260809131359_ai_request_audit_budget.sql'
+          hardening='supabase/migrations/20260809132552_harden_ai_request_audit_rpc_invoker.sql'
+          grep -q 'create table public.ai_request_audit' "$migration"
+          grep -q 'enable row level security' "$migration"
+          grep -q 'pg_advisory_xact_lock' "$migration"
+          grep -q "set search_path = ''" "$migration"
+          grep -q 'security invoker' "$hardening"
+          grep -q 'grant insert (user_id, request_kind)' "$hardening"
+          grep -q 'ai_request_audit_insert_own_pending' "$hardening"
+          grep -q 'ai_request_audit_complete_own_pending' "$hardening"
+          ! grep -qi 'grant delete' "$hardening"
+          grep -q 'reserve_ai_request' web/lib/supabase/database.types.ts
+          grep -q 'complete_ai_request' web/lib/supabase/database.types.ts
+          grep -q 'reserveAiRequest(authContext, requestKind)' web/lib/ai/provider-router.ts
+          grep -q "}, auth, 'coach')" web/app/api/ai/coach/route.ts
+          grep -q 'Retry-After' web/app/api/ai/coach/route.ts
+          grep -q 'Retry-After' web/app/api/ai/respond/route.ts
+          if grep -R -E 'countTokens|count_tokens' web/lib/ai web/app/api/ai; then
+            echo 'Extra provider token-count request detected.' >&2
+            exit 1
+          fi
+          if grep -R -E "from\(['\"]ai_request_audit['\"]\)\.(insert|update|delete|upsert)" web; then
+            echo 'Direct Web mutation of AI audit table detected.' >&2
+            exit 1
+          fi
+          if grep -R -E 'SUPABASE_SERVICE_ROLE_KEY|sb_secret_' web/lib/ai web/app/api/ai; then
+            echo 'Privileged Supabase key detected in AI runtime.' >&2
+            exit 1
+          fi
