@@ -29,12 +29,16 @@ test('email change requires a live Auth-server validation and does not claim imm
 
 test('canonical account lifecycle templates avoid direct ConfirmationURL consumption', async () => {
   const changeEmail = await readFile(new URL('../../supabase/templates/email-change.html', import.meta.url), 'utf8');
+  const emailChanged = await readFile(new URL('../../supabase/templates/email-changed.html', import.meta.url), 'utf8');
   const passwordChanged = await readFile(new URL('../../supabase/templates/password-changed.html', import.meta.url), 'utf8');
   const reauth = await readFile(new URL('../../supabase/templates/reauthentication.html', import.meta.url), 'utf8');
   assert.match(changeEmail, /token_hash=\{\{ \.TokenHash \}\}/);
   assert.match(changeEmail, /type=email_change/);
   assert.match(changeEmail, /next=\/profile\/security/);
   assert.doesNotMatch(changeEmail, /\.ConfirmationURL/);
+  assert.match(emailChanged, /\{\{ \.OldEmail \}\}/);
+  assert.match(emailChanged, /\{\{ \.Email \}\}/);
+  assert.match(emailChanged, /\/profile\/security/);
   assert.match(passwordChanged, /\/auth\/recover/);
   assert.match(reauth, /\{\{ \.Token \}\}/);
 });
