@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { activeAuthSession } from '@/lib/auth/active-session';
+import { ONBOARDING_SCHEMA_VERSION } from '@/lib/onboarding/model';
 import { hasSupabasePublicEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 
@@ -13,8 +14,7 @@ export default async function HomePage() {
   const active = await activeAuthSession(supabase);
 
   // A locally valid JWT is not enough here. If the Auth user was deleted or
-  // the session was revoked, the application entry must expose Sign in/Sign up
-  // instead of trapping the browser in authenticated routes.
+  // the session was revoked, expose Sign in/Sign up instead of trapping them.
   if (!active) redirect('/auth');
 
   const [googleCredential, onboarding] = await Promise.all([
@@ -26,20 +26,28 @@ export default async function HomePage() {
       .maybeSingle(),
     supabase
       .from('user_onboarding')
-      .select('status')
+      .select('status,schema_version')
       .eq('user_id', active.userId)
       .maybeSingle(),
   ]);
 
-  // A real personalized NeoFit lifecycle requires a usable Google provider
-  // before collecting the self-report that will later feed program generation.
+  // The AI credential is the first real Onboarding gate. It now lives inside
+  // /onboarding/welcome rather than a non-existent /onboarding/ai route.
   if (googleCredential.error || googleCredential.data?.status !== 'active') {
-    redirect('/onboarding/ai');
-  }
-
-  if (onboarding.error || onboarding.data?.status !== 'completed') {
     redirect('/onboarding/welcome');
   }
 
-  redirect('/today');
+  // v1 completion is deliberately not accepted as v2 completion because old
+  // categorical defaults cannot be distinguished from explicit self-report.
+  if (
+    onboarding.error ||
+    onboarding.data?.status !== 'completed' ||
+    onboarding.data.schema_version !== ONBOARDING_SCHEMA_VERSION
+  ) {
+    redirect('/onboarding/welcome');
+  }
+
+  // Stage21 ends at a truthful lifecycle handoff. Until Program Cycle +
+  // planners exist, do not pretend that a personalized course was generated.
+  redirect('/onboarding/ready');
 }
