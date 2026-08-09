@@ -1,46 +1,22 @@
 # NeoFit Stage 20 — UI Truth, Empty States and Data-Safety Polish
 
-Status: implementation / Preview-only; stacked on Stage 19. This stage removes user-facing claims and controls that looked more complete than the actual data source.
+Status: **code/CI complete, Preview-only**; stacked on Stage 19. Hosted rendered/browser QA remains open.
 
 ## Goal
 
-Make the UI tell the same truth as the backend architecture.
+Make every visible control, label, metric and destructive action tell the same truth as the real data architecture. Stage 20 targets stale copy, decorative controls, unsupported inference, metric/date mismatch and destructive actions broader than their apparent scope.
 
-Stage 20 is not a redesign for aesthetics alone. It targets five classes of product debt:
+## Fixes
 
-1. stale copy after a backend gap was already fixed;
-2. decorative controls with no working source/action;
-3. UI labels that infer user state without evidence;
-4. metric/date mismatches;
-5. destructive state operations broader than their apparent scope.
+### Today — stale Nutrition Plan copy removed
 
-## Today — stale Nutrition Plan copy
+Today no longer says the Account Nutrition Plan is fixture-backed. Account copy now reflects the real versioned active plan, versioned catalog and explicit plan-meal logging. Guest remains clearly Demo-only.
 
-The Today screen still told users that Nutrition Plan was `fixture-backed`, even though Stage 17/18 replaced the account source with versioned persistence and deterministic plan-to-diary logging.
+### Nutrition catalog — fake filters removed
 
-Stage 20 removes the stale implementation note.
+The old `اخیر / محبوب‌ها / ایرانی` chips did not have real corresponding sources/actions. They were removed instead of faked.
 
-Current copy is account-aware:
-
-- Account: versioned active plan + versioned catalog + explicit plan-meal logging.
-- Guest: clearly labeled Demo only.
-
-This prevents the product from looking unfinished after the underlying gap was already solved.
-
-## Nutrition catalog — dead filters removed
-
-The previous UI rendered these chips:
-
-- همه
-- اخیر
-- محبوب‌ها
-- ایرانی
-
-Only `همه` had any effective behavior. `اخیر` and `محبوب‌ها` had no real history/popularity source, and `ایرانی` was not wired to a meaningful category predicate.
-
-Stage 20 does **not** fake these features.
-
-The filter row now uses only real current catalog categories:
+The filter row now contains only real current catalog categories:
 
 - همه
 - خورش
@@ -49,118 +25,85 @@ The filter row now uses only real current catalog categories:
 - آش و سوپ
 - صبحانه
 
-Every chip has real state, `aria-pressed`, a category predicate and a truthful result count. Text search and category filter compose together.
+Every chip has actual state, `aria-pressed`, a real category predicate and truthful result count. Text search and category filter compose together. Empty results state says the catalog is still limited/versioned.
 
-The empty state explicitly says that the current catalog is still limited/versioned rather than pretending broad coverage.
+### Nutrition meal dialog — keyboard behavior
 
-## Nutrition meal dialog accessibility
+The meal sheet now focuses its close control when opened, closes with Escape, restores focus to its opener, exposes `aria-modal`/title/description and keeps mutation controls disabled while saving.
 
-The meal sheet now:
+### Workout — unsupported `بعدی` inference removed
 
-- focuses its close control when opened;
-- closes with Escape;
-- restores focus to the food result that opened it;
-- exposes `aria-modal`, labelled title and evidence description;
-- keeps save/close controls disabled while an account write is pending.
+The first plan item is no longer labelled `بعدی`. The route does not yet have a separate schedule/history source that can prove which session is next. Account copy explicitly says the list is active-plan order only.
 
-This improves keyboard behavior without changing the Nutrition Core authority.
+### Progress — metric/date binding fixed
 
-## Workout — fake “next session” label removed
+Weight, waist and body-fat cards now each resolve their own latest measurement row. A newer weight-only measurement can no longer make the waist/body-fat card show a false date.
 
-The Workout screen previously styled the first plan day as `بعدی` even though the route did not load a schedule or completion history capable of proving what session was actually next.
+### Nutrition State — destructive reset and date-scope hardening
 
-Stage 20 removes that inference.
+The Account `resetDiary()` path previously deleted **all** `nutrition_entries` rows for the user. Stage 20 scopes it to `user_id + local_date`.
 
-For authenticated plans, the screen now explicitly says that the order is the active plan order and NeoFit does not guess a “next” session until a separate schedule/history source exists.
+Current contract:
 
-## Progress — metric date truth
-
-The screen correctly found the latest waist measurement, but rendered the date from the latest **overall** measurement. A newer weight-only row could therefore make the waist card display a false date.
-
-Stage 20 now resolves separate rows for:
-
-- latest weight;
-- latest waist;
-- latest body-fat percentage.
-
-Each metric's date comes from the same row as its value.
-
-## Nutrition State — date scope and destructive reset
-
-A more serious state-layer issue was found during the UI audit.
-
-The Account `resetDiary()` path deleted every `nutrition_entries` row for the user. This was much broader than a day-level UI reset should ever be.
-
-Stage 20 changes the contract:
-
-- Account reset is scoped to `user_id + local_date`;
+- Account reset deletes only the current local date;
 - other-day history is preserved;
-- Guest reset only resets Demo entries for the current local day;
-- the state value exposed to Today is filtered to the current local date;
-- local date updates on focus/visibility/one-minute timer so an open browser does not keep showing the previous day's Timeline indefinitely;
-- manual food logging uses a UUID-backed client mutation id rather than a timestamp-only identifier.
+- Guest reset replaces only current-day Demo entries;
+- Today receives only `currentDiary` for the active local date;
+- the local date refreshes on focus, visibility change and a one-minute timer;
+- manual food logging uses UUID-backed client mutation ids instead of timestamp-only ids.
 
-This is data-safety hardening, not just UI polish.
+This is a data-safety fix, not cosmetic polish.
 
-## App Shell — keyboard skip link
+### App Shell — keyboard skip link
 
-Stage 20 adds a visible-on-focus `رفتن به محتوای اصلی` skip link targeting `#screen-content`.
+The shell now provides a visible-on-focus `رفتن به محتوای اصلی` link targeting a programmatically focusable `#screen-content`.
 
-The destination is programmatically focusable with `tabIndex=-1`.
+### Route-placeholder audit
 
-The Stage 19 global focus-visible/reduced-motion baseline remains active.
+Stage 20 CI recursively scans app routes and rejects any user-facing route still rendered through the historical generic `RoutePlaceholder` implementation.
 
-## Route-placeholder audit
+## Important next gap discovered — Onboarding self-report semantics
 
-Stage 20 CI recursively scans app route source and rejects any route still rendered through the old generic `RoutePlaceholder` component.
+`createEmptyOnboardingDraft()` currently contains several values that are valid user answers before the user explicitly chooses them, for example:
 
-The component file can remain as dead historical code until cleanup, but it must not be a user-facing route implementation.
+- activityLevel=`sedentary`
+- sleepQuality=`average`
+- stressLevel=`medium`
+- smoking=`never`
+- dietType=`balanced`
+- trainingLevel=`beginner`
+- location=`gym`
+- daysPerWeek=`3`
 
-## Onboarding data-truth gap discovered — deliberately moved to Stage 21
+Gender UI can also visually fall back to `prefer-not-to-say` while the stored value is still null.
 
-The Stage 20 audit found a deeper issue in Onboarding that should not be hidden by a cosmetic patch.
+Because Coach consumes Onboarding context, UI defaults must not silently become claimed self-report. Live Supabase inspection during Stage 20 found **zero `user_onboarding` rows**, so Stage 21 can redesign this contract before hosted user data exists instead of applying a superficial one-field patch.
 
-`createEmptyOnboardingDraft()` currently supplies several valid categorical values before the user explicitly chooses them, for example:
+## Final validation
 
-- `activityLevel = sedentary`
-- `sleepQuality = average`
-- `stressLevel = medium`
-- `smoking = never`
-- `dietType = balanced`
-- `trainingLevel = beginner`
-- `location = gym`
-- `daysPerWeek = 3`
+Final Stage 20 implementation head before this documentation sync:
 
-The Gender step also visually falls back to `prefer-not-to-say` while the stored value is still null.
+`7dc6aa82dbeff130df981036ab19fc3c19b1e471`
 
-These defaults can blur the boundary between UI defaults and actual self-report, especially because Coach later consumes Onboarding context.
+`UI Truth Audit CI` run `31323084673`: **success**
 
-Live Supabase audit during Stage 20 found **zero `user_onboarding` rows**, so the next stage can redesign the draft/version/validation contract without migrating real hosted user data.
+Passed:
 
-Stage 20 therefore records this as a dedicated next-stage data-truth problem instead of silently changing meanings in-place.
-
-## Validation contract
-
-`UI Truth Audit CI` runs:
-
-- Stage 20 UI-truth source contracts;
-- existing accessibility/UI regression;
+- UI truth contracts;
+- existing UI/accessibility regression;
 - Nutrition Core adapter regression;
 - Workout Player regression;
-- complete Supabase app regression;
+- full Supabase app regression;
 - TypeScript;
 - Next production build;
-- hard truth-boundary grep checks.
+- hard UI-truth boundary gate.
 
-The new audit rejects:
+CI now rejects stale fixture-backed Today copy, decorative Recent/Popular filters, fake next-workout labels, date-unscoped Nutrition reset, missing skip link and RoutePlaceholder-backed routes.
 
-- stale `fixture-backed` copy in Today;
-- dead Recent/Popular Nutrition chips;
-- fake `بعدی` Workout label;
-- Nutrition reset without local-date scoping;
-- missing skip link;
-- app routes using `RoutePlaceholder`.
+## Hosted proof still required
+
+After the next single Preview deployment, perform rendered desktop/mobile QA of Today, Nutrition, Workout, Progress and App Shell keyboard behavior and confirm the latest stacked UI has no spacing/card-density regressions.
 
 ## Release rule
 
-Preview only. UI truth fixes do not replace hosted E2E. Stage 21 should address Onboarding defaults/self-report semantics before Agent proposal/write flows use Onboarding as authoritative user intent.
+Preview only. Stage 20 fixes do not replace hosted E2E. Stage 21 should fix Onboarding self-report/default semantics before Onboarding becomes an authoritative input to Agent proposal/write workflows.
