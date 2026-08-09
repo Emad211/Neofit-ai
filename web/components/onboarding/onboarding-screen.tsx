@@ -12,6 +12,7 @@ import {
   PROGRAM_DURATION_MAX_DAYS,
   PROGRAM_DURATION_MIN_DAYS,
   buildTrainingPreview,
+  equipmentOptions,
   getNextOnboardingStep,
   getOnboardingStep,
   getPreviousOnboardingStep,
@@ -19,6 +20,8 @@ import {
   onboardingSteps,
   resumeStepNumber,
   validateOnboardingStep,
+  weekdayOptions,
+  type EquipmentId,
   type GoalId,
   type OnboardingDraft,
   type OnboardingStepSlug,
@@ -30,8 +33,16 @@ function numberOrNull(value: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function toggleString(list: string[], value: string) {
+function toggleValue<T extends string>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
+}
+
+function localToday() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function ListEditor({ values, onChange, placeholder }: { values: string[]; onChange(values: string[]): void; placeholder: string }) {
@@ -78,6 +89,10 @@ function ReviewCard({ title, editHref, children }: { title: string; editHref: st
   return <article className="onboarding-review-card"><header><h3>{title}</h3><a href={editHref}>ویرایش</a></header><div>{children}</div></article>;
 }
 
+function PreferenceGroup({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+  return <section className="onboarding-preference-group"><header><h3>{title}</h3><p>{description}</p></header><div className="onboarding-grid onboarding-grid--2">{children}</div></section>;
+}
+
 function nullableSelectValue(value: string | null) {
   return value ?? '';
 }
@@ -114,19 +129,18 @@ function StepContent({
     <header className="onboarding-step-title"><span>هدف برنامه</span><h1>اولویت اصلی تو چیست؟</h1><p>یک هدف اصلی انتخاب کن. هدف‌های فرعی اختیاری‌اند.</p></header>
     <div className="onboarding-goal-grid">{goals.map(([id, label]) => <button type="button" key={id} className={draft.goal.primaryGoal === id ? 'is-selected' : ''} aria-pressed={draft.goal.primaryGoal === id} onClick={() => updateSection('goal', { ...draft.goal, primaryGoal: id, secondaryGoals: draft.goal.secondaryGoals.filter((goal) => goal !== id) })}>{label}</button>)}</div>
     <label>سرعت مورد انتظار<select value={nullableSelectValue(draft.goal.targetTimeline)} onChange={(event) => updateSection('goal', { ...draft.goal, targetTimeline: (event.target.value || null) as OnboardingDraft['goal']['targetTimeline'] })}><option value="">انتخاب کن</option><option value="steady">آرام و پایدار</option><option value="balanced">متعادل</option><option value="fast">سریع‌تر با کنترل بیشتر</option></select></label>
-    <fieldset><legend>هدف‌های فرعی <small className="onboarding-optional">اختیاری</small></legend><div className="onboarding-chip-grid">{goals.filter(([id]) => id !== draft.goal.primaryGoal).map(([id, label]) => <button type="button" key={id} className={draft.goal.secondaryGoals.includes(id) ? 'is-selected' : ''} aria-pressed={draft.goal.secondaryGoals.includes(id)} onClick={() => updateSection('goal', { ...draft.goal, secondaryGoals: toggleString(draft.goal.secondaryGoals, id) as GoalId[] })}>{label}</button>)}</div></fieldset>
+    <fieldset><legend>هدف‌های فرعی <small className="onboarding-optional">اختیاری</small></legend><div className="onboarding-chip-grid">{goals.filter(([id]) => id !== draft.goal.primaryGoal).map(([id, label]) => <button type="button" key={id} className={draft.goal.secondaryGoals.includes(id) ? 'is-selected' : ''} aria-pressed={draft.goal.secondaryGoals.includes(id)} onClick={() => updateSection('goal', { ...draft.goal, secondaryGoals: toggleValue(draft.goal.secondaryGoals, id) })}>{label}</button>)}</div></fieldset>
   </>;
 
   if (step === 3) return <>
-    <header className="onboarding-step-title"><span>مشخصات پایه</span><h1>اطلاعات اولیه</h1><p>این مقادیر ورودی مستقیم تو هستند و به‌عنوان self-report ذخیره می‌شوند.</p></header>
+    <header className="onboarding-step-title"><span>مشخصات پایه</span><h1>اطلاعات اولیه</h1><p>فقط اطلاعاتی را می‌گیریم که برای شخصی‌سازی دوره لازم‌اند.</p></header>
     <div className="onboarding-grid onboarding-grid--2">
       <label>نام نمایشی<input value={draft.basics.name} autoComplete="name" maxLength={80} onChange={(event) => updateSection('basics', { ...draft.basics, name: event.target.value })} /></label>
       <NumberField label="سن" value={draft.basics.age} min={10} max={120} suffix="سال" onChange={(age) => updateSection('basics', { ...draft.basics, age })} />
       <NumberField label="قد" value={draft.basics.heightCm} min={100} max={250} suffix="cm" onChange={(heightCm) => updateSection('basics', { ...draft.basics, heightCm, unitSystem: 'metric' })} />
       <NumberField label="وزن فعلی" value={draft.basics.weightKg} min={25} max={350} step={0.1} suffix="kg" onChange={(weightKg) => updateSection('basics', { ...draft.basics, weightKg, unitSystem: 'metric' })} />
-      <label>کشور <small className="onboarding-optional">اختیاری</small><input value={draft.basics.country} autoComplete="country-name" maxLength={100} onChange={(event) => updateSection('basics', { ...draft.basics, country: event.target.value })} /></label>
     </div>
-    <p className="onboarding-unset-note">برای جلوگیری از تبدیل اشتباه، ورودی‌های بدنی در این نسخه فقط با kg و cm دریافت و canonical ذخیره می‌شوند.</p>
+    <p className="onboarding-unset-note">ورودی‌های بدنی در این نسخه با kg و cm دریافت و canonical ذخیره می‌شوند تا تبدیل واحد مبهم وارد Planner نشود.</p>
     <fieldset><legend>جنسیت</legend><ChoiceGrid value={draft.basics.gender} onChange={(gender) => updateSection('basics', { ...draft.basics, gender })} options={[{ value: 'male', label: 'مرد' }, { value: 'female', label: 'زن' }, { value: 'other', label: 'سایر' }, { value: 'prefer-not-to-say', label: 'ترجیح می‌دهم نگویم' }]} /></fieldset>
   </>;
 
@@ -139,7 +153,6 @@ function StepContent({
       <NumberField label="درصد چربی بدن" value={draft.body.bodyFatPercent} min={2} max={70} step={0.1} suffix="%" onChange={(bodyFatPercent) => updateSection('body', { ...draft.body, bodyFatPercent })} />
       <NumberField label="وزن هدف" value={draft.body.targetWeightKg} min={25} max={350} step={0.1} suffix="kg" onChange={(targetWeightKg) => updateSection('body', { ...draft.body, targetWeightKg })} />
     </div>
-    <ToggleRow checked={draft.body.progressPhotoOptIn} onChange={(progressPhotoOptIn) => updateSection('body', { ...draft.body, progressPhotoOptIn })} title="مایلم بعداً عکس پیشرفت اضافه کنم" description="در این مرحله هیچ عکسی آپلود نمی‌شود." />
   </>;
 
   if (step === 5) return <>
@@ -203,32 +216,41 @@ function StepContent({
   </>;
 
   if (step === 10) {
-    const days = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'];
-    const equipment = ['دمبل', 'هالتر', 'کابل', 'کش تمرینی', 'نیمکت', 'دستگاه‌های باشگاه', 'بارفیکس', 'تردمیل/دوچرخه'];
+    const toggleEquipment = (equipment: EquipmentId) => {
+      const next = equipment === 'bodyweight'
+        ? (draft.availability.equipment.includes('bodyweight') ? [] : ['bodyweight'] as EquipmentId[])
+        : toggleValue(draft.availability.equipment.filter((item) => item !== 'bodyweight'), equipment);
+      updateSection('availability', { ...draft.availability, equipment: next });
+    };
     return <>
-      <header className="onboarding-step-title"><span>زمان و تجهیزات</span><h1>برنامه باید در زندگی واقعی جا شود</h1><p>ظرفیت واقعی بهتر از برنامه‌ای است که روی کاغذ عالی و در عمل غیرقابل اجرا باشد.</p></header>
+      <header className="onboarding-step-title"><span>زمان و تجهیزات</span><h1>برنامه باید در زندگی واقعی جا شود</h1><p>ظرفیت و ابزار واقعی را ثبت کن تا Planner حرکت غیرقابل اجرا پیشنهاد ندهد.</p></header>
       <ChoiceGrid value={draft.availability.location} onChange={(location) => updateSection('availability', { ...draft.availability, location })} options={[{ value: 'home', label: 'خانه' }, { value: 'gym', label: 'باشگاه' }, { value: 'both', label: 'هر دو' }]} />
       <div className="onboarding-grid onboarding-grid--2"><NumberField label="روز تمرین در هفته" value={draft.availability.daysPerWeek} min={1} max={6} onChange={(daysPerWeek) => updateSection('availability', { ...draft.availability, daysPerWeek })} /><label>مدت هر جلسه<select value={draft.availability.sessionDuration ?? ''} onChange={(event) => updateSection('availability', { ...draft.availability, sessionDuration: event.target.value ? Number(event.target.value) as OnboardingDraft['availability']['sessionDuration'] : null })}><option value="">انتخاب کن</option>{[30,45,60,75,90].map((minute) => <option key={minute} value={minute}>{minute.toLocaleString('fa-IR')} دقیقه</option>)}</select></label></div>
-      <fieldset><legend>روزهای ترجیحی <small className="onboarding-optional">اختیاری</small></legend><div className="onboarding-chip-grid">{days.map((day) => <button type="button" key={day} className={draft.availability.preferredDays.includes(day) ? 'is-selected' : ''} aria-pressed={draft.availability.preferredDays.includes(day)} onClick={() => updateSection('availability', { ...draft.availability, preferredDays: toggleString(draft.availability.preferredDays, day) })}>{day}</button>)}</div></fieldset>
-      <fieldset><legend>تجهیزات در دسترس <small className="onboarding-optional">اختیاری</small></legend><div className="onboarding-chip-grid">{equipment.map((item) => <button type="button" key={item} className={draft.availability.equipment.includes(item) ? 'is-selected' : ''} aria-pressed={draft.availability.equipment.includes(item)} onClick={() => updateSection('availability', { ...draft.availability, equipment: toggleString(draft.availability.equipment, item) })}>{item}</button>)}</div></fieldset>
+      <fieldset><legend>روزهای ترجیحی <small className="onboarding-optional">اختیاری</small></legend><div className="onboarding-chip-grid">{weekdayOptions.map((day) => <button type="button" key={day.value} className={draft.availability.preferredDays.includes(day.value) ? 'is-selected' : ''} aria-pressed={draft.availability.preferredDays.includes(day.value)} onClick={() => updateSection('availability', { ...draft.availability, preferredDays: toggleValue(draft.availability.preferredDays, day.value) })}>{day.label}</button>)}</div></fieldset>
+      <fieldset><legend>تجهیزات در دسترس</legend><div className="onboarding-chip-grid onboarding-chip-grid--equipment">{equipmentOptions.map((item) => <button type="button" key={item.value} className={draft.availability.equipment.includes(item.value) ? 'is-selected' : ''} aria-pressed={draft.availability.equipment.includes(item.value)} onClick={() => toggleEquipment(item.value)}><strong>{item.label}</strong>{item.description ? <small>{item.description}</small> : null}</button>)}</div></fieldset>
       <label>تجهیزات دیگر <small className="onboarding-optional">اختیاری</small><input maxLength={700} value={draft.availability.customEquipment} onChange={(event) => updateSection('availability', { ...draft.availability, customEquipment: event.target.value })} /></label>
       <label>زمان ترجیحی<select value={nullableSelectValue(draft.availability.preferredTime)} onChange={(event) => updateSection('availability', { ...draft.availability, preferredTime: (event.target.value || null) as OnboardingDraft['availability']['preferredTime'] })}><option value="">انتخاب کن</option><option value="morning">صبح</option><option value="afternoon">بعدازظهر</option><option value="evening">عصر/شب</option><option value="flexible">انعطاف‌پذیر</option></select></label>
+      <label>محدودیت زمانی یا شیفت کاری <small className="onboarding-optional">اختیاری</small><textarea maxLength={2000} value={draft.availability.scheduleNotes} onChange={(event) => updateSection('availability', { ...draft.availability, scheduleNotes: event.target.value })} placeholder="مثلاً هفته‌های شیفت شب یا روزهایی که فقط ۳۰ دقیقه فرصت دارم" /></label>
     </>;
   }
 
   if (step === 11) return <>
     <header className="onboarding-step-title"><span>ترجیحات</span><h1>NeoFit چطور با تو کار کند؟</h1><p>این‌ها preference هستند؛ ایمنی و داده واقعی همیشه اولویت بالاتری دارند.</p></header>
-    <label>شدت تمرین<select value={nullableSelectValue(draft.preferences.intensity)} onChange={(event) => updateSection('preferences', { ...draft.preferences, intensity: (event.target.value || null) as OnboardingDraft['preferences']['intensity'] })}><option value="">انتخاب کن</option><option value="gentle">ملایم</option><option value="moderate">متوسط</option><option value="challenging">چالش‌برانگیز</option></select></label>
-    <label>میزان هوازی<select value={nullableSelectValue(draft.preferences.cardioPreference)} onChange={(event) => updateSection('preferences', { ...draft.preferences, cardioPreference: (event.target.value || null) as OnboardingDraft['preferences']['cardioPreference'] })}><option value="">انتخاب کن</option><option value="low">کم</option><option value="balanced">متعادل</option><option value="high">زیاد</option></select></label>
-    <label>سبک تمرین<select value={nullableSelectValue(draft.preferences.trainingStyle)} onChange={(event) => updateSection('preferences', { ...draft.preferences, trainingStyle: (event.target.value || null) as OnboardingDraft['preferences']['trainingStyle'] })}><option value="">انتخاب کن</option><option value="resistance">مقاومتی</option><option value="functional">عملکردی</option><option value="mixed">ترکیبی</option></select></label>
-    <label>تنوع برنامه<select value={nullableSelectValue(draft.preferences.variety)} onChange={(event) => updateSection('preferences', { ...draft.preferences, variety: (event.target.value || null) as OnboardingDraft['preferences']['variety'] })}><option value="">انتخاب کن</option><option value="stable">ثابت‌تر</option><option value="balanced">متعادل</option><option value="varied">متنوع</option></select></label>
-    <label>ساختار تغذیه<select value={nullableSelectValue(draft.preferences.nutritionStrictness)} onChange={(event) => updateSection('preferences', { ...draft.preferences, nutritionStrictness: (event.target.value || null) as OnboardingDraft['preferences']['nutritionStrictness'] })}><option value="">انتخاب کن</option><option value="flexible">انعطاف‌پذیر</option><option value="structured">ساختاریافته</option><option value="strict">دقیق‌تر</option></select></label>
-    <label>لحن Coach<select value={nullableSelectValue(draft.preferences.coachingTone)} onChange={(event) => updateSection('preferences', { ...draft.preferences, coachingTone: (event.target.value || null) as OnboardingDraft['preferences']['coachingTone'] })}><option value="">انتخاب کن</option><option value="supportive">حمایتی</option><option value="direct">مستقیم</option><option value="analytical">تحلیلی</option></select></label>
-    <label>میزان یادآوری در آینده<select value={nullableSelectValue(draft.preferences.reminderLevel)} onChange={(event) => updateSection('preferences', { ...draft.preferences, reminderLevel: (event.target.value || null) as OnboardingDraft['preferences']['reminderLevel'] })}><option value="">انتخاب کن</option><option value="minimal">کم</option><option value="normal">معمولی</option><option value="high">زیاد</option></select></label>
+    <PreferenceGroup title="سبک تمرین" description="احساس کلی و ساختار تمرین را مشخص کن.">
+      <label>شدت تمرین<select value={nullableSelectValue(draft.preferences.intensity)} onChange={(event) => updateSection('preferences', { ...draft.preferences, intensity: (event.target.value || null) as OnboardingDraft['preferences']['intensity'] })}><option value="">انتخاب کن</option><option value="gentle">ملایم</option><option value="moderate">متوسط</option><option value="challenging">چالش‌برانگیز</option></select></label>
+      <label>میزان هوازی<select value={nullableSelectValue(draft.preferences.cardioPreference)} onChange={(event) => updateSection('preferences', { ...draft.preferences, cardioPreference: (event.target.value || null) as OnboardingDraft['preferences']['cardioPreference'] })}><option value="">انتخاب کن</option><option value="low">کم</option><option value="balanced">متعادل</option><option value="high">زیاد</option></select></label>
+      <label>نوع تمرین<select value={nullableSelectValue(draft.preferences.trainingStyle)} onChange={(event) => updateSection('preferences', { ...draft.preferences, trainingStyle: (event.target.value || null) as OnboardingDraft['preferences']['trainingStyle'] })}><option value="">انتخاب کن</option><option value="resistance">مقاومتی</option><option value="functional">عملکردی</option><option value="mixed">ترکیبی</option></select></label>
+      <label>تنوع برنامه<select value={nullableSelectValue(draft.preferences.variety)} onChange={(event) => updateSection('preferences', { ...draft.preferences, variety: (event.target.value || null) as OnboardingDraft['preferences']['variety'] })}><option value="">انتخاب کن</option><option value="stable">ثابت‌تر</option><option value="balanced">متعادل</option><option value="varied">متنوع</option></select></label>
+    </PreferenceGroup>
+    <PreferenceGroup title="تغذیه و Coach" description="میزان ساختار و لحن همراهی را مشخص کن.">
+      <label>ساختار تغذیه<select value={nullableSelectValue(draft.preferences.nutritionStrictness)} onChange={(event) => updateSection('preferences', { ...draft.preferences, nutritionStrictness: (event.target.value || null) as OnboardingDraft['preferences']['nutritionStrictness'] })}><option value="">انتخاب کن</option><option value="flexible">انعطاف‌پذیر</option><option value="structured">ساختاریافته</option><option value="strict">دقیق‌تر</option></select></label>
+      <label>لحن Coach<select value={nullableSelectValue(draft.preferences.coachingTone)} onChange={(event) => updateSection('preferences', { ...draft.preferences, coachingTone: (event.target.value || null) as OnboardingDraft['preferences']['coachingTone'] })}><option value="">انتخاب کن</option><option value="supportive">حمایتی</option><option value="direct">مستقیم</option><option value="analytical">تحلیلی</option></select></label>
+    </PreferenceGroup>
+    <p className="onboarding-unset-note">تنظیم یادآوری‌ها را الان نمی‌پرسیم؛ تا وقتی delivery واقعی ساخته نشده، این تصمیم به زمان استفاده موکول می‌شود.</p>
   </>;
 
   if (step === 12) return <>
-    <header className="onboarding-step-title"><span>مرور</span><h1>قبل از نهایی‌کردن، جواب‌ها را ببین</h1><p>هر بخش را می‌توانی مستقیم ویرایش کنی؛ نیازی نیست کل مسیر را عقب بروی.</p></header>
+    <header className="onboarding-step-title"><span>مرور و ایمنی</span><h1>قبل از ساخت دوره، همه چیز را یک‌جا ببین</h1><p>هر بخش را مستقیم ویرایش کن. جمع‌بندی ایمنی همین‌جا انجام می‌شود تا دو صفحه عبوری اضافه نداشته باشیم.</p></header>
     <div className="onboarding-review-grid">
       <ReviewCard title="هدف" editHref="/onboarding/goal"><p>{draft.goal.primaryGoal ? goalLabels[draft.goal.primaryGoal] : 'ثبت نشده'}</p><p>{draft.goal.targetTimeline ?? 'سرعت انتخاب نشده'}</p></ReviewCard>
       <ReviewCard title="مشخصات" editHref="/onboarding/basics"><p>{draft.basics.name || 'نام ثبت نشده'}</p><p>{draft.basics.weightKg === null ? 'وزن ثبت نشده' : `${draft.basics.weightKg.toLocaleString('fa-IR')} kg`}</p></ReviewCard>
@@ -237,16 +259,7 @@ function StepContent({
       <ReviewCard title="تغذیه" editHref="/onboarding/nutrition"><p>{draft.nutrition.dietType ?? 'الگوی غذایی ثبت نشده'}</p><p>{draft.nutrition.allergies.length.toLocaleString('fa-IR')} حساسیت ثبت‌شده</p></ReviewCard>
       <ReviewCard title="تمرین و زمان" editHref="/onboarding/availability"><p>{draft.availability.daysPerWeek === null ? 'روز تمرین ثبت نشده' : `${draft.availability.daysPerWeek.toLocaleString('fa-IR')} روز در هفته`}</p><p>{draft.availability.sessionDuration === null ? 'مدت جلسه ثبت نشده' : `${draft.availability.sessionDuration.toLocaleString('fa-IR')} دقیقه`}</p></ReviewCard>
     </div>
-  </>;
-
-  if (step === 13) return <>
-    <header className="onboarding-step-title"><span>کنترل ایمنی</span><h1>قیدهای مهم مشخص‌اند</h1><p>این جمع‌بندی deterministic است و هیچ مدل AI اجازه ندارد محدودیت پزشکی یا Nutrition authority را دور بزند.</p></header>
     <div className="onboarding-analysis-card"><h3>قواعد ایمنی فعال</h3><ul>{preview.healthCautions.map((item) => <li key={item}>{item}</li>)}</ul></div>
-    <div className="onboarding-analysis-card"><h3>ظرفیت زمانی</h3><p>{preview.trainingDays === null || preview.sessionMinutes === null ? 'ظرفیت تمرین هنوز کامل گزارش نشده است.' : `${preview.trainingDays.toLocaleString('fa-IR')} جلسه در هفته، هر جلسه حدود ${preview.sessionMinutes.toLocaleString('fa-IR')} دقیقه.`}</p></div>
-  </>;
-
-  if (step === 14) return <>
-    <header className="onboarding-step-title"><span>آمادگی داده</span><h1>ورودی دوره آماده است</h1><p>این برنامه نهایی AI نیست؛ فقط نشان می‌دهد Planner بعدی چه ظرفیت زمانی‌ای را باید رعایت کند.</p></header>
     <div className="onboarding-plan-preview"><div><span>روز تمرین</span><strong>{preview.trainingDays === null ? '—' : preview.trainingDays.toLocaleString('fa-IR')}</strong></div><div><span>مدت جلسه</span><strong>{preview.sessionMinutes === null ? '—' : `${preview.sessionMinutes.toLocaleString('fa-IR')} دقیقه`}</strong></div></div>
     <div className="onboarding-boundary-note"><strong>Nutrition Core</strong><p>{NUTRITION_AUTHORITY_NOTE}</p></div>
   </>;
@@ -254,11 +267,10 @@ function StepContent({
   return <>
     <header className="onboarding-step-title"><span>دوره</span><h1>بازه دوره را مشخص کن</h1><p>فقط تاریخ، مدت و رضایت ساخت دوره ثبت می‌شود؛ هنوز هیچ برنامه‌ای را ساخته‌شده وانمود نمی‌کنیم.</p></header>
     <div className="onboarding-grid onboarding-grid--2">
-      <label>تاریخ شروع<input type="date" value={draft.confirmation.startDate} onChange={(event) => updateSection('confirmation', { ...draft.confirmation, startDate: event.target.value })} /></label>
+      <label>تاریخ شروع<input type="date" min={localToday()} value={draft.confirmation.startDate} onChange={(event) => updateSection('confirmation', { ...draft.confirmation, startDate: event.target.value })} /></label>
       <NumberField label="مدت دوره" value={draft.confirmation.programDurationDays} min={PROGRAM_DURATION_MIN_DAYS} max={PROGRAM_DURATION_MAX_DAYS} suffix="روز" onChange={(programDurationDays) => updateSection('confirmation', { ...draft.confirmation, programDurationDays })} />
     </div>
     <p className="onboarding-unset-note">بازه فعلی {PROGRAM_DURATION_MIN_DAYS.toLocaleString('fa-IR')} تا {PROGRAM_DURATION_MAX_DAYS.toLocaleString('fa-IR')} روز است.</p>
-    <div className="onboarding-boundary-note"><strong>اعلان‌ها بعداً</strong><p>یادآوری تمرین، وعده، آب و گزارش هفتگی تا وقتی persistence و delivery واقعی ندارند در Onboarding از تو پرسیده نمی‌شوند.</p></div>
     <ToggleRow checked={draft.confirmation.finalConsent} onChange={(finalConsent) => updateSection('confirmation', { ...draft.confirmation, finalConsent })} title="اطلاعات را مرور کرده‌ام و اجازه می‌دهم NeoFit برای این دوره برنامه تمرین و تغذیه هماهنگ بسازد" />
   </>;
 }
