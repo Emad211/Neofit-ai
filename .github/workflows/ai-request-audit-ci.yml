@@ -12,6 +12,7 @@ on:
       - 'web/package.json'
       - 'web/.env.example'
       - 'supabase/migrations/20260809131359_ai_request_audit_budget.sql'
+      - 'supabase/migrations/20260809132552_harden_ai_request_audit_rpc_invoker.sql'
       - 'docs/NEOFIT_STAGE15_AI_REQUEST_AUDIT_BUDGET.md'
       - 'docs/NEOFIT_GAP_AUDIT_2026-08-08.md'
       - '.github/workflows/ai-request-audit-ci.yml'
@@ -26,6 +27,7 @@ on:
       - 'web/package.json'
       - 'web/.env.example'
       - 'supabase/migrations/20260809131359_ai_request_audit_budget.sql'
+      - 'supabase/migrations/20260809132552_harden_ai_request_audit_rpc_invoker.sql'
       - 'docs/NEOFIT_STAGE15_AI_REQUEST_AUDIT_BUDGET.md'
       - 'docs/NEOFIT_GAP_AUDIT_2026-08-08.md'
       - '.github/workflows/ai-request-audit-ci.yml'
@@ -82,15 +84,20 @@ jobs:
         run: |
           set -euo pipefail
           migration='supabase/migrations/20260809131359_ai_request_audit_budget.sql'
+          hardening='supabase/migrations/20260809132552_harden_ai_request_audit_rpc_invoker.sql'
           grep -q 'create table public.ai_request_audit' "$migration"
           grep -q 'enable row level security' "$migration"
-          grep -q 'grant select on table public.ai_request_audit to authenticated' "$migration"
           grep -q 'pg_advisory_xact_lock' "$migration"
           grep -q "set search_path = ''" "$migration"
+          grep -q 'security invoker' "$hardening"
+          grep -q 'grant insert (user_id, request_kind)' "$hardening"
+          grep -q 'ai_request_audit_insert_own_pending' "$hardening"
+          grep -q 'ai_request_audit_complete_own_pending' "$hardening"
+          ! grep -qi 'grant delete' "$hardening"
           grep -q 'reserve_ai_request' web/lib/supabase/database.types.ts
           grep -q 'complete_ai_request' web/lib/supabase/database.types.ts
           grep -q 'reserveAiRequest(authContext, requestKind)' web/lib/ai/provider-router.ts
-          grep -q "generateWithProviderFallback.*auth, 'coach'" web/app/api/ai/coach/route.ts || grep -q "}, auth, 'coach')" web/app/api/ai/coach/route.ts
+          grep -q "}, auth, 'coach')" web/app/api/ai/coach/route.ts
           grep -q 'Retry-After' web/app/api/ai/coach/route.ts
           grep -q 'Retry-After' web/app/api/ai/respond/route.ts
           if grep -R -E 'countTokens|count_tokens' web/lib/ai web/app/api/ai; then
