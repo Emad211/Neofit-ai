@@ -115,8 +115,13 @@ jobs:
           grep -q "type: 'video'" web/lib/ai/providers/google.ts
           grep -q 'runYouTubeSearchTool' web/app/api/ai/coach/route.ts
           grep -q 'prefers-reduced-motion:reduce' web/app/agent-tools-polish.css
-          if grep -R -E 'captions|transcript|youtube-dl|yt-dlp|youtube\.com/embed|<iframe' web/lib/integrations web/lib/coach web/components/coach-screen.tsx; then
-            echo 'Forbidden transcript scraping or automatic YouTube embed detected.' >&2
+          if grep -R -E 'captions|transcript|youtube-dl|yt-dlp|youtube\.com/embed|<iframe' \
+            web/lib/integrations \
+            web/lib/coach/external-tool-router.ts \
+            web/lib/coach/system-prompt.ts \
+            web/lib/ai/providers/google.ts \
+            web/components/coach-screen.tsx; then
+            echo 'Forbidden YouTube transcript scraping or automatic embed detected.' >&2
             exit 1
           fi
           if grep -R -E 'encryptProviderApiKey|decryptProviderApiKey|encrypted_provider_credentials' web/lib/integrations web/app/api/integrations; then
