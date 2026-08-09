@@ -17,6 +17,16 @@ import {
 } from './request-audit';
 import type { AiGenerationInput, AiGenerationResult, AiProvider } from './types';
 
+export class AiCapabilityUnavailableError extends Error {
+  readonly capability: 'youtube_video';
+
+  constructor(capability: 'youtube_video') {
+    super(`AI capability unavailable: ${capability}`);
+    this.name = 'AiCapabilityUnavailableError';
+    this.capability = capability;
+  }
+}
+
 function cooldownActive(value: string | null): boolean {
   return value ? Date.parse(value) > Date.now() : false;
 }
@@ -29,7 +39,9 @@ export async function generateWithProviderFallback(
   const authContext = context ?? await authenticatedAiContext();
   const { userId, credentials } = await listStoredCredentials(authContext);
   const byProvider = new Map(credentials.map((credential) => [credential.provider, credential]));
-  const eligibleProviders = AI_PROVIDER_PRIORITY.filter((provider) => {
+  const requiresYouTubeVideo = Boolean(request.media?.some((item) => item.type === 'youtube_video'));
+  const priority = requiresYouTubeVideo ? (['google'] as const) : AI_PROVIDER_PRIORITY;
+  const eligibleProviders = priority.filter((provider) => {
     const credential = byProvider.get(provider);
     return Boolean(
       credential
@@ -40,6 +52,7 @@ export async function generateWithProviderFallback(
 
   // Do not consume budget when there is no provider request to make.
   if (eligibleProviders.length === 0) {
+    if (requiresYouTubeVideo) throw new AiCapabilityUnavailableError('youtube_video');
     throw new Error('No active AI provider credential is available.');
   }
 
@@ -99,6 +112,7 @@ export async function generateWithProviderFallback(
         };
       } catch (error) {
         lastError = error;
+        if (requiresYouTubeVideo) throw error;
         if (!(error instanceof ProviderRequestError) || !shouldFallback(error)) throw error;
         await markCredentialFailure({
           provider,

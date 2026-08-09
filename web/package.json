@@ -24,6 +24,8 @@
     "test:workout-player": "node --import tsx --test tests/workout-player-persistence.test.ts",
     "test:workout-plan": "node --import tsx --test tests/workout-plan-persistence.test.ts",
     "test:nutrition-plan": "node --import tsx --test tests/nutrition-plan-persistence.test.ts",
+    "test:youtube-tools": "node --import tsx --test tests/youtube-agent-tools.test.ts",
+    "test:ui-polish": "node --import tsx --test tests/ui-polish-accessibility.test.ts",
     "test:onboarding": "node --import tsx --test tests/onboarding-foundation.test.ts",
     "test:coach": "node --import tsx --test tests/coach-readonly.test.ts",
     "check:adapter": "npm run typecheck && npm run test:adapter",

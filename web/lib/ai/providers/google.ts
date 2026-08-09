@@ -25,6 +25,27 @@ function googleText(payload: GoogleInteraction): string {
     .trim();
 }
 
+function youtubeUri(value: string): string {
+  let url: URL;
+  try { url = new URL(value); }
+  catch { throw new Error('Invalid YouTube media URL.'); }
+  const host = url.hostname.toLowerCase().replace(/^www\./, '');
+  if (host !== 'youtube.com' && host !== 'm.youtube.com' && host !== 'youtu.be') {
+    throw new Error('Only YouTube media URLs are supported.');
+  }
+  return url.toString();
+}
+
+function interactionInput(request: AiGenerationInput): string | Array<{ type: 'text'; text: string } | { type: 'video'; uri: string }> {
+  const media = request.media ?? [];
+  if (media.length === 0) return request.input;
+  if (media.length > 1) throw new Error('Only one YouTube video is supported per NeoFit Coach request.');
+  return [
+    { type: 'text', text: request.input },
+    { type: 'video', uri: youtubeUri(media[0]!.url) },
+  ];
+}
+
 export async function validateGoogleCredential(apiKey: string, modelId: string): Promise<void> {
   const response = await fetchWithTimeout(
     `${GOOGLE_API_BASE}/models/${encodeURIComponent(modelId)}`,
@@ -49,7 +70,7 @@ export async function generateGoogle(
       },
       body: JSON.stringify({
         model: modelId,
-        input: request.input,
+        input: interactionInput(request),
         ...(request.systemInstruction ? { system_instruction: request.systemInstruction } : {}),
         store: false,
       }),

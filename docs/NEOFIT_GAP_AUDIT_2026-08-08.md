@@ -1,13 +1,13 @@
 # NeoFit Gap Audit — current Preview cycle
 
-Status: canonical current backlog. Detailed design/incident history stays in the individual Stage documents; this file tracks what is still materially incomplete.
+Status: canonical current backlog. Detailed implementation/incident history lives in the Stage documents; this file tracks only current truth and remaining gaps.
 
 ## Severity
 
-- **P0** — identity, privacy, data integrity or runtime blocker
-- **P1** — core feature still incomplete/fake or an important request-cost gap
-- **P2** — important pre-Production completeness/security
-- **P3** — UX, accessibility, visual and expansion polish
+- **P0** — identity/privacy/data-integrity/runtime blocker
+- **P1** — core feature incomplete/fake or important request/cost gap
+- **P2** — pre-Production completeness/security
+- **P3** — visual/accessibility/interaction polish
 
 ---
 
@@ -15,19 +15,19 @@ Status: canonical current backlog. Detailed design/incident history stays in the
 
 ### Auth mailbox/session proof
 
-Code/local HTTP contracts are hardened, but the latest stacked Preview must still prove with real mailboxes:
+Code/local HTTP contracts are hardened. Latest stacked Preview still needs real-mailbox/device proof:
 
-- signup → Confirm Signup → explicit scanner-safe verification → session → onboarding;
-- forgot password → Recovery → new password;
-- Password Changed notification delivery;
+- signup → scanner-safe Confirm Signup → session → onboarding;
+- recovery → new password;
+- Password Changed email delivery;
 - Secure Email Change with old + new mailbox;
-- Browser A + Browser B revoke-other-sessions behavior.
+- two-browser revoke-other-sessions.
 
-Hosted Auth settings currently confirmed: 12-character minimum, current-password enforcement, Secure Email Change, OTP expiration 3600, custom Preview SMTP and NeoFit TokenHash templates. Secure Password Change remains intentionally OFF until its reauthentication nonce UX is implemented/tested. Leaked-password protection is plan-gated on the current Supabase Free project.
+Hosted settings already configured: min password 12, current-password enforcement, Secure Email Change, OTP 3600, custom Preview SMTP and NeoFit TokenHash templates. Secure Password Change remains intentionally OFF until exact reauthentication nonce UX exists. Leaked-password protection remains plan-gated on current Free Supabase.
 
 ### Latest Preview runtime stack
 
-GitHub CI/builds are the current source of engineering proof while Vercel build-rate quota is limiting deployments. Do not create another Production project. When quota is available, deploy the latest green stacked candidate once to the existing Preview Lab and run all hosted E2E on that single candidate.
+Vercel is still build-rate constrained. Do not create another project or Production deployment. Keep using GitHub CI + Next production builds until one latest stacked candidate can be deployed to the existing Preview Lab.
 
 ---
 
@@ -35,131 +35,121 @@ GitHub CI/builds are the current source of engineering proof while Vercel build-
 
 ### Progress measurements — CODE REAL; HOSTED QA OPEN
 
-`body_measurements` replaced synthetic account progress. Need real-account add/edit/refresh/history proof.
+`body_measurements` replaces synthetic account progress. Real-account add/refresh/history proof remains.
 
 ### Nutrition goals — ACCOUNT DEMO LEAK FIXED
 
-Account goals are real-or-empty. Guest targets remain explicitly Demo.
+Account goals are real-or-empty. Guest targets remain explicit Demo.
 
-### Workout Plan — STAGE 16 CODE/SCHEMA/CI GREEN; HOSTED E2E OPEN
+### Workout Plan — STAGE 16 GREEN; HOSTED E2E OPEN
 
-Account plan is versioned/immutable under RLS, one active version/user, Player stores plan id/version, plan activation is blocked during active sessions, and Guest fixture is Demo-only. Need hosted empty-state/version/player provenance proof.
+Versioned immutable user-owned plan, one active version, Player plan provenance, mid-session activation guard, Guest demo-only. Need real runtime empty-state/version/resume proof.
 
-### Nutrition Plan — STAGE 17 CODE/SCHEMA/CI GREEN; HOSTED E2E OPEN
+### Nutrition Plan — STAGE 17 GREEN; HOSTED E2E OPEN
 
-Account plan stores only versioned catalog identities/portion counts. Stored calorie/macro claims are rejected; exact source-version mismatch fails closed; Guest weekly fixture is Demo-only. Need hosted activation/resolution/version proof.
+Versioned plan stores only catalog identity/version + portion count. Stored nutrition claims are rejected; source-version mismatch fails closed; Guest demo-only. Need real activation/resolution proof.
 
-### Nutrition Plan meal → diary — STAGE 18 CODE/SCHEMA/CI GREEN; HOSTED E2E OPEN
+### Nutrition Plan → diary — STAGE 18 GREEN; HOSTED E2E OPEN
 
-The account can now explicitly `ثبت برای امروز`.
+User-initiated `ثبت برای امروز` is live in code:
 
-Current contract:
-
-- Browser sends only plan id/version/meal id/local date;
-- live Auth validation before write;
-- exact active plan reread under RLS;
-- catalog id/source-version revalidation;
-- Shared Nutrition Core produces every estimate;
-- deterministic SHA-256 mutation ids;
+- Browser sends plan id/version/meal id/local date only;
+- live Auth validation;
+- plan/catalog revalidation under RLS;
+- Shared Nutrition Core creates every estimate;
 - one bulk idempotent upsert;
-- exact composite provenance `(plan_id,user_id,version)`;
+- SHA-256 mutation identity;
+- owner+plan+version composite provenance;
 - all-null/all-present provenance shape;
-- covering FK index verified by Performance Advisor;
-- Guest demo cannot use account plan logging.
+- covering FK index.
 
-Final green code runs before doc sync:
-
-- Diary Logging CI `31319808827`
-- Provenance Integrity CI `31319808832`
-
-Hosted proof: log one deliberate plan meal, verify Core estimates/provenance, repeat click with unchanged row count, then verify Today/Nutrition totals exactly once.
+Need real runtime log → repeat click → unchanged row count → Today/Nutrition totals exactly once.
 
 ### Food catalog coverage — OPEN / HIGH P1
 
-Current Web catalog is still a small IFKB-shaped seeded set. This is now one of the biggest truth/completeness limits for useful Nutrition Plan generation, food search and Coach nutrition suggestions.
+Current Web catalog is still a small seeded IFKB-shaped set. This is now the largest data-completeness limit for useful Nutrition search/plans/Coach.
 
-Next expansion must resolve through real/versioned IFKB/FNDDS/SR-compatible records; broad AI-generated calories/macros remain prohibited.
+Next catalog work must expand authoritative/versioned food resolution while keeping Nutrition Core authoritative. Do not let LLM-generated calorie/macro values bypass catalog/Core.
 
 ---
 
-## P1 — AI runtime / agent architecture
+## P1 — AI / agent runtime
 
 ### Google BYOK — CODE READY; HOSTED PROVIDER PROOF OPEN
 
-Encrypted user key vault, Google-first routing and model preference exist. Need a real hosted Save/Test + Coach request on latest stack.
+Encrypted user vault, Google-first routing and model preference exist. Need real Save/Test + Coach call on latest Preview.
 
 ### AvalAI fallback — CODE READY; HOSTED CONTROLLED PROOF OPEN
 
-Need a deliberate fallback-eligible Google failure followed by AvalAI success.
+Need deliberate fallback-eligible Google failure followed by AvalAI success.
 
 ### AI request audit/budget — STAGE 15 GREEN; HOSTED PROOF OPEN
 
-One user reservation covers the entire Google→AvalAI chain; 429 + Retry-After, metadata-only audit, no prompt/output/key logging and no token-count preflight. Need real Google success row and controlled fallback row.
+One reservation covers Google→AvalAI chain; metadata-only audit; 429 + Retry-After; no prompt/output/key logging; no countTokens preflight. Need real success/fallback audit rows.
 
-### Coach request-budget UX — GAP
+### YouTube Agent Tool — STAGE 19 CODE/SCHEMA/CI GREEN; HOSTED E2E OPEN
 
-Stage 15 backend returns `429 + Retry-After`, but current Coach UI does not yet surface a specific cooldown message; it falls into generic failure copy. Stage 19 should parse this explicitly and prevent blind re-submit.
+YouTube is now a separate read-only external integration, not a Provider.
 
-### YouTube agent integration — OPEN / STAGE 19
+Current contract:
 
-YouTube must be a real read-only external Agent Tool, not a decorative link.
+- separate user-owned encrypted YouTube Data API v3 key;
+- Save/Test uses cheap `videos.list`, no search;
+- normal Coach turns make zero YouTube calls;
+- direct public YouTube URL makes zero Data API calls and is passed to Google Gemini video input;
+- explicit search uses deterministic local intent, one `search.list`, one batched `videos.list`, one Coach LLM request;
+- no transcript scraper/caption workaround/automatic iframe;
+- Google-only direct-video capability; no fake AvalAI fallback;
+- exact structured cards returned independently of model prose;
+- external metadata is explicitly untrusted prompt data;
+- metadata-only `agent_tool_audit` stores SHA-256 query fingerprint, not raw query/results;
+- atomic per-user search budget: 3/minute, 30/24h;
+- live DB QA proved attempts 1–3 allowed, 4 denied with retry-after 60 and zero persisted QA rows.
 
-Target architecture:
+Green Stage19 code run before final doc sync: `YouTube Agent Tools CI` `31321927187`.
 
-```text
-Coach intent/tool request
-  -> YouTube discovery/metadata tool
-       -> YouTube Data API v3
-  -> user/model selects a public video
-  -> Gemini video understanding receives the public YouTube URL
-  -> final Coach response may include structured video cards/timestamps
-```
+Hosted proof requires real restricted YouTube key, search cards/audit, direct-video Gemini analysis and cooldown behavior.
 
-Rules:
+### Agent orchestration — READ-ONLY FOUNDATION READY
 
-- Gemini BYOK key is **not** reused as a YouTube Data API credential;
-- YouTube integration credential/quota is separate from AI provider credentials;
-- search only on explicit video/tutorial intent, never every Coach turn;
-- no transcript scraping;
-- no Captions API workaround for arbitrary public videos;
-- public metadata uses official YouTube Data API;
-- Gemini may directly understand public YouTube URLs;
-- video-understanding capability is Google-specific unless another provider is explicitly proven compatible; no fake AvalAI fallback;
-- only render/embed a YouTube player after user intent, not an iframe for every result;
-- external-tool quota/audit remains distinct from LLM request audit.
+Current architecture intentionally remains one deterministic orchestrator + bounded read-only tools. Do not explode into many autonomous agents yet.
 
-### Agent tool orchestration — OPEN
+Next meaningful Agent step should be **typed proposals**, not direct writes:
 
-Current Coach uses a deterministic local context router plus one provider call and is intentionally read-only. This is efficient and should remain the default.
+- propose workout-plan version;
+- propose exercise replacement;
+- propose Nutrition Plan version using catalog identities only;
+- user reviews diff;
+- explicit confirmation creates/activates a new immutable version.
 
-Stage 19 should introduce a **bounded read-only tool layer** beginning with YouTube rather than exploding into many autonomous agents. Meaningful plan mutations remain proposal + explicit confirmation work after hosted runtime proofs.
+No unrestricted SQL or silent plan mutation.
 
 ---
 
 ## P1 — request/performance
 
-### Nutrition/plan route requests — BOUNDED
+### Current core routes — BOUNDED
 
-Current plan display is identity + one active-plan query; catalog resolution is in-process. Stage 18 logging adds one live Auth validation, one plan read and one bulk write. No per-item writes or duplicate pre-read.
+Nutrition plan display: identity + one active-plan query. Plan logging: live Auth + one plan read + one bulk write. YouTube direct URL: no Data API. YouTube search: one atomic reservation + two external API requests + one LLM request.
 
 ### History pagination — OPEN
 
-Future Nutrition history, Workout history, AI audit history and tool-audit pages need explicit range/cursor pagination.
+Nutrition history, Workout history, AI audit history and tool-audit history need explicit cursor/range pagination before large datasets.
 
-### YouTube quota architecture — OPEN
+### Cross-route data waterfalls — CONTINUE AUDIT
 
-YouTube search has its own quota model; discovery must be intentional, bounded, cacheable and observable. Do not use search as an invisible classifier.
+Continue checking Server Components for accidental serial identity/data calls where `Promise.all` or request reuse is safe. Do not merge sources into one giant account snapshot just to reduce code.
 
 ---
 
 ## P2 — Auth/security before Production
 
-- CAPTCHA: real Turnstile/hCaptcha only; no visual fake checkbox.
-- Reauthentication: template exists; exact nonce/elevation product flow still open.
-- Account deletion: no button until recent reauth + scoped privileged delete boundary + Storage cleanup + disposable E2E.
+- CAPTCHA: real Turnstile/hCaptcha only; no fake UI.
+- Reauthentication: template exists; exact nonce/elevation UX open.
+- Account deletion: recent reauth + scoped privileged delete boundary + Storage cleanup + disposable E2E required before button.
 - MFA: enrollment/challenge/recovery UX open.
 - Session timeout/single-session hosted policy not proven.
-- Production mail: replace Gmail Preview SMTP with dedicated transactional provider/domain and SPF/DKIM/DMARC.
+- Production email: move from Gmail Preview SMTP to dedicated transactional provider/domain with SPF/DKIM/DMARC.
 - Leaked-password protection when plan supports it.
 
 ---
@@ -168,71 +158,67 @@ YouTube search has its own quota model; discovery must be intentional, bounded, 
 
 ### Notifications/push — OPEN
 
-No real notification persistence/delivery source yet. Do not ask for push permission before a real delivery path exists.
+No real notification persistence/delivery source. Do not ask for push permission before delivery exists.
 
 ### Reports — OPEN
 
-Reports must consume real Nutrition/Workout/Progress sources and cannot revive old Firebase/Genkit assumptions.
+Must consume real Nutrition/Workout/Progress sources and not revive old Firebase/Genkit assumptions.
 
 ### Body photos/media — OPEN
 
-Requires explicit consent, private Storage RLS, deletion semantics and metadata minimization.
+Requires consent, private Storage RLS, deletion semantics and metadata minimization.
 
 ### Coach conversation persistence — OPEN
 
-Current Coach explicitly resets between devices/sessions. This is truthful but incomplete. If persisted later, store bounded conversation metadata/content with clear privacy/delete semantics rather than browser-only hidden behavior.
+Coach truthfully resets between devices/sessions. If persisted later, require bounded history, delete controls and explicit privacy semantics.
+
+### YouTube result quality controls — OPEN AFTER RUNTIME PROOF
+
+Do not add heuristic channel whitelists or extra LLM ranking before real search QA. First inspect actual result quality, then add minimal deterministic filters if evidence supports them.
 
 ---
 
-## P3 — UI / visual / accessibility polish
+## P3 — UI / visual / accessibility
 
-### Reduced motion — GAP
+### Stage19 accessibility baseline — FIXED
 
-`page-stack` currently animates with no `prefers-reduced-motion` override. Add an accessibility-safe motion contract.
+Global focus-visible coverage, form-font inheritance, common 44px hit targets and prefers-reduced-motion are now present and CI-gated.
 
-### Focus visibility — GAP
+### Coach interaction polish — FIXED BASELINE / RUNTIME QA OPEN
 
-Global focus treatment currently covers button/input more reliably than anchors/select/textarea/custom focusable controls. Make `:focus-visible` consistent across all interactive elements.
+Specific budget cooldown, submit lock, auto-scroll, keyboard behavior, YouTube cards/CTAs and expandable technical metadata exist. Need browser/mobile visual QA after deployment.
 
-### Form typography/interaction consistency — GAP
+### Profile workout fixture leakage — FIXED
 
-Ensure textarea/select/button/input inherit Vazirmatn, hit targets stay >=44px where practical, and disabled/pending states remain visually obvious.
-
-### Coach technical metadata — POLISH GAP
-
-Provider/model/latency/fallback/context metadata is useful for QA but too raw for the primary Persian conversation surface. Keep it accessible in a subtle expandable technical-details treatment instead of competing with the answer.
-
-### Coach interaction polish — GAP
-
-Add explicit budget cooldown UX, better busy/aria state, sensible auto-scroll and keyboard behavior without sending accidental multiline prompts.
+Profile no longer displays Guest `workoutPlan.length` as account truth and does not add a Workout query just for a vanity metric.
 
 ### Empty/error states — CONTINUE AUDIT
 
-Every account route should distinguish: no data yet, unavailable query, Demo guest data and stale/invalid versioned data. Do not collapse these into generic cards.
+Every account route must distinguish no-data, unavailable-query, Guest Demo and invalid/stale versioned data. Continue visual QA route by route.
 
-### Theme setting truth — AUDIT REQUIRED
+### Theme setting truth — OPEN
 
-`user_settings.theme` exists. Verify whether it actually controls UI appearance; if not, either implement it or stop presenting theme as a working preference. Never keep a decorative setting that does nothing.
+`user_settings.theme` exists in schema but current product does not expose a proven end-to-end theme control. Do not present theme as a working preference until implemented. Dark mode is optional, not a blocker.
 
-### Dark mode — OPTIONAL AFTER SETTING TRUTH
+### Visual hierarchy consistency — CONTINUE AUDIT
 
-Not a blocker. Only implement if theme preference is intentionally supported end-to-end.
+After latest deployment, capture mobile/desktop screenshots for Today, Nutrition, Workout, Progress, Profile, Coach, Auth, Onboarding and settings. Fix spacing/typography/card-density based on rendered evidence rather than CSS assumptions.
 
 ---
 
 ## Current recommended order
 
-1. Keep Vercel deploy count at zero while build-rate quota is constrained.
-2. Stage 19: YouTube read-only Agent Tool + Coach/tool UX + accessibility polish.
-3. Audit/fix remaining decorative or non-functional settings and empty/error states.
-4. Expand catalog coverage through authoritative/versioned food resolution.
-5. Deploy the latest green stacked candidate **once** to existing Preview Lab.
+1. Keep Vercel deploy count at zero until the latest stacked candidate is worth one deployment.
+2. Finish Stage19 docs/green final HEAD.
+3. Next polish stage: route-by-route rendered UI/data-truth audit + non-functional settings audit.
+4. Expand catalog coverage through authoritative/versioned resolution.
+5. Deploy latest green stack once to existing Preview Lab.
 6. Run Auth mailbox/session E2E.
-7. Run Google BYOK + Stage 15 audit proof and controlled AvalAI fallback proof.
-8. Runtime-prove Workout/Nutrition plan versioning and Stage 18 idempotent meal logging.
-9. Runtime-prove body measurements/normal diary persistence.
-10. Only then add typed Coach proposal/write actions with explicit user confirmation.
+7. Run Google BYOK + Stage15 audit and controlled AvalAI fallback proof.
+8. Runtime-prove YouTube search/direct-video/tool budget.
+9. Runtime-prove Workout/Nutrition plan flows + Stage18 idempotent logging + Progress.
+10. Only then start typed Coach proposal/write flows with explicit confirmation.
 
 ## Release rule
 
-Preview-only. No Production promotion until core P0/P1 hosted proofs are green with real account/provider/mailbox traffic. No unrestricted SQL or autonomous plan mutation is ever exposed to the model.
+Preview-only. No Production promotion until core P0/P1 hosted proofs are green with real account/provider/mailbox/tool traffic. The model never gets unrestricted database access.

@@ -108,7 +108,7 @@ test('budget failures map to 429 + Retry-After before callers retry blindly', as
     assert.match(route, /AiBudgetExceededError/);
     assert.match(route, /ai_request_budget_exceeded/);
     assert.match(route, /'Retry-After'/);
-    assert.match(route, /status: 429/);
+    assert.match(route, /(?:status:\s*429|\},\s*429\s*,)/);
   }
 });
 

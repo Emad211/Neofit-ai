@@ -7,11 +7,52 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
+      agent_tool_audit: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          failure_code: string | null
+          id: string
+          latency_ms: number | null
+          query_fingerprint: string
+          result_count: number | null
+          status: string
+          tool_name: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          failure_code?: string | null
+          id?: string
+          latency_ms?: number | null
+          query_fingerprint: string
+          result_count?: number | null
+          status?: string
+          tool_name: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          failure_code?: string | null
+          id?: string
+          latency_ms?: number | null
+          query_fingerprint?: string
+          result_count?: number | null
+          status?: string
+          tool_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_request_audit: {
         Row: {
           attempt_count: number
@@ -114,6 +155,57 @@ export type Database = {
           user_id?: string
           waist_cm?: number | null
           weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      encrypted_integration_credentials: {
+        Row: {
+          auth_tag: string
+          ciphertext: string
+          cooldown_until: string | null
+          created_at: string
+          id: string
+          integration: string
+          iv: string
+          key_hint: string
+          key_version: number
+          last_failure_code: string | null
+          last_validated_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auth_tag: string
+          ciphertext: string
+          cooldown_until?: string | null
+          created_at?: string
+          id?: string
+          integration: string
+          iv: string
+          key_hint: string
+          key_version?: number
+          last_failure_code?: string | null
+          last_validated_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auth_tag?: string
+          ciphertext?: string
+          cooldown_until?: string | null
+          created_at?: string
+          id?: string
+          integration?: string
+          iv?: string
+          key_hint?: string
+          key_version?: number
+          last_failure_code?: string | null
+          last_validated_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -228,11 +320,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "nutrition_entries_nutrition_plan_id_fkey"
-            columns: ["nutrition_plan_id"]
+            foreignKeyName: "nutrition_entries_plan_provenance_fk"
+            columns: ["nutrition_plan_id", "user_id", "nutrition_plan_version"]
             isOneToOne: false
             referencedRelation: "nutrition_plans"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "user_id", "version"]
           },
         ]
       }
@@ -700,14 +792,14 @@ export type TablesUpdate<
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
-    }
+    Update: infer U
+  }
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
+      Update: infer U
+    }
       ? U
       : never
     : never

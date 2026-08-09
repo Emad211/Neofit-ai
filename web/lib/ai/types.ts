@@ -12,9 +12,17 @@ export interface AiCredentialMetadata {
   readonly lastFailureCode: string | null;
 }
 
+export interface AiYouTubeVideoInput {
+  readonly type: 'youtube_video';
+  readonly url: string;
+}
+
+export type AiMediaInput = AiYouTubeVideoInput;
+
 export interface AiGenerationInput {
   readonly input: string;
   readonly systemInstruction?: string;
+  readonly media?: readonly AiMediaInput[];
 }
 
 export interface AiGenerationResult {

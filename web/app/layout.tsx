@@ -15,6 +15,7 @@ import './onboarding.css';
 import './coach.css';
 import './account-integration.css';
 import './auth.css';
+import './agent-tools-polish.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(publicAppUrl),
