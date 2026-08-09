@@ -44,14 +44,16 @@ test('YouTube integration uses a separate encrypted credential domain and table'
   assert.doesNotMatch(route, /encryptProviderApiKey|decryptProviderApiKey/);
 });
 
-test('saving or testing a YouTube key never burns search quota', async () => {
+test('saving or testing a YouTube key never burns search quota and uses a valid videos.list part', async () => {
   const route = await web('app/api/integrations/youtube/route.ts');
   assert.match(route, /validateYouTubeApiKey/);
   assert.doesNotMatch(route, /searchYouTubeVideos/);
   const client = await web('lib/integrations/youtube-client.ts');
   const validationBlock = client.slice(client.indexOf('export async function validateYouTubeApiKey'), client.indexOf('export async function searchYouTubeVideos'));
   assert.match(validationBlock, /apiUrl\('videos'/);
-  assert.match(validationBlock, /chart.*mostPopular/s);
+  assert.match(validationBlock, /part', 'snippet'/);
+  assert.match(validationBlock, /chart', 'mostPopular'/);
+  assert.doesNotMatch(validationBlock, /part', 'id'/);
   assert.doesNotMatch(validationBlock, /apiUrl\('search'/);
 });
 
@@ -64,8 +66,27 @@ test('YouTube search is bounded, safe-filtered and uses one batched video metada
   assert.match(client, /relevanceLanguage.*fa/s);
   assert.match(client, /detailsUrl\.searchParams\.set\('id', candidates\.map/);
   assert.equal((client.match(/apiUrl\('search'/g) ?? []).length, 1);
-  assert.equal((client.match(/apiUrl\('videos'/g) ?? []).length, 2); // validation + one search metadata batch
+  assert.equal((client.match(/apiUrl\('videos'/g) ?? []).length, 2);
   assert.doesNotMatch(client, /captions|transcript|youtube-dl|yt-dlp|scrape/i);
+});
+
+test('YouTube search budget is atomically reserved in Postgres before external search', async () => {
+  const migration = await repo('supabase/migrations/20260809153742_reserve_youtube_agent_tool_budget.sql');
+  const audit = await web('lib/integrations/tool-audit.ts');
+  const tool = await web('lib/integrations/youtube-tool.ts');
+  const route = await web('app/api/ai/coach/route.ts');
+  assert.match(migration, /security invoker/);
+  assert.match(migration, /pg_advisory_xact_lock/);
+  assert.match(migration, /created_at >= v_now - interval '60 seconds'/);
+  assert.match(migration, /created_at >= v_now - interval '24 hours'/);
+  assert.match(migration, /v_burst >= 3/);
+  assert.match(migration, /v_daily >= 30/);
+  assert.match(migration, /insert into public\.agent_tool_audit/);
+  assert.match(audit, /reserve_agent_tool_call/);
+  assert.match(audit, /AgentToolBudgetExceededError/);
+  assert.ok(audit.indexOf('reserve_agent_tool_call') < tool.indexOf('searchYouTubeVideos') || tool.includes('beginYouTubeToolAudit'));
+  assert.match(route, /youtube_tool_budget_exceeded/);
+  assert.match(route, /Retry-After/);
 });
 
 test('Coach uses local tool intent and does not hide a YouTube search on every turn', async () => {
