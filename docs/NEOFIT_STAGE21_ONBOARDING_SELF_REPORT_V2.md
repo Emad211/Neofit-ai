@@ -1,114 +1,142 @@
-# NeoFit Stage 21 — Onboarding Self-Report v2
+# NeoFit Stage 21 — Onboarding v2 + AI Credential Gate + Program Contract
 
-Status: design/implementation started; Preview-only; stacked on Stage 20.
+Status: implementation active on `stage21/onboarding-self-report-v2`; Preview-only.
 
-## Why this stage exists
+This stage converts the revised product lifecycle from documentation into executable product behavior. It does not generate a fake plan. The next domain stage is Program Cycle.
 
-Stage 20 found that several values in `createEmptyOnboardingDraft()` are already valid domain answers before a user explicitly chooses them. Examples include sedentary activity, average sleep, medium stress, never smoking, balanced diet, beginner training level, gym location and three training days/week.
-
-That is acceptable for a UI suggestion only if the system can distinguish it from self-report. The current contract cannot reliably do that, and Coach later consumes Onboarding context.
-
-Therefore Stage 21 treats **absence of explicit choice as data**, rather than silently converting product defaults into claimed user facts.
-
-Live Supabase inspection before this redesign found zero `user_onboarding` rows, so the hosted account source can move to v2 before real Onboarding data exists.
-
-## Core rule
-
-A user-report field has three conceptual states:
+## Product flow implemented here
 
 ```text
-unset
-explicitly selected value
-explicitly selected prefer-not-to-say / none (where the domain supports it)
+verified account
+  -> /onboarding/welcome
+  -> validate/store Google AI Studio key in encrypted BYOK vault
+  -> optional AvalAI fallback key
+  -> explicit self-report Onboarding
+  -> choose program start date + duration
+  -> consent to coordinated Training + Nutrition generation
+  -> persist Onboarding schema v2
+  -> /onboarding/ready truth boundary
 ```
 
-`unset` must never render as though a valid answer has already been selected.
+`/onboarding/ready` deliberately does not claim a generated course exists. Stage22 must create Program Cycle and Stage24 must implement the structured planners before the product can advance from this handoff into a real active course.
 
-## Product defaults vs self-report
+## AI credential gate
 
-### Product/default behavior may have technical defaults
+The first Onboarding step owns the product prerequisite but not the secret storage.
 
-Examples:
+- account mode requires an `active` Google credential before step 1 can complete;
+- Google is the required primary provider;
+- AvalAI is optional fallback and can be configured in the same screen;
+- existing `/api/ai/providers/*` validation + AES-GCM encrypted vault are reused;
+- validation is inference-free;
+- raw key exists only in temporary component state;
+- raw key is never added to `OnboardingDraft`, localStorage, logs or analytics;
+- `/profile/ai` remains the later key rotation/recovery surface;
+- Guest can continue only as explicit Demo and cannot claim a real AI-personalized course.
 
-- locale
-- units
-- UI step position
-- schema version
+The historical half-implemented `/onboarding/ai` redirect is removed. `/onboarding` and the application root now route to `/onboarding/welcome`, where the actual AI gate exists.
 
-These are not claims about the user's body, behavior or preference.
+## Self-report semantics v2
 
-### Self-report must remain unset until explicit choice
+`ONBOARDING_SCHEMA_VERSION = 2`.
 
-Examples include:
-
-- gender
-- activity level
-- training experience/level
-- training location
-- training days/week
-- session duration when presented as availability
-- sleep quality
-- stress level
-- smoking
-- diet type
-- primary goal
-- coaching style/preferences
-- medical yes/no/none choices when the UI asks the user to report them
-
-The exact field inventory is part of the implementation audit; tests must reject adding new pre-selected self-report defaults later.
-
-## Persistence version
-
-Stage 21 introduces Onboarding data semantics version 2.
-
-The hosted `user_onboarding.schema_version` should represent this contract. A v2 draft is not considered complete merely because every property has a valid TypeScript value; required self-report choices must have explicit values.
-
-Because the hosted table is currently empty, Stage 21 does not need to infer missing intent from real account rows.
-
-Guest/local v1 drafts are a separate compatibility problem: parser logic must either migrate only unambiguous fields or fail safely into a review/reset flow. It must never guess that an old default was explicitly chosen.
-
-## UI rules
-
-- no radio/select card appears selected for an unset self-report field;
-- `prefer-not-to-say` is a real explicit choice, not a visual fallback for null;
-- Next/Complete validates required explicit choices;
-- validation copy identifies the missing decision without auto-filling it;
-- Back/forward navigation preserves explicit choices;
-- resumed drafts display only values actually stored as explicit choices.
-
-## Coach boundary
-
-Coach context must preserve missingness.
-
-Examples:
+Core rule:
 
 ```text
-activityLevel: null
-smoking: null
-trainingLevel: null
+unset != explicit value != technical/UI default
 ```
 
-must be treated as "not reported", never translated into sedentary/never/beginner.
+The empty draft no longer preselects personal facts such as:
 
-The model must not be told a self-report value that exists only because the form had a convenient initial option.
+- target pace;
+- gender;
+- hypertension/diabetes/cardiac history;
+- injury/no-injury and exercise pain;
+- activity, sleep quality, stress and smoking;
+- meals/day, diet, budget, cooking ability, kitchen access, eating-out frequency;
+- training level and cardio/strength experience;
+- location, days/week, session duration and preferred time;
+- training/nutrition/coaching preferences.
 
-## Future Agent boundary
+Required self-report fields remain `null` until the user acts. Validation prevents advancing when required choices remain unset.
 
-Workout/Nutrition plan proposals must only use self-report fields that are explicitly present. Missing information can trigger a clarification or conservative proposal constraint, but not an invented user profile.
+Technical defaults that are not claims about the user may remain deterministic, for example schema version and metric units.
 
-## Validation plan
+## Safe v1 migration
 
-Dedicated Stage 21 CI must prove:
+Live inspection before this implementation found one hosted `user_onboarding` row with `schema_version=1,status=completed`.
 
-1. empty v2 draft contains no pre-selected self-report answers;
-2. UI does not render a valid answer as selected for null/unset fields;
-3. required steps fail until explicit selection;
-4. prefer-not-to-say remains distinct from unset;
-5. parser rejects malformed/unknown enum values;
-6. Coach context emits null/missing rather than old defaults;
-7. hosted schema version and generated types remain synchronized;
-8. complete Supabase app regression + TypeScript + Next production build remain green.
+Stage21 does not delete it and does not treat old defaults as facts.
 
-## Release rule
+The v1 -> v2 compatibility path:
 
-Preview only. Do not enable Coach plan-write proposals until Onboarding v2 self-report semantics are implemented and green.
+- preserves unambiguous entries such as typed name/body numbers, explicit primary goal, text notes, allergy lists and selected Body Map areas;
+- resets ambiguous categorical/boolean old defaults to `null`;
+- clears `completedSteps` and completion consent;
+- requires the user to re-review v2 rather than silently inheriting `sedentary`, `never`, `beginner`, `gym`, `3 days/week`, etc.;
+- rewrites the row as schema v2 only when the user saves under the new contract.
+
+Guest storage moves from `neofit:onboarding:v1` to `neofit:onboarding:v2` with the same conservative migration rule.
+
+## Program contract added
+
+Stage21 adds the first explicit course boundary:
+
+- `startDate`;
+- `programDurationDays`;
+- bounded duration: 14–84 days;
+- final consent specifically authorizes coordinated Training + Nutrition generation from the supplied data.
+
+The duration is not implemented by increasing the old flat 14-day plan documents. Stage22 must introduce Program Cycle/phases and bounded materialization as defined by `NEOFIT_COACH_PROGRAM_LIFECYCLE_ARCHITECTURE.md`.
+
+## Runtime/data truth changes
+
+- application root requires a live Auth-server user;
+- missing Google credential -> Onboarding welcome/AI gate;
+- completed Onboarding v1 is not accepted as completed v2;
+- completed v2 -> `/onboarding/ready`, not `/today`;
+- direct Onboarding account initialization uses live `getUser()` rather than claims-only identity;
+- no account can reach the new lifecycle by the old non-existent `/onboarding/ai` path.
+
+## Nutrition authority
+
+No calorie/macro target formula is added to Onboarding.
+
+Shared Nutrition Core remains the only arithmetic authority. Planner work in later stages must persist resolvable food identities/source versions and must not promote model-authored nutrition numbers to authority.
+
+## CI contract
+
+`Onboarding v2 Lifecycle CI` must prove:
+
+1. schema version is 2 and public flow remains 15 steps;
+2. step 1 is the real AI credential gate;
+3. empty draft has no preselected self-report facts;
+4. v1 conservative migration keeps unambiguous values and resets ambiguous defaults;
+5. numeric session-duration v2 draft parses correctly;
+6. required steps reject unset choices;
+7. program duration is bounded;
+8. Body Map remains exactly 73 unique front/back regions;
+9. raw AI key is absent from Onboarding model/storage;
+10. root/index contain no `/onboarding/ai` target;
+11. completion routes to the truthful ready handoff rather than Today;
+12. full Supabase app regression, TypeScript and Next production build stay green.
+
+## External/runtime proof still required
+
+After code CI is green:
+
+- restart/pull local branch;
+- real account -> Google key save inside Onboarding;
+- refresh and prove credential status remains active without raw key returning to Browser;
+- complete all required v2 choices;
+- verify hosted row becomes schema v2 only after save;
+- verify selected program duration persists;
+- sign out/in and confirm root returns to the correct lifecycle state;
+- confirm empty Today no longer reproduces the old `energyKcal` crash on a current build;
+- confirm Preview stale Service Worker cleanup on the next single hosted deployment.
+
+## Next stage
+
+Stage22: `program_cycles` source of truth + state machine + idempotent generation-run contract + linkage to versioned Workout/Nutrition plans.
+
+No autonomous write agent is enabled by Stage21.
