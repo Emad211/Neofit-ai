@@ -49,6 +49,74 @@
   line-height: 1.75;
 }
 
+.onboarding-ai-gate__provider-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 13px;
+  border: 1px solid #dfe9e3;
+  border-radius: 14px;
+  background: #f8fbf9;
+}
+
+.onboarding-ai-gate__provider-head > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.onboarding-ai-gate__provider-head span,
+.onboarding-ai-gate__field-help {
+  color: #697a70;
+  font-size: .78rem;
+  font-weight: 550;
+  line-height: 1.6;
+}
+
+.onboarding-ai-gate__provider-head a {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 42px;
+  padding-inline: 12px;
+  border: 1px solid #bfd5c8;
+  border-radius: 11px;
+  background: #fff;
+  color: #176b47;
+  font-size: .78rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.onboarding-secret-field {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.onboarding-secret-field input {
+  min-width: 0;
+}
+
+.onboarding-secret-field__toggle {
+  min-inline-size: 72px;
+  min-block-size: 48px;
+  border: 1px solid #cedbd3;
+  border-radius: 12px;
+  background: #fff;
+  color: #375448;
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 850;
+}
+
+.onboarding-ai-gate__field-help {
+  display: block;
+  margin-block-start: -2px;
+}
+
 @media (max-width: 720px) {
   .onboarding-review-card > header a {
     min-block-size: 44px;
@@ -62,5 +130,36 @@
   .onboarding-actions > .primary:only-child,
   .onboarding-actions__spacer + .primary {
     flex: 1 1 100%;
+  }
+
+  .onboarding-ai-gate {
+    margin-top: .65rem;
+    padding: 13px;
+    border-radius: 16px;
+  }
+
+  .onboarding-ai-gate__provider-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .onboarding-ai-gate__provider-head a {
+    width: 100%;
+    justify-content: center;
+    min-block-size: 46px;
+  }
+
+  .onboarding-secret-field__toggle {
+    min-inline-size: 78px;
+  }
+}
+
+@media (max-width: 380px) {
+  .onboarding-secret-field {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-secret-field__toggle {
+    width: 100%;
   }
 }
