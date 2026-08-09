@@ -4,8 +4,13 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { createClient } from '@/lib/supabase/client';
 import { hasSupabasePublicEnv } from '@/lib/supabase/env';
 import { clearGuestOnboardingDraft, readGuestOnboardingDraft, writeGuestOnboardingDraft } from '@/lib/onboarding/storage';
-import { completeRemoteOnboarding, loadRemoteOnboarding, saveRemoteOnboarding } from '@/lib/onboarding/persistence';
-import { createEmptyOnboardingDraft, markStepCompleted, type OnboardingDraft } from '@/lib/onboarding/model';
+import {
+  OnboardingConflictError,
+  completeRemoteOnboarding,
+  loadRemoteOnboarding,
+  saveRemoteOnboarding,
+} from '@/lib/onboarding/persistence';
+import { ONBOARDING_TOTAL_STEPS, createEmptyOnboardingDraft, markStepCompleted, type OnboardingDraft } from '@/lib/onboarding/model';
 
 type PersistenceMode = 'loading' | 'account' | 'guest' | 'error';
 
@@ -26,6 +31,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [draft, setDraft] = useState<OnboardingDraft>(() => createEmptyOnboardingDraft());
   const [mode, setMode] = useState<PersistenceMode>('loading');
   const [accountId, setAccountId] = useState<string | null>(null);
+  const [databaseUpdatedAt, setDatabaseUpdatedAt] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('در حال بررسی محل ذخیره‌سازی...');
 
@@ -46,8 +52,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
       try {
         const supabase = createClient();
-        // Direct navigation into Onboarding must not trust a stale JWT alone.
-        // getUser() validates the account against the Auth server before RLS-backed writes.
         const { data: userData, error: userError } = await supabase.auth.getUser();
         const userId = userData.user?.id ?? null;
         if (userError || !userId) {
@@ -61,21 +65,22 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         const remote = await loadRemoteOnboarding(supabase, userId);
         if (cancelled) return;
         setAccountId(userId);
+        setDatabaseUpdatedAt(remote?.databaseUpdatedAt ?? null);
         setDraft(remote?.draft ?? createEmptyOnboardingDraft());
         setMode('account');
         if (remote?.migratedFromVersion === 1) {
-          setMessage('داده‌های قابل‌تشخیص نسخه قبلی حفظ شدند؛ پاسخ‌های مبهم باید در Onboarding v2 دوباره صریحاً انتخاب شوند.');
+          setMessage('داده‌های قابل‌تشخیص نسخه قبلی حفظ شدند؛ پاسخ‌های مبهم باید دوباره انتخاب شوند.');
         } else if (remote && !remote.draft) {
-          setMessage('نسخه ذخیره‌شده قابل اعتماد نیست؛ برای جلوگیری از حدس‌زدن پاسخ‌های شخصی، Onboarding از نو بررسی می‌شود.');
+          setMessage('نسخه ذخیره‌شده قابل اعتماد نیست؛ پاسخ‌های شخصی دوباره بررسی می‌شوند.');
         } else if (remote?.status === 'completed') {
-          setMessage('Onboarding v2 این حساب تکمیل شده است؛ می‌توانی اطلاعات را مرور یا اصلاح کنی.');
+          setMessage('Onboarding این حساب تکمیل شده است؛ اطلاعات قابل مرور و اصلاح‌اند.');
         } else {
-          setMessage('ذخیره امن حساب با RLS فعال است.');
+          setMessage('پیشرفت در حساب شخصی ذخیره می‌شود.');
         }
       } catch {
         if (cancelled) return;
         setMode('error');
-        setMessage('اتصال حساب برای Onboarding در دسترس نیست. برای جلوگیری از دو نسخه داده، ذخیره حساب متوقف شده است.');
+        setMessage('اتصال حساب در دسترس نیست؛ برای جلوگیری از دو نسخه داده، ذخیره متوقف شده است.');
       }
     }
     void initialize();
@@ -91,36 +96,48 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setSaving(true);
     try {
       if (mode === 'account' && accountId) {
-        const supabase = createClient();
-        await saveRemoteOnboarding(supabase, accountId, nextDraft, Math.min(15, step + 1));
-        setMessage('این مرحله در حساب شخصی ذخیره شد.');
+        const result = await saveRemoteOnboarding(
+          createClient(),
+          accountId,
+          nextDraft,
+          Math.min(ONBOARDING_TOTAL_STEPS, step + 1),
+          databaseUpdatedAt,
+        );
+        setDatabaseUpdatedAt(result.databaseUpdatedAt);
+        setMessage('ذخیره شد.');
       } else if (mode === 'guest') {
         writeGuestOnboardingDraft(nextDraft);
-        setMessage('این مرحله در همین مرورگر ذخیره شد.');
+        setMessage('در همین مرورگر ذخیره شد.');
       } else {
         throw new Error('Onboarding persistence is unavailable.');
       }
       setDraft(nextDraft);
       return nextDraft;
+    } catch (error) {
+      if (error instanceof OnboardingConflictError) {
+        setMessage('این Onboarding در تب یا دستگاه دیگری تغییر کرده است. صفحه را تازه کن تا نسخه جدید جایگزین نشود.');
+      }
+      throw error;
     } finally {
       setSaving(false);
     }
-  }, [accountId, draft, mode]);
+  }, [accountId, databaseUpdatedAt, draft, mode]);
 
   const complete = useCallback(async () => {
     const now = new Date().toISOString();
     const completedDraft = markStepCompleted({
       ...draft,
       confirmation: { ...draft.confirmation, completedAt: now },
-    }, 15);
+    }, ONBOARDING_TOTAL_STEPS);
     setSaving(true);
     try {
       if (mode === 'account' && accountId) {
-        const result = await completeRemoteOnboarding(createClient(), accountId, completedDraft);
+        const result = await completeRemoteOnboarding(createClient(), accountId, completedDraft, databaseUpdatedAt);
+        setDatabaseUpdatedAt(result.databaseUpdatedAt);
         clearGuestOnboardingDraft();
         setDraft(result.draft);
-        setMessage(result.metadataSyncWarning ? 'Onboarding ذخیره شد؛ همگام‌سازی بخشی از تنظیمات پروفایل نیاز به تلاش بعدی دارد.' : 'Onboarding v2 با موفقیت تکمیل شد.');
-        return result;
+        setMessage(result.metadataSyncWarning ? 'Onboarding ذخیره شد؛ همگام‌سازی بخشی از پروفایل بعداً تکرار می‌شود.' : 'Onboarding با موفقیت تکمیل شد.');
+        return { draft: result.draft, metadataSyncWarning: result.metadataSyncWarning };
       }
       if (mode === 'guest') {
         writeGuestOnboardingDraft(completedDraft);
@@ -129,10 +146,15 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         return { draft: completedDraft, metadataSyncWarning: false };
       }
       throw new Error('Onboarding persistence is unavailable.');
+    } catch (error) {
+      if (error instanceof OnboardingConflictError) {
+        setMessage('قبل از تکمیل، داده در تب یا دستگاه دیگری تغییر کرده است. صفحه را تازه کن تا نسخه جدید از بین نرود.');
+      }
+      throw error;
     } finally {
       setSaving(false);
     }
-  }, [accountId, draft, mode]);
+  }, [accountId, databaseUpdatedAt, draft, mode]);
 
   const value = useMemo(() => ({ draft, mode, accountId, saving, message, updateSection, saveStep, complete }), [accountId, complete, draft, message, mode, saveStep, saving, updateSection]);
   return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;
