@@ -15,11 +15,21 @@ export interface AccountWorkoutState {
   readonly player: WorkoutPlayerState;
 }
 
-type SessionRow = Pick<Tables<'workout_sessions'>, 'id' | 'client_mutation_id' | 'started_at'>;
+type SessionRow = Pick<
+  Tables<'workout_sessions'>,
+  'id' | 'client_mutation_id' | 'started_at' | 'workout_plan_id' | 'workout_plan_version'
+>;
 type SetRow = Pick<
   Tables<'workout_sets'>,
   'exercise_id' | 'exercise_name' | 'exercise_order' | 'set_order' | 'target_reps' | 'reps' | 'weight_kg' | 'completed_at'
 >;
+
+function accountPlanProvenance(workout: WorkoutDay): { planId: string; planVersion: number } {
+  if (!workout.planId || !Number.isInteger(workout.planVersion) || Number(workout.planVersion) < 1) {
+    throw new Error('نسخهٔ برنامه تمرینی حساب مشخص نیست.');
+  }
+  return { planId: workout.planId, planVersion: Number(workout.planVersion) };
+}
 
 function mapRowsToPlayer(workout: WorkoutDay, session: SessionRow, rows: readonly SetRow[]): WorkoutPlayerState {
   let player = createWorkoutPlayerState(workout, {
@@ -54,10 +64,11 @@ function mapRowsToPlayer(workout: WorkoutDay, session: SessionRow, rows: readonl
 }
 
 async function loadActiveSession(userId: string, workout: WorkoutDay): Promise<AccountWorkoutState | null> {
+  const { planId, planVersion } = accountPlanProvenance(workout);
   const supabase = createClient();
   const { data: session, error: sessionError } = await supabase
     .from('workout_sessions')
-    .select('id,client_mutation_id,started_at')
+    .select('id,client_mutation_id,started_at,workout_plan_id,workout_plan_version')
     .eq('user_id', userId)
     .eq('workout_id', workout.id)
     .eq('status', 'active')
@@ -66,6 +77,9 @@ async function loadActiveSession(userId: string, workout: WorkoutDay): Promise<A
     .maybeSingle();
   if (sessionError) throw new Error('خواندن جلسه فعال تمرین ناموفق بود.');
   if (!session) return null;
+  if (session.workout_plan_id !== planId || session.workout_plan_version !== planVersion) {
+    throw new Error('جلسه فعال به نسخهٔ دیگری از برنامه تمرینی تعلق دارد. ابتدا آن جلسه را کامل یا لغو کن.');
+  }
 
   const { data: rows, error: setsError } = await supabase
     .from('workout_sets')
@@ -79,6 +93,7 @@ async function loadActiveSession(userId: string, workout: WorkoutDay): Promise<A
 }
 
 export async function loadOrCreateAccountWorkout(userId: string, workout: WorkoutDay): Promise<AccountWorkoutState> {
+  const { planId, planVersion } = accountPlanProvenance(workout);
   const existing = await loadActiveSession(userId, workout);
   if (existing) return existing;
 
@@ -91,6 +106,8 @@ export async function loadOrCreateAccountWorkout(userId: string, workout: Workou
       client_mutation_id: player.clientMutationId,
       workout_id: workout.id,
       workout_title: workout.title,
+      workout_plan_id: planId,
+      workout_plan_version: planVersion,
       status: 'active',
       started_at: player.startedAt,
     })

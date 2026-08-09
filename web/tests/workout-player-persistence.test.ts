@@ -58,12 +58,15 @@ test('account set persistence upserts only the completed set and completion upda
   assert.doesNotMatch(persistence, /indexedDB|event[_ -]?bus|background[_ -]?sync/i);
 });
 
-test('immersive player uses a claims-only identity read and details route launches it', async () => {
+test('immersive Player reuses the plan snapshot identity and details route launches it', async () => {
   const page = await read('app/workout-player/[id]/page.tsx');
-  const identity = await read('lib/supabase/workout-identity.ts');
+  const planData = await read('lib/supabase/workout-plan-data.ts');
+  const account = await read('lib/supabase/account.ts');
   const details = await read('components/workout-details-screen.tsx');
-  assert.match(page, /loadWorkoutIdentity/);
-  assert.doesNotMatch(page, /loadAccountSnapshot/);
-  assert.match(identity, /auth\.getClaims\(\)/);
+  assert.match(page, /loadWorkoutPlanSnapshot/);
+  assert.match(page, /snapshot\.userId/);
+  assert.doesNotMatch(page, /loadWorkoutIdentity/);
+  assert.match(planData, /loadAccountIdentity\(\)/);
+  assert.match(account, /auth\.getClaims\(\)/);
   assert.match(details, /href=\{`\/workout-player\/\$\{workout\.id\}`\}/);
 });
