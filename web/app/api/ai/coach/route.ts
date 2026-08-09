@@ -9,6 +9,7 @@ import { routeCoachDomains } from '@/lib/coach/context-router';
 import { routeCoachExternalTool } from '@/lib/coach/external-tool-router';
 import { buildCoachInput, COACH_MESSAGE_LIMIT, parseCoachHistory } from '@/lib/coach/request';
 import { buildCoachSystemInstruction, type CoachExternalContext } from '@/lib/coach/system-prompt';
+import { AgentToolBudgetExceededError, AgentToolBudgetUnavailableError } from '@/lib/integrations/tool-audit';
 import type { YouTubeVideoCard } from '@/lib/integrations/types';
 import { YouTubeRequestError } from '@/lib/integrations/youtube-client';
 import { runYouTubeSearchTool, YouTubeIntegrationNotConfiguredError } from '@/lib/integrations/youtube-tool';
@@ -103,6 +104,15 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof YouTubeIntegrationNotConfiguredError) {
       return privateJson({ error: 'youtube_not_configured' }, 503);
+    }
+    if (error instanceof AgentToolBudgetExceededError) {
+      return privateJson({
+        error: 'youtube_tool_budget_exceeded',
+        retryAfterSeconds: error.retryAfterSeconds,
+      }, 429, { 'Retry-After': String(error.retryAfterSeconds) });
+    }
+    if (error instanceof AgentToolBudgetUnavailableError) {
+      return privateJson({ error: 'youtube_tool_budget_unavailable' }, 503);
     }
     if (error instanceof YouTubeRequestError) {
       const status = error.kind === 'rate_limit' ? 429 : error.kind === 'auth' ? 401 : 502;
