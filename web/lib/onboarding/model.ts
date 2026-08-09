@@ -190,6 +190,11 @@ export const goalLabels: Record<GoalId, string> = {
 
 const goalIds = new Set<GoalId>(['weight-loss', 'muscle-gain', 'maintenance', 'fitness', 'lifestyle']);
 const genderIds = new Set<GenderId>(['male', 'female', 'other', 'prefer-not-to-say']);
+const injurySeverities = new Set<InjurySeverity>(['mild', 'moderate', 'severe']);
+const injuryStatuses = new Set<InjuryStatus>(['current', 'past']);
+const MAX_SHORT_TEXT = 160;
+const MAX_NOTES = 2000;
+const MAX_LIST_ITEMS = 30;
 
 export const createEmptyOnboardingDraft = (): OnboardingDraft => {
   const now = new Date().toISOString();
@@ -220,8 +225,22 @@ function finiteOrNull(value: unknown): value is number | null {
   return value === null || (typeof value === 'number' && Number.isFinite(value));
 }
 
-function stringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((item) => typeof item === 'string');
+function numberInRangeOrNull(value: unknown, min: number, max: number): value is number | null {
+  return value === null || (typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max);
+}
+
+function stringWithin(value: unknown, maxLength: number): value is string {
+  return typeof value === 'string' && value.length <= maxLength;
+}
+
+function stringArray(value: unknown, maxItems = MAX_LIST_ITEMS, maxLength = MAX_SHORT_TEXT): value is string[] {
+  return Array.isArray(value)
+    && value.length <= maxItems
+    && value.every((item) => typeof item === 'string' && item.length <= maxLength);
+}
+
+function uniqueStrings(value: readonly string[]) {
+  return new Set(value).size === value.length;
 }
 
 function nullableEnum<T extends string | number>(value: unknown, values: readonly T[]): value is T | null {
@@ -232,9 +251,30 @@ function nullableBoolean(value: unknown): value is boolean | null {
   return value === null || typeof value === 'boolean';
 }
 
+function validIsoTimestamp(value: unknown): value is string {
+  return typeof value === 'string' && value.length <= 40 && Number.isFinite(Date.parse(value));
+}
+
+function validStartDate(value: unknown): value is string {
+  return value === '' || (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value));
+}
+
+function isInjuryArea(value: unknown): value is InjuryArea {
+  if (!isRecord(value)) return false;
+  if (!stringWithin(value.bodyPartId, 100) || !stringWithin(value.key, 120) || !stringWithin(value.label, MAX_SHORT_TEXT)) return false;
+  if (value.face !== 'ant' && value.face !== 'post') return false;
+  if (value.key !== `${value.face}:${value.bodyPartId}`) return false;
+  if (!injurySeverities.has(value.severity as InjurySeverity) || !injuryStatuses.has(value.status as InjuryStatus)) return false;
+  return stringWithin(value.forbiddenMovements, 700) && stringWithin(value.notes, MAX_NOTES);
+}
+
 export function parseOnboardingDraft(value: unknown): OnboardingDraft | null {
   if (!isRecord(value) || value.version !== ONBOARDING_SCHEMA_VERSION || !Array.isArray(value.completedSteps)) return null;
-  if (!value.completedSteps.every((step) => Number.isInteger(step) && Number(step) >= 1 && Number(step) <= ONBOARDING_TOTAL_STEPS)) return null;
+  if (
+    value.completedSteps.length > ONBOARDING_TOTAL_STEPS
+    || !value.completedSteps.every((step) => Number.isInteger(step) && Number(step) >= 1 && Number(step) <= ONBOARDING_TOTAL_STEPS)
+    || new Set(value.completedSteps).size !== value.completedSteps.length
+  ) return null;
   if (
     !isRecord(value.goal) ||
     !isRecord(value.basics) ||
@@ -261,24 +301,24 @@ export function parseOnboardingDraft(value: unknown): OnboardingDraft | null {
   const preferences = value.preferences;
   const confirmation = value.confirmation;
 
-  if (!nullableEnum(goal.primaryGoal, [...goalIds]) || !stringArray(goal.secondaryGoals) || !goal.secondaryGoals.every((item) => goalIds.has(item as GoalId)) || !nullableEnum(goal.targetTimeline, ['steady', 'balanced', 'fast'])) return null;
-  if (typeof basics.name !== 'string' || !finiteOrNull(basics.age) || !nullableEnum(basics.gender, [...genderIds]) || !finiteOrNull(basics.heightCm) || !finiteOrNull(basics.weightKg) || typeof basics.country !== 'string' || !['metric', 'imperial'].includes(String(basics.unitSystem))) return null;
-  if (![body.waistCm, body.hipCm, body.neckCm, body.bodyFatPercent, body.targetWeightKg].every(finiteOrNull) || typeof body.progressPhotoOptIn !== 'boolean') return null;
-  if (!stringArray(medical.conditions) || typeof medical.medications !== 'string' || !nullableBoolean(medical.hasHighBloodPressure) || !nullableBoolean(medical.hasDiabetes) || !nullableBoolean(medical.hasCardiacHistory) || typeof medical.physicianRestrictions !== 'string' || typeof medical.medicalAcknowledged !== 'boolean') return null;
-  if (!nullableBoolean(injuries.noInjuries) || !Array.isArray(injuries.areas) || !nullableBoolean(injuries.painDuringExercise) || !finiteOrNull(injuries.painScale) || typeof injuries.generalLimitations !== 'string') return null;
-  if (typeof lifestyle.occupation !== 'string' || !nullableEnum(lifestyle.activityLevel, ['sedentary', 'light', 'moderate', 'high']) || !finiteOrNull(lifestyle.sittingHours) || !finiteOrNull(lifestyle.dailySteps) || !finiteOrNull(lifestyle.sleepHours) || !nullableEnum(lifestyle.sleepQuality, ['poor', 'average', 'good']) || !nullableEnum(lifestyle.stressLevel, ['low', 'medium', 'high']) || !nullableEnum(lifestyle.smoking, ['never', 'sometimes', 'daily']) || typeof lifestyle.routineNotes !== 'string') return null;
-  if (!finiteOrNull(nutrition.mealsPerDay) || !nullableEnum(nutrition.dietType, ['balanced', 'vegetarian', 'vegan', 'pescatarian', 'low-carb', 'other']) || !stringArray(nutrition.allergies) || !stringArray(nutrition.dislikedFoods) || !stringArray(nutrition.favoriteIranianFoods) || !nullableEnum(nutrition.budget, ['economy', 'balanced', 'flexible']) || !nullableEnum(nutrition.cookingAbility, ['beginner', 'intermediate', 'advanced']) || !nullableBoolean(nutrition.kitchenAccess) || !nullableEnum(nutrition.eatingOutFrequency, ['rare', 'weekly', 'frequent']) || typeof nutrition.notes !== 'string') return null;
-  if (!nullableEnum(training.level, ['beginner', 'intermediate', 'advanced']) || !finiteOrNull(training.trainingAgeMonths) || !stringArray(training.previousSports) || !finiteOrNull(training.recentBreakWeeks) || !stringArray(training.familiarMovements) || !nullableEnum(training.cardioExperience, ['none', 'basic', 'regular']) || !nullableEnum(training.strengthExperience, ['none', 'basic', 'regular']) || typeof training.notes !== 'string') return null;
-  if (!nullableEnum(availability.location, ['home', 'gym', 'both']) || !stringArray(availability.equipment) || typeof availability.customEquipment !== 'string' || !finiteOrNull(availability.daysPerWeek) || !nullableEnum(availability.sessionDuration, [30, 45, 60, 75, 90] as const) || !stringArray(availability.preferredDays) || !nullableEnum(availability.preferredTime, ['morning', 'afternoon', 'evening', 'flexible']) || typeof availability.scheduleNotes !== 'string') return null;
+  if (!nullableEnum(goal.primaryGoal, [...goalIds]) || !stringArray(goal.secondaryGoals, goalIds.size, 30) || !goal.secondaryGoals.every((item) => goalIds.has(item as GoalId)) || !uniqueStrings(goal.secondaryGoals) || (goal.primaryGoal !== null && goal.secondaryGoals.includes(goal.primaryGoal as string)) || !nullableEnum(goal.targetTimeline, ['steady', 'balanced', 'fast'])) return null;
+  if (!stringWithin(basics.name, 80) || !numberInRangeOrNull(basics.age, 10, 120) || !nullableEnum(basics.gender, [...genderIds]) || !numberInRangeOrNull(basics.heightCm, 100, 250) || !numberInRangeOrNull(basics.weightKg, 25, 350) || !stringWithin(basics.country, 100) || !['metric', 'imperial'].includes(String(basics.unitSystem))) return null;
+  if (!numberInRangeOrNull(body.waistCm, 30, 250) || !numberInRangeOrNull(body.hipCm, 30, 250) || !numberInRangeOrNull(body.neckCm, 20, 100) || !numberInRangeOrNull(body.bodyFatPercent, 2, 70) || !numberInRangeOrNull(body.targetWeightKg, 25, 350) || typeof body.progressPhotoOptIn !== 'boolean') return null;
+  if (!stringArray(medical.conditions, 20, MAX_SHORT_TEXT) || !stringWithin(medical.medications, MAX_NOTES) || !nullableBoolean(medical.hasHighBloodPressure) || !nullableBoolean(medical.hasDiabetes) || !nullableBoolean(medical.hasCardiacHistory) || !stringWithin(medical.physicianRestrictions, MAX_NOTES) || typeof medical.medicalAcknowledged !== 'boolean') return null;
+  if (!nullableBoolean(injuries.noInjuries) || !Array.isArray(injuries.areas) || injuries.areas.length > 73 || !injuries.areas.every(isInjuryArea) || !uniqueStrings(injuries.areas.map((area) => area.key)) || !nullableBoolean(injuries.painDuringExercise) || !numberInRangeOrNull(injuries.painScale, 0, 10) || !stringWithin(injuries.generalLimitations, MAX_NOTES)) return null;
+  if (!stringWithin(lifestyle.occupation, MAX_SHORT_TEXT) || !nullableEnum(lifestyle.activityLevel, ['sedentary', 'light', 'moderate', 'high']) || !numberInRangeOrNull(lifestyle.sittingHours, 0, 24) || !numberInRangeOrNull(lifestyle.dailySteps, 0, 100000) || !numberInRangeOrNull(lifestyle.sleepHours, 0, 24) || !nullableEnum(lifestyle.sleepQuality, ['poor', 'average', 'good']) || !nullableEnum(lifestyle.stressLevel, ['low', 'medium', 'high']) || !nullableEnum(lifestyle.smoking, ['never', 'sometimes', 'daily']) || !stringWithin(lifestyle.routineNotes, MAX_NOTES)) return null;
+  if (!numberInRangeOrNull(nutrition.mealsPerDay, 1, 8) || !nullableEnum(nutrition.dietType, ['balanced', 'vegetarian', 'vegan', 'pescatarian', 'low-carb', 'other']) || !stringArray(nutrition.allergies) || !uniqueStrings(nutrition.allergies) || !stringArray(nutrition.dislikedFoods) || !uniqueStrings(nutrition.dislikedFoods) || !stringArray(nutrition.favoriteIranianFoods) || !uniqueStrings(nutrition.favoriteIranianFoods) || !nullableEnum(nutrition.budget, ['economy', 'balanced', 'flexible']) || !nullableEnum(nutrition.cookingAbility, ['beginner', 'intermediate', 'advanced']) || !nullableBoolean(nutrition.kitchenAccess) || !nullableEnum(nutrition.eatingOutFrequency, ['rare', 'weekly', 'frequent']) || !stringWithin(nutrition.notes, MAX_NOTES)) return null;
+  if (!nullableEnum(training.level, ['beginner', 'intermediate', 'advanced']) || !numberInRangeOrNull(training.trainingAgeMonths, 0, 1200) || !stringArray(training.previousSports) || !uniqueStrings(training.previousSports) || !numberInRangeOrNull(training.recentBreakWeeks, 0, 520) || !stringArray(training.familiarMovements) || !uniqueStrings(training.familiarMovements) || !nullableEnum(training.cardioExperience, ['none', 'basic', 'regular']) || !nullableEnum(training.strengthExperience, ['none', 'basic', 'regular']) || !stringWithin(training.notes, MAX_NOTES)) return null;
+  if (!nullableEnum(availability.location, ['home', 'gym', 'both']) || !stringArray(availability.equipment, 30, 100) || !uniqueStrings(availability.equipment) || !stringWithin(availability.customEquipment, 700) || !numberInRangeOrNull(availability.daysPerWeek, 1, 6) || !nullableEnum(availability.sessionDuration, [30, 45, 60, 75, 90] as const) || !stringArray(availability.preferredDays, 7, 30) || !uniqueStrings(availability.preferredDays) || !nullableEnum(availability.preferredTime, ['morning', 'afternoon', 'evening', 'flexible']) || !stringWithin(availability.scheduleNotes, MAX_NOTES)) return null;
   if (!nullableEnum(preferences.intensity, ['gentle', 'moderate', 'challenging']) || !nullableEnum(preferences.cardioPreference, ['low', 'balanced', 'high']) || !nullableEnum(preferences.trainingStyle, ['resistance', 'functional', 'mixed']) || !nullableEnum(preferences.variety, ['stable', 'balanced', 'varied']) || !nullableEnum(preferences.nutritionStrictness, ['flexible', 'structured', 'strict']) || !nullableEnum(preferences.coachingTone, ['supportive', 'direct', 'analytical']) || !nullableEnum(preferences.reminderLevel, ['minimal', 'normal', 'high'])) return null;
-  if (typeof confirmation.startDate !== 'string' || !finiteOrNull(confirmation.programDurationDays) || typeof confirmation.workoutReminders !== 'boolean' || typeof confirmation.mealReminders !== 'boolean' || typeof confirmation.waterReminders !== 'boolean' || typeof confirmation.weeklyReport !== 'boolean' || typeof confirmation.finalConsent !== 'boolean' || !(confirmation.completedAt === null || typeof confirmation.completedAt === 'string')) return null;
-  if (typeof value.startedAt !== 'string' || typeof value.updatedAt !== 'string') return null;
+  if (!validStartDate(confirmation.startDate) || !numberInRangeOrNull(confirmation.programDurationDays, PROGRAM_DURATION_MIN_DAYS, PROGRAM_DURATION_MAX_DAYS) || typeof confirmation.workoutReminders !== 'boolean' || typeof confirmation.mealReminders !== 'boolean' || typeof confirmation.waterReminders !== 'boolean' || typeof confirmation.weeklyReport !== 'boolean' || typeof confirmation.finalConsent !== 'boolean' || !(confirmation.completedAt === null || validIsoTimestamp(confirmation.completedAt))) return null;
+  if (!validIsoTimestamp(value.startedAt) || !validIsoTimestamp(value.updatedAt)) return null;
 
   return value as unknown as OnboardingDraft;
 }
 
-function legacyString(record: Record<string, unknown>, key: string): string {
-  return typeof record[key] === 'string' ? String(record[key]) : '';
+function legacyString(record: Record<string, unknown>, key: string, maxLength = MAX_NOTES): string {
+  return typeof record[key] === 'string' ? String(record[key]).slice(0, maxLength) : '';
 }
 
 function legacyNumber(record: Record<string, unknown>, key: string): number | null {
@@ -286,8 +326,13 @@ function legacyNumber(record: Record<string, unknown>, key: string): number | nu
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
-function legacyStrings(record: Record<string, unknown>, key: string): string[] {
-  return stringArray(record[key]) ? record[key] : [];
+function legacyStrings(record: Record<string, unknown>, key: string, maxItems = MAX_LIST_ITEMS): string[] {
+  if (!Array.isArray(record[key])) return [];
+  const values = (record[key] as unknown[])
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.slice(0, MAX_SHORT_TEXT))
+    .slice(0, maxItems);
+  return Array.from(new Set(values));
 }
 
 export function migrateLegacyOnboardingDraft(value: unknown): OnboardingDraft | null {
@@ -304,16 +349,17 @@ export function migrateLegacyOnboardingDraft(value: unknown): OnboardingDraft | 
   const availability = isRecord(value.availability) ? value.availability : {};
   const confirmation = isRecord(value.confirmation) ? value.confirmation : {};
 
-  if (typeof value.startedAt === 'string') next.startedAt = value.startedAt;
+  if (validIsoTimestamp(value.startedAt)) next.startedAt = value.startedAt;
   if (typeof goal.primaryGoal === 'string' && goalIds.has(goal.primaryGoal as GoalId)) next.goal.primaryGoal = goal.primaryGoal as GoalId;
-  next.goal.secondaryGoals = legacyStrings(goal, 'secondaryGoals').filter((item): item is GoalId => goalIds.has(item as GoalId));
+  next.goal.secondaryGoals = legacyStrings(goal, 'secondaryGoals', goalIds.size)
+    .filter((item): item is GoalId => goalIds.has(item as GoalId) && item !== next.goal.primaryGoal);
 
-  next.basics.name = legacyString(basics, 'name');
+  next.basics.name = legacyString(basics, 'name', 80);
   next.basics.age = legacyNumber(basics, 'age');
   if (typeof basics.gender === 'string' && genderIds.has(basics.gender as GenderId)) next.basics.gender = basics.gender as GenderId;
   next.basics.heightCm = legacyNumber(basics, 'heightCm');
   next.basics.weightKg = legacyNumber(basics, 'weightKg');
-  next.basics.country = legacyString(basics, 'country');
+  next.basics.country = legacyString(basics, 'country', 100);
   if (basics.unitSystem === 'imperial') next.basics.unitSystem = 'imperial';
 
   next.body.waistCm = legacyNumber(body, 'waistCm');
@@ -323,14 +369,15 @@ export function migrateLegacyOnboardingDraft(value: unknown): OnboardingDraft | 
   next.body.targetWeightKg = legacyNumber(body, 'targetWeightKg');
   next.body.progressPhotoOptIn = body.progressPhotoOptIn === true;
 
-  next.medical.conditions = legacyStrings(medical, 'conditions');
+  next.medical.conditions = legacyStrings(medical, 'conditions', 20);
   next.medical.medications = legacyString(medical, 'medications');
   next.medical.physicianRestrictions = legacyString(medical, 'physicianRestrictions');
 
-  next.injuries.areas = Array.isArray(injuries.areas) ? injuries.areas as InjuryArea[] : [];
+  const legacyAreas = Array.isArray(injuries.areas) ? injuries.areas.filter(isInjuryArea).slice(0, 73) : [];
+  next.injuries.areas = legacyAreas.filter((area, index) => legacyAreas.findIndex((candidate) => candidate.key === area.key) === index);
   next.injuries.generalLimitations = legacyString(injuries, 'generalLimitations');
 
-  next.lifestyle.occupation = legacyString(lifestyle, 'occupation');
+  next.lifestyle.occupation = legacyString(lifestyle, 'occupation', MAX_SHORT_TEXT);
   next.lifestyle.sittingHours = legacyNumber(lifestyle, 'sittingHours');
   next.lifestyle.dailySteps = legacyNumber(lifestyle, 'dailySteps');
   next.lifestyle.sleepHours = legacyNumber(lifestyle, 'sleepHours');
@@ -348,11 +395,11 @@ export function migrateLegacyOnboardingDraft(value: unknown): OnboardingDraft | 
   next.trainingHistory.notes = legacyString(training, 'notes');
 
   next.availability.equipment = legacyStrings(availability, 'equipment');
-  next.availability.customEquipment = legacyString(availability, 'customEquipment');
-  next.availability.preferredDays = legacyStrings(availability, 'preferredDays');
+  next.availability.customEquipment = legacyString(availability, 'customEquipment', 700);
+  next.availability.preferredDays = legacyStrings(availability, 'preferredDays', 7);
   next.availability.scheduleNotes = legacyString(availability, 'scheduleNotes');
 
-  next.confirmation.startDate = legacyString(confirmation, 'startDate');
+  next.confirmation.startDate = validStartDate(confirmation.startDate) ? confirmation.startDate : '';
   next.completedSteps = [];
   next.confirmation.completedAt = null;
   next.confirmation.finalConsent = false;
@@ -400,6 +447,7 @@ export function validateOnboardingStep(draft: OnboardingDraft, step: number): st
   if (step === 2) {
     if (!draft.goal.primaryGoal) errors.push('یک هدف اصلی انتخاب کن.');
     if (!draft.goal.targetTimeline) errors.push('سرعت مورد انتظار را خودت انتخاب کن.');
+    if (draft.goal.primaryGoal && draft.goal.secondaryGoals.includes(draft.goal.primaryGoal)) errors.push('هدف اصلی نباید هم‌زمان هدف فرعی باشد.');
   }
   if (step === 3) {
     if (!draft.basics.name.trim()) errors.push('نام نمایشی را وارد کن.');
