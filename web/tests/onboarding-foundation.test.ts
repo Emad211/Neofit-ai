@@ -37,6 +37,17 @@ test('injury body map retains exactly 73 unique front/back regions', () => {
   assert.ok(parts.some((part) => part.face === 'post'));
 });
 
+test('mobile injury map uses one-face navigation and collapsible detail cards', async () => {
+  const map = await source('components/onboarding/body-map/injury-body-map.tsx');
+  const css = await source('app/onboarding/onboarding-mobile-polish.css');
+  assert.match(map, /onboarding-body-map__face-switch/);
+  assert.match(map, /role="tablist"/);
+  assert.match(map, /<details/);
+  assert.match(css, /figure\.is-active/);
+  assert.match(css, /max-height:min\(59dvh|59dvh/);
+  assert.match(css, /safe-area-inset-bottom/);
+});
+
 test('empty v2 draft does not preselect self-report or course duration', () => {
   const draft = createEmptyOnboardingDraft();
   assert.equal(draft.version, 2);
@@ -91,11 +102,33 @@ test('legacy v1 migration preserves unambiguous entries but resets ambiguous def
   assert.deepEqual(migrated.completedSteps, []);
 });
 
-test('v2 parser accepts explicit numeric session duration and rejects v1', () => {
+test('v2 parser accepts valid explicit values and rejects malformed self-report payloads', () => {
   const draft = createEmptyOnboardingDraft();
   draft.availability.sessionDuration = 60;
   assert.ok(parseOnboardingDraft(draft));
   assert.equal(parseOnboardingDraft({ ...draft, version: 1 }), null);
+
+  const duplicateGoal = structuredClone(draft);
+  duplicateGoal.goal.primaryGoal = 'fitness';
+  duplicateGoal.goal.secondaryGoals = ['fitness'];
+  assert.equal(parseOnboardingDraft(duplicateGoal), null);
+
+  const malformedInjury = structuredClone(draft) as typeof draft;
+  malformedInjury.injuries.areas = [{
+    key: 'ant:knee',
+    bodyPartId: 'different-id',
+    face: 'ant',
+    label: 'زانو',
+    severity: 'mild',
+    status: 'current',
+    forbiddenMovements: '',
+    notes: '',
+  }];
+  assert.equal(parseOnboardingDraft(malformedInjury), null);
+
+  const oversized = structuredClone(draft);
+  oversized.medical.physicianRestrictions = 'x'.repeat(2001);
+  assert.equal(parseOnboardingDraft(oversized), null);
 });
 
 test('step validation requires explicit choices and a bounded course duration', () => {
@@ -145,14 +178,41 @@ test('AI key is gated inside Onboarding without entering draft or Browser storag
   assert.doesNotMatch(await source('lib/onboarding/model.ts'), /apiKey|ciphertext|authTag/);
 });
 
-test('lifecycle routing has no broken /onboarding/ai target and stops truthfully before planners exist', async () => {
+test('only one AI onboarding route exists and legacy duplicate route is deleted', async () => {
   const root = await source('app/page.tsx');
   const index = await source('app/onboarding/page.tsx');
+  assert.doesNotMatch(root, /\/onboarding\/ai/);
+  assert.match(index, /\/onboarding\/welcome/);
+  await assert.rejects(() => source('app/onboarding/ai/page.tsx'));
+  await assert.rejects(() => source('app/onboarding/ai/continue/route.ts'));
+});
+
+test('account draft persistence uses optimistic concurrency instead of silent upsert overwrite', async () => {
+  const persistence = await source('lib/onboarding/persistence.ts');
+  const context = await source('components/onboarding/onboarding-context.tsx');
+  assert.match(persistence, /OnboardingConflictError/);
+  assert.match(persistence, /\.eq\('updated_at', input\.expectedDatabaseUpdatedAt\)/);
+  assert.match(persistence, /\.insert\(payload\)/);
+  assert.match(context, /databaseUpdatedAt/);
+  assert.match(context, /OnboardingConflictError/);
+});
+
+test('final onboarding asks only for real course inputs and review has direct edit affordances', async () => {
+  const screen = await source('components/onboarding/onboarding-screen.tsx');
+  assert.match(screen, /programDurationDays/);
+  assert.match(screen, /editHref="\/onboarding\/goal"/);
+  assert.match(screen, /editHref="\/onboarding\/availability"/);
+  assert.doesNotMatch(screen, /draft\.confirmation\.workoutReminders/);
+  assert.doesNotMatch(screen, /draft\.confirmation\.mealReminders/);
+  assert.doesNotMatch(screen, /<option value="imperial">/);
+  assert.match(screen, /errorsRef\.current\?\.focus\(\)/);
+});
+
+test('lifecycle stops truthfully before planners exist', async () => {
+  const root = await source('app/page.tsx');
   const screen = await source('components/onboarding/onboarding-screen.tsx');
   assert.match(root, /schema_version/);
   assert.match(root, /ONBOARDING_SCHEMA_VERSION/);
-  assert.doesNotMatch(root, /\/onboarding\/ai/);
-  assert.match(index, /\/onboarding\/welcome/);
   assert.match(screen, /router\.push\('\/onboarding\/ready'\)/);
   assert.doesNotMatch(screen, /router\.push\('\/today'\)/);
 });
