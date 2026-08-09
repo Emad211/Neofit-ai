@@ -1,0 +1,66 @@
+.onboarding-optional {
+  margin-inline-start: 5px;
+  color: #7b8981;
+  font-size: .75rem;
+  font-weight: 650;
+}
+
+.onboarding-review-card > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-block-end: 10px;
+}
+
+.onboarding-review-card > header h3 {
+  margin: 0;
+}
+
+.onboarding-review-card > header a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 40px;
+  padding-inline: 10px;
+  border-radius: 10px;
+  color: #176b47;
+  font-size: .78rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.onboarding-review-card > header a:hover,
+.onboarding-review-card > header a:focus-visible {
+  background: #edf6f1;
+}
+
+.onboarding-actions__spacer {
+  flex: .9;
+}
+
+.onboarding-unset-note {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #dce7e0;
+  border-radius: 14px;
+  background: #f7faf8;
+  color: #64736b;
+  font-size: .82rem;
+  line-height: 1.75;
+}
+
+@media (max-width: 720px) {
+  .onboarding-review-card > header a {
+    min-block-size: 44px;
+    padding-inline: 12px;
+  }
+
+  .onboarding-actions__spacer {
+    display: none;
+  }
+
+  .onboarding-actions > .primary:only-child,
+  .onboarding-actions__spacer + .primary {
+    flex: 1 1 100%;
+  }
+}
