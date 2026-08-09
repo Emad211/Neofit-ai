@@ -33,15 +33,24 @@ This decision removes only catalog **expansion** from the roadmap; it does not w
 
 Do not create another Vercel project or Production deployment. Keep using GitHub CI + Next production builds, then deploy one latest stacked green candidate to the existing Preview Lab.
 
+Current Stage21 code head passed both:
+
+- Runtime Recovery Gate CI `31341835609`;
+- Onboarding v2 Lifecycle CI `31341835614`.
+
+The public/stable Preview still needs one exact-current-stack deployment before browser evidence can replace the old Stage12 incident evidence.
+
 ### Auth mailbox/session E2E — OPEN
 
 Need latest-Preview proof for:
 
-- signup → scanner-safe confirmation → session → onboarding;
+- signup → scanner-safe confirmation → session → Onboarding v2 AI gate;
 - password recovery;
 - Password Changed delivery;
 - Secure Email Change with old/new mailbox;
 - two-browser revoke-other-sessions.
+
+Current local-signup incident is understood: Supabase Auth logs recorded a Gmail SMTP `535 BadCredentials` failure during the failed attempt, while later signup/verify events succeeded after SMTP credentials were corrected. Do not misclassify the earlier mail failure as a Next/Auth routing failure.
 
 Hosted controls already configured: minimum password 12, current-password enforcement, Secure Email Change, OTP 3600, Preview SMTP and NeoFit TokenHash templates. Secure Password Change remains OFF until exact reauthentication nonce UX exists. Leaked-password protection remains plan-gated on current Free Supabase.
 
@@ -49,22 +58,62 @@ Hosted controls already configured: minimum password 12, current-password enforc
 
 ## P1 — user/data truth
 
-### Onboarding defaults can become false self-report — HIGH P1 / STAGE 21
+### Stage21 Onboarding v2 + AI credential gate — CODE GREEN; HOSTED E2E OPEN
 
-Stage 20 found that the empty Onboarding draft currently contains valid categorical answers before explicit user choice, including examples such as:
+Stage21 is now implemented rather than design-only.
 
-- activity=`sedentary`
-- sleepQuality=`average`
-- stress=`medium`
-- smoking=`never`
-- diet=`balanced`
-- trainingLevel=`beginner`
-- location=`gym`
-- daysPerWeek=`3`
+Current contract:
 
-Gender UI can also visually fall back to `prefer-not-to-say` while stored gender is null.
+- `ONBOARDING_SCHEMA_VERSION = 2`;
+- public Onboarding remains exactly 15 steps;
+- step 1 is the real Coach/AI credential gate;
+- account mode requires a validated active Google AI Studio credential before advancing;
+- AvalAI is optional fallback in the same gate;
+- raw keys use the existing encrypted BYOK vault and never enter the Onboarding document or persistent Browser storage;
+- old `/onboarding/ai` half-route is removed; the real gate is `/onboarding/welcome`;
+- personal categorical/boolean self-report is `null` until explicitly selected;
+- required steps refuse to advance while required choices remain unset;
+- program start date + duration contract are captured before completion;
+- duration is currently bounded to 14–84 days pending Stage22 Program Cycle materialization;
+- completion routes to `/onboarding/ready`, which deliberately refuses to claim that an AI course has already been generated.
 
-Because Coach later consumes Onboarding as user context, UI defaults must not silently become claimed self-report. Live Supabase currently has **0 `user_onboarding` rows**, so Stage 21 can redesign this contract before hosted user data exists.
+A live pre-v2 audit found one `user_onboarding` row at schema v1/completed. Stage21 does not delete it and does not trust ambiguous old defaults. Conservative compatibility preserves only unambiguous typed/text/body/list data, resets ambiguous categorical self-report, clears old completion and rewrites schema v2 only when the user saves through the new flow.
+
+Remaining proof:
+
+- real account enters step 1 and saves/tests Google key;
+- optional AvalAI save/test;
+- refresh/resume retains credential metadata without raw key return;
+- complete all 15 v2 steps with explicit choices;
+- selected start date/duration persist;
+- hosted row becomes schema v2 through actual user saves;
+- sign-out/in returns to the correct lifecycle state.
+
+### Program Cycle — MISSING / NEXT DOMAIN STAGE
+
+The current versioned Workout/Nutrition plan stores are not yet a complete course lifecycle. Stage22 must add user-owned `program_cycles` with bounded state transitions, requested course duration, start/end dates, generation state, active plan linkage, revision/provenance and idempotent generation-run semantics.
+
+Do not solve this by expanding a flat plan JSON to dozens of days. Program Cycle should materialize bounded phases/blocks into the requested duration.
+
+### Exercise Registry + substitution safety — MISSING / STAGE23
+
+Current workout plan documents can persist exercises, but a professional authoritative registry for movement pattern, muscles, equipment, difficulty, contraindications and validated substitutes is still missing. Coach must not invent arbitrary exercise identities for write flows.
+
+### Structured post-Onboarding planners — MISSING / STAGE24
+
+Need bounded structured Training Planner + Nutrition Planner sharing one normalized profile/safety/program contract, deterministic validation, Nutrition identity/source-version resolution and fail-closed persistence.
+
+### Program review/activation — MISSING / STAGE25
+
+Need one coordinated user-facing course review before activating generated Workout + Nutrition plan versions under a Program Cycle.
+
+### Coach proposal/diff/confirmation — MISSING / STAGE26
+
+Need typed proposals that show exact before/after scope and reason before any plan mutation. Stale-source-version proposals must fail.
+
+### Confirmed plan mutation tools — MISSING / STAGE27
+
+Need user-confirmed tools for future-only Workout/Nutrition changes that create immutable new versions. Completed workout sessions and logged diary history must never be rewritten.
 
 ### Progress — CODE REAL; HOSTED QA OPEN
 
@@ -94,11 +143,11 @@ Need real runtime log → repeat click → unchanged row count → Today/Nutriti
 
 ## P1 — AI / agent runtime
 
-### Google BYOK — CODE READY; HOSTED PROOF OPEN
+### Google BYOK — CODE READY + ONBOARDING GATE WIRED; HOSTED PROOF OPEN
 
-Need real Save/Test + Coach call on latest Preview.
+Default Google model remains `gemini-3.5-flash-lite`. Need real Save/Test from the Onboarding gate plus a Coach/model request on the latest runtime.
 
-### AvalAI fallback — CODE READY; HOSTED CONTROLLED PROOF OPEN
+### AvalAI fallback — CODE READY + ONBOARDING OPTIONAL WIRED; HOSTED CONTROLLED PROOF OPEN
 
 Need deliberate fallback-eligible Google failure followed by AvalAI success.
 
@@ -124,7 +173,7 @@ Need real restricted YouTube key + cards/audit/direct-video/cooldown proof after
 
 ### Agent write capability — DELIBERATELY NOT ACTIVE
 
-Next write evolution should be typed proposals + visible diff + explicit user confirmation for new immutable plan versions. No silent mutation and no unrestricted SQL.
+The write evolution is explicitly Stage26/27: typed proposal → deterministic validation → visible diff → explicit confirmation → immutable future plan version. No silent mutation and no unrestricted SQL.
 
 ---
 
@@ -140,9 +189,12 @@ Keep route-specific sources. Remove avoidable serial reads with request reuse/Pr
 
 ### Current expensive paths — BOUNDED
 
-- Nutrition plan display: identity + one active-plan query.
-- Plan meal logging: live Auth + one plan read + one bulk write.
-- YouTube direct URL: zero Data API calls.
+- root lifecycle: one live Auth validation + Google credential/Onboarding reads in parallel;
+- Onboarding step save: one account row upsert per explicit step transition, no keystroke autosave;
+- AI key Save/Test: provider validation only, no hidden inference;
+- Nutrition plan display: identity + one active-plan query;
+- Plan meal logging: live Auth + one plan read + one bulk write;
+- YouTube direct URL: zero Data API calls;
 - YouTube search: one DB reservation + two official API calls + one LLM request.
 
 ---
@@ -191,7 +243,11 @@ Implemented and CI-gated:
 - App Shell keyboard skip link;
 - app routes scanned for remaining `RoutePlaceholder` usage.
 
-### Rendered visual QA — OPEN
+### Stage21 rendered Onboarding QA — OPEN
+
+Code-level accessibility/data-truth gates are green, but the new AI credential step, explicit nullable choice states and course-duration controls still need rendered desktop/mobile keyboard/focus evidence on local/current Preview runtime.
+
+### General rendered visual QA — OPEN
 
 After the next single deployment, capture mobile/desktop evidence for Today, Nutrition, Plan, Workout, Player, Progress, Profile, Coach, Auth, Onboarding and Settings. Fix spacing/card-density/typography from rendered evidence rather than CSS assumptions.
 
@@ -199,15 +255,16 @@ After the next single deployment, capture mobile/desktop evidence for Today, Nut
 
 ## Recommended order
 
-1. Stage 21: redesign Onboarding defaults/self-report semantics while the live table is empty.
-2. Continue route-by-route gap/UI/performance audit and remove fake/decorative behavior.
-3. Deploy latest stacked green candidate once to the existing Preview Lab.
-4. Run Auth mailbox/session E2E.
-5. Run Google BYOK + AI audit + controlled AvalAI fallback proof.
-6. Runtime-prove YouTube search/direct-video/tool budget.
-7. Runtime-prove Workout/Nutrition/Progress + Stage18 idempotent meal logging.
-8. Then add typed Coach proposal/write flows with explicit confirmation.
+1. Local runtime proof of current Stage21: Auth/signup mail path, AI key gate, full v2 Onboarding, persisted duration, empty Today regression.
+2. **Stage22 — Program Cycle** schema/state machine + plan linkage/idempotent generation-run contract.
+3. **Stage23 — Exercise Registry + deterministic Safety/Substitution Engine.**
+4. **Stage24 — structured Training + Nutrition planners and validators/materializers.**
+5. **Stage25 — coordinated Program review/activation UX.**
+6. **Stage26 — Coach Proposal / exact Diff / Confirmation framework.**
+7. **Stage27 — confirmed Workout/Nutrition future-version mutation tools.**
+8. Deploy one latest stacked green candidate to existing Preview Lab when quota allows.
+9. Run Auth/provider/YouTube/program lifecycle E2E, then only increase autonomy after evidence is green.
 
 ## Release rule
 
-Preview-only. No Production promotion until P0/P1 hosted proofs are green with real account/provider/mailbox/tool traffic. The model never gets unrestricted database access.
+Preview-only. No Production promotion until P0/P1 hosted proofs are green with real account/provider/mailbox/tool/program traffic. The model never gets unrestricted database access and never silently mutates a program.
