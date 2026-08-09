@@ -1,38 +1,42 @@
-name: Onboarding Foundation CI
+name: Onboarding v2 Lifecycle CI
 
 on:
   push:
     branches:
-      - 'stage7/**'
+      - 'stage21/**'
     paths:
       - 'web/app/onboarding/**'
+      - 'web/app/page.tsx'
       - 'web/components/onboarding/**'
       - 'web/lib/onboarding/**'
       - 'web/tests/onboarding-foundation.test.ts'
       - 'web/lib/supabase/database.types.ts'
       - 'web/package.json'
       - 'supabase/migrations/*onboarding*.sql'
-      - 'docs/NEOFIT_STAGE7_ONBOARDING_PLAN.md'
+      - 'docs/NEOFIT_STAGE21_ONBOARDING_SELF_REPORT_V2.md'
+      - 'docs/NEOFIT_COACH_PROGRAM_LIFECYCLE_ARCHITECTURE.md'
       - '.github/workflows/onboarding-ci.yml'
   pull_request:
     branches:
-      - stage6/workout-player-persistence
+      - stage20/ui-truth-empty-states
     paths:
       - 'web/app/onboarding/**'
+      - 'web/app/page.tsx'
       - 'web/components/onboarding/**'
       - 'web/lib/onboarding/**'
       - 'web/tests/onboarding-foundation.test.ts'
       - 'web/lib/supabase/database.types.ts'
       - 'web/package.json'
       - 'supabase/migrations/*onboarding*.sql'
-      - 'docs/NEOFIT_STAGE7_ONBOARDING_PLAN.md'
+      - 'docs/NEOFIT_STAGE21_ONBOARDING_SELF_REPORT_V2.md'
+      - 'docs/NEOFIT_COACH_PROGRAM_LIFECYCLE_ARCHITECTURE.md'
       - '.github/workflows/onboarding-ci.yml'
 
 permissions:
   contents: read
 
 concurrency:
-  group: onboarding-ci-${{ github.ref }}
+  group: onboarding-v2-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -57,16 +61,19 @@ jobs:
       - name: Install workspace dependencies
         working-directory: web
         run: npm install --no-audit --no-fund
-      - name: Onboarding contract tests
+      - name: Onboarding v2 contract tests
         working-directory: web
         run: npm run test:onboarding
+      - name: Full Supabase app regression
+        working-directory: web
+        run: npm run test:supabase-app
       - name: TypeScript
         working-directory: web
         run: npm run typecheck
       - name: Production build
         working-directory: web
         run: npm run build
-      - name: Verify onboarding ownership and nutrition boundary
+      - name: Verify lifecycle boundaries
         shell: bash
         run: |
           set -euo pipefail
@@ -76,6 +83,11 @@ jobs:
           grep -q '(select auth.uid()) = user_id' "$FILE"
           grep -q "status in ('draft', 'completed')" "$FILE"
           grep -q 'current_step between 1 and 15' "$FILE"
+          grep -q 'ONBOARDING_SCHEMA_VERSION = 2' web/lib/onboarding/model.ts
+          grep -q 'programDurationDays' web/lib/onboarding/model.ts
+          grep -q '/api/ai/providers' web/components/onboarding/onboarding-ai-gate.tsx
+          ! grep -q '/onboarding/ai' web/app/page.tsx
+          ! grep -Eq 'localStorage|sessionStorage' web/components/onboarding/onboarding-ai-gate.tsx
           grep -q 'Nutrition Core' web/lib/onboarding/model.ts
           if grep -Ei '\b(calorieTarget|proteinGrams|carbohydrateGrams|fatGrams|bmr)\b' web/lib/onboarding/model.ts; then
             echo 'Legacy nutrition arithmetic detected inside onboarding model.' >&2
