@@ -29,6 +29,7 @@ mobile/.env
 mobile/.env.*
 
 # Tooling
+.tools/
 coverage/
 *.tsbuildinfo
 npm-debug.log*
