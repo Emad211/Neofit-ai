@@ -8,18 +8,21 @@ const testDirectory = dirname(fileURLToPath(import.meta.url));
 const webRoot = resolve(testDirectory, '..');
 const repositoryRoot = resolve(webRoot, '..');
 const migrationsRoot = resolve(repositoryRoot, 'supabase/migrations');
+const identityMigrationName = '20260804232149_identity_foundation.sql';
 const migrationName = '20260805132201_nutrition_persistence.sql';
 
 async function readMigration(): Promise<string> {
   return readFile(resolve(migrationsRoot, migrationName), 'utf8');
 }
 
-test('Stage 4D adds exactly one nutrition migration after identity', async () => {
+test('nutrition foundation remains the first migration after identity while later migrations are allowed', async () => {
   const migrations = (await readdir(migrationsRoot)).filter((name) => name.endsWith('.sql')).sort();
-  assert.deepEqual(migrations, [
-    '20260804232149_identity_foundation.sql',
-    migrationName,
-  ]);
+  const identityIndex = migrations.indexOf(identityMigrationName);
+  const nutritionIndex = migrations.indexOf(migrationName);
+  assert.ok(identityIndex >= 0, 'Identity foundation migration is missing.');
+  assert.ok(nutritionIndex >= 0, 'Nutrition persistence migration is missing.');
+  assert.equal(nutritionIndex, identityIndex + 1);
+  assert.deepEqual(migrations.slice(identityIndex, nutritionIndex + 1), [identityMigrationName, migrationName]);
 });
 
 test('nutrition goals store Shared Core JSON without SQL arithmetic', async () => {
