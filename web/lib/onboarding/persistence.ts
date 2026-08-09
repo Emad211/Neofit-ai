@@ -1,12 +1,18 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database, Json } from '@/lib/supabase/database.types';
-import { parseOnboardingDraft, type OnboardingDraft } from './model';
+import {
+  ONBOARDING_TOTAL_STEPS,
+  normalizeOnboardingDraft,
+  type OnboardingDraft,
+} from './model';
 
 export interface RemoteOnboardingSnapshot {
   readonly draft: OnboardingDraft | null;
   readonly currentStep: number;
   readonly status: 'draft' | 'completed';
   readonly completedAt: string | null;
+  readonly schemaVersion: number;
+  readonly migratedFromVersion: number | null;
 }
 
 export async function loadRemoteOnboarding(
@@ -15,16 +21,19 @@ export async function loadRemoteOnboarding(
 ): Promise<RemoteOnboardingSnapshot | null> {
   const { data, error } = await supabase
     .from('user_onboarding')
-    .select('draft,current_step,status,completed_at')
+    .select('draft,current_step,status,completed_at,schema_version')
     .eq('user_id', userId)
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
+  const normalized = normalizeOnboardingDraft(data.draft);
   return {
-    draft: parseOnboardingDraft(data.draft),
+    draft: normalized?.draft ?? null,
     currentStep: data.current_step,
     status: data.status === 'completed' ? 'completed' : 'draft',
     completedAt: data.completed_at,
+    schemaVersion: data.schema_version,
+    migratedFromVersion: normalized?.migratedFromVersion ?? null,
   };
 }
 
@@ -37,7 +46,7 @@ export async function saveRemoteOnboarding(
   const { error } = await supabase.from('user_onboarding').upsert({
     user_id: userId,
     status: 'draft',
-    current_step: Math.max(1, Math.min(15, currentStep)),
+    current_step: Math.max(1, Math.min(ONBOARDING_TOTAL_STEPS, currentStep)),
     draft: draft as unknown as Json,
     schema_version: draft.version,
     completed_at: null,
@@ -60,7 +69,7 @@ export async function completeRemoteOnboarding(
   const { error: onboardingError } = await supabase.from('user_onboarding').upsert({
     user_id: userId,
     status: 'completed',
-    current_step: 15,
+    current_step: ONBOARDING_TOTAL_STEPS,
     draft: completedDraft as unknown as Json,
     schema_version: completedDraft.version,
     completed_at: completedAt,
