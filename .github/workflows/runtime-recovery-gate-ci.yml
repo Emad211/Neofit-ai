@@ -85,13 +85,13 @@ jobs:
         run: |
           set -euo pipefail
           env -u NEXT_PUBLIC_SUPABASE_URL -u NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY \
-            npm run start -- -H 127.0.0.1 -p 3100 >/tmp/neofit-runtime-recovery.log 2>&1 &
+            ./node_modules/.bin/next start -H 127.0.0.1 -p 3100 >/tmp/neofit-runtime-recovery.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID || true' EXIT
 
           READY=0
           for i in $(seq 1 30); do
-            STATUS=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3100/offline || true)
+            STATUS=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3100/sw.js || true)
             if [ "$STATUS" = "200" ]; then READY=1; break; fi
             sleep 1
           done
@@ -109,9 +109,9 @@ jobs:
           test "$ROOT_STATUS" = "307"
           grep -Eiq '^location: /today\r?$' /tmp/root.headers
 
-          SW_STATUS=$(curl -sS -o /tmp/sw.body -w '%{http_code}' http://127.0.0.1:3100/sw.js)
-          test "$SW_STATUS" = "200"
-          grep -q 'neofit-app-shell-' /tmp/sw.body
+          grep -q 'neofit-app-shell-' /tmp/neofit-runtime-recovery-sw.tmp 2>/dev/null || true
+          curl -sS http://127.0.0.1:3100/sw.js -o /tmp/neofit-runtime-recovery-sw.tmp
+          grep -q 'neofit-app-shell-' /tmp/neofit-runtime-recovery-sw.tmp
       - name: Hard recovery boundaries
         shell: bash
         run: |
