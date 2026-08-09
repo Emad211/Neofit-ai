@@ -11,11 +11,27 @@ Status: canonical **current** backlog. Detailed implementation/incident history 
 
 ---
 
+## Product decisions / explicit non-goals
+
+### Food catalog expansion — DEFERRED BY PRODUCT DECISION
+
+Authoritative/versioned food-catalog expansion is **not part of the active roadmap**. Do not schedule IFKB/FNDDS/SR coverage expansion unless the product owner explicitly reopens it.
+
+Existing Nutrition safety rules remain unchanged:
+
+- current catalog identities remain versioned;
+- Shared Nutrition Core remains the sole arithmetic authority;
+- AI-generated calorie/macro claims remain prohibited as persisted authority.
+
+This decision removes only catalog **expansion** from the roadmap; it does not weaken the existing Nutrition Core/provenance contracts.
+
+---
+
 ## P0 — hosted runtime proofs
 
 ### Latest Preview stack — OPEN
 
-Vercel build-rate remains constrained. Do not create another project or Production deployment. Keep using GitHub CI + Next production builds, then deploy one latest stacked green candidate to the existing Preview Lab.
+Do not create another Vercel project or Production deployment. Keep using GitHub CI + Next production builds, then deploy one latest stacked green candidate to the existing Preview Lab.
 
 ### Auth mailbox/session E2E — OPEN
 
@@ -33,7 +49,7 @@ Hosted controls already configured: minimum password 12, current-password enforc
 
 ## P1 — user/data truth
 
-### Onboarding defaults can become false self-report — HIGH P1 / NEXT STAGE
+### Onboarding defaults can become false self-report — HIGH P1 / STAGE 21
 
 Stage 20 found that the empty Onboarding draft currently contains valid categorical answers before explicit user choice, including examples such as:
 
@@ -49,12 +65,6 @@ Stage 20 found that the empty Onboarding draft currently contains valid categori
 Gender UI can also visually fall back to `prefer-not-to-say` while stored gender is null.
 
 Because Coach later consumes Onboarding as user context, UI defaults must not silently become claimed self-report. Live Supabase currently has **0 `user_onboarding` rows**, so Stage 21 can redesign this contract before hosted user data exists.
-
-### Food catalog coverage — HIGH P1
-
-Current Web catalog remains a small seeded IFKB-shaped set. It limits useful Nutrition search, plan creation and Coach meal suggestions.
-
-Expansion must use authoritative/versioned IFKB/FNDDS/SR-compatible resolution while keeping Nutrition Core authoritative. AI-generated calorie/macro claims remain prohibited.
 
 ### Progress — CODE REAL; HOSTED QA OPEN
 
@@ -189,15 +199,14 @@ After the next single deployment, capture mobile/desktop evidence for Today, Nut
 
 ## Recommended order
 
-1. Close Stage 20 documentation on a final green HEAD.
-2. Stage 21: redesign Onboarding defaults/self-report semantics while the live table is empty.
-3. Expand authoritative/versioned food catalog coverage.
-4. Deploy latest stacked green candidate once to existing Preview Lab.
-5. Run Auth mailbox/session E2E.
-6. Run Google BYOK + AI audit + controlled AvalAI fallback proof.
-7. Runtime-prove YouTube search/direct-video/tool budget.
-8. Runtime-prove Workout/Nutrition/Progress + Stage18 idempotent meal logging.
-9. Then add typed Coach proposal/write flows with explicit confirmation.
+1. Stage 21: redesign Onboarding defaults/self-report semantics while the live table is empty.
+2. Continue route-by-route gap/UI/performance audit and remove fake/decorative behavior.
+3. Deploy latest stacked green candidate once to the existing Preview Lab.
+4. Run Auth mailbox/session E2E.
+5. Run Google BYOK + AI audit + controlled AvalAI fallback proof.
+6. Runtime-prove YouTube search/direct-video/tool budget.
+7. Runtime-prove Workout/Nutrition/Progress + Stage18 idempotent meal logging.
+8. Then add typed Coach proposal/write flows with explicit confirmation.
 
 ## Release rule
 
