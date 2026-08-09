@@ -86,7 +86,13 @@ export function TodayScreen() {
       </section>
 
       <Link className="plan-preview" href="/nutrition/plan">
-        <div><span className="section-kicker">برنامهٔ غذایی</span><h2>نگاه سریع به برنامه</h2><p>در نسخه فعلی این بخش هنوز fixture-backed است و در audit برای persistence واقعی علامت خورده.</p></div>
+        <div>
+          <span className="section-kicker">برنامهٔ غذایی</span>
+          <h2>نگاه سریع به برنامه</h2>
+          <p>{account
+            ? 'برنامهٔ حساب از نسخهٔ فعال و کاتالوگ نسخه‌دار خوانده می‌شود؛ وعده‌های معتبر را می‌توان برای امروز مستقیم ثبت کرد.'
+            : 'در حالت مهمان فقط نمونهٔ Demo برای بررسی رابط نمایش داده می‌شود و برنامهٔ شخصی محسوب نمی‌شود.'}</p>
+        </div>
         <span className="round-arrow"><NeoFitIcon name="chevron" /></span>
       </Link>
     </section>

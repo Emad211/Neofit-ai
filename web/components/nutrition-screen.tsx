@@ -3,13 +3,14 @@
 import type { MealType } from '@neofit/nutrition-core';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { NeoFitIcon } from '@/components/neofit-icons';
 import { useNutritionState } from '@/components/nutrition-state';
 import { foodFixtures, type FoodFixture } from '@/data/fixtures';
 import { estimateWebFood, filterWebFoods } from '@/lib/nutrition-adapter';
 
 const faNumber = new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 1 });
+type CategoryFilter = 'all' | FoodFixture['category'];
 
 const categoryLabels: Readonly<Record<FoodFixture['category'], string>> = {
   stew: 'خورش',
@@ -18,6 +19,15 @@ const categoryLabels: Readonly<Record<FoodFixture['category'], string>> = {
   soup: 'آش و سوپ',
   breakfast: 'صبحانه',
 };
+
+const categoryFilters: readonly { id: CategoryFilter; label: string }[] = [
+  { id: 'all', label: 'همه' },
+  { id: 'stew', label: 'خورش' },
+  { id: 'rice', label: 'برنج' },
+  { id: 'kebab', label: 'کباب' },
+  { id: 'soup', label: 'آش و سوپ' },
+  { id: 'breakfast', label: 'صبحانه' },
+];
 
 const mealOptions: readonly { id: MealType; label: string }[] = [
   { id: 'breakfast', label: 'صبحانه' },
@@ -50,22 +60,54 @@ export function NutritionScreen() {
   const router = useRouter();
   const { addFood, account } = useNutritionState();
   const [query, setQuery] = useState('');
+  const [category, setCategory] = useState<CategoryFilter>('all');
   const [selectedFood, setSelectedFood] = useState<FoodFixture | null>(null);
   const [portionCount, setPortionCount] = useState(1);
   const [mealType, setMealType] = useState<MealType>('lunch');
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
 
-  const filteredFoods = useMemo(() => filterWebFoods(foodFixtures, query), [query]);
+  const filteredFoods = useMemo(() => {
+    const byText = filterWebFoods(foodFixtures, query);
+    return category === 'all' ? byText : byText.filter((food) => food.category === category);
+  }, [category, query]);
   const selectedEstimate = useMemo(
     () => selectedFood ? estimateWebFood(selectedFood, portionCount) : null,
     [portionCount, selectedFood],
   );
 
+  useEffect(() => {
+    if (!selectedFood) return;
+    closeButtonRef.current?.focus();
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape' && !saving) {
+        event.preventDefault();
+        setSelectedFood(null);
+        window.requestAnimationFrame(() => openerRef.current?.focus());
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [saving, selectedFood]);
+
   function chooseFood(food: FoodFixture) {
+    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setSelectedFood(food);
     setPortionCount(1);
     setSubmitError('');
+  }
+
+  function closeSheet() {
+    if (saving) return;
+    setSelectedFood(null);
+    window.requestAnimationFrame(() => openerRef.current?.focus());
+  }
+
+  function resetSearch() {
+    setQuery('');
+    setCategory('all');
   }
 
   async function confirmFood() {
@@ -83,6 +125,15 @@ export function NutritionScreen() {
       setSaving(false);
     }
   }
+
+  const categoryLabel = category === 'all' ? null : categoryLabels[category];
+  const summaryLabel = query && categoryLabel
+    ? `«${query}» در ${categoryLabel}`
+    : query
+      ? `نتیجه برای «${query}»`
+      : categoryLabel
+        ? `دستهٔ ${categoryLabel}`
+        : 'همهٔ غذاهای فعلی کاتالوگ';
 
   return (
     <>
@@ -107,15 +158,22 @@ export function NutritionScreen() {
           {query ? <button type="button" onClick={() => setQuery('')} aria-label="پاک‌کردن جست‌وجو">×</button> : <span />}
         </label>
 
-        <div className="filter-row" aria-label="دسته‌بندی‌های غذا">
-          <button className="filter-chip is-active" type="button">همه</button>
-          <button className="filter-chip" type="button">اخیر</button>
-          <button className="filter-chip" type="button">محبوب‌ها</button>
-          <button className="filter-chip" type="button">ایرانی</button>
+        <div className="filter-row" aria-label="دسته‌بندی‌های واقعی کاتالوگ">
+          {categoryFilters.map((filter) => (
+            <button
+              className={category === filter.id ? 'filter-chip is-active' : 'filter-chip'}
+              type="button"
+              key={filter.id}
+              aria-pressed={category === filter.id}
+              onClick={() => setCategory(filter.id)}
+            >
+              {filter.label}
+            </button>
+          ))}
         </div>
 
-        <div className="results-summary">
-          <span>{query ? `نتیجه برای «${query}»` : 'پیشنهادهای سریع'}</span>
+        <div className="results-summary" aria-live="polite">
+          <span>{summaryLabel}</span>
           <b>{faNumber.format(filteredFoods.length)} مورد</b>
         </div>
 
@@ -126,20 +184,21 @@ export function NutritionScreen() {
             <div className="empty-state">
               <span className="empty-state__icon"><NeoFitIcon name="search" size={30} /></span>
               <h3>غذایی پیدا نشد</h3>
-              <p>نام ساده‌تر یا املای دیگری را امتحان کن.</p>
-              <button type="button" className="secondary-button" onClick={() => setQuery('')}>پاک‌کردن جست‌وجو</button>
+              <p>جست‌وجو یا دسته‌بندی را تغییر بده. کاتالوگ فعلی هنوز محدود و نسخه‌دار است.</p>
+              <button type="button" className="secondary-button" onClick={resetSearch}>نمایش همهٔ غذاها</button>
             </div>
           )}
         </div>
       </section>
 
       {selectedFood && selectedEstimate ? (
-        <div className="sheet-layer" role="presentation" onMouseDown={() => !saving && setSelectedFood(null)}>
+        <div className="sheet-layer" role="presentation" onMouseDown={closeSheet}>
           <section
             className="meal-sheet"
             role="dialog"
             aria-modal="true"
             aria-labelledby="meal-sheet-title"
+            aria-describedby="meal-sheet-evidence"
             onMouseDown={(event) => event.stopPropagation()}
           >
             <span className="sheet-handle" />
@@ -149,7 +208,7 @@ export function NutritionScreen() {
                 <h2 id="meal-sheet-title">{selectedFood.nameFa}</h2>
                 <p>{selectedFood.portionLabelFa}</p>
               </div>
-              <button type="button" aria-label="بستن" disabled={saving} onClick={() => setSelectedFood(null)}>×</button>
+              <button ref={closeButtonRef} type="button" aria-label="بستن" disabled={saving} onClick={closeSheet}>×</button>
             </header>
 
             <div className="nutrition-strip">
@@ -177,6 +236,7 @@ export function NutritionScreen() {
                     key={option.id}
                     disabled={saving}
                     className={mealType === option.id ? 'is-active' : ''}
+                    aria-pressed={mealType === option.id}
                     onClick={() => setMealType(option.id)}
                   >
                     {option.label}
@@ -185,7 +245,7 @@ export function NutritionScreen() {
               </div>
             </div>
 
-            <p className="evidence-note"><NeoFitIcon name="check" size={16} />مقدارها با قوانین قطعی Nutrition Core محاسبه شده‌اند.</p>
+            <p id="meal-sheet-evidence" className="evidence-note"><NeoFitIcon name="check" size={16} />مقدارها با قوانین قطعی Nutrition Core محاسبه شده‌اند.</p>
             <p className="sync-destination-note">
               {account ? 'این وعده در حساب Supabase تو ذخیره می‌شود.' : 'این وعده فقط در همین مرورگر ذخیره می‌شود.'}
             </p>

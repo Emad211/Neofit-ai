@@ -33,6 +33,10 @@ function metric(value: number | null | undefined, unit: string) {
   return value === null || value === undefined ? <strong>—</strong> : <strong>{faNumber.format(value)}<small> {unit}</small></strong>;
 }
 
+function metricDate(row: BodyMeasurement | null) {
+  return row ? `آخرین ثبت: ${dateFormatter.format(new Date(row.measuredAt))}` : 'هنوز اندازه‌گیری ثبت نشده';
+}
+
 export function ProgressScreen() {
   const { account } = useAccountState();
   const localDate = formatLocalDate(new Date(), account?.timezone);
@@ -82,10 +86,18 @@ export function ProgressScreen() {
     () => measurements.filter((row) => row.weightKg !== null).slice(-8),
     [measurements],
   );
-  const latest = measurements.at(-1) ?? null;
-  const latestWeight = [...measurements].reverse().find((row) => row.weightKg !== null)?.weightKg ?? null;
-  const latestWaist = [...measurements].reverse().find((row) => row.waistCm !== null)?.waistCm ?? null;
-  const latestBodyFat = [...measurements].reverse().find((row) => row.bodyFatPercent !== null)?.bodyFatPercent ?? null;
+  const latestWeightRow = useMemo(
+    () => [...measurements].reverse().find((row) => row.weightKg !== null) ?? null,
+    [measurements],
+  );
+  const latestWaistRow = useMemo(
+    () => [...measurements].reverse().find((row) => row.waistCm !== null) ?? null,
+    [measurements],
+  );
+  const latestBodyFatRow = useMemo(
+    () => [...measurements].reverse().find((row) => row.bodyFatPercent !== null) ?? null,
+    [measurements],
+  );
   const weightChange = weightRows.length >= 2
     ? (weightRows.at(-1)?.weightKg ?? 0) - (weightRows[0]?.weightKg ?? 0)
     : null;
@@ -180,14 +192,14 @@ export function ProgressScreen() {
       </div>
 
       <div className="progress-metrics">
-        <article><span>آخرین وزن</span>{metric(latestWeight, 'کیلوگرم')}<p>{weightChange === null ? 'برای روند، حداقل دو ثبت لازم است' : `${faNumber.format(Math.abs(weightChange))} کیلوگرم ${weightChange < 0 ? 'کاهش' : weightChange > 0 ? 'افزایش' : 'بدون تغییر'}`}</p></article>
-        <article><span>آخرین دور کمر</span>{metric(latestWaist, 'سانتی‌متر')}<p>{latest ? `آخرین ثبت: ${dateFormatter.format(new Date(latest.measuredAt))}` : 'هنوز اندازه‌گیری ثبت نشده'}</p></article>
-        <article><span>درصد چربی بدن</span>{metric(latestBodyFat, '٪')}<p>{faNumber.format(measurements.length)} ثبت واقعی</p></article>
+        <article><span>آخرین وزن</span>{metric(latestWeightRow?.weightKg, 'کیلوگرم')}<p>{weightChange === null ? 'برای روند، حداقل دو ثبت وزن لازم است' : `${faNumber.format(Math.abs(weightChange))} کیلوگرم ${weightChange < 0 ? 'کاهش' : weightChange > 0 ? 'افزایش' : 'بدون تغییر'}`}</p></article>
+        <article><span>آخرین دور کمر</span>{metric(latestWaistRow?.waistCm, 'سانتی‌متر')}<p>{metricDate(latestWaistRow)}</p></article>
+        <article><span>درصد چربی بدن</span>{metric(latestBodyFatRow?.bodyFatPercent, '٪')}<p>{metricDate(latestBodyFatRow)}</p></article>
       </div>
 
       <article className="progress-chart-card">
         <div className="progress-chart-card__header">
-          <div><span>روند وزن</span><h3>{weightRows.length ? 'آخرین اندازه‌گیری‌های ثبت‌شده' : 'هنوز داده‌ای برای نمودار نیست'}</h3></div>
+          <div><span>روند وزن</span><h3>{weightRows.length ? 'آخرین اندازه‌گیری‌های وزن' : 'هنوز داده‌ای برای نمودار نیست'}</h3></div>
           {weightChange === null ? <b>—</b> : <b>{weightChange > 0 ? '+' : ''}{faNumber.format(weightChange)} kg</b>}
         </div>
         {loading ? <p className="progress-empty">در حال خواندن اندازه‌گیری‌ها...</p> : weightRows.length ? (
@@ -214,7 +226,7 @@ export function ProgressScreen() {
       </form>
 
       <article className="consistency-card">
-        <div className="consistency-card__copy"><span>مرز داده</span><h3>فقط اندازه‌گیری واقعی</h3><p>Progress دیگر برای نمایش کارت یا نمودار، Nutrition diary یا وزن‌های fixture را بارگیری نمی‌کند.</p></div>
+        <div className="consistency-card__copy"><span>مرز داده</span><h3>فقط اندازه‌گیری واقعی</h3><p>Progress برای نمایش کارت یا نمودار، Nutrition diary یا وزن‌های Demo را بارگیری نمی‌کند.</p></div>
       </article>
 
       {measurements.length ? <section className="measurement-history" aria-labelledby="measurement-history-heading"><div className="section-heading section-heading--compact"><div><p className="section-kicker">تاریخچه</p><h2 id="measurement-history-heading">آخرین ثبت‌ها</h2></div></div>{[...measurements].reverse().slice(0, 6).map((row) => <article key={row.id}><div><strong>{dateFormatter.format(new Date(row.measuredAt))}</strong><p>{[row.weightKg !== null ? `${faNumber.format(row.weightKg)} kg` : null, row.waistCm !== null ? `${faNumber.format(row.waistCm)} cm کمر` : null, row.bodyFatPercent !== null ? `${faNumber.format(row.bodyFatPercent)}٪ چربی` : null].filter(Boolean).join(' · ')}</p>{row.note ? <small>{row.note}</small> : null}</div><button type="button" onClick={() => void deleteMeasurement(row)}>حذف</button></article>)}</section> : null}
