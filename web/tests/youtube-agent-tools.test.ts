@@ -4,7 +4,7 @@ import test from 'node:test';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extractYouTubeUrl, routeCoachExternalTool } from '@/lib/coach/external-tool-router';
-import { toolQueryFingerprint } from '@/lib/integrations/tool-audit';
+import { toolQueryFingerprint } from '@/lib/integrations/tool-audit-core';
 
 const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = resolve(webRoot, '..');
