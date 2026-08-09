@@ -1,6 +1,6 @@
 # NeoFit Stage 14 — Auth Account Lifecycle
 
-Status: implementation / Preview-only; stacked on Stage 13.
+Status: code + real built-Next HTTP proof complete; Preview-hosted email-change E2E pending Vercel quota reset and hosted Change Email configuration.
 
 ## Goal
 
@@ -8,7 +8,7 @@ Extend the serious Stage 13 identity/session boundary into account lifecycle ope
 
 ## Email change
 
-NeoFit now exposes email change in `/profile/security` only after `activeAuthSession()` succeeds. That means the request is gated by both local JWT claims and live `getUser()` validation against Supabase Auth.
+NeoFit exposes email change in `/profile/security` only after `activeAuthSession()` succeeds. The request is gated by both local JWT claims and live `getUser()` validation against Supabase Auth.
 
 The request uses:
 
@@ -47,11 +47,11 @@ Stage 14 adds repository-owned canonical templates for the hosted controls that 
 
 The Password Changed notification links users to NeoFit recovery if an unexpected password mutation occurs.
 
-The reauthentication template uses the Supabase-provided six-digit `{{ .Token }}` only. It does not invent a local verification protocol.
+The reauthentication template uses the Supabase-provided six-digit `{{ .Token }}` only. Current public Supabase documentation documents sending this nonce and consuming it through supported sensitive update operations; NeoFit does not invent a generic local privilege-elevation verifier from that OTP.
 
 ## Account deletion is deliberately not implemented yet
 
-Supabase self-service browser clients cannot safely call `auth.admin.deleteUser()`. The admin API requires a secret/service-role-equivalent privileged boundary and must never be exposed in the browser bundle or ordinary Route Handler credentials.
+Supabase self-service browser clients cannot safely call `auth.admin.deleteUser()`. The admin API requires a secret/service-role-equivalent privileged boundary and must never be exposed in the browser bundle or ordinary user-authenticated Web credentials.
 
 A correct deletion slice also needs to handle owned Storage objects because Supabase can reject deletion of a user that still owns Storage objects.
 
@@ -59,7 +59,7 @@ Therefore Stage 14 contains **no fake Delete Account button** and no privileged 
 
 The future deletion architecture must prove all of the following before UI exposure:
 
-1. explicit user intent and recent reauthentication;
+1. explicit user intent and a proven recent-reauthentication primitive;
 2. server-side identity binding to the exact requesting user;
 3. a tightly scoped privileged backend function that can only delete that same user;
 4. cleanup/handling of owned private Storage objects;
@@ -67,9 +67,20 @@ The future deletion architecture must prove all of the following before UI expos
 6. no privileged secret returned to or bundled for the browser;
 7. runtime E2E with a disposable account.
 
-## Runtime test contract
+## Runtime evidence
 
-Stage 14 CI starts the built Next server and verifies with real HTTP that a dummy `email_change` link:
+Auth Account Lifecycle CI run `31313488847` completed successfully for code HEAD `9937d7e69230e56feb65ba8afcdb7aab3c51b9d9` before this documentation-only sync.
+
+Successful gates:
+
+- account lifecycle contract tests;
+- complete Supabase app regression;
+- TypeScript;
+- Next.js production build;
+- real built-Next email-change HTTP smoke;
+- lifecycle privilege/boundary gate.
+
+The real HTTP smoke proves that a dummy `email_change` link:
 
 - returns `303`;
 - redirects to the configured canonical origin;
@@ -78,18 +89,31 @@ Stage 14 CI starts the built Next server and verifies with real HTTP that a dumm
 - keeps `Referrer-Policy: no-referrer` and `Cache-Control: private, no-store`;
 - renders the email-change verification interstitial.
 
-The broader Supabase app regression, TypeScript and production build also run.
+## Hosted configuration already evidenced by the user
 
-## Hosted Dashboard follow-up after code is green
+For Preview QA the user has configured:
 
-Before email-change E2E, verify in Supabase Dashboard:
+- custom SMTP;
+- scanner-safe Confirm Signup `TokenHash` template;
+- scanner-safe Reset Password `TokenHash` template;
+- `Password changed` security notification enabled.
 
-- Secure Email Change is enabled if available/desirable for the project;
-- `Change email address` template matches `supabase/templates/email-change.html`;
-- `Password changed` notification remains enabled and its body can be synced to `supabase/templates/password-changed.html`;
-- Reauthentication template can be synced to `supabase/templates/reauthentication.html` before a feature starts using it.
+These are manual Dashboard facts, not yet Stage 14 mailbox E2E proof.
+
+## Hosted Dashboard follow-up
+
+Before email-change E2E:
+
+- verify Secure Email Change in `Authentication -> Sign In / Providers -> Email`;
+- replace `Change email address` source with `supabase/templates/email-change.html`;
+- optionally sync the enabled Password Changed notification body to `supabase/templates/password-changed.html`;
+- keep the Reauthentication template ready, but do not claim a product reauthentication flow until a feature uses a documented verification contract.
 
 Do not enable unrelated Phone/MFA/identity-link notifications until those product flows exist.
+
+## Deployment status
+
+No new Vercel project will be created. Stage 14 will be deployed only to the existing `neofit-preview-lab` after its API deployment quota resets, ideally as the single latest green stacked candidate so quota is not wasted.
 
 ## Release rule
 
