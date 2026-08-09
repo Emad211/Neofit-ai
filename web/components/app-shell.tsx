@@ -49,9 +49,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [pathname]);
 
-  const statusClass = !online || loadError
-    ? 'offline-note'
-    : 'offline-note offline-note--trusted';
+  const statusClass = !online || loadError ? 'offline-note' : 'offline-note offline-note--trusted';
   let statusText: ReactNode;
   if (!online) {
     statusText = account
@@ -69,6 +67,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <main className="app-frame" id="main-content">
+      <a className="skip-link" href="#screen-content">رفتن به محتوای اصلی</a>
       <div className="app-frame__halo" aria-hidden="true" />
       <header className="topbar">
         <div>
@@ -89,7 +88,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <span>{statusText}</span>
       </div>
 
-      <div className="screen-content">{children}</div>
+      <div className="screen-content" id="screen-content" tabIndex={-1}>{children}</div>
 
       <nav className="bottom-nav" aria-label="ناوبری اصلی">
         {navigation.map((item) => {
