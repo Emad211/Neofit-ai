@@ -190,6 +190,31 @@ $activeNpmVersion = (& $npmCommand -v).Trim()
 Say "Active Node.js: $activeNodeVersion"
 Say "Active npm: $activeNpmVersion"
 
+$appUrl = "http://localhost:$Port"
+$envPath = Join-Path $current 'web\.env.local'
+
+$existingPublishable = $null
+$existingEncryption = $null
+$existingRecovery = $null
+if (Test-Path $envPath) {
+  foreach ($line in Get-Content $envPath) {
+    if ($line -match '^NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=(.+)$') {
+      $existingPublishable = $Matches[1].Trim()
+    }
+    if ($line -match '^AI_CREDENTIAL_ENCRYPTION_KEY=(.+)$') {
+      $existingEncryption = $Matches[1].Trim()
+    }
+    if ($line -match '^AUTH_RECOVERY_INTENT_KEY=(.+)$') {
+      $existingRecovery = $Matches[1].Trim()
+    }
+  }
+}
+
+if (-not $SupabasePublishableKey.Trim() -and $existingPublishable) {
+  $SupabasePublishableKey = $existingPublishable
+  Say 'Reusing the saved Supabase publishable key from web\.env.local.'
+}
+
 if (-not $SupabasePublishableKey.Trim()) {
   Write-Host ''
   Write-Host 'Paste the Supabase publishable key in THIS terminal only.' -ForegroundColor Yellow
@@ -199,22 +224,6 @@ if (-not $SupabasePublishableKey.Trim()) {
 
 if (-not $SupabasePublishableKey.Trim()) {
   Fail 'Supabase publishable key is empty.'
-}
-
-$appUrl = "http://localhost:$Port"
-$envPath = Join-Path $current 'web\.env.local'
-
-$existingEncryption = $null
-$existingRecovery = $null
-if (Test-Path $envPath) {
-  foreach ($line in Get-Content $envPath) {
-    if ($line -match '^AI_CREDENTIAL_ENCRYPTION_KEY=(.+)$') {
-      $existingEncryption = $Matches[1].Trim()
-    }
-    if ($line -match '^AUTH_RECOVERY_INTENT_KEY=(.+)$') {
-      $existingRecovery = $Matches[1].Trim()
-    }
-  }
 }
 
 $encryptionKey = if ($existingEncryption) { $existingEncryption } else { New-Base64Key }
@@ -257,7 +266,7 @@ Write-Host '- This local build uses the shared remote Supabase project.'
 Write-Host '- Node 24 on the machine was not uninstalled or changed.'
 Write-Host '- Local encryption/signing keys were generated locally and were not printed.'
 Write-Host '- Do not commit or share web\.env.local.'
-Write-Host '- Supabase hosted email templates currently use the hosted SiteURL, so local email confirmation may still return to Preview.'
+Write-Host '- Hosted Supabase email settings must allow localhost redirects for local confirmation flows.'
 Write-Host ''
 
 Say "Starting Next.js dev server on port $Port ..."
