@@ -15,6 +15,20 @@ on:
       - 'web/tests/runtime-recovery-gate.test.ts'
       - 'web/package.json'
       - '.github/workflows/runtime-recovery-gate-ci.yml'
+  pull_request:
+    branches:
+      - stage20/ui-truth-empty-states
+    paths:
+      - 'web/app/page.tsx'
+      - 'web/app/auth/**'
+      - 'web/app/layout.tsx'
+      - 'web/components/pwa-register.tsx'
+      - 'web/lib/auth/**'
+      - 'web/lib/nutrition-adapter.ts'
+      - 'web/lib/web-diary-storage.ts'
+      - 'web/tests/runtime-recovery-gate.test.ts'
+      - 'web/package.json'
+      - '.github/workflows/runtime-recovery-gate-ci.yml'
   workflow_dispatch:
 
 permissions:
