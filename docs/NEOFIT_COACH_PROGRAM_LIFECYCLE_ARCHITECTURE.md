@@ -1,53 +1,95 @@
 # NeoFit Coach Program Lifecycle Architecture
 
-Status: canonical product target for the active Preview cycle. This document supersedes the older assumption that Onboarding, AI settings, plan persistence and Coach are independent features.
+Status: **canonical product contract for the active Preview cycle**. Stage21 code is implemented and CI-green; Stage22 is the next domain stage. This document supersedes the older assumption that Onboarding, AI settings, plan persistence and Coach are independent features.
 
 ## Product promise
 
 A real NeoFit account follows one coherent lifecycle:
 
 ```text
-Account + verified session
-  -> Onboarding starts
-  -> connect personal AI provider key
-  -> complete explicit self-report / safety / preferences
-  -> choose program duration
-  -> NeoFit Coach generates coordinated Training + Nutrition program
-  -> validated immutable plan versions become active
-  -> user follows the program through Workout Player + Nutrition logging
-  -> Coach remains available throughout the program
+verified account
+  -> Onboarding step 1: connect personal Google AI key
+  -> optional AvalAI fallback
+  -> explicit self-report / safety / preferences
+  -> choose program start date + duration
+  -> Program Cycle generation
+  -> coordinated Training + Nutrition planners
+  -> deterministic validation / safety / Nutrition authority checks
+  -> immutable plan versions become active
+  -> user follows Workout + Nutrition program
+  -> one NeoFit Coach remains available throughout the course
   -> requested changes become typed proposals
-  -> user reviews an exact diff
-  -> explicit confirmation creates a new immutable plan version for the remaining program
-  -> history/provenance remains intact
+  -> user reviews an exact before/after diff
+  -> explicit confirmation creates a new immutable future plan version
+  -> completed history/provenance remains intact
 ```
 
-The user experiences one main **NeoFit Coach**. Internally, specialized planner/tool modules may exist, but the product must not expose a confusing swarm of autonomous agents.
+The user experiences **one NeoFit Coach**. Training, Nutrition, Safety, YouTube and future planner modules are internal tools/capabilities of that Coach, not a confusing swarm of user-facing agents.
 
-## AI credential gate inside Onboarding
+## Current execution status
+
+### Stage21 — IMPLEMENTED / CI GREEN / RUNTIME PROOF OPEN
+
+Current code now provides:
+
+- exactly 15 public Onboarding steps;
+- first step is the real AI credential gate;
+- Google AI Studio key is required for account-mode continuation;
+- AvalAI is available as optional fallback in the same step;
+- existing AES-GCM BYOK vault/provider validation routes are reused;
+- raw provider key never enters the Onboarding document or persistent Browser storage;
+- `ONBOARDING_SCHEMA_VERSION = 2`;
+- old personal categorical defaults are now `null/unset` until explicit user selection;
+- conservative v1 compatibility preserves only unambiguous data and does not promote old defaults to self-report;
+- 73-region injury Body Map remains intact;
+- final step captures program start date, requested duration and generation consent;
+- completion stops at `/onboarding/ready` instead of pretending a generated program already exists.
+
+Validated implementation head: `7aac774147b66c8983daa4ef91265d3493dd8d5f`.
+
+- Runtime Recovery Gate CI `31341835609`: success.
+- Onboarding v2 Lifecycle CI `31341835614`: success.
+
+Hosted/local account proof is still required before Stage21 is release-proven.
+
+### Stage22 — NEXT: Program Cycle
+
+Current Workout/Nutrition plan tables are useful immutable stores, but they do not yet represent the user's complete course lifecycle.
+
+Stage22 adds a user-owned `program_cycles` source of truth and idempotent generation-run boundary.
+
+## AI credential contract
 
 For a real account program, AI configuration is part of Onboarding rather than a hidden Profile prerequisite.
 
-Required product behavior:
+- first real Onboarding step checks existing Google credential metadata;
+- if missing/inactive, user enters a Google AI Studio key there;
+- save/test uses existing authenticated provider routes and encrypted vault;
+- Google is the primary required Planner/Coach provider;
+- AvalAI remains optional fallback;
+- `/profile/ai` remains the post-Onboarding rotation/recovery/settings surface;
+- Guest mode may remain an explicit Demo but cannot claim a generated personal program.
 
-- first real Onboarding stage checks whether a valid Google credential exists;
-- if absent, the user enters the Google AI Studio key inside Onboarding;
-- the existing encrypted BYOK vault and provider validation APIs are reused;
-- the raw key is never written into the Onboarding JSON, localStorage, logs or analytics;
-- Google is the primary required planner/Coach provider;
-- AvalAI remains optional fallback and can be configured in the same step or later;
-- `/profile/ai` remains the rotation/recovery/settings surface after Onboarding;
-- Guest mode may remain a Demo, but cannot claim a real generated personal program without an authenticated account + usable AI provider.
+Provider request policy remains request-efficient:
 
-## Onboarding v2 requirements
+```text
+normal request -> Google only
+eligible Google failure -> AvalAI fallback
+```
 
-Onboarding must distinguish explicit self-report from product defaults.
+No per-message provider health check and no hidden classifier inference should be added merely to route the normal Coach path.
 
-`unset`, `explicitly selected`, and `technical default` are different states.
+## Onboarding v2 data contract
 
-The program-generation contract must not treat untouched form defaults as user facts.
+Core semantic rule:
 
-Onboarding must capture at minimum:
+```text
+unset != explicitly selected != technical default
+```
+
+Personal facts are not inferred from untouched UI controls.
+
+Onboarding captures at minimum:
 
 - primary/secondary goal;
 - explicit body/profile data;
@@ -56,272 +98,269 @@ Onboarding must capture at minimum:
 - nutrition preferences/allergies/dislikes;
 - training history;
 - available equipment/location;
-- training days and session duration;
-- coaching style preferences;
+- training days/session duration;
+- coaching preferences;
 - program start date;
-- **program duration in days**;
-- final consent to generate a coordinated program from the supplied data.
+- requested program duration;
+- final consent for coordinated Training + Nutrition generation.
 
-## Program Cycle — missing domain entity
+Old v1 account/Guest drafts are handled conservatively. Ambiguous old categorical defaults are cleared and must be re-selected rather than guessed.
 
-Current Workout/Nutrition plan tables are useful versioned stores, but they are not yet a complete course/program lifecycle.
+## Program Cycle — Stage22 contract
 
-Add a user-owned `program_cycles` source of truth with a bounded state machine such as:
+Add one user-owned program lifecycle source of truth with bounded state transitions, initially one active cycle per user.
+
+Recommended states:
 
 ```text
 draft -> generating -> ready -> active -> completed
                      \-> failed
 active -> paused
+paused -> active
 active/paused -> completed
 ```
 
-Minimum program-cycle metadata:
+Minimum metadata:
 
-- id/user_id;
+- id / user_id;
 - title;
 - requested duration days;
-- start/end date;
-- goal snapshot / Onboarding schema version;
-- generation status;
-- active Workout Plan version;
-- active Nutrition Plan version;
-- generated-at / activated-at / completed-at;
+- start date / derived end date;
+- Onboarding schema/version snapshot reference or bounded normalized goal snapshot;
+- generation status and idempotency key;
+- active Workout Plan id/version;
+- active Nutrition Plan id/version;
 - revision number / source;
-- no raw prompt, API key or private model payload.
+- generated_at / activated_at / paused_at / completed_at;
+- created_at / updated_at;
+- no raw prompt, provider key, hidden chain-of-thought or private provider payload.
 
-Plan history stays immutable and user-owned under RLS.
+Stage22 must enforce ownership with RLS and make generation replay/idempotency explicit.
 
-## Current 14-day schema limitation
+## Course duration and bounded materialization
 
-Workout Plan v1 and Nutrition Plan v1 both cap a document at 14 days. That is incompatible with the new product promise when the user chooses a longer course.
+Workout Plan v1 and Nutrition Plan v1 each cap one detailed document at 14 days. The product must not solve longer courses by asking one model call for a huge 60/90-day flat JSON document.
 
-Do **not** simply raise the JSON array limit to 90 and ask one model call to emit a huge flat document.
+Preferred architecture:
 
-Preferred v2 structure:
-
-- program cycle defines the full requested duration;
+- Program Cycle defines full requested duration;
 - planner output defines bounded phases/blocks;
-- each phase has explicit date/day ranges and progression intent;
-- compact weekly/day templates are materialized deterministically into the requested course calendar;
-- active detailed plan data remains versioned and bounded;
-- edits affect future/uncompleted scope without mutating completed history.
+- each phase has explicit date/day scope and progression intent;
+- compact weekly/day templates are materialized deterministically;
+- detailed active plan documents remain bounded/versioned;
+- future revisions affect future/uncompleted scope only;
+- completed sessions and diary history retain original provenance.
 
-This keeps requests/output size bounded and makes a 28/42/56/84-day program practical without one enormous AI response.
+Stage21 currently accepts a bounded 14–84-day course contract. Stage22 owns the domain model that makes those longer durations practical.
 
-## Plan generation after Onboarding
+## Post-Onboarding generation — Stage24 target
 
-Onboarding completion must no longer end with only a deterministic preview.
-
-Target flow:
+After Program Cycle + exercise safety contracts exist:
 
 ```text
 validated Onboarding v2
-  -> create program-cycle generation run (idempotent)
-  -> build shared normalized user/safety/program contract
-  -> Training Planner structured generation
-  -> Nutrition Planner structured generation
-  -> deterministic application validation
-  -> safety validation
-  -> Nutrition identity/version resolution through current catalog + Nutrition Core authority
-  -> create Workout Plan version (source=onboarding/coach)
-  -> create Nutrition Plan version (source=onboarding/coach)
-  -> activate both atomically for the Program Cycle
-  -> show final program overview
+  -> create/reuse idempotent Program Cycle generation run
+  -> normalized shared user/safety/program contract
+  -> structured Training Planner
+  -> structured Nutrition Planner
+  -> deterministic schema/business validation
+  -> deterministic Workout safety validation
+  -> Nutrition identity/source-version resolution
+  -> Nutrition Core arithmetic authority
+  -> create immutable Workout Plan version
+  -> create immutable Nutrition Plan version
+  -> coordinated review
+  -> explicit activation
 ```
 
-One user-facing Coach does not require one giant model response. Training and Nutrition planners should be bounded structured planning operations sharing the same normalized profile and program duration.
+One user-facing Coach does not require one giant model response. Training and Nutrition planning should be bounded operations sharing the same normalized program contract.
 
 ## Nutrition authority boundary
 
-The product owner has explicitly deferred broad food-catalog expansion.
+Broad food-catalog expansion is explicitly deferred by product decision.
 
-Therefore the active product contract is:
+Therefore:
 
-- generated Nutrition Plans may only persist food identities/source versions that the current authoritative catalog can resolve;
-- plan JSON never persists AI-authored calories/macros as authority;
-- Shared Nutrition Core remains the only arithmetic authority;
-- requests outside current catalog coverage may be discussed by Coach, but cannot silently become authoritative persisted macro data.
+- generated Nutrition Plans may persist only currently resolvable catalog food identities/source versions;
+- plan documents never persist model-authored calories/macros as authority;
+- Shared Nutrition Core remains the sole arithmetic authority;
+- unresolved foods may be discussed, but cannot silently become authoritative diary/plan nutrition values;
+- already logged diary history is never rewritten by Coach adaptation.
 
-This is an intentional product limitation until catalog expansion is explicitly reopened.
+## Exercise Registry / Safety — Stage23
 
-## Workout knowledge gap
+Before Coach can professionally replace individual exercises, NeoFit needs a typed exercise registry containing at least:
 
-The current Workout Plan schema accepts bounded exercise id/name/sets/reps/rest values, but NeoFit does not yet have a sufficiently rich authoritative exercise registry for professional substitutions.
-
-Before Coach can safely replace individual exercises, introduce a typed exercise registry / movement contract containing at least:
-
-- stable exercise id/name;
+- stable exercise id and display names;
 - movement pattern;
 - primary/secondary muscle groups;
 - equipment requirements;
 - difficulty/skill level;
 - contraindication tags;
-- common injury/safety constraints;
+- injury/safety constraints;
 - substitute/alternative relationships;
-- optional trusted media/search hints.
+- optional trusted YouTube/search hints.
 
-AI may rank/select from validated candidates, but should not create arbitrary exercise identities that bypass safety/tool contracts.
+AI may rank/select validated candidates but cannot invent arbitrary persisted exercise identities that bypass the registry or safety checks.
+
+Medical/injury constraints are hard validator inputs, not prompt decoration.
+
+- physician restrictions override user/AI preference;
+- current pain/severe injury can block unsafe proposals;
+- new or serious symptoms do not trigger autonomous medical treatment plans;
+- allergies are hard exclusions for persisted Nutrition Plans;
+- AI cannot bypass deterministic validators.
 
 ## In-program Coach
 
-The existing read-only Coach becomes the single ongoing user-facing assistant.
-
-It should support domain-specific conversation without forcing the user to understand internal agent architecture.
-
-Read tools already have useful foundations for:
+The existing read-only Coach already has foundations for:
 
 - profile/Onboarding context;
-- safety/injury context;
+- injury/safety context;
 - current-day Nutrition logs;
 - Workout sessions/sets;
 - body progress;
-- YouTube discovery/video analysis;
-- provider/audit budgets.
+- YouTube discovery/direct-video analysis;
+- Google/AvalAI routing;
+- AI/tool audit budgets.
 
-The missing layer is safe program mutation.
+The missing product-critical layer is safe program planning/mutation.
 
-## Required typed proposal tools
+## Proposal / diff / confirmation contract
 
-Every mutation follows:
+Every write-capable Coach action follows:
 
 ```text
 user request
- -> read current immutable program/plan context
- -> create typed proposal
- -> validate proposal
- -> present exact before/after diff + reason/safety impact
+ -> read current immutable Program/Plan versions
+ -> build typed proposal
+ -> deterministic validation
+ -> show exact before/after diff + reason + safety impact
  -> explicit user confirmation
- -> create new immutable version
- -> activate new version for future scope
- -> audit change metadata
+ -> compare expected source versions
+ -> create new immutable future version
+ -> activate only valid future scope
+ -> record metadata-only change audit
 ```
 
-Initial tool families:
+No silent mutation is permitted in the first production generation.
 
-### Training
+### Initial Training tool family
 
-- propose exercise replacement;
-- adjust future sets/reps/rest/load target;
-- change training day/schedule;
-- reduce/raise intensity for future sessions;
-- respond to pain/RPE/equipment-loss by proposing safe alternatives;
+- replace one future exercise;
+- change future sets/reps/rest/load target;
+- change future training day/schedule;
+- reduce/raise future intensity;
+- respond to pain/RPE/equipment loss with validated alternatives;
 - regenerate one future day/week/block;
-- pause/extend program;
+- pause/extend a Program Cycle;
 - never rewrite completed Workout Sessions/Sets.
 
-### Nutrition
+### Initial Nutrition tool family
 
-- replace a future meal/item with currently resolvable catalog identities;
-- change portion counts/timing within deterministic Core constraints;
+- replace a future meal/item with current authoritative catalog identities;
+- adjust future portion counts/timing within Core contracts;
 - regenerate one future day/week/block;
-- adapt plan around allergies/dislikes/availability;
-- never overwrite already logged diary history;
-- never accept model-authored calorie/macro totals as persisted authority.
+- adapt around allergies/dislikes/availability;
+- never overwrite logged diary history;
+- never accept model-authored macro totals as persisted authority.
 
-### Program / Coach
+### Program-level tools
 
-- explain the current plan and why it exists;
+- explain the current program and rationale;
 - summarize adherence/progress;
-- propose a coordinated training+nutrition revision when goals/availability change;
-- display plan diff before applying;
-- keep all writes user-confirmed in the first production generation.
+- propose coordinated Training + Nutrition revisions when goals/availability change;
+- show exact scope and diff before apply.
 
 ## Change/audit contract
 
-Add a metadata-only program-change/proposal record so NeoFit can explain why a plan version changed without storing raw provider prompts/responses.
+Future proposal persistence should be metadata-focused:
 
-Suggested fields:
-
-- proposal id/user/program id;
+- proposal id / user / program id;
 - domain/tool name;
-- source plan ids/versions;
+- expected source plan ids/versions;
 - target scope (date/day/block/exercise/meal);
-- proposal status: proposed/confirmed/rejected/applied/expired;
-- normalized reason code + bounded user-visible summary;
-- resulting plan ids/versions after apply;
+- status: proposed / confirmed / rejected / applied / expired;
+- normalized reason code + bounded user-visible explanation;
+- resulting plan ids/versions;
 - timestamps;
-- no raw AI key, raw prompt, full model response or hidden health text duplication.
+- no raw API key, hidden prompt, full provider payload or duplicated sensitive health narrative.
 
 ## Idempotency and concurrency
 
-- finishing Onboarding twice must not generate duplicate active cycles;
-- plan generation requires an idempotent generation key;
-- applying a proposal requires expected-source-version optimistic concurrency;
-- stale proposals must fail if the active plan version changed after the proposal was created;
-- only one active Program Cycle is allowed initially unless a future multi-program product explicitly changes this;
+- finishing Onboarding twice must not create duplicate active Program Cycles;
+- generation must use an idempotency key;
+- only one initial active Program Cycle per user;
+- proposal apply must compare expected source versions;
+- stale proposals fail if current plan versions changed;
 - completed historical sessions/diary entries remain immutable provenance.
 
-## Safety contract
+## Current foundations vs missing work
 
-Medical/injury constraints are hard inputs to planner validation, not optional prompt decoration.
+### Strong/implemented foundations
 
-- physician restrictions override user/AI preference;
-- current pain or severe injury can block unsafe exercise proposals;
-- new/serious symptoms do not trigger autonomous medical plans;
-- Workout substitutions must be validated against exercise constraints;
-- Nutrition allergies must be hard-excluded from persisted plans;
-- AI can explain/recommend but cannot bypass deterministic validators.
-
-## Current closeness assessment
-
-### Strong foundations already present
-
-- Supabase Auth/RLS/session hardening;
+- Auth/RLS/session hardening;
+- scanner-safe email/recovery architecture;
+- runtime recovery gate for stale/deleted Auth and Preview PWA state;
 - encrypted Google/AvalAI BYOK vault;
-- Google-first provider router + fallback policy;
-- 15-step Onboarding + Body Map persistence foundation;
-- versioned immutable Workout Plan table/RPCs;
-- versioned immutable Nutrition Plan table/RPCs;
+- Google-first provider routing/fallback policy;
+- **Onboarding v2 AI gate + explicit self-report + duration contract**;
+- 73-region Body Map;
+- versioned immutable Workout Plans;
+- versioned immutable Nutrition Plans;
 - Workout session/set provenance;
-- Nutrition Plan -> Core-backed diary logging provenance;
-- read-only Coach with selective context;
+- Nutrition Plan -> Core-backed diary provenance;
+- read-only Coach selective context;
 - AI request audit/budget;
 - YouTube read-only tool architecture;
 - UI truth/accessibility baseline.
 
-### Partially present but needs redesign/wiring
-
-- AI settings exists but is outside Onboarding;
-- Onboarding exists but self-report/default semantics need v2 and duration field;
-- plan stores/RPCs exist but are flat max-14-day documents and not linked to a Program Cycle;
-- Coach can read user state but cannot propose/apply plan versions;
-- safety context is available but not yet a deterministic plan-generation/substitution validator;
-- current Nutrition catalog can support only its existing bounded identities.
-
 ### Missing product-critical capabilities
 
-- Program Cycle entity/lifecycle;
-- post-Onboarding AI generation pipeline;
+- Program Cycle entity/state machine;
+- idempotent generation-run lifecycle;
+- exercise registry/substitution safety engine;
 - structured Training Planner;
 - structured Nutrition Planner;
-- program-duration materialization/phases;
-- exercise registry/substitution knowledge contract;
+- phase/block course materialization;
+- coordinated Program review/activation;
 - typed proposal/diff/confirmation framework;
-- Workout Plan mutation tools;
-- Nutrition Plan mutation tools;
-- stale-version concurrency protection for proposals;
+- Workout/Nutrition future-version mutation tools;
+- stale-version proposal concurrency protection;
 - program change audit/provenance;
-- ongoing adherence-driven coordinated adaptation;
+- adherence-driven coordinated adaptation;
 - hosted E2E for the full lifecycle.
 
-## Revised active roadmap
+## Active roadmap
 
-1. **Stage 21 — Onboarding v2 + AI credential gate + program-duration contract.**
-2. **Stage 22 — Program Cycle schema/state machine + plan linkage/idempotent generation-run contract.**
-3. **Stage 23 — Exercise registry + deterministic Workout safety/substitution validation.**
-4. **Stage 24 — Structured post-Onboarding Training + Nutrition planners and exact plan validators/materializers.**
-5. **Stage 25 — Program review/activation UX + one coordinated course overview.**
-6. **Stage 26 — Typed Coach proposal/diff/confirmation layer (read current plan, no direct mutation).**
-7. **Stage 27 — Confirmed Workout/Nutrition program-change tools creating immutable future versions.**
-8. Deploy one latest green stacked Preview candidate and run Auth/provider/YouTube/program lifecycle E2E.
-9. Only after real runtime proof, add more adaptive/autonomous behavior; silent autonomous plan mutation remains prohibited.
+1. **Stage21 — Onboarding v2 + AI credential gate + program duration: CODE GREEN; runtime proof open.**
+2. **Stage22 — Program Cycle schema/state machine + plan linkage + idempotent generation-run contract.**
+3. **Stage23 — Exercise Registry + deterministic Workout safety/substitution validation.**
+4. **Stage24 — structured Training + Nutrition planners + validators/materializers.**
+5. **Stage25 — coordinated Program review/activation UX.**
+6. **Stage26 — typed Coach Proposal / exact Diff / Confirmation layer.**
+7. **Stage27 — confirmed Workout/Nutrition future-version mutation tools.**
+8. One latest green Preview deployment + Auth/provider/YouTube/program lifecycle E2E.
+9. Only after runtime proof, increase adaptive/autonomous behavior; silent autonomous plan mutation remains prohibited.
 
 ## Release boundary
 
-Preview-only until the full lifecycle is proven with a real account:
+Preview-only until this real-account lifecycle is proven:
 
 ```text
-signup -> AI key -> onboarding v2 -> duration -> generate both plans -> activate -> log workout/meal -> ask Coach for change -> review diff -> confirm -> new version -> resume program
+signup
+ -> Google key inside Onboarding
+ -> explicit Onboarding v2
+ -> course duration
+ -> Program Cycle
+ -> generate both plans
+ -> review + activate
+ -> log workout/meal
+ -> ask Coach for a change
+ -> review exact diff
+ -> confirm
+ -> new immutable future version
+ -> resume program
 ```
 
-No unrestricted SQL is exposed to the model. No plan mutation is silently applied.
+No unrestricted SQL is exposed to the model. No plan mutation is silently applied. Production remains out of scope until the runtime evidence is green.
