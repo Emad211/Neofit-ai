@@ -1,0 +1,92 @@
+name: UI Truth Audit CI
+
+on:
+  push:
+    branches:
+      - 'stage20/**'
+    paths:
+      - 'web/components/**'
+      - 'web/app/ui-truth-polish.css'
+      - 'web/app/layout.tsx'
+      - 'web/tests/ui-truth-audit.test.ts'
+      - 'web/package.json'
+      - 'docs/NEOFIT_STAGE20_UI_TRUTH_EMPTY_STATES.md'
+      - 'docs/NEOFIT_GAP_AUDIT_2026-08-08.md'
+      - '.github/workflows/ui-truth-audit-ci.yml'
+  pull_request:
+    branches:
+      - stage19/youtube-agent-tools-polish
+    paths:
+      - 'web/components/**'
+      - 'web/app/ui-truth-polish.css'
+      - 'web/app/layout.tsx'
+      - 'web/tests/ui-truth-audit.test.ts'
+      - 'web/package.json'
+      - 'docs/NEOFIT_STAGE20_UI_TRUTH_EMPTY_STATES.md'
+      - 'docs/NEOFIT_GAP_AUDIT_2026-08-08.md'
+      - '.github/workflows/ui-truth-audit-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ui-truth-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_VERCEL_ENV: preview
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_test_value
+      AI_CREDENTIAL_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+      AUTH_RECOVERY_INTENT_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+      - name: Install workspace dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: UI truth contracts
+        working-directory: web
+        run: npm run test:ui-truth
+      - name: Existing UI accessibility regression
+        working-directory: web
+        run: npm run test:ui-polish
+      - name: Nutrition Core adapter regression
+        working-directory: web
+        run: npm run test:adapter
+      - name: Workout Player regression
+        working-directory: web
+        run: npm run test:workout-player
+      - name: Full Supabase app regression
+        working-directory: web
+        run: npm run test:supabase-app
+      - name: TypeScript
+        working-directory: web
+        run: npm run typecheck
+      - name: Production build
+        working-directory: web
+        run: npm run build
+      - name: Verify UI truth boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -q 'fixture-backed' web/components/today-screen.tsx
+          ! grep -qE '>اخیر<|>محبوب‌ها<' web/components/nutrition-screen.tsx
+          ! grep -q '>بعدی<' web/components/workout-screen.tsx
+          grep -q "\.eq('local_date', localDate)" web/components/nutrition-state.tsx
+          grep -q 'className="skip-link"' web/components/app-shell.tsx
+          grep -q 'prefers-reduced-motion:reduce' web/app/agent-tools-polish.css
