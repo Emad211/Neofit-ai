@@ -15,7 +15,10 @@ export interface AccountWorkoutState {
   readonly player: WorkoutPlayerState;
 }
 
-type SessionRow = Pick<Tables<'workout_sessions'>, 'id' | 'client_mutation_id' | 'started_at'>;
+type SessionRow = Pick<
+  Tables<'workout_sessions'>,
+  'id' | 'client_mutation_id' | 'started_at' | 'workout_plan_id' | 'workout_plan_version'
+>;
 type SetRow = Pick<
   Tables<'workout_sets'>,
   'exercise_id' | 'exercise_name' | 'exercise_order' | 'set_order' | 'target_reps' | 'reps' | 'weight_kg' | 'completed_at'
@@ -53,11 +56,16 @@ function mapRowsToPlayer(workout: WorkoutDay, session: SessionRow, rows: readonl
   return player;
 }
 
-async function loadActiveSession(userId: string, workout: WorkoutDay): Promise<AccountWorkoutState | null> {
+async function loadActiveSession(
+  userId: string,
+  workout: WorkoutDay,
+  planId: string,
+  planVersion: number,
+): Promise<AccountWorkoutState | null> {
   const supabase = createClient();
   const { data: session, error: sessionError } = await supabase
     .from('workout_sessions')
-    .select('id,client_mutation_id,started_at')
+    .select('id,client_mutation_id,started_at,workout_plan_id,workout_plan_version')
     .eq('user_id', userId)
     .eq('workout_id', workout.id)
     .eq('status', 'active')
@@ -66,6 +74,9 @@ async function loadActiveSession(userId: string, workout: WorkoutDay): Promise<A
     .maybeSingle();
   if (sessionError) throw new Error('خواندن جلسه فعال تمرین ناموفق بود.');
   if (!session) return null;
+  if (session.workout_plan_id !== planId || session.workout_plan_version !== planVersion) {
+    throw new Error('جلسه فعال به نسخهٔ دیگری از برنامه تمرینی تعلق دارد.');
+  }
 
   const { data: rows, error: setsError } = await supabase
     .from('workout_sets')
@@ -78,19 +89,26 @@ async function loadActiveSession(userId: string, workout: WorkoutDay): Promise<A
   return { sessionId: session.id, player: mapRowsToPlayer(workout, session, rows ?? []) };
 }
 
-export async function loadOrCreateAccountWorkout(userId: string, workout: WorkoutDay): Promise<AccountWorkoutState> {
-  const existing = await loadActiveSession(userId, workout);
+export async function loadOrCreateAccountWorkout(input: {
+  readonly userId: string;
+  readonly workout: WorkoutDay;
+  readonly planId: string;
+  readonly planVersion: number;
+}): Promise<AccountWorkoutState> {
+  const existing = await loadActiveSession(input.userId, input.workout, input.planId, input.planVersion);
   if (existing) return existing;
 
-  const player = createWorkoutPlayerState(workout);
+  const player = createWorkoutPlayerState(input.workout);
   const supabase = createClient();
   const { data, error } = await supabase
     .from('workout_sessions')
     .insert({
-      user_id: userId,
+      user_id: input.userId,
       client_mutation_id: player.clientMutationId,
-      workout_id: workout.id,
-      workout_title: workout.title,
+      workout_id: input.workout.id,
+      workout_title: input.workout.title,
+      workout_plan_id: input.planId,
+      workout_plan_version: input.planVersion,
       status: 'active',
       started_at: player.startedAt,
     })
@@ -100,7 +118,7 @@ export async function loadOrCreateAccountWorkout(userId: string, workout: Workou
   if (error) {
     // A second tab may have created the same active workout between the read and insert.
     if (error.code === '23505') {
-      const raced = await loadActiveSession(userId, workout);
+      const raced = await loadActiveSession(input.userId, input.workout, input.planId, input.planVersion);
       if (raced) return raced;
     }
     throw new Error('ساخت جلسه تمرین در حساب ناموفق بود.');
