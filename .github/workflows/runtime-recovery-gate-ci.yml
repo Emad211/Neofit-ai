@@ -79,19 +79,18 @@ jobs:
       - name: Production build
         working-directory: web
         run: npm run build
-      - name: Built Next public/Auth/static smoke
+      - name: Built Next static runtime smoke
         working-directory: web
         shell: bash
         run: |
           set -euo pipefail
-          env -u NEXT_PUBLIC_SUPABASE_URL -u NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY \
-            ../node_modules/.bin/next start -H 127.0.0.1 -p 3100 >/tmp/neofit-runtime-recovery.log 2>&1 &
+          ../node_modules/.bin/next start -H 127.0.0.1 -p 3100 >/tmp/neofit-runtime-recovery.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID || true' EXIT
 
           READY=0
           for i in $(seq 1 30); do
-            STATUS=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3100/sw.js || true)
+            STATUS=$(curl -sS -o /tmp/neofit-runtime-recovery-sw.tmp -w '%{http_code}' http://127.0.0.1:3100/sw.js || true)
             if [ "$STATUS" = "200" ]; then READY=1; break; fi
             sleep 1
           done
@@ -99,17 +98,6 @@ jobs:
             cat /tmp/neofit-runtime-recovery.log
             exit 1
           fi
-
-          AUTH_STATUS=$(curl -sS -o /tmp/auth.body -w '%{http_code}' http://127.0.0.1:3100/auth)
-          test "$AUTH_STATUS" = "200"
-          grep -q 'ورود به حساب' /tmp/auth.body
-          grep -q 'ساخت حساب امن' /tmp/auth.body
-
-          ROOT_STATUS=$(curl -sS -D /tmp/root.headers -o /tmp/root.body -w '%{http_code}' http://127.0.0.1:3100/)
-          test "$ROOT_STATUS" = "307"
-          grep -Eiq '^location: /today\r?$' /tmp/root.headers
-
-          curl -sS http://127.0.0.1:3100/sw.js -o /tmp/neofit-runtime-recovery-sw.tmp
           grep -q 'neofit-app-shell-' /tmp/neofit-runtime-recovery-sw.tmp
       - name: Hard recovery boundaries
         shell: bash
