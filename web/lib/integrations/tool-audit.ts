@@ -7,35 +7,84 @@ export interface AgentToolAuditReservation {
   readonly id: string;
 }
 
+interface ReserveAgentToolRow {
+  readonly allowed: boolean;
+  readonly audit_id: string | null;
+  readonly burst_used: number;
+  readonly daily_used: number;
+  readonly retry_after_seconds: number;
+}
+
+interface RpcResult {
+  readonly data: unknown;
+  readonly error: { readonly message?: string } | null;
+}
+
+type RpcCaller = (fn: string, args?: Record<string, unknown>) => PromiseLike<RpcResult>;
+
+export class AgentToolBudgetExceededError extends Error {
+  readonly retryAfterSeconds: number;
+  readonly burstUsed: number;
+  readonly dailyUsed: number;
+
+  constructor(input: { retryAfterSeconds: number; burstUsed: number; dailyUsed: number }) {
+    super('Agent tool budget exceeded.');
+    this.name = 'AgentToolBudgetExceededError';
+    this.retryAfterSeconds = input.retryAfterSeconds;
+    this.burstUsed = input.burstUsed;
+    this.dailyUsed = input.dailyUsed;
+  }
+}
+
+export class AgentToolBudgetUnavailableError extends Error {
+  constructor() {
+    super('Agent tool budget is unavailable.');
+    this.name = 'AgentToolBudgetUnavailableError';
+  }
+}
+
+function rpc(context: IntegrationAuthenticatedContext): RpcCaller {
+  // The live database exposes reserve_agent_tool_call. Keep this narrow until
+  // the next full generated type refresh instead of widening the Supabase client.
+  return context.supabase.rpc.bind(context.supabase) as unknown as RpcCaller;
+}
+
+function count(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? Math.round(value) : 0;
+}
+
 export async function beginYouTubeToolAudit(
   context: IntegrationAuthenticatedContext,
   query: string,
-): Promise<AgentToolAuditReservation | null> {
-  const { data, error } = await context.supabase
-    .from('agent_tool_audit')
-    .insert({
-      user_id: context.userId,
-      tool_name: 'youtube_search',
-      query_fingerprint: toolQueryFingerprint(query),
-    })
-    .select('id')
-    .single();
-  if (error || !data) {
-    console.warn('NeoFit agent tool audit reservation failed.');
-    return null;
+): Promise<AgentToolAuditReservation> {
+  const { data, error } = await rpc(context)('reserve_agent_tool_call', {
+    p_tool_name: 'youtube_search',
+    p_query_fingerprint: toolQueryFingerprint(query),
+  });
+  if (error || !Array.isArray(data) || data.length !== 1) throw new AgentToolBudgetUnavailableError();
+
+  const row = data[0] as Partial<ReserveAgentToolRow>;
+  const burstUsed = count(row.burst_used);
+  const dailyUsed = count(row.daily_used);
+  if (row.allowed !== true) {
+    throw new AgentToolBudgetExceededError({
+      retryAfterSeconds: Math.max(1, count(row.retry_after_seconds)),
+      burstUsed,
+      dailyUsed,
+    });
   }
-  return { id: data.id };
+  if (typeof row.audit_id !== 'string' || !row.audit_id) throw new AgentToolBudgetUnavailableError();
+  return { id: row.audit_id };
 }
 
 export async function completeYouTubeToolAudit(input: {
   context: IntegrationAuthenticatedContext;
-  reservation: AgentToolAuditReservation | null;
+  reservation: AgentToolAuditReservation;
   status: 'success' | 'failure';
   resultCount?: number;
   latencyMs: number;
   failureCode?: string | null;
 }): Promise<void> {
-  if (!input.reservation) return;
   const { error } = await input.context.supabase
     .from('agent_tool_audit')
     .update({
