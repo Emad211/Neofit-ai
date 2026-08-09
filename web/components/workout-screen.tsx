@@ -45,7 +45,7 @@ export function WorkoutScreen({ snapshot }: { snapshot: WorkoutPlanSnapshot }) {
       <div className="section-heading">
         <div>
           <p className="section-kicker">{snapshot.mode === 'guest' ? 'برنامه نمونه مهمان' : 'برنامهٔ فعال حساب'}</p>
-          <h2 id="workout-heading">{snapshot.title ?? 'تمرین‌های این هفته'}</h2>
+          <h2 id="workout-heading">{snapshot.title ?? 'تمرین‌های برنامه'}</h2>
         </div>
         <span className="status-pill">
           <NeoFitIcon name="workout" size={15} />
@@ -57,6 +57,10 @@ export function WorkoutScreen({ snapshot }: { snapshot: WorkoutPlanSnapshot }) {
         <div className="auth-notice auth-notice--warning" role="status">این برنامه فقط Demo مهمان است و برنامهٔ شخصی یا تجویز‌شده محسوب نمی‌شود.</div>
       ) : null}
 
+      {snapshot.mode === 'account' ? (
+        <div className="auth-notice" role="status">ترتیب زیر ترتیب نسخهٔ فعال برنامه است. NeoFit تا وقتی schedule/history جداگانه نداشته باشد، جلسه‌ای را به‌عنوان «بعدی» حدس نمی‌زند.</div>
+      ) : null}
+
       <article className="workout-summary-card">
         <div><span>جلسه</span><strong>{faNumber.format(workoutPlan.length)}</strong></div>
         <div><span>حرکت</span><strong>{faNumber.format(exerciseCount)}</strong></div>
@@ -64,12 +68,9 @@ export function WorkoutScreen({ snapshot }: { snapshot: WorkoutPlanSnapshot }) {
       </article>
 
       <div className="workout-list">
-        {workoutPlan.map((workout, index) => (
-          <Link className={index === 0 ? 'workout-card is-next' : 'workout-card'} href={`/workout/${workout.id}`} key={workout.id}>
-            <div className="workout-card__day">
-              <span>{workout.day}</span>
-              {index === 0 ? <b>بعدی</b> : null}
-            </div>
+        {workoutPlan.map((workout) => (
+          <Link className="workout-card" href={`/workout/${workout.id}`} key={workout.id}>
+            <div className="workout-card__day"><span>{workout.day}</span></div>
             <div className="workout-card__body">
               <h3>{workout.title}</h3>
               <p>{workout.focus}</p>
