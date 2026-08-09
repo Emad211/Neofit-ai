@@ -1,0 +1,90 @@
+name: Nutrition Plan Persistence CI
+
+on:
+  push:
+    branches:
+      - 'stage17/**'
+    paths:
+      - 'web/app/(main)/nutrition/plan/**'
+      - 'web/components/nutrition-plan-screen.tsx'
+      - 'web/lib/nutrition-plan-core.ts'
+      - 'web/lib/supabase/nutrition-plan-data.ts'
+      - 'web/lib/supabase/database.types.ts'
+      - 'web/tests/nutrition-plan-persistence.test.ts'
+      - 'web/package.json'
+      - 'supabase/migrations/20260809140618_nutrition_plan_versioning.sql'
+      - 'docs/NEOFIT_STAGE17_NUTRITION_PLAN_PERSISTENCE.md'
+      - 'docs/NEOFIT_GAP_AUDIT_2026-08-08.md'
+      - '.github/workflows/nutrition-plan-persistence-ci.yml'
+  pull_request:
+    branches:
+      - stage16/workout-plan-persistence
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nutrition-plan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_VERCEL_ENV: preview
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_test_value
+      AI_CREDENTIAL_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+      AUTH_RECOVERY_INTENT_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+      - name: Install workspace dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: Nutrition plan contracts
+        working-directory: web
+        run: npm run test:nutrition-plan
+      - name: Nutrition Core adapter regression
+        working-directory: web
+        run: npm run test:adapter
+      - name: Full Supabase app regression
+        working-directory: web
+        run: npm run test:supabase-app
+      - name: TypeScript
+        working-directory: web
+        run: npm run typecheck
+      - name: Production build
+        working-directory: web
+        run: npm run build
+      - name: Verify Nutrition Plan authority boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          migration='supabase/migrations/20260809140618_nutrition_plan_versioning.sql'
+          grep -q 'create table public.nutrition_plans' "$migration"
+          grep -q 'enable row level security' "$migration"
+          grep -q 'security invoker' "$migration"
+          grep -q 'grant update (status, activated_at, archived_at)' "$migration"
+          ! grep -qi 'grant delete' "$migration"
+          grep -q 'nutrition_plan_id uuid references public.nutrition_plans' "$migration"
+          grep -q 'FORBIDDEN_NUTRITION_CLAIM_KEYS' web/lib/nutrition-plan-core.ts
+          grep -q 'resolveNutritionPlanDocument(parsed, foodFixtures)' web/lib/supabase/nutrition-plan-data.ts
+          grep -q 'loadNutritionPlanSnapshot' web/app/'(main)'/nutrition/plan/page.tsx
+          ! grep -q 'weeklyPlan' web/app/'(main)'/nutrition/plan/page.tsx
+          ! grep -q 'weeklyPlan' web/components/nutrition-plan-screen.tsx
+          ! grep -R -E '\.(calories|macros|energyKcal|proteinG|carbsG|fatG)' web/components/nutrition-plan-screen.tsx
+          grep -q 'nutrition_plans:' web/lib/supabase/database.types.ts
+          grep -q 'create_nutrition_plan_version:' web/lib/supabase/database.types.ts
+          grep -q 'nutrition_plan_id: string | null' web/lib/supabase/database.types.ts

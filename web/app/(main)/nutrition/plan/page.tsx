@@ -1,5 +1,9 @@
 import { NutritionPlanScreen } from '@/components/nutrition-plan-screen';
+import { loadNutritionPlanSnapshot } from '@/lib/supabase/nutrition-plan-data';
 
-export default function NutritionPlanPage() {
-  return <NutritionPlanScreen />;
+export const dynamic = 'force-dynamic';
+
+export default async function NutritionPlanPage() {
+  const snapshot = await loadNutritionPlanSnapshot();
+  return <NutritionPlanScreen snapshot={snapshot} />;
 }
