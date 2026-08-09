@@ -15,6 +15,20 @@ export function normalizeTimeZone(
   }
 }
 
+/**
+ * Returns the calendar date in the runtime's own local timezone.
+ * Browser-initiated diary actions use this so a user near midnight does not
+ * inherit the Vercel server timezone. Account server reads should continue to
+ * use formatLocalDate() with the persisted profile timezone.
+ */
+export function localDateKey(date: Date): string {
+  if (!Number.isFinite(date.getTime())) throw new Error('Unable to format an invalid local date.');
+  const year = String(date.getFullYear()).padStart(4, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function formatLocalDate(
   date: Date,
   timeZone = DEFAULT_NEOFIT_TIME_ZONE,

@@ -138,6 +138,10 @@ export function parseNutritionPlanDocument(value: Json): NutritionPlanDocument |
   if (days.some((day) => day === null)) return null;
   const parsedDays = days as NutritionPlanDayDocument[];
   if (new Set(parsedDays.map((day) => day.id)).size !== parsedDays.length) return null;
+
+  const mealIds = parsedDays.flatMap((day) => day.meals.map((meal) => meal.id));
+  if (new Set(mealIds).size !== mealIds.length) return null;
+
   return { days: parsedDays };
 }
 

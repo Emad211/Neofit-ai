@@ -1,0 +1,37 @@
+name: Nutrition Plan Provenance Integrity CI
+
+on:
+  push:
+    branches:
+      - 'stage18/**'
+    paths:
+      - 'supabase/migrations/20260809142000_harden_nutrition_entry_plan_provenance.sql'
+      - 'supabase/migrations/20260809142500_tighten_nutrition_entry_plan_provenance_shape.sql'
+      - '.github/workflows/nutrition-plan-provenance-integrity-ci.yml'
+  pull_request:
+    branches:
+      - stage17/nutrition-plan-persistence
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify exact owner/version provenance tuple
+        shell: bash
+        run: |
+          set -euo pipefail
+          fk='supabase/migrations/20260809142000_harden_nutrition_entry_plan_provenance.sql'
+          shape='supabase/migrations/20260809142500_tighten_nutrition_entry_plan_provenance_shape.sql'
+          grep -q 'unique (id, user_id, version)' "$fk"
+          grep -q 'foreign key (nutrition_plan_id, user_id, nutrition_plan_version)' "$fk"
+          grep -q 'references public.nutrition_plans (id, user_id, version)' "$fk"
+          grep -q 'nutrition_plan_id is null' "$shape"
+          grep -q 'nutrition_plan_version is null' "$shape"
+          grep -q 'nutrition_plan_meal_id is null' "$shape"
+          grep -q 'nutrition_plan_id is not null' "$shape"
+          grep -q 'nutrition_plan_version > 0' "$shape"
+          grep -q 'nutrition_plan_meal_id is not null' "$shape"

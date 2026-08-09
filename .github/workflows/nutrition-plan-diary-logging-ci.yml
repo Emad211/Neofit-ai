@@ -1,0 +1,98 @@
+name: Nutrition Plan Diary Logging CI
+
+on:
+  push:
+    branches:
+      - 'stage18/**'
+    paths:
+      - 'web/app/(main)/nutrition/plan/**'
+      - 'web/components/nutrition-plan-*.tsx'
+      - 'web/lib/nutrition-plan-core.ts'
+      - 'web/lib/supabase/nutrition-plan-persistence.ts'
+      - 'web/tests/nutrition-plan-diary-logging.test.ts'
+      - 'supabase/migrations/20260809142000_harden_nutrition_entry_plan_provenance.sql'
+      - 'docs/NEOFIT_STAGE18_NUTRITION_PLAN_DIARY_LOGGING.md'
+      - 'docs/NEOFIT_GAP_AUDIT_2026-08-08.md'
+      - '.github/workflows/nutrition-plan-diary-logging-ci.yml'
+  pull_request:
+    branches:
+      - stage17/nutrition-plan-persistence
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nutrition-plan-log-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_VERCEL_ENV: preview
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_test_value
+      AI_CREDENTIAL_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+      AUTH_RECOVERY_INTENT_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+      - name: Install workspace dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: Plan meal logging contracts
+        working-directory: web
+        run: node --import tsx --test tests/nutrition-plan-diary-logging.test.ts
+      - name: Nutrition Core adapter regression
+        working-directory: web
+        run: npm run test:adapter
+      - name: Nutrition persistence regression
+        working-directory: web
+        run: npm run test:supabase-nutrition
+      - name: Full Supabase app regression
+        working-directory: web
+        run: npm run test:supabase-app
+      - name: TypeScript
+        working-directory: web
+        run: npm run typecheck
+      - name: Production build
+        working-directory: web
+        run: npm run build
+      - name: Verify Core, provenance and idempotency boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          migration='supabase/migrations/20260809142000_harden_nutrition_entry_plan_provenance.sql'
+          action='web/app/(main)/nutrition/plan/actions.ts'
+          persistence='web/lib/supabase/nutrition-plan-persistence.ts'
+          form='web/components/nutrition-plan-log-form.tsx'
+          grep -q 'foreign key (nutrition_plan_id, user_id, nutrition_plan_version)' "$migration"
+          grep -q 'references public.nutrition_plans (id, user_id, version)' "$migration"
+          grep -q 'nutrition_entries_plan_provenance_shape' "$migration"
+          grep -q 'activeAuthSession(supabase)' "$action"
+          ! grep -E -q 'estimate|energyKcal|proteinG|carbsG|fatG|foodFixtures' "$action"
+          grep -q 'createWebDiaryEntry' "$persistence"
+          grep -q 'NUTRITION_CORE_SCHEMA_VERSION' "$persistence"
+          grep -q "onConflict: 'user_id,client_mutation_id'" "$persistence"
+          grep -q 'ignoreDuplicates: true' "$persistence"
+          test "$(grep -c "from('nutrition_entries')" "$persistence")" = '1'
+          grep -q "createHash('sha256')" "$persistence"
+          grep -q 'nutrition_plan_id: row.id' "$persistence"
+          grep -q 'nutrition_plan_version: row.version' "$persistence"
+          grep -q 'nutrition_plan_meal_id: meal.id' "$persistence"
+          grep -q 'localDateKey(new Date())' "$form"
+          if grep -R -E 'SUPABASE_SERVICE_ROLE_KEY|sb_secret_' web/app/'(main)'/nutrition/plan web/lib/supabase/nutrition-plan-persistence.ts; then
+            echo 'Privileged Supabase key detected in Nutrition Plan logging path.' >&2
+            exit 1
+          fi
