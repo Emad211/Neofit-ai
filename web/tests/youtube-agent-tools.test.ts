@@ -84,7 +84,7 @@ test('YouTube search budget is atomically reserved in Postgres before external s
   assert.match(migration, /insert into public\.agent_tool_audit/);
   assert.match(audit, /reserve_agent_tool_call/);
   assert.match(audit, /AgentToolBudgetExceededError/);
-  assert.ok(audit.indexOf('reserve_agent_tool_call') < tool.indexOf('searchYouTubeVideos') || tool.includes('beginYouTubeToolAudit'));
+  assert.ok(tool.indexOf('beginYouTubeToolAudit') < tool.indexOf('searchYouTubeVideos'));
   assert.match(route, /youtube_tool_budget_exceeded/);
   assert.match(route, /Retry-After/);
 });
