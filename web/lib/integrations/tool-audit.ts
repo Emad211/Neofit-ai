@@ -1,14 +1,10 @@
 import 'server-only';
 
-import { createHash } from 'node:crypto';
 import type { IntegrationAuthenticatedContext } from './credential-store';
+import { toolQueryFingerprint } from './tool-audit-core';
 
 export interface AgentToolAuditReservation {
   readonly id: string;
-}
-
-export function toolQueryFingerprint(query: string): string {
-  return createHash('sha256').update(query.trim(), 'utf8').digest('hex');
 }
 
 export async function beginYouTubeToolAudit(
