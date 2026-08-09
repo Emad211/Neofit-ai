@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { authenticatedAiContext } from '@/lib/ai/credential-store';
 import { ProviderRequestError } from '@/lib/ai/provider-error';
 import { generateWithProviderFallback } from '@/lib/ai/provider-router';
+import { AiBudgetExceededError, AiBudgetUnavailableError } from '@/lib/ai/request-audit';
 import { isSameOriginBrowserMutation } from '@/lib/auth/request-origin';
 import { loadCoachContext } from '@/lib/coach/context-loader';
 import { routeCoachDomains } from '@/lib/coach/context-router';
@@ -9,6 +10,19 @@ import { buildCoachInput, COACH_MESSAGE_LIMIT, parseCoachHistory } from '@/lib/c
 import { buildCoachSystemInstruction } from '@/lib/coach/system-prompt';
 
 export const dynamic = 'force-dynamic';
+
+function budgetExceeded(error: AiBudgetExceededError) {
+  return NextResponse.json({
+    error: 'ai_request_budget_exceeded',
+    retryAfterSeconds: error.retryAfterSeconds,
+  }, {
+    status: 429,
+    headers: {
+      'Cache-Control': 'private, no-store',
+      'Retry-After': String(error.retryAfterSeconds),
+    },
+  });
+}
 
 export async function POST(request: Request) {
   if (!isSameOriginBrowserMutation(request)) {
@@ -37,12 +51,16 @@ export async function POST(request: Request) {
     const result = await generateWithProviderFallback({
       input: buildCoachInput(history, message),
       systemInstruction: buildCoachSystemInstruction(context, domains),
-    }, auth);
+    }, auth, 'coach');
     return NextResponse.json({
       answer: result.text,
       meta: { provider: result.provider, modelId: result.modelId, latencyMs: result.latencyMs, fallbackFrom: result.fallbackFrom, contextDomains: domains },
     }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
+    if (error instanceof AiBudgetExceededError) return budgetExceeded(error);
+    if (error instanceof AiBudgetUnavailableError) {
+      return NextResponse.json({ error: 'ai_request_budget_unavailable' }, { status: 503 });
+    }
     if (error instanceof ProviderRequestError) {
       const status = error.kind === 'rate_limit' ? 429 : error.kind === 'auth' ? 401 : 502;
       return NextResponse.json({ error: 'ai_provider_unavailable', code: error.code }, { status });
