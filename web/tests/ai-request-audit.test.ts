@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { aiRequestBudgetLimits, normalizeAiUsage } from '@/lib/ai/request-audit';
+import { aiRequestBudgetLimits, normalizeAiUsage } from '@/lib/ai/request-audit-core';
 
 const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = resolve(webRoot, '..');
@@ -92,9 +92,11 @@ test('provider router reserves one user request before the fallback chain and co
 
 test('telemetry never adds a token-count or extra provider inference request', async () => {
   const audit = await read('lib/ai/request-audit.ts');
+  const core = await read('lib/ai/request-audit-core.ts');
   const google = await read('lib/ai/providers/google.ts');
   const avalai = await read('lib/ai/providers/avalai.ts');
   assert.doesNotMatch(audit, /countTokens|count_tokens|generateFromProvider|fetch\(/);
+  assert.doesNotMatch(core, /countTokens|count_tokens|generateFromProvider|fetch\(/);
   assert.doesNotMatch(google, /countTokens|count_tokens/);
   assert.doesNotMatch(avalai, /countTokens|count_tokens/);
 });
