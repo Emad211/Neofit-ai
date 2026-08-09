@@ -15,6 +15,53 @@ interface ProviderState {
 
 const emptyProviderState: ProviderState = { apiKey: '', busy: false, message: '', error: false };
 
+function SecretField({
+  id,
+  value,
+  placeholder,
+  disabled,
+  revealed,
+  onRevealChange,
+  onChange,
+}: {
+  readonly id: string;
+  readonly value: string;
+  readonly placeholder: string;
+  readonly disabled: boolean;
+  readonly revealed: boolean;
+  readonly onRevealChange: (next: boolean) => void;
+  readonly onChange: (next: string) => void;
+}) {
+  return (
+    <div className="onboarding-secret-field">
+      <input
+        id={id}
+        type={revealed ? 'text' : 'password'}
+        autoComplete="off"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
+        enterKeyHint="done"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        disabled={disabled}
+        aria-describedby={`${id}-privacy`}
+      />
+      <button
+        type="button"
+        className="onboarding-secret-field__toggle"
+        onClick={() => onRevealChange(!revealed)}
+        disabled={disabled || !value}
+        aria-pressed={revealed}
+        aria-label={revealed ? 'پنهان کردن کلید' : 'نمایش کلید'}
+      >
+        {revealed ? 'پنهان' : 'نمایش'}
+      </button>
+    </div>
+  );
+}
+
 export function OnboardingAiGate({
   mode,
   onGoogleReadyChange,
@@ -26,6 +73,8 @@ export function OnboardingAiGate({
   const [loading, setLoading] = useState(true);
   const [google, setGoogle] = useState<ProviderState>(emptyProviderState);
   const [avalai, setAvalai] = useState<ProviderState>(emptyProviderState);
+  const [showGoogleKey, setShowGoogleKey] = useState(false);
+  const [showAvalaiKey, setShowAvalaiKey] = useState(false);
 
   const googleCredential = useMemo(
     () => credentials.find((credential) => credential.provider === 'google') ?? null,
@@ -99,9 +148,11 @@ export function OnboardingAiGate({
         busy: false,
         error: false,
         message: provider === 'google'
-          ? 'Google معتبر است؛ می‌توانی Onboarding را ادامه بدهی.'
+          ? 'Google معتبر است؛ می‌توانی ادامه بدهی.'
           : 'AvalAI به‌عنوان fallback ذخیره شد.',
       });
+      if (provider === 'google') setShowGoogleKey(false);
+      else setShowAvalaiKey(false);
     } catch {
       patch(provider, {
         busy: false,
@@ -138,7 +189,7 @@ export function OnboardingAiGate({
     return (
       <div className="onboarding-ai-gate">
         <div className="onboarding-ai-gate__status is-demo"><strong>حالت Demo</strong><span>کلید AI در حالت مهمان دریافت یا ذخیره نمی‌شود.</span></div>
-        <p>می‌توانی فرم را برای دیدن تجربه کاربری ادامه بدهی، اما NeoFit این مسیر را برنامه شخصی AI-generated حساب نمی‌کند. برای چرخه واقعی باید وارد حساب شوی.</p>
+        <p>می‌توانی تجربه Onboarding را ببینی، اما دوره AI شخصی فقط برای حساب واقعی ساخته می‌شود.</p>
         <a className="onboarding-ai-gate__auth-link" href="/auth">ورود یا ساخت حساب</a>
       </div>
     );
@@ -147,25 +198,29 @@ export function OnboardingAiGate({
   return (
     <div className="onboarding-ai-gate">
       <div className={`onboarding-ai-gate__status ${googleReady ? 'is-ready' : ''}`}>
-        <strong>{googleReady ? 'Google Gemini متصل است' : 'ابتدا Google AI Studio را متصل کن'}</strong>
-        <span>{googleReady ? `${googleCredential?.keyHint ?? ''} · ${googleCredential?.modelId ?? DEFAULT_AI_MODELS.google}` : 'این Provider برای ساخت برنامه و Coach اصلی لازم است.'}</span>
+        <strong>{googleReady ? 'Google Gemini متصل است' : 'Google AI Studio را متصل کن'}</strong>
+        <span>{googleReady ? `${googleCredential?.keyHint ?? ''} · ${googleCredential?.modelId ?? DEFAULT_AI_MODELS.google}` : 'کلید شخصی خودت را می‌سازی؛ NeoFit فقط بعد از اعتبارسنجی آن را رمزنگاری می‌کند.'}</span>
       </div>
 
       {!googleReady ? (
         <div className="onboarding-ai-gate__provider">
-          <label htmlFor="onboarding-google-key">Google AI Studio API key</label>
-          <input
+          <div className="onboarding-ai-gate__provider-head">
+            <div><strong>۱. کلید Google را بساز</strong><span>صفحه رسمی در تب جدید باز می‌شود؛ بعد برگرد و کلید را اینجا Paste کن.</span></div>
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">باز کردن AI Studio ↗</a>
+          </div>
+          <label htmlFor="onboarding-google-key">۲. API key را وارد کن</label>
+          <SecretField
             id="onboarding-google-key"
-            type="password"
-            autoComplete="off"
-            spellCheck={false}
             value={google.apiKey}
-            onChange={(event) => setGoogle((current) => ({ ...current, apiKey: event.target.value, message: '', error: false }))}
             placeholder="کلید شخصی Google"
             disabled={google.busy || loading}
+            revealed={showGoogleKey}
+            onRevealChange={setShowGoogleKey}
+            onChange={(apiKey) => setGoogle((current) => ({ ...current, apiKey, message: '', error: false }))}
           />
+          <small id="onboarding-google-key-privacy" className="onboarding-ai-gate__field-help">کلید بعد از Save از فیلد پاک می‌شود و از API NeoFit برنمی‌گردد.</small>
           <div className="onboarding-ai-gate__actions">
-            <button type="button" onClick={() => void save('google')} disabled={google.busy || loading || !google.apiKey.trim()}>{google.busy ? 'در حال بررسی...' : 'اعتبارسنجی و ذخیره امن'}</button>
+            <button type="button" onClick={() => void save('google')} disabled={google.busy || loading || !google.apiKey.trim()}>{google.busy ? 'در حال بررسی...' : 'اعتبارسنجی و ذخیره'}</button>
           </div>
           {google.message ? <p className={google.error ? 'is-error' : 'is-success'} role="status">{google.message}</p> : null}
         </div>
@@ -177,22 +232,26 @@ export function OnboardingAiGate({
 
       <details className="onboarding-ai-gate__fallback">
         <summary>AvalAI پشتیبان — اختیاری</summary>
-        <p>درخواست عادی همیشه اول به Google می‌رود؛ AvalAI فقط در خطاهای مجاز fallback استفاده می‌شود.</p>
+        <p>درخواست عادی اول به Google می‌رود؛ AvalAI فقط در خطاهای مجاز fallback استفاده می‌شود.</p>
         {avalaiCredential?.status === 'active' ? (
           <div className="onboarding-ai-gate__status is-ready"><strong>AvalAI متصل است</strong><span>{avalaiCredential.keyHint}</span></div>
         ) : (
           <div className="onboarding-ai-gate__provider">
+            <div className="onboarding-ai-gate__provider-head">
+              <div><strong>کلید AvalAI داری؟</strong><span>اگر نداری، می‌توانی بعداً از تنظیمات AI اضافه‌اش کنی.</span></div>
+              <a href="https://docs.avalai.ir/en/quickstart" target="_blank" rel="noreferrer">راهنمای رسمی ↗</a>
+            </div>
             <label htmlFor="onboarding-avalai-key">AvalAI API key</label>
-            <input
+            <SecretField
               id="onboarding-avalai-key"
-              type="password"
-              autoComplete="off"
-              spellCheck={false}
               value={avalai.apiKey}
-              onChange={(event) => setAvalai((current) => ({ ...current, apiKey: event.target.value, message: '', error: false }))}
               placeholder="کلید اختیاری AvalAI"
               disabled={avalai.busy}
+              revealed={showAvalaiKey}
+              onRevealChange={setShowAvalaiKey}
+              onChange={(apiKey) => setAvalai((current) => ({ ...current, apiKey, message: '', error: false }))}
             />
+            <small id="onboarding-avalai-key-privacy" className="onboarding-ai-gate__field-help">Fallback اختیاری است و مانع ادامه Onboarding نمی‌شود.</small>
             <div className="onboarding-ai-gate__actions"><button type="button" className="is-secondary" onClick={() => void save('avalai')} disabled={avalai.busy || !avalai.apiKey.trim()}>{avalai.busy ? 'در حال بررسی...' : 'ذخیره AvalAI'}</button></div>
           </div>
         )}
