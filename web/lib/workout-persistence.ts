@@ -24,6 +24,13 @@ type SetRow = Pick<
   'exercise_id' | 'exercise_name' | 'exercise_order' | 'set_order' | 'target_reps' | 'reps' | 'weight_kg' | 'completed_at'
 >;
 
+function accountPlanProvenance(workout: WorkoutDay): { planId: string; planVersion: number } {
+  if (!workout.planId || !Number.isInteger(workout.planVersion) || Number(workout.planVersion) < 1) {
+    throw new Error('نسخهٔ برنامه تمرینی حساب مشخص نیست.');
+  }
+  return { planId: workout.planId, planVersion: Number(workout.planVersion) };
+}
+
 function mapRowsToPlayer(workout: WorkoutDay, session: SessionRow, rows: readonly SetRow[]): WorkoutPlayerState {
   let player = createWorkoutPlayerState(workout, {
     clientMutationId: session.client_mutation_id,
@@ -56,12 +63,8 @@ function mapRowsToPlayer(workout: WorkoutDay, session: SessionRow, rows: readonl
   return player;
 }
 
-async function loadActiveSession(
-  userId: string,
-  workout: WorkoutDay,
-  planId: string,
-  planVersion: number,
-): Promise<AccountWorkoutState | null> {
+async function loadActiveSession(userId: string, workout: WorkoutDay): Promise<AccountWorkoutState | null> {
+  const { planId, planVersion } = accountPlanProvenance(workout);
   const supabase = createClient();
   const { data: session, error: sessionError } = await supabase
     .from('workout_sessions')
@@ -75,7 +78,7 @@ async function loadActiveSession(
   if (sessionError) throw new Error('خواندن جلسه فعال تمرین ناموفق بود.');
   if (!session) return null;
   if (session.workout_plan_id !== planId || session.workout_plan_version !== planVersion) {
-    throw new Error('جلسه فعال به نسخهٔ دیگری از برنامه تمرینی تعلق دارد.');
+    throw new Error('جلسه فعال به نسخهٔ دیگری از برنامه تمرینی تعلق دارد. ابتدا آن جلسه را کامل یا لغو کن.');
   }
 
   const { data: rows, error: setsError } = await supabase
@@ -89,26 +92,22 @@ async function loadActiveSession(
   return { sessionId: session.id, player: mapRowsToPlayer(workout, session, rows ?? []) };
 }
 
-export async function loadOrCreateAccountWorkout(input: {
-  readonly userId: string;
-  readonly workout: WorkoutDay;
-  readonly planId: string;
-  readonly planVersion: number;
-}): Promise<AccountWorkoutState> {
-  const existing = await loadActiveSession(input.userId, input.workout, input.planId, input.planVersion);
+export async function loadOrCreateAccountWorkout(userId: string, workout: WorkoutDay): Promise<AccountWorkoutState> {
+  const { planId, planVersion } = accountPlanProvenance(workout);
+  const existing = await loadActiveSession(userId, workout);
   if (existing) return existing;
 
-  const player = createWorkoutPlayerState(input.workout);
+  const player = createWorkoutPlayerState(workout);
   const supabase = createClient();
   const { data, error } = await supabase
     .from('workout_sessions')
     .insert({
-      user_id: input.userId,
+      user_id: userId,
       client_mutation_id: player.clientMutationId,
-      workout_id: input.workout.id,
-      workout_title: input.workout.title,
-      workout_plan_id: input.planId,
-      workout_plan_version: input.planVersion,
+      workout_id: workout.id,
+      workout_title: workout.title,
+      workout_plan_id: planId,
+      workout_plan_version: planVersion,
       status: 'active',
       started_at: player.startedAt,
     })
@@ -118,7 +117,7 @@ export async function loadOrCreateAccountWorkout(input: {
   if (error) {
     // A second tab may have created the same active workout between the read and insert.
     if (error.code === '23505') {
-      const raced = await loadActiveSession(input.userId, input.workout, input.planId, input.planVersion);
+      const raced = await loadActiveSession(userId, workout);
       if (raced) return raced;
     }
     throw new Error('ساخت جلسه تمرین در حساب ناموفق بود.');
