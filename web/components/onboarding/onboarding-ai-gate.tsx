@@ -20,7 +20,7 @@ export function OnboardingAiGate({
   onGoogleReadyChange,
 }: {
   readonly mode: OnboardingMode;
-  readonly onGoogleReadyChange(ready: boolean): void;
+  readonly onGoogleReadyChange: (ready: boolean) => void;
 }) {
   const [credentials, setCredentials] = useState<AiCredentialMetadata[]>([]);
   const [loading, setLoading] = useState(true);
