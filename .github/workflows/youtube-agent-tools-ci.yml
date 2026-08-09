@@ -24,6 +24,7 @@ on:
       - 'web/tests/ui-polish-accessibility.test.ts'
       - 'web/package.json'
       - 'supabase/migrations/20260809150638_youtube_integration_and_tool_audit.sql'
+      - 'supabase/migrations/20260809153742_reserve_youtube_agent_tool_budget.sql'
       - 'docs/NEOFIT_STAGE19_YOUTUBE_AGENT_TOOLS_POLISH.md'
       - 'docs/NEOFIT_GAP_AUDIT_2026-08-08.md'
       - '.github/workflows/youtube-agent-tools-ci.yml'
@@ -50,6 +51,7 @@ on:
       - 'web/tests/ui-polish-accessibility.test.ts'
       - 'web/package.json'
       - 'supabase/migrations/20260809150638_youtube_integration_and_tool_audit.sql'
+      - 'supabase/migrations/20260809153742_reserve_youtube_agent_tool_budget.sql'
       - 'docs/NEOFIT_STAGE19_YOUTUBE_AGENT_TOOLS_POLISH.md'
       - 'docs/NEOFIT_GAP_AUDIT_2026-08-08.md'
       - '.github/workflows/youtube-agent-tools-ci.yml'
@@ -111,6 +113,8 @@ jobs:
           set -euo pipefail
           grep -q 'encrypted_integration_credentials' web/lib/integrations/credential-store.ts
           grep -q 'neofit:integration-credential' web/lib/integrations/credential-vault.ts
+          grep -q 'reserve_agent_tool_call' web/lib/integrations/tool-audit.ts
+          grep -q 'pg_advisory_xact_lock' supabase/migrations/20260809153742_reserve_youtube_agent_tool_budget.sql
           grep -q "requiresYouTubeVideo ? (\['google'\] as const)" web/lib/ai/provider-router.ts
           grep -q "type: 'video'" web/lib/ai/providers/google.ts
           grep -q 'runYouTubeSearchTool' web/app/api/ai/coach/route.ts
