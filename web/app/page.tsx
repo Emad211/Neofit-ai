@@ -17,14 +17,28 @@ export default async function HomePage() {
   // instead of trapping the browser in authenticated routes.
   if (!active) redirect('/auth');
 
-  const onboarding = await supabase
-    .from('user_onboarding')
-    .select('status')
-    .eq('user_id', active.userId)
-    .maybeSingle();
+  const [googleCredential, onboarding] = await Promise.all([
+    supabase
+      .from('encrypted_provider_credentials')
+      .select('status')
+      .eq('user_id', active.userId)
+      .eq('provider', 'google')
+      .maybeSingle(),
+    supabase
+      .from('user_onboarding')
+      .select('status')
+      .eq('user_id', active.userId)
+      .maybeSingle(),
+  ]);
 
-  if (!onboarding.error && onboarding.data?.status !== 'completed') {
-    redirect('/onboarding');
+  // A real personalized NeoFit lifecycle requires a usable Google provider
+  // before collecting the self-report that will later feed program generation.
+  if (googleCredential.error || googleCredential.data?.status !== 'active') {
+    redirect('/onboarding/ai');
+  }
+
+  if (onboarding.error || onboarding.data?.status !== 'completed') {
+    redirect('/onboarding/welcome');
   }
 
   redirect('/today');
