@@ -1,9 +1,13 @@
 'use client';
 
 import {
+  NUTRIENT_KEYS,
   NUTRITION_CORE_SCHEMA_VERSION,
   type MealType,
+  type NutritionEstimate,
   type NutritionGoals,
+  type NutritionRange,
+  type NutritionVector,
 } from '@neofit/nutrition-core';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { dailyTargets, foodFixtures, initialDiary, type FoodFixture } from '@/data/fixtures';
@@ -12,12 +16,14 @@ import { formatLocalDate } from '@/lib/local-date';
 import {
   buildInitialWebDiary,
   createWebDiaryEntry,
+  mealTypeLabelFa,
   summarizeWebDiary,
+  webMacrosFromEstimate,
   type WebDiaryEntry,
   type WebDiarySummary,
 } from '@/lib/nutrition-adapter';
 import { createClient } from '@/lib/supabase/client';
-import type { Json } from '@/lib/supabase/database.types';
+import type { Json, Tables } from '@/lib/supabase/database.types';
 import { parseStoredWebDiary, serializeStoredWebDiary } from '@/lib/web-diary-storage';
 
 const STORAGE_KEY = 'neofit:web-diary:v1';
@@ -46,10 +52,91 @@ interface NutritionStateProviderProps {
   readonly loadError?: string | null;
 }
 
+type NutritionEntryRow = Tables<'nutrition_entries'>;
+
 const NutritionStateContext = createContext<NutritionStateValue | null>(null);
 
 function asJson(value: unknown): Json {
   return JSON.parse(JSON.stringify(value)) as Json;
+}
+
+function isJsonObject(value: Json | undefined): value is { [key: string]: Json | undefined } {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function parseNutritionVector(value: Json | undefined): NutritionVector | null {
+  if (!isJsonObject(value)) return null;
+  const vector: Partial<Record<(typeof NUTRIENT_KEYS)[number], number>> = {};
+  for (const key of NUTRIENT_KEYS) {
+    const nutrient = value[key];
+    if (nutrient === undefined) continue;
+    if (typeof nutrient !== 'number' || !Number.isFinite(nutrient)) return null;
+    vector[key] = nutrient;
+  }
+  return vector;
+}
+
+function parseNutritionRange(value: Json | undefined): NutritionRange | undefined | null {
+  if (value === undefined) return undefined;
+  if (!isJsonObject(value)) return null;
+  const p10 = parseNutritionVector(value.p10);
+  const p50 = parseNutritionVector(value.p50);
+  const p90 = parseNutritionVector(value.p90);
+  if (!p10 || !p50 || !p90) return null;
+  return { p10, p50, p90 };
+}
+
+function parseNutritionEstimate(value: Json): NutritionEstimate | null {
+  if (!isJsonObject(value)) return null;
+  const gramsValue = value.grams;
+  const grams = gramsValue === null
+    ? null
+    : typeof gramsValue === 'number' && Number.isFinite(gramsValue) && gramsValue >= 0
+      ? gramsValue
+      : undefined;
+  if (grams === undefined) return null;
+  const center = parseNutritionVector(value.center);
+  if (!center) return null;
+  const range = parseNutritionRange(value.range);
+  if (range === null) return null;
+  return range ? { grams, center, range } : { grams, center };
+}
+
+function parseMealType(value: string): MealType | null {
+  return value === 'breakfast' || value === 'lunch' || value === 'dinner' || value === 'snack' ? value : null;
+}
+
+function parseSourceType(value: string): 'food' | 'recipe' | 'custom' | null {
+  return value === 'food' || value === 'recipe' || value === 'custom' ? value : null;
+}
+
+function rowToDiaryEntry(row: NutritionEntryRow): WebDiaryEntry | null {
+  const mealType = parseMealType(row.meal_type);
+  const sourceType = parseSourceType(row.source_type);
+  const estimate = parseNutritionEstimate(row.estimate);
+  if (!mealType || !sourceType || !estimate) return null;
+  try {
+    return {
+      core: {
+        id: row.id,
+        localDate: row.local_date,
+        mealType,
+        label: row.label,
+        sourceType,
+        sourceId: row.source_id,
+        estimate,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      },
+      mealLabelFa: mealTypeLabelFa(mealType),
+      portionText: estimate.grams === null
+        ? 'سهم ثبت‌شده'
+        : `${new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 1 }).format(estimate.grams)} گرم`,
+      macros: webMacrosFromEstimate(estimate),
+    };
+  } catch {
+    return null;
+  }
 }
 
 function createInitialDiary(localDate: string): WebDiaryEntry[] {
@@ -59,6 +146,11 @@ function createInitialDiary(localDate: string): WebDiaryEntry[] {
     localDate,
     timestamp: new Date().toISOString(),
   });
+}
+
+function createClientMutationId(foodId: string): string {
+  const random = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+  return `${foodId}:${random}`;
 }
 
 export function NutritionStateProvider({
@@ -73,27 +165,19 @@ export function NutritionStateProvider({
   const account = accountOverride === undefined ? sharedAccount?.account ?? null : accountOverride;
   const configured = configuredOverride === undefined ? sharedAccount?.configured ?? false : configuredOverride;
   const accountMode = account !== null;
-  const [localDate, setLocalDate] = useState(() =>
-    formatLocalDate(new Date(), account?.timezone),
-  );
+  const [localDate, setLocalDate] = useState(() => formatLocalDate(new Date(), account?.timezone));
   const [diary, setDiary] = useState<WebDiaryEntry[]>(() =>
     initialDiary ? [...initialDiary] : accountMode ? [] : createInitialDiary(localDate),
   );
   const [hydrated, setHydrated] = useState(accountMode);
-  const [syncStatus, setSyncStatus] = useState<NutritionSyncStatus>(
-    loadError ? 'error' : accountMode ? 'synced' : 'local',
-  );
+  const [syncStatus, setSyncStatus] = useState<NutritionSyncStatus>(loadError ? 'error' : accountMode ? 'synced' : 'local');
   const [syncMessage, setSyncMessage] = useState(
     loadError ?? (accountMode ? 'اطلاعات حساب همگام است.' : 'داده‌ها فقط در همین مرورگر ذخیره می‌شوند.'),
   );
-  // Guest mode is an explicit demo and may use demo goals. Account mode must
-  // never silently inherit synthetic personal targets.
   const goals = accountMode ? initialGoals : (initialGoals ?? dailyTargets);
 
   useEffect(() => {
-    const updateLocalDate = () => {
-      setLocalDate(formatLocalDate(new Date(), account?.timezone));
-    };
+    const updateLocalDate = () => setLocalDate(formatLocalDate(new Date(), account?.timezone));
     updateLocalDate();
     const interval = window.setInterval(updateLocalDate, 60_000);
     window.addEventListener('focus', updateLocalDate);
@@ -138,7 +222,6 @@ export function NutritionStateProvider({
       setHydrated(true);
     }
   // The account identity is the boundary between Remote and local state.
-  // Server refreshes for the same account must not overwrite optimistic state.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account?.id]);
 
@@ -152,13 +235,17 @@ export function NutritionStateProvider({
     }
   }, [accountMode, diary, hydrated]);
 
+  const currentDiary = useMemo(
+    () => diary.filter((entry) => entry.core.localDate === localDate),
+    [diary, localDate],
+  );
   const summary = useMemo(
-    () => summarizeWebDiary(diary, localDate, goals),
-    [diary, goals, localDate],
+    () => summarizeWebDiary(currentDiary, localDate, goals),
+    [currentDiary, goals, localDate],
   );
 
   const value = useMemo<NutritionStateValue>(() => ({
-    diary,
+    diary: currentDiary,
     summary,
     localDate,
     account,
@@ -167,7 +254,7 @@ export function NutritionStateProvider({
     syncMessage,
     async addFood(food, portionCount, mealType) {
       const timestamp = new Date().toISOString();
-      const clientMutationId = `${food.id}-${Date.now()}`;
+      const clientMutationId = createClientMutationId(food.id);
       const entry = createWebDiaryEntry({
         id: clientMutationId,
         label: food.nameFa,
@@ -213,47 +300,44 @@ export function NutritionStateProvider({
         throw error ?? new Error('Nutrition entry insert returned no row.');
       }
 
-      setDiary((current) => current.map((item) =>
-        item.core.id === clientMutationId
-          ? {
-              ...item,
-              core: {
-                ...item.core,
-                id: data.id,
-                createdAt: data.created_at,
-                updatedAt: data.updated_at,
-              },
-            }
-          : item,
-      ));
+      const persisted = rowToDiaryEntry(data);
+      if (!persisted) {
+        setDiary((current) => current.filter((item) => item.core.id !== clientMutationId));
+        setSyncStatus('error');
+        setSyncMessage('ذخیره انجام شد اما پاسخ معتبر Nutrition Core قابل بازسازی نبود؛ صفحه را تازه کن.');
+        throw new Error('Persisted Nutrition entry could not be reconstructed.');
+      }
+      setDiary((current) => current.map((item) => item.core.id === clientMutationId ? persisted : item));
       setSyncStatus('synced');
       setSyncMessage('غذا در حساب نئوفیت ذخیره شد.');
     },
     async resetDiary() {
       if (!account) {
-        setDiary(createInitialDiary(localDate));
+        const previousDates = diary.filter((entry) => entry.core.localDate !== localDate);
+        setDiary([...previousDates, ...createInitialDiary(localDate)]);
         setSyncStatus('local');
-        setSyncMessage('دادهٔ آزمایشی مرورگر بازنشانی شد.');
+        setSyncMessage('دادهٔ آزمایشی امروز مرورگر بازنشانی شد؛ روزهای دیگر دست‌نخورده ماندند.');
         return;
       }
 
       setSyncStatus('saving');
-      setSyncMessage('در حال حذف ثبت‌های تغذیه حساب...');
+      setSyncMessage('در حال حذف ثبت‌های امروز از حساب...');
       const supabase = createClient();
       const { error } = await supabase
         .from('nutrition_entries')
         .delete()
-        .eq('user_id', account.id);
+        .eq('user_id', account.id)
+        .eq('local_date', localDate);
       if (error) {
         setSyncStatus('error');
-        setSyncMessage('حذف ثبت‌های حساب انجام نشد.');
+        setSyncMessage('حذف ثبت‌های امروز حساب انجام نشد.');
         throw error;
       }
-      setDiary([]);
+      setDiary((current) => current.filter((entry) => entry.core.localDate !== localDate));
       setSyncStatus('synced');
-      setSyncMessage('ثبت‌های تغذیه حساب حذف شدند.');
+      setSyncMessage('ثبت‌های امروز حساب حذف شدند؛ تاریخچهٔ روزهای دیگر حفظ شد.');
     },
-  }), [account, configured, diary, localDate, summary, syncMessage, syncStatus]);
+  }), [account, configured, currentDiary, diary, localDate, summary, syncMessage, syncStatus]);
 
   return <NutritionStateContext.Provider value={value}>{children}</NutritionStateContext.Provider>;
 }
