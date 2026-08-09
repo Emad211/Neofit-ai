@@ -235,8 +235,19 @@ function nullableBoolean(value: unknown): value is boolean | null {
 export function parseOnboardingDraft(value: unknown): OnboardingDraft | null {
   if (!isRecord(value) || value.version !== ONBOARDING_SCHEMA_VERSION || !Array.isArray(value.completedSteps)) return null;
   if (!value.completedSteps.every((step) => Number.isInteger(step) && Number(step) >= 1 && Number(step) <= ONBOARDING_TOTAL_STEPS)) return null;
-  const sections = ['goal', 'basics', 'body', 'medical', 'injuries', 'lifestyle', 'nutrition', 'trainingHistory', 'availability', 'preferences', 'confirmation'] as const;
-  if (!sections.every((key) => isRecord(value[key]))) return null;
+  if (
+    !isRecord(value.goal) ||
+    !isRecord(value.basics) ||
+    !isRecord(value.body) ||
+    !isRecord(value.medical) ||
+    !isRecord(value.injuries) ||
+    !isRecord(value.lifestyle) ||
+    !isRecord(value.nutrition) ||
+    !isRecord(value.trainingHistory) ||
+    !isRecord(value.availability) ||
+    !isRecord(value.preferences) ||
+    !isRecord(value.confirmation)
+  ) return null;
 
   const goal = value.goal;
   const basics = value.basics;
