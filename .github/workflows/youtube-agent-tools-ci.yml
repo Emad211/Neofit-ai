@@ -1,0 +1,133 @@
+name: YouTube Agent Tools CI
+
+on:
+  push:
+    branches:
+      - 'stage19/**'
+    paths:
+      - 'web/app/api/integrations/**'
+      - 'web/app/api/ai/coach/**'
+      - 'web/app/(main)/profile/integrations/**'
+      - 'web/components/integration-settings-screen.tsx'
+      - 'web/components/coach-screen.tsx'
+      - 'web/components/profile-screen.tsx'
+      - 'web/lib/integrations/**'
+      - 'web/lib/coach/external-tool-router.ts'
+      - 'web/lib/coach/system-prompt.ts'
+      - 'web/lib/ai/types.ts'
+      - 'web/lib/ai/provider-router.ts'
+      - 'web/lib/ai/providers/google.ts'
+      - 'web/lib/supabase/database.types.ts'
+      - 'web/app/agent-tools-polish.css'
+      - 'web/app/layout.tsx'
+      - 'web/tests/youtube-agent-tools.test.ts'
+      - 'web/tests/ui-polish-accessibility.test.ts'
+      - 'web/package.json'
+      - 'supabase/migrations/20260809150638_youtube_integration_and_tool_audit.sql'
+      - 'docs/NEOFIT_STAGE19_YOUTUBE_AGENT_TOOLS_POLISH.md'
+      - 'docs/NEOFIT_GAP_AUDIT_2026-08-08.md'
+      - '.github/workflows/youtube-agent-tools-ci.yml'
+  pull_request:
+    branches:
+      - stage18/nutrition-plan-diary-logging
+    paths:
+      - 'web/app/api/integrations/**'
+      - 'web/app/api/ai/coach/**'
+      - 'web/app/(main)/profile/integrations/**'
+      - 'web/components/integration-settings-screen.tsx'
+      - 'web/components/coach-screen.tsx'
+      - 'web/components/profile-screen.tsx'
+      - 'web/lib/integrations/**'
+      - 'web/lib/coach/external-tool-router.ts'
+      - 'web/lib/coach/system-prompt.ts'
+      - 'web/lib/ai/types.ts'
+      - 'web/lib/ai/provider-router.ts'
+      - 'web/lib/ai/providers/google.ts'
+      - 'web/lib/supabase/database.types.ts'
+      - 'web/app/agent-tools-polish.css'
+      - 'web/app/layout.tsx'
+      - 'web/tests/youtube-agent-tools.test.ts'
+      - 'web/tests/ui-polish-accessibility.test.ts'
+      - 'web/package.json'
+      - 'supabase/migrations/20260809150638_youtube_integration_and_tool_audit.sql'
+      - 'docs/NEOFIT_STAGE19_YOUTUBE_AGENT_TOOLS_POLISH.md'
+      - 'docs/NEOFIT_GAP_AUDIT_2026-08-08.md'
+      - '.github/workflows/youtube-agent-tools-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: youtube-agent-tools-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_VERCEL_ENV: preview
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_test_value
+      AI_CREDENTIAL_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+      AUTH_RECOVERY_INTENT_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+      - name: Install workspace dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: YouTube agent tool contracts
+        working-directory: web
+        run: npm run test:youtube-tools
+      - name: UI polish and accessibility contracts
+        working-directory: web
+        run: npm run test:ui-polish
+      - name: Coach regression
+        working-directory: web
+        run: npm run test:coach
+      - name: Full Supabase app regression
+        working-directory: web
+        run: npm run test:supabase-app
+      - name: TypeScript
+        working-directory: web
+        run: npm run typecheck
+      - name: Production build
+        working-directory: web
+        run: npm run build
+      - name: Verify secret, tool and UI boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'encrypted_integration_credentials' web/lib/integrations/credential-store.ts
+          grep -q 'neofit:integration-credential' web/lib/integrations/credential-vault.ts
+          grep -q "requiresYouTubeVideo ? (\['google'\] as const)" web/lib/ai/provider-router.ts
+          grep -q "type: 'video'" web/lib/ai/providers/google.ts
+          grep -q 'runYouTubeSearchTool' web/app/api/ai/coach/route.ts
+          grep -q 'prefers-reduced-motion:reduce' web/app/agent-tools-polish.css
+          if grep -R -E 'captions|transcript|youtube-dl|yt-dlp|youtube\.com/embed|<iframe' web/lib/integrations web/lib/coach web/components/coach-screen.tsx; then
+            echo 'Forbidden transcript scraping or automatic YouTube embed detected.' >&2
+            exit 1
+          fi
+          if grep -R -E 'encryptProviderApiKey|decryptProviderApiKey|encrypted_provider_credentials' web/lib/integrations web/app/api/integrations; then
+            echo 'YouTube integration is incorrectly reusing the AI provider credential contract.' >&2
+            exit 1
+          fi
+          if grep -qE 'workout-fixtures|workoutPlan\.length|fixture</small>' web/components/profile-screen.tsx; then
+            echo 'Account Profile is leaking the Guest workout fixture.' >&2
+            exit 1
+          fi
+          if grep -R -E 'SUPABASE_SERVICE_ROLE_KEY|sb_secret_' web/lib/integrations web/app/api/integrations; then
+            echo 'Privileged Supabase key detected in integration runtime.' >&2
+            exit 1
+          fi
