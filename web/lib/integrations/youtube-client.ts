@@ -105,12 +105,13 @@ interface VideosPayload {
   readonly items?: Array<{
     readonly id?: string;
     readonly contentDetails?: { readonly duration?: string };
+    readonly snippet?: { readonly title?: string };
   }>;
 }
 
 export async function validateYouTubeApiKey(apiKey: string): Promise<void> {
   const url = apiUrl('videos', apiKey);
-  url.searchParams.set('part', 'id');
+  url.searchParams.set('part', 'snippet');
   url.searchParams.set('chart', 'mostPopular');
   url.searchParams.set('maxResults', '1');
   url.searchParams.set('regionCode', 'US');
