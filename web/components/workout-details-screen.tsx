@@ -23,7 +23,7 @@ export function WorkoutDetailsScreen({ workout }: { workout: WorkoutDay }) {
         <div className="workout-detail-hero__stats">
           <div><strong>{faNumber.format(workout.exercises.length)}</strong><span>حرکت</span></div>
           <div><strong>{faNumber.format(totalSets)}</strong><span>ست</span></div>
-          <div><strong>{faNumber.format(workout.calories)}</strong><span>kcal</span></div>
+          <div><strong>{workout.duration}</strong><span>زمان برنامه</span></div>
         </div>
       </article>
 
