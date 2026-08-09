@@ -5,21 +5,6 @@ import type { AiProvider } from './types';
 
 export type AiRequestKind = 'coach' | 'respond';
 
-interface ReserveRow {
-  readonly allowed: boolean;
-  readonly request_id: string | null;
-  readonly burst_used: number;
-  readonly hourly_used: number;
-  readonly retry_after_seconds: number;
-}
-
-interface RpcResult {
-  readonly data: unknown;
-  readonly error: { readonly message?: string } | null;
-}
-
-type RpcCaller = (fn: string, args?: Record<string, unknown>) => PromiseLike<RpcResult>;
-
 export interface AiAuditReservation {
   readonly requestId: string;
   readonly burstUsed: number;
@@ -109,25 +94,19 @@ export function normalizeAiUsage(usage: unknown): AiUsageCounts {
   };
 }
 
-function rpc(context: AiAuthenticatedContext): RpcCaller {
-  // The generated Database type is updated by Stage 15 CI/schema sync. Keeping the
-  // narrow cast here prevents the audit module from widening the entire Supabase client.
-  return context.supabase.rpc.bind(context.supabase) as unknown as RpcCaller;
-}
-
 export async function reserveAiRequest(
   context: AiAuthenticatedContext,
   requestKind: AiRequestKind,
 ): Promise<AiAuditReservation> {
   const limits = aiRequestBudgetLimits();
-  const { data, error } = await rpc(context)('reserve_ai_request', {
+  const { data, error } = await context.supabase.rpc('reserve_ai_request', {
     p_request_kind: requestKind,
     p_burst_limit: limits.burstPerMinute,
     p_hourly_limit: limits.requestsPerHour,
   });
-  if (error || !Array.isArray(data) || data.length !== 1) throw new AiBudgetUnavailableError();
+  if (error || !data || data.length !== 1) throw new AiBudgetUnavailableError();
 
-  const row = data[0] as Partial<ReserveRow>;
+  const row = data[0];
   const burstUsed = asNonNegativeInteger(row.burst_used) ?? 0;
   const hourlyUsed = asNonNegativeInteger(row.hourly_used) ?? 0;
   const retryAfterSeconds = Math.max(1, asNonNegativeInteger(row.retry_after_seconds) ?? 1);
@@ -155,22 +134,23 @@ export async function completeAiRequest(input: {
   failureCode?: string | null;
 }): Promise<void> {
   const usage = normalizeAiUsage(input.usage);
-  const { error } = await rpc(input.context)('complete_ai_request', {
+  const args: Parameters<typeof input.context.supabase.rpc<'complete_ai_request'>>[1] = {
     p_request_id: input.reservation.requestId,
     p_status: input.status,
-    p_provider: input.provider,
-    p_model_id: input.modelId,
-    p_fallback_from: input.fallbackFrom,
     p_attempt_count: input.attemptCount,
     p_router_latency_ms: input.routerLatencyMs,
     p_input_chars: input.inputChars,
     p_system_chars: input.systemChars,
-    p_output_chars: input.outputChars,
-    p_input_tokens: usage.inputTokens,
-    p_output_tokens: usage.outputTokens,
-    p_total_tokens: usage.totalTokens,
-    p_failure_code: input.failureCode ?? null,
-  });
+    ...(input.provider ? { p_provider: input.provider } : {}),
+    ...(input.modelId ? { p_model_id: input.modelId } : {}),
+    ...(input.fallbackFrom ? { p_fallback_from: input.fallbackFrom } : {}),
+    ...(input.outputChars !== null ? { p_output_chars: input.outputChars } : {}),
+    ...(usage.inputTokens !== null ? { p_input_tokens: usage.inputTokens } : {}),
+    ...(usage.outputTokens !== null ? { p_output_tokens: usage.outputTokens } : {}),
+    ...(usage.totalTokens !== null ? { p_total_tokens: usage.totalTokens } : {}),
+    ...(input.failureCode ? { p_failure_code: input.failureCode } : {}),
+  };
+  const { error } = await input.context.supabase.rpc('complete_ai_request', args);
   if (error) {
     // Audit completion must never leak prompt/key material and must not replace a
     // successful provider response with an observability-only failure.
