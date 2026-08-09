@@ -1,5 +1,5 @@
 export const ONBOARDING_SCHEMA_VERSION = 2 as const;
-export const ONBOARDING_TOTAL_STEPS = 15;
+export const ONBOARDING_TOTAL_STEPS = 13;
 export const PROGRAM_DURATION_MIN_DAYS = 14;
 export const PROGRAM_DURATION_MAX_DAYS = 84;
 
@@ -15,10 +15,8 @@ export const onboardingSteps = [
   { number: 9, slug: 'training-history', label: 'سابقه تمرین' },
   { number: 10, slug: 'availability', label: 'زمان و تجهیزات' },
   { number: 11, slug: 'preferences', label: 'ترجیحات' },
-  { number: 12, slug: 'review', label: 'مرور' },
-  { number: 13, slug: 'analysis', label: 'تحلیل' },
-  { number: 14, slug: 'result', label: 'نتیجه اولیه' },
-  { number: 15, slug: 'confirmation', label: 'دوره' },
+  { number: 12, slug: 'review', label: 'مرور و ایمنی' },
+  { number: 13, slug: 'confirmation', label: 'دوره' },
 ] as const;
 
 export type OnboardingStepSlug = (typeof onboardingSteps)[number]['slug'];
@@ -27,6 +25,30 @@ export type GenderId = 'male' | 'female' | 'other' | 'prefer-not-to-say';
 export type UnitSystem = 'metric' | 'imperial';
 export type InjurySeverity = 'mild' | 'moderate' | 'severe';
 export type InjuryStatus = 'current' | 'past';
+export type WeekdayId = 'sat' | 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri';
+export type EquipmentId = 'bodyweight' | 'dumbbell' | 'barbell' | 'cable' | 'bands' | 'bench' | 'full-gym' | 'pull-up-bar' | 'cardio-machine';
+
+export const weekdayOptions: readonly { value: WeekdayId; label: string }[] = [
+  { value: 'sat', label: 'شنبه' },
+  { value: 'sun', label: 'یکشنبه' },
+  { value: 'mon', label: 'دوشنبه' },
+  { value: 'tue', label: 'سه‌شنبه' },
+  { value: 'wed', label: 'چهارشنبه' },
+  { value: 'thu', label: 'پنجشنبه' },
+  { value: 'fri', label: 'جمعه' },
+];
+
+export const equipmentOptions: readonly { value: EquipmentId; label: string; description?: string }[] = [
+  { value: 'bodyweight', label: 'فقط وزن بدن', description: 'بدون وسیله' },
+  { value: 'dumbbell', label: 'دمبل' },
+  { value: 'barbell', label: 'هالتر' },
+  { value: 'cable', label: 'کابل' },
+  { value: 'bands', label: 'کش تمرینی' },
+  { value: 'bench', label: 'نیمکت' },
+  { value: 'full-gym', label: 'باشگاه کامل', description: 'دستگاه‌های متنوع' },
+  { value: 'pull-up-bar', label: 'بارفیکس' },
+  { value: 'cardio-machine', label: 'تردمیل / دوچرخه' },
+];
 
 export interface GoalSection {
   primaryGoal: GoalId | null;
@@ -120,11 +142,11 @@ export interface TrainingHistorySection {
 
 export interface AvailabilitySection {
   location: 'home' | 'gym' | 'both' | null;
-  equipment: string[];
+  equipment: EquipmentId[];
   customEquipment: string;
   daysPerWeek: number | null;
   sessionDuration: 30 | 45 | 60 | 75 | 90 | null;
-  preferredDays: string[];
+  preferredDays: WeekdayId[];
   preferredTime: 'morning' | 'afternoon' | 'evening' | 'flexible' | null;
   scheduleNotes: string;
 }
@@ -192,6 +214,15 @@ const goalIds = new Set<GoalId>(['weight-loss', 'muscle-gain', 'maintenance', 'f
 const genderIds = new Set<GenderId>(['male', 'female', 'other', 'prefer-not-to-say']);
 const injurySeverities = new Set<InjurySeverity>(['mild', 'moderate', 'severe']);
 const injuryStatuses = new Set<InjuryStatus>(['current', 'past']);
+const weekdayIds = new Set<WeekdayId>(weekdayOptions.map((option) => option.value));
+const equipmentIds = new Set<EquipmentId>(equipmentOptions.map((option) => option.value));
+const legacyWeekdays: Readonly<Record<string, WeekdayId>> = {
+  'شنبه': 'sat', 'یکشنبه': 'sun', 'دوشنبه': 'mon', 'سه‌شنبه': 'tue', 'چهارشنبه': 'wed', 'پنجشنبه': 'thu', 'جمعه': 'fri',
+};
+const legacyEquipment: Readonly<Record<string, EquipmentId>> = {
+  'وزن بدن': 'bodyweight', 'دمبل': 'dumbbell', 'هالتر': 'barbell', 'کابل': 'cable', 'کش تمرینی': 'bands', 'نیمکت': 'bench',
+  'دستگاه‌های باشگاه': 'full-gym', 'باشگاه کامل': 'full-gym', 'بارفیکس': 'pull-up-bar', 'تردمیل/دوچرخه': 'cardio-machine', 'تردمیل / دوچرخه': 'cardio-machine',
+};
 const MAX_SHORT_TEXT = 160;
 const MAX_NOTES = 2000;
 const MAX_LIST_ITEMS = 30;
@@ -219,10 +250,6 @@ export const createEmptyOnboardingDraft = (): OnboardingDraft => {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function finiteOrNull(value: unknown): value is number | null {
-  return value === null || (typeof value === 'number' && Number.isFinite(value));
 }
 
 function numberInRangeOrNull(value: unknown, min: number, max: number): value is number | null {
@@ -276,17 +303,9 @@ export function parseOnboardingDraft(value: unknown): OnboardingDraft | null {
     || new Set(value.completedSteps).size !== value.completedSteps.length
   ) return null;
   if (
-    !isRecord(value.goal) ||
-    !isRecord(value.basics) ||
-    !isRecord(value.body) ||
-    !isRecord(value.medical) ||
-    !isRecord(value.injuries) ||
-    !isRecord(value.lifestyle) ||
-    !isRecord(value.nutrition) ||
-    !isRecord(value.trainingHistory) ||
-    !isRecord(value.availability) ||
-    !isRecord(value.preferences) ||
-    !isRecord(value.confirmation)
+    !isRecord(value.goal) || !isRecord(value.basics) || !isRecord(value.body) || !isRecord(value.medical) || !isRecord(value.injuries)
+    || !isRecord(value.lifestyle) || !isRecord(value.nutrition) || !isRecord(value.trainingHistory) || !isRecord(value.availability)
+    || !isRecord(value.preferences) || !isRecord(value.confirmation)
   ) return null;
 
   const goal = value.goal;
@@ -309,7 +328,7 @@ export function parseOnboardingDraft(value: unknown): OnboardingDraft | null {
   if (!stringWithin(lifestyle.occupation, MAX_SHORT_TEXT) || !nullableEnum(lifestyle.activityLevel, ['sedentary', 'light', 'moderate', 'high']) || !numberInRangeOrNull(lifestyle.sittingHours, 0, 24) || !numberInRangeOrNull(lifestyle.dailySteps, 0, 100000) || !numberInRangeOrNull(lifestyle.sleepHours, 0, 24) || !nullableEnum(lifestyle.sleepQuality, ['poor', 'average', 'good']) || !nullableEnum(lifestyle.stressLevel, ['low', 'medium', 'high']) || !nullableEnum(lifestyle.smoking, ['never', 'sometimes', 'daily']) || !stringWithin(lifestyle.routineNotes, MAX_NOTES)) return null;
   if (!numberInRangeOrNull(nutrition.mealsPerDay, 1, 8) || !nullableEnum(nutrition.dietType, ['balanced', 'vegetarian', 'vegan', 'pescatarian', 'low-carb', 'other']) || !stringArray(nutrition.allergies) || !uniqueStrings(nutrition.allergies) || !stringArray(nutrition.dislikedFoods) || !uniqueStrings(nutrition.dislikedFoods) || !stringArray(nutrition.favoriteIranianFoods) || !uniqueStrings(nutrition.favoriteIranianFoods) || !nullableEnum(nutrition.budget, ['economy', 'balanced', 'flexible']) || !nullableEnum(nutrition.cookingAbility, ['beginner', 'intermediate', 'advanced']) || !nullableBoolean(nutrition.kitchenAccess) || !nullableEnum(nutrition.eatingOutFrequency, ['rare', 'weekly', 'frequent']) || !stringWithin(nutrition.notes, MAX_NOTES)) return null;
   if (!nullableEnum(training.level, ['beginner', 'intermediate', 'advanced']) || !numberInRangeOrNull(training.trainingAgeMonths, 0, 1200) || !stringArray(training.previousSports) || !uniqueStrings(training.previousSports) || !numberInRangeOrNull(training.recentBreakWeeks, 0, 520) || !stringArray(training.familiarMovements) || !uniqueStrings(training.familiarMovements) || !nullableEnum(training.cardioExperience, ['none', 'basic', 'regular']) || !nullableEnum(training.strengthExperience, ['none', 'basic', 'regular']) || !stringWithin(training.notes, MAX_NOTES)) return null;
-  if (!nullableEnum(availability.location, ['home', 'gym', 'both']) || !stringArray(availability.equipment, 30, 100) || !uniqueStrings(availability.equipment) || !stringWithin(availability.customEquipment, 700) || !numberInRangeOrNull(availability.daysPerWeek, 1, 6) || !nullableEnum(availability.sessionDuration, [30, 45, 60, 75, 90] as const) || !stringArray(availability.preferredDays, 7, 30) || !uniqueStrings(availability.preferredDays) || !nullableEnum(availability.preferredTime, ['morning', 'afternoon', 'evening', 'flexible']) || !stringWithin(availability.scheduleNotes, MAX_NOTES)) return null;
+  if (!nullableEnum(availability.location, ['home', 'gym', 'both']) || !stringArray(availability.equipment, equipmentIds.size, 30) || !availability.equipment.every((item) => equipmentIds.has(item as EquipmentId)) || !uniqueStrings(availability.equipment) || !stringWithin(availability.customEquipment, 700) || !numberInRangeOrNull(availability.daysPerWeek, 1, 6) || !nullableEnum(availability.sessionDuration, [30, 45, 60, 75, 90] as const) || !stringArray(availability.preferredDays, weekdayIds.size, 10) || !availability.preferredDays.every((item) => weekdayIds.has(item as WeekdayId)) || !uniqueStrings(availability.preferredDays) || !nullableEnum(availability.preferredTime, ['morning', 'afternoon', 'evening', 'flexible']) || !stringWithin(availability.scheduleNotes, MAX_NOTES)) return null;
   if (!nullableEnum(preferences.intensity, ['gentle', 'moderate', 'challenging']) || !nullableEnum(preferences.cardioPreference, ['low', 'balanced', 'high']) || !nullableEnum(preferences.trainingStyle, ['resistance', 'functional', 'mixed']) || !nullableEnum(preferences.variety, ['stable', 'balanced', 'varied']) || !nullableEnum(preferences.nutritionStrictness, ['flexible', 'structured', 'strict']) || !nullableEnum(preferences.coachingTone, ['supportive', 'direct', 'analytical']) || !nullableEnum(preferences.reminderLevel, ['minimal', 'normal', 'high'])) return null;
   if (!validStartDate(confirmation.startDate) || !numberInRangeOrNull(confirmation.programDurationDays, PROGRAM_DURATION_MIN_DAYS, PROGRAM_DURATION_MAX_DAYS) || typeof confirmation.workoutReminders !== 'boolean' || typeof confirmation.mealReminders !== 'boolean' || typeof confirmation.waterReminders !== 'boolean' || typeof confirmation.weeklyReport !== 'boolean' || typeof confirmation.finalConsent !== 'boolean' || !(confirmation.completedAt === null || validIsoTimestamp(confirmation.completedAt))) return null;
   if (!validIsoTimestamp(value.startedAt) || !validIsoTimestamp(value.updatedAt)) return null;
@@ -333,6 +352,11 @@ function legacyStrings(record: Record<string, unknown>, key: string, maxItems = 
     .map((item) => item.slice(0, MAX_SHORT_TEXT))
     .slice(0, maxItems);
   return Array.from(new Set(values));
+}
+
+function mapLegacyList<T extends string>(values: readonly string[], mapping: Readonly<Record<string, T>>, allowed: ReadonlySet<T>): T[] {
+  const mapped = values.map((value) => mapping[value] ?? value).filter((value): value is T => allowed.has(value as T));
+  return Array.from(new Set(mapped));
 }
 
 export function migrateLegacyOnboardingDraft(value: unknown): OnboardingDraft | null {
@@ -360,7 +384,6 @@ export function migrateLegacyOnboardingDraft(value: unknown): OnboardingDraft | 
   next.basics.heightCm = legacyNumber(basics, 'heightCm');
   next.basics.weightKg = legacyNumber(basics, 'weightKg');
   next.basics.country = legacyString(basics, 'country', 100);
-  if (basics.unitSystem === 'imperial') next.basics.unitSystem = 'imperial';
 
   next.body.waistCm = legacyNumber(body, 'waistCm');
   next.body.hipCm = legacyNumber(body, 'hipCm');
@@ -394,9 +417,9 @@ export function migrateLegacyOnboardingDraft(value: unknown): OnboardingDraft | 
   next.trainingHistory.familiarMovements = legacyStrings(training, 'familiarMovements');
   next.trainingHistory.notes = legacyString(training, 'notes');
 
-  next.availability.equipment = legacyStrings(availability, 'equipment');
+  next.availability.equipment = mapLegacyList(legacyStrings(availability, 'equipment'), legacyEquipment, equipmentIds);
   next.availability.customEquipment = legacyString(availability, 'customEquipment', 700);
-  next.availability.preferredDays = legacyStrings(availability, 'preferredDays', 7);
+  next.availability.preferredDays = mapLegacyList(legacyStrings(availability, 'preferredDays', 7), legacyWeekdays, weekdayIds);
   next.availability.scheduleNotes = legacyString(availability, 'scheduleNotes');
 
   next.confirmation.startDate = validStartDate(confirmation.startDate) ? confirmation.startDate : '';
@@ -490,11 +513,12 @@ export function validateOnboardingStep(draft: OnboardingDraft, step: number): st
     if (!inRange(draft.availability.daysPerWeek, 1, 6)) errors.push('تعداد روز تمرین باید بین ۱ تا ۶ باشد.');
     if (![30, 45, 60, 75, 90].includes(draft.availability.sessionDuration ?? -1)) errors.push('مدت جلسه معتبر انتخاب کن.');
     if (!draft.availability.preferredTime) errors.push('زمان ترجیحی تمرین را مشخص کن.');
+    if (draft.availability.equipment.length === 0 && !draft.availability.customEquipment.trim()) errors.push('حداقل تجهیزات یا گزینه «فقط وزن بدن» را مشخص کن.');
   }
   if (step === 11) {
     if (!draft.preferences.intensity || !draft.preferences.cardioPreference || !draft.preferences.trainingStyle || !draft.preferences.variety || !draft.preferences.nutritionStrictness || !draft.preferences.coachingTone || !draft.preferences.reminderLevel) errors.push('همه ترجیحات مربی‌گری را خودت انتخاب کن.');
   }
-  if (step === 15) {
+  if (step === ONBOARDING_TOTAL_STEPS) {
     if (!draft.confirmation.startDate) errors.push('تاریخ شروع را انتخاب کن.');
     if (!inRange(draft.confirmation.programDurationDays, PROGRAM_DURATION_MIN_DAYS, PROGRAM_DURATION_MAX_DAYS)) errors.push(`مدت دوره باید بین ${PROGRAM_DURATION_MIN_DAYS.toLocaleString('fa-IR')} تا ${PROGRAM_DURATION_MAX_DAYS.toLocaleString('fa-IR')} روز باشد.`);
     if (!draft.confirmation.finalConsent) errors.push('برای تولید برنامه تمرین و تغذیه، تأیید نهایی لازم است.');
