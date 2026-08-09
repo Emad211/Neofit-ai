@@ -1,315 +1,238 @@
-# NeoFit Gap Audit — 2026-08-08
+# NeoFit Gap Audit — current Preview cycle
 
-Status: active canonical backlog for the Preview-only development cycle.
-
-Detailed incident/design history lives in each Stage document. This file intentionally tracks the **current truth**, not every intermediate implementation attempt.
+Status: canonical current backlog. Detailed design/incident history stays in the individual Stage documents; this file tracks what is still materially incomplete.
 
 ## Severity
 
-- **P0** — identity, privacy, data-integrity or core runtime blocker
-- **P1** — core user feature still fake/incomplete or unnecessarily expensive
-- **P2** — important pre-Production hardening/completeness
-- **P3** — polish/expansion after core data and agent contracts are proven
+- **P0** — identity, privacy, data integrity or runtime blocker
+- **P1** — core feature still incomplete/fake or an important request-cost gap
+- **P2** — important pre-Production completeness/security
+- **P3** — UX, accessibility, visual and expansion polish
 
 ---
 
-## P0 — Identity / security / data integrity
+## P0 — hosted runtime proofs still open
 
-### Auth confirmation + recovery — CODE/LOCAL-RUNTIME GREEN; HOSTED MAILBOX E2E OPEN
+### Auth mailbox/session proof
 
-Stage 13 replaced the broken cross-host PKCE confirmation path with scanner-safe staged `TokenHash` verification:
+Code/local HTTP contracts are hardened, but the latest stacked Preview must still prove with real mailboxes:
 
-- email-link GET does not consume OTP;
-- short-lived HttpOnly staged-token cookie;
-- clean canonical URL without `token_hash`;
-- explicit user POST performs `verifyOtp`;
-- exact cookie-path cleanup;
-- recovery intent HMAC-bound to user + session + timestamp;
-- sensitive Auth headers are verified by real built-Next HTTP smoke.
+- signup → Confirm Signup → explicit scanner-safe verification → session → onboarding;
+- forgot password → Recovery → new password;
+- Password Changed notification delivery;
+- Secure Email Change with old + new mailbox;
+- Browser A + Browser B revoke-other-sessions behavior.
 
-Hosted Supabase/Vercel configuration is now in place:
+Hosted Auth settings currently confirmed: 12-character minimum, current-password enforcement, Secure Email Change, OTP expiration 3600, custom Preview SMTP and NeoFit TokenHash templates. Secure Password Change remains intentionally OFF until its reauthentication nonce UX is implemented/tested. Leaked-password protection is plan-gated on the current Supabase Free project.
 
-- stable Preview Site URL;
-- custom SMTP for Preview QA;
-- Confirm Signup TokenHash template;
-- Reset Password TokenHash template;
-- `AUTH_RECOVERY_INTENT_KEY` in Preview environment.
+### Latest Preview runtime stack
 
-Still required after latest stacked Preview deploy:
-
-- fresh mailbox signup → confirm → session → onboarding;
-- forgot password → mailbox → recovery → new password;
-- password-changed security notification delivery.
-
-### Email change — STAGE 14 CODE + HOSTED CONFIG GREEN; TWO-ADDRESS E2E OPEN
-
-Stage 14 adds live-session-gated `updateUser({ email })` and reuses the same scanner-safe confirmation boundary for `email_change`.
-
-Hosted settings now confirmed:
-
-- Secure Email Change ON;
-- Change Email TokenHash template configured;
-- Email Address Changed security template configured;
-- Password Changed notification enabled.
-
-Still required: disposable old-address + new-address mailbox E2E.
-
-### Password policy — APP/HOSTED CORE SETTINGS ALIGNED
-
-Current hosted settings confirmed:
-
-- minimum password length = 12;
-- Require current password when updating = ON;
-- Email OTP expiration = 3600 seconds;
-- Secure password change = intentionally OFF until NeoFit implements/tests the exact reauthentication nonce flow;
-- password character-class requirement = intentionally unset until app validation/copy matches it;
-- leaked-password protection = unavailable on current Free plan and must not be claimed active.
-
-### Session semantics — CODE HARDENED; MULTI-BROWSER QA OPEN
-
-Stage 13 provides:
-
-- pending submit state to reduce accidental duplicate sessions;
-- normal logout = local session;
-- explicit global logout;
-- revoke-other-sessions control;
-- live `getUser()` validation for password/session/BYOK/provider-cost-sensitive actions.
-
-Do not fabricate browser/device labels from current Supabase session metadata; login is server-side and observed user agents are not reliable device identity.
-
-Still required: Browser A + Browser B revoke proof.
-
-### Fresh-account post-login correctness — FIXED IN STAGE 13
-
-Fresh account with zero Nutrition goals and zero diary entries no longer crashes `/today`. Empty diary = exactly zero consumed; malformed non-empty data still fails closed.
+GitHub CI/builds are the current source of engineering proof while Vercel build-rate quota is limiting deployments. Do not create another Production project. When quota is available, deploy the latest green stacked candidate once to the existing Preview Lab and run all hosted E2E on that single candidate.
 
 ---
 
-## P1 — Core user data truth
+## P1 — user data truth
 
-### Progress body measurements — STAGE 10 FIXED; HOSTED QA OPEN
+### Progress measurements — CODE REAL; HOSTED QA OPEN
 
-Real `body_measurements` under own-row RLS replaced synthetic weight trend. Need real account add/refresh/history QA.
+`body_measurements` replaced synthetic account progress. Need real-account add/edit/refresh/history proof.
 
-### Account Nutrition targets — STAGE 11 FIXED
+### Nutrition goals — ACCOUNT DEMO LEAK FIXED
 
-Real accounts no longer receive demo calorie/macro targets. Guest fixtures remain explicitly demo-only.
+Account goals are real-or-empty. Guest targets remain explicitly Demo.
 
-### Workout Plan — STAGE 16 LIVE SCHEMA + CODE + CI GREEN; HOSTED E2E OPEN
+### Workout Plan — STAGE 16 CODE/SCHEMA/CI GREEN; HOSTED E2E OPEN
 
-`public.workout_plans` is now the authenticated source of truth:
+Account plan is versioned/immutable under RLS, one active version/user, Player stores plan id/version, plan activation is blocked during active sessions, and Guest fixture is Demo-only. Need hosted empty-state/version/player provenance proof.
 
-- immutable-content versions;
-- `draft | active | archived` lifecycle;
-- one active version per user;
-- own-row RLS;
-- SECURITY INVOKER plan RPCs;
-- no authenticated plan-content UPDATE/DELETE;
-- plan activation blocked during active Workout session;
-- `workout_sessions` stores plan id/version provenance;
-- Player resume fails closed on provenance mismatch;
-- Account with no active plan shows empty state;
-- Guest fixture remains explicitly Demo;
-- synthetic workout calorie burn removed from account workout UI;
-- Player route reuses plan-snapshot identity rather than making a second identity read.
+### Nutrition Plan — STAGE 17 CODE/SCHEMA/CI GREEN; HOSTED E2E OPEN
 
-Live migrations:
+Account plan stores only versioned catalog identities/portion counts. Stored calorie/macro claims are rejected; exact source-version mismatch fails closed; Guest weekly fixture is Demo-only. Need hosted activation/resolution/version proof.
 
-- `20260809133914_workout_plan_versioning`
-- `20260809133953_index_workout_session_plan_fk`
-- `20260809134603_guard_workout_plan_activation_during_session`
+### Nutrition Plan meal → diary — STAGE 18 CODE/SCHEMA/CI GREEN; HOSTED E2E OPEN
 
-Final code evidence: `Workout Plan Persistence CI` run `31317223286` success.
+The account can now explicitly `ثبت برای امروز`.
 
-Hosted proof still required: account empty state, deliberate plan activation, exact UI reflection, Player provenance/resume, activation block mid-session, activation after complete/cancel.
+Current contract:
 
-### Nutrition Plan — STAGE 17 LIVE SCHEMA + CODE + CI GREEN; HOSTED E2E OPEN
+- Browser sends only plan id/version/meal id/local date;
+- live Auth validation before write;
+- exact active plan reread under RLS;
+- catalog id/source-version revalidation;
+- Shared Nutrition Core produces every estimate;
+- deterministic SHA-256 mutation ids;
+- one bulk idempotent upsert;
+- exact composite provenance `(plan_id,user_id,version)`;
+- all-null/all-present provenance shape;
+- covering FK index verified by Performance Advisor;
+- Guest demo cannot use account plan logging.
 
-`public.nutrition_plans` is now the authenticated source of truth:
+Final green code runs before doc sync:
 
-- immutable-content versions;
-- one active version per user;
-- own-row RLS;
-- SECURITY INVOKER plan RPCs;
-- Account never silently receives `weeklyPlan` fixture;
-- Guest weekly plan remains explicitly Demo;
-- Account with no active plan shows empty state;
-- persisted account plan stores only food identity + exact `sourceVersion` + portion count;
-- catalog resolution requires exact id/version match;
-- parser rejects stored nutrition claims including `calories`, `macros`, `energyKcal`, `proteinG`, `carbsG`, `fatG`, `nutrition`, `estimate`;
-- plan UI never renders stored macro/calorie properties;
-- `nutrition_entries` now has optional plan id/version/meal-id provenance for future plan-meal logging.
+- Diary Logging CI `31319808827`
+- Provenance Integrity CI `31319808832`
 
-Live migration:
+Hosted proof: log one deliberate plan meal, verify Core estimates/provenance, repeat click with unchanged row count, then verify Today/Nutrition totals exactly once.
 
-- `20260809140618_nutrition_plan_versioning`
+### Food catalog coverage — OPEN / HIGH P1
 
-Final code evidence: `Nutrition Plan Persistence CI` run `31317881612` success.
+Current Web catalog is still a small IFKB-shaped seeded set. This is now one of the biggest truth/completeness limits for useful Nutrition Plan generation, food search and Coach nutrition suggestions.
 
-Hosted proof still required: account empty state, deliberate catalog-versioned plan activation, exact UI resolution, mismatch fail-closed, version activation/archive.
-
-### Plan-meal → diary logging — OPEN
-
-Stage 17 intentionally does not expose a fake “log this meal” button yet. The next write path must:
-
-1. resolve plan food ids/source versions;
-2. run the Shared Nutrition Core;
-3. persist the Core-produced estimate;
-4. store `nutrition_plan_id`, `nutrition_plan_version`, `nutrition_plan_meal_id` provenance;
-5. remain idempotent under duplicate click/retry.
-
-### Notifications center / push delivery — OPEN
-
-No real notification persistence/delivery contract yet. Do not request push permission until there is a real notification source and delivery path.
+Next expansion must resolve through real/versioned IFKB/FNDDS/SR-compatible records; broad AI-generated calories/macros remain prohibited.
 
 ---
 
-## P1 — Request/performance architecture
+## P1 — AI runtime / agent architecture
 
-### Main app Nutrition over-fetch — FIXED IN STAGE 11
+### Google BYOK — CODE READY; HOSTED PROVIDER PROOF OPEN
 
-App shell is identity-only; Today loads date-scoped diary data where needed.
+Encrypted user key vault, Google-first routing and model preference exist. Need a real hosted Save/Test + Coach request on latest stack.
 
-### Plan page requests — BOUNDED
+### AvalAI fallback — CODE READY; HOSTED CONTROLLED PROOF OPEN
 
-Workout Plan and Nutrition Plan pages use lightweight identity + one active-plan query. Catalog/plan resolution happens in-process. No AI call is needed to display plans.
+Need a deliberate fallback-eligible Google failure followed by AvalAI success.
 
-### Future history pages — NEED PAGINATION
+### AI request audit/budget — STAGE 15 GREEN; HOSTED PROOF OPEN
 
-Today is date-bounded. Long-term diary/workout/audit history pages must use explicit range/cursor pagination rather than unbounded history reads.
+One user reservation covers the entire Google→AvalAI chain; 429 + Retry-After, metadata-only audit, no prompt/output/key logging and no token-count preflight. Need real Google success row and controlled fallback row.
 
----
+### Coach request-budget UX — GAP
 
-## P1 — AI runtime / observability
+Stage 15 backend returns `429 + Retry-After`, but current Coach UI does not yet surface a specific cooldown message; it falls into generic failure copy. Stage 19 should parse this explicitly and prevent blind re-submit.
 
-### Google BYOK runtime proof — OPEN
+### YouTube agent integration — OPEN / STAGE 19
 
-Google-first vault/router/settings exist, but hosted Save/Test + real Coach request still need proof on the latest Preview stack.
+YouTube must be a real read-only external Agent Tool, not a decorative link.
 
-### AvalAI fallback runtime proof — OPEN
+Target architecture:
 
-Fallback/cooldown is contract-tested; still need a controlled Google failure followed by AvalAI success.
+```text
+Coach intent/tool request
+  -> YouTube discovery/metadata tool
+       -> YouTube Data API v3
+  -> user/model selects a public video
+  -> Gemini video understanding receives the public YouTube URL
+  -> final Coach response may include structured video cards/timestamps
+```
 
-### AI request audit/budget — STAGE 15 LIVE SCHEMA + CODE + CI GREEN; HOSTED PROOF OPEN
+Rules:
 
-`public.ai_request_audit` is metadata-only and bounded:
+- Gemini BYOK key is **not** reused as a YouTube Data API credential;
+- YouTube integration credential/quota is separate from AI provider credentials;
+- search only on explicit video/tutorial intent, never every Coach turn;
+- no transcript scraping;
+- no Captions API workaround for arbitrary public videos;
+- public metadata uses official YouTube Data API;
+- Gemini may directly understand public YouTube URLs;
+- video-understanding capability is Google-specific unless another provider is explicitly proven compatible; no fake AvalAI fallback;
+- only render/embed a YouTube player after user intent, not an iframe for every result;
+- external-tool quota/audit remains distinct from LLM request audit.
 
-- one user reservation for the entire Google→AvalAI chain;
-- default 12 rolling requests/minute, 120/hour;
-- advisory-lock atomic reservation;
-- 429 + `Retry-After` on exhaustion;
-- no prompt/history/system text/output/API key/raw provider payload stored;
-- no `countTokens` provider preflight;
-- provider-returned token usage recorded when available, otherwise null;
-- SECURITY INVOKER + RLS + column grants after Advisor caught the initial definer design.
+### Agent tool orchestration — OPEN
 
-Live migrations:
+Current Coach uses a deterministic local context router plus one provider call and is intentionally read-only. This is efficient and should remain the default.
 
-- `20260809131359_ai_request_audit_budget`
-- `20260809132552_harden_ai_request_audit_rpc_invoker`
-
-Final code evidence: `AI Request Audit Budget CI` run `31316133575` success.
-
-Hosted proof still required:
-
-- Google success → one audit row, attempt=1;
-- controlled Google→AvalAI fallback → same request row, attempt=2;
-- verify no sensitive content stored.
-
-### Coach — READ-ONLY BY DESIGN
-
-Coach context is selective and real (Profile/Safety/Nutrition/Workout/Progress). Do not enable plan mutation tools until hosted AI audit + plan runtime proofs are green.
+Stage 19 should introduce a **bounded read-only tool layer** beginning with YouTube rather than exploding into many autonomous agents. Meaningful plan mutations remain proposal + explicit confirmation work after hosted runtime proofs.
 
 ---
 
-## P2 — Auth / abuse / Production hardening
+## P1 — request/performance
 
-### CAPTCHA — OPEN, DO NOT FAKE
+### Nutrition/plan route requests — BOUNDED
 
-No visual-only CAPTCHA. Add Turnstile/hCaptcha only with real site key, Supabase provider secret, client token flow and E2E.
+Current plan display is identity + one active-plan query; catalog resolution is in-process. Stage 18 logging adds one live Auth validation, one plan read and one bulk write. No per-item writes or duplicate pre-read.
 
-### Reauthentication — TEMPLATE READY; PRODUCT FLOW OPEN
+### History pagination — OPEN
 
-Canonical Supabase reauthentication OTP template exists. NeoFit does not claim generic reauth elevation until the exact nonce contract is implemented/tested.
+Future Nutrition history, Workout history, AI audit history and tool-audit pages need explicit range/cursor pagination.
 
-### Account deletion — DELIBERATELY OPEN
+### YouTube quota architecture — OPEN
 
-Do not expose a Delete Account button until there is:
-
-- recent/proven reauthentication;
-- exact-user binding;
-- tightly scoped privileged backend delete boundary;
-- Storage ownership cleanup;
-- cascade/session semantics;
-- disposable-account E2E.
-
-Never put `service_role` / `sb_secret_*` into the browser/runtime bundle.
-
-### MFA — OPEN
-
-No MFA factors currently proven. Implement only with a complete enrollment/challenge/recovery UX.
-
-### Session timeout/single-session policy — NOT PROVEN
-
-Observed sessions were not time-boxed. Do not claim inactivity/single-session policy unless hosted plan/settings support and runtime prove it.
-
-### SMTP — PREVIEW READY; PRODUCTION SENDER OPEN
-
-Gmail SMTP is acceptable for Preview mailbox QA, not final Production transactional mail. Before Production move to a dedicated provider/domain with SPF/DKIM/DMARC and Auth-link tracking disabled.
+YouTube search has its own quota model; discovery must be intentional, bounded, cacheable and observable. Do not use search as an invisible classifier.
 
 ---
 
-## P2 — Product completeness
+## P2 — Auth/security before Production
 
-### Food catalog coverage — OPEN
+- CAPTCHA: real Turnstile/hCaptcha only; no visual fake checkbox.
+- Reauthentication: template exists; exact nonce/elevation product flow still open.
+- Account deletion: no button until recent reauth + scoped privileged delete boundary + Storage cleanup + disposable E2E.
+- MFA: enrollment/challenge/recovery UX open.
+- Session timeout/single-session hosted policy not proven.
+- Production mail: replace Gmail Preview SMTP with dedicated transactional provider/domain and SPF/DKIM/DMARC.
+- Leaked-password protection when plan supports it.
 
-Current Web catalog is small and IFKB-shaped. Expand through IFKB/FNDDS/SR-backed resolution before claiming broad food search or broad Nutrition Plan generation.
+---
 
-### Body photos/media — OPEN
+## P2 — product completeness
 
-Needs consent, private Storage RLS, deletion semantics and metadata minimization.
+### Notifications/push — OPEN
+
+No real notification persistence/delivery source yet. Do not ask for push permission before a real delivery path exists.
 
 ### Reports — OPEN
 
-Must consume real Progress/Workout/Nutrition sources; do not resurrect old Firebase/Genkit flows.
+Reports must consume real Nutrition/Workout/Progress sources and cannot revive old Firebase/Genkit assumptions.
+
+### Body photos/media — OPEN
+
+Requires explicit consent, private Storage RLS, deletion semantics and metadata minimization.
+
+### Coach conversation persistence — OPEN
+
+Current Coach explicitly resets between devices/sessions. This is truthful but incomplete. If persisted later, store bounded conversation metadata/content with clear privacy/delete semantics rather than browser-only hidden behavior.
 
 ---
 
-## P2 — Agentic capability
+## P3 — UI / visual / accessibility polish
 
-Before any meaningful write-agent action:
+### Reduced motion — GAP
 
-1. deploy latest green stack to the same Preview Lab;
-2. runtime-prove Auth mailbox/session flows;
-3. runtime-prove Google/AvalAI + Stage 15 audit;
-4. runtime-prove Stage 16 Workout Plan versions/provenance;
-5. runtime-prove Stage 17 Nutrition Plan identity/version resolution;
-6. implement Core-backed plan-meal logging;
-7. define typed proposal schemas;
-8. require explicit user confirmation for meaningful plan mutation;
-9. never give the model raw SQL/unrestricted DB access.
+`page-stack` currently animates with no `prefers-reduced-motion` override. Add an accessibility-safe motion contract.
 
----
+### Focus visibility — GAP
 
-## P3 — UX / PWA polish
+Global focus treatment currently covers button/input more reliably than anchors/select/textarea/custom focusable controls. Make `:focus-visible` consistent across all interactive elements.
 
-Service Worker excludes `/api/`, `/auth/`, authorization-bearing requests and private/no-store responses. Remaining polish includes browser/device QA, accessibility regression, install UX and notification permission UX after real notification delivery exists.
+### Form typography/interaction consistency — GAP
+
+Ensure textarea/select/button/input inherit Vazirmatn, hit targets stay >=44px where practical, and disabled/pending states remain visually obvious.
+
+### Coach technical metadata — POLISH GAP
+
+Provider/model/latency/fallback/context metadata is useful for QA but too raw for the primary Persian conversation surface. Keep it accessible in a subtle expandable technical-details treatment instead of competing with the answer.
+
+### Coach interaction polish — GAP
+
+Add explicit budget cooldown UX, better busy/aria state, sensible auto-scroll and keyboard behavior without sending accidental multiline prompts.
+
+### Empty/error states — CONTINUE AUDIT
+
+Every account route should distinguish: no data yet, unavailable query, Demo guest data and stale/invalid versioned data. Do not collapse these into generic cards.
+
+### Theme setting truth — AUDIT REQUIRED
+
+`user_settings.theme` exists. Verify whether it actually controls UI appearance; if not, either implement it or stop presenting theme as a working preference. Never keep a decorative setting that does nothing.
+
+### Dark mode — OPTIONAL AFTER SETTING TRUTH
+
+Not a blocker. Only implement if theme preference is intentionally supported end-to-end.
 
 ---
 
 ## Current recommended order
 
-1. Keep coding without extra Vercel deployments until the existing `neofit-preview-lab` quota is available.
-2. Deploy the **latest green stacked candidate once**, Preview-only.
-3. Run signup-confirm, password recovery, password-change notification, two-browser revoke, and two-address email-change E2E.
-4. Run Google BYOK/Coach request and verify Stage 15 audit metadata.
-5. Run controlled Google→AvalAI fallback and verify the same request/audit semantics.
-6. Runtime-prove Stage 16 Workout Plan and Stage 17 Nutrition Plan empty/version/resolution flows.
-7. Add Nutrition Plan meal → diary logging through Nutrition Core + plan provenance.
-8. Runtime-prove body measurements and normal diary persistence.
-9. Add real notifications and remaining Auth hardening (CAPTCHA/MFA/deletion) before public Production.
-10. Add controlled Coach proposal/write flows only after the above.
+1. Keep Vercel deploy count at zero while build-rate quota is constrained.
+2. Stage 19: YouTube read-only Agent Tool + Coach/tool UX + accessibility polish.
+3. Audit/fix remaining decorative or non-functional settings and empty/error states.
+4. Expand catalog coverage through authoritative/versioned food resolution.
+5. Deploy the latest green stacked candidate **once** to existing Preview Lab.
+6. Run Auth mailbox/session E2E.
+7. Run Google BYOK + Stage 15 audit proof and controlled AvalAI fallback proof.
+8. Runtime-prove Workout/Nutrition plan versioning and Stage 18 idempotent meal logging.
+9. Runtime-prove body measurements/normal diary persistence.
+10. Only then add typed Coach proposal/write actions with explicit user confirmation.
 
 ## Release rule
 
-All work remains Preview-only in `neofit-preview-lab`. No Production promotion until core P0/P1 hosted proofs are green with real accounts and real provider/mailbox traffic.
+Preview-only. No Production promotion until core P0/P1 hosted proofs are green with real account/provider/mailbox traffic. No unrestricted SQL or autonomous plan mutation is ever exposed to the model.
