@@ -1,6 +1,6 @@
 # NeoFit Stage 16 — Workout Plan Persistence
 
-Status: implementation / Preview-only; stacked on Stage 15.
+Status: code + live schema + CI complete / hosted runtime proof open / Preview-only; stacked on Stage 15.
 
 ## Goal
 
@@ -149,6 +149,8 @@ The Player route reuses the account identity already loaded for the active plan 
 
 Account `/workout` performs the identity read plus one bounded active-plan query. Detail and Player use the same snapshot contract.
 
+The first Stage 16 CI run correctly exposed a stale Stage 6 regression that still required `loadWorkoutIdentity()` in the Player route. The production code was not reverted: the regression was updated to enforce the improved snapshot reuse and explicitly reject reintroducing `loadWorkoutIdentity()`.
+
 ## Live migrations
 
 - `20260809133914_workout_plan_versioning`
@@ -158,6 +160,20 @@ Account `/workout` performs the identity read plus one bounded active-plan query
 Supabase Security Advisor reports no Stage 16 issue. Performance Advisor initially identified the new session-plan FK as uncovered; the second migration added a dedicated `workout_plan_id` index and removed that warning.
 
 Unused-index INFO notices on empty/near-empty tables are not treated as removal candidates before real traffic proves their query patterns.
+
+A transaction + rollback QA under an authenticated user context exercised version creation and the active-session activation guard. No QA plan/session rows persisted afterward.
+
+## Final code / CI evidence
+
+- branch: `stage16/workout-plan-persistence`
+- green code head before this documentation update: `a848969f322371120e8def15f06f55e8c18a86fd`
+- `Workout Plan Persistence CI` run `31317223286`: **success**
+- Workout plan contract tests: success
+- Workout Player regression: success
+- full Supabase app regression: success
+- TypeScript: success
+- Next.js production build: success
+- workout plan data-truth/RLS/versioning gate: success
 
 ## Deliberately not faked
 
