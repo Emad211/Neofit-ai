@@ -56,7 +56,7 @@ function rowSnapshot(row: WorkoutPlanRow): WorkoutPlanSnapshot {
     schemaVersion: row.schema_version,
     title: row.title,
     source: row.source,
-    days: workoutPlanViews(document),
+    days: workoutPlanViews(document, { planId: row.id, planVersion: row.version }),
     loadError: null,
   };
 }
