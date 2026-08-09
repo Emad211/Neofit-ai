@@ -1,0 +1,12 @@
+<div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.8;color:#101828">
+  <h2>تأیید تغییر ایمیل NeoFit</h2>
+  <p>درخواستی برای تغییر ایمیل حساب NeoFit به <strong>{{ .NewEmail }}</strong> ثبت شده است.</p>
+  <p>برای ادامه، این مرحله را خودتان تأیید کنید.</p>
+  <p>
+    <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email_change&next=/profile/security"
+       style="display:inline-block;padding:12px 18px;border-radius:10px;background:#116149;color:#ffffff;text-decoration:none;font-weight:700">
+      تأیید تغییر ایمیل
+    </a>
+  </p>
+  <p style="color:#475467;font-size:13px">اگر Secure Email Change فعال باشد، ممکن است تأیید از هر دو آدرس فعلی و جدید لازم باشد. اگر شما این درخواست را ثبت نکرده‌اید، این ایمیل را نادیده بگیرید و امنیت حساب را بررسی کنید.</p>
+</div>
