@@ -1,0 +1,128 @@
+.onboarding-ai-gate {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, Canvas 96%, currentColor 4%);
+}
+
+.onboarding-ai-gate.is-loading,
+.onboarding-ai-gate.is-error {
+  min-height: 96px;
+  align-content: center;
+}
+
+.onboarding-ai-gate__status {
+  display: grid;
+  gap: .3rem;
+  padding: .9rem 1rem;
+  border-radius: 14px;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+}
+
+.onboarding-ai-gate__status.is-ready {
+  outline: 1px solid color-mix(in srgb, #14925f 45%, transparent);
+  background: color-mix(in srgb, #14925f 9%, transparent);
+}
+
+.onboarding-ai-gate__status.is-demo {
+  outline: 1px solid color-mix(in srgb, #9a6b00 40%, transparent);
+  background: color-mix(in srgb, #9a6b00 8%, transparent);
+}
+
+.onboarding-ai-gate__status span,
+.onboarding-ai-gate__privacy,
+.onboarding-ai-gate__fallback > p {
+  opacity: .75;
+  font-size: .9rem;
+}
+
+.onboarding-ai-gate__provider {
+  display: grid;
+  gap: .65rem;
+}
+
+.onboarding-ai-gate__provider input {
+  width: 100%;
+}
+
+.onboarding-ai-gate__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+}
+
+.onboarding-ai-gate__actions button,
+.onboarding-ai-gate__auth-link {
+  min-height: 44px;
+  border-radius: 12px;
+}
+
+.onboarding-ai-gate__auth-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  padding: 0 .9rem;
+  text-decoration: none;
+  border: 1px solid currentColor;
+}
+
+.onboarding-ai-gate__fallback {
+  padding-top: .8rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.onboarding-ai-gate__fallback summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.onboarding-ai-gate .is-error {
+  color: #b42318;
+}
+
+.onboarding-ai-gate .is-success {
+  color: #087443;
+}
+
+.onboarding-unset-note {
+  margin: .4rem 0 0;
+  font-size: .85rem;
+  opacity: .7;
+}
+
+.onboarding-ready-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.onboarding-ready-card {
+  width: min(680px, 100%);
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  background: Canvas;
+}
+
+.onboarding-ready-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+
+.onboarding-ready-card__actions a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 1rem;
+  border-radius: 12px;
+  border: 1px solid currentColor;
+  text-decoration: none;
+}
