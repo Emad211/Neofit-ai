@@ -27,13 +27,13 @@ Stage 13 now has a scanner-safe one-time-link architecture:
 
 A real built Next server HTTP smoke proved the final behavior, including canonical redirect host continuity, no-referrer/no-store headers, verification interstitial rendering and cross-origin signout rejection.
 
-Hosted mailbox proof remains open because Stage 13 cannot deploy until the Vercel API quota resets.
+Hosted mailbox proof remains open because Stage 13/14 cannot deploy until the Vercel API quota resets.
 
-### Canonical Auth origin — CODE FIXED; HOSTED SITE URL MANUAL VERIFY OPEN
+### Canonical Auth origin — CODE FIXED; USER REPORTS HOSTED SITE URL CONFIGURED; MAILBOX PROOF OPEN
 
-The HTTP smoke discovered that framework-derived request URLs could drift from `127.0.0.1` to `localhost`, which would break a host-only staged token cookie. Sensitive Auth redirects now use `NEXT_PUBLIC_APP_URL` / canonical origin directly.
+Sensitive Auth redirects use `NEXT_PUBLIC_APP_URL` / canonical origin directly. The user has configured the stable Preview alias in hosted Supabase, but the final evidence is still a fresh mailbox round-trip after the next Preview deployment.
 
-Real Preview password sign-ins are confirmed in Vercel logs, while Supabase Auth logs still showed `referer=http://localhost:3000`. The connector cannot read hosted Auth URL configuration, so manually verify Site URL is exactly:
+Canonical Preview origin:
 
 `https://neofit-preview-lab-emadk50000-9178-emads-projects-41cb6447.vercel.app`
 
@@ -46,26 +46,15 @@ The real Next smoke proved that the generic `Referrer-Policy` rule overrode the 
 
 The final HTTP smoke verifies the actual emitted headers.
 
-### Password recovery — CODE COMPLETE; HOSTED MAILBOX E2E OPEN
+### Password recovery — CODE COMPLETE; HOSTED CONFIG MANUALLY INSTALLED; MAILBOX E2E OPEN
 
-Stage 13 adds:
+Stage 13 adds generic/non-enumerating recovery request, scanner-safe token verification, signed 15-minute recovery intent, live Auth-server validation, password update and revoke-other-refresh-sessions behavior.
 
-- generic/non-enumerating recovery request;
-- scanner-safe token verification;
-- signed 15-minute recovery intent;
-- live Auth-server session validation;
-- password update;
-- revoke-other-refresh-sessions behavior.
+The user reports the Preview recovery signing secret is installed, custom SMTP is enabled and the hosted Recovery template now uses NeoFit's `TokenHash` route. A real mailbox round-trip remains required after the next Preview deployment.
 
-Manual requirements:
+### Leaked-password protection — PLAN-GATED / OPEN
 
-- Vercel Preview `AUTH_RECOVERY_INTENT_KEY`;
-- hosted Recovery email template;
-- real mailbox round-trip after Stage 13 deploy.
-
-### Leaked-password protection — OPEN / HOSTED SETTING
-
-Supabase Security Advisor still reports `auth_leaked_password_protection` as disabled. Enable it if the current plan exposes the feature, then rerun the advisor.
+Supabase Security Advisor reported `auth_leaked_password_protection` disabled. Current Supabase documentation states this protection is available on Pro and above. The current project is Free, so NeoFit must not claim this hosted control is active.
 
 ### Session accumulation / duplicate login — REAL EVIDENCE; CODE CONTROL ADDED; MULTI-BROWSER QA OPEN
 
@@ -77,7 +66,7 @@ Current session metadata is server-side (`user_agent=node`, Vercel/server IP), s
 
 All observed sessions are AAL1, MFA factors = 0 and `not_after = null`.
 
-### Locally valid but server-revoked JWT gap — FIXED FOR SENSITIVE/COSTLY ACTIONS
+### Locally valid but server-ended session gap — FIXED FOR SENSITIVE/COSTLY ACTIONS
 
 Ordinary navigation remains fast with `getClaims()`. Security-sensitive mutations and BYOK/Coach provider access use `activeAuthSession()` = `getClaims()` + live `getUser()` Auth-server validation.
 
@@ -147,6 +136,28 @@ Coach loads `body_measurements` only for Progress intent and does not add this q
 
 ## P2 — Auth / abuse / Production hardening
 
+### Email change — STAGE 14 CODE IMPLEMENTED; HOSTED TEMPLATE/E2E OPEN
+
+Stage 14 adds a live-session-gated `updateUser({ email })` request from `/profile/security` and reuses the scanner-safe one-time-link boundary for `type=email_change`. NeoFit does not claim the email changed immediately and explicitly accounts for hosted Secure Email Change potentially requiring both current and new addresses to confirm.
+
+Canonical template: `supabase/templates/email-change.html`.
+
+Before declaring this complete: run Stage 14 CI, install/verify the hosted Change Email template and Secure Email Change setting, deploy the green Preview candidate, then perform a disposable two-address mailbox E2E.
+
+### Password-change notification — HOSTED TOGGLE ENABLED / TEMPLATE SYNC OPTIONAL
+
+The user enabled the hosted `Password changed` security notification. Stage 14 adds `supabase/templates/password-changed.html` as the repository-owned Persian canonical body. Hosted delivery still needs proof during a real password-change E2E.
+
+### Reauthentication — CANONICAL TEMPLATE ADDED; PRODUCT FLOW NOT YET CLAIMED
+
+`supabase/templates/reauthentication.html` uses Supabase's real six-digit `{{ .Token }}`. No local fake reauthentication protocol is claimed. A feature should consume this only after its exact nonce verification contract is implemented and tested.
+
+### Account deletion — DELIBERATELY OPEN / DO NOT FAKE
+
+No Delete Account button exists yet. Official Supabase user deletion is an admin operation requiring a privileged server boundary, and owned Storage objects can block deletion. NeoFit will not place a service-role/secret key in the Web app just to make a button appear functional.
+
+Future deletion must prove recent reauthentication, exact-user binding, a tightly scoped privileged backend function, owned Storage cleanup, cascade semantics and disposable-account E2E.
+
 ### CAPTCHA / bot protection — OPEN, DO NOT FAKE
 
 No real CAPTCHA token flow exists. Wire Cloudflare Turnstile/hCaptcha only after real provider site key + Supabase provider secret are available. Do not add a visual-only checkbox.
@@ -159,18 +170,22 @@ New NeoFit passwords require 12–128 characters while legacy shorter passwords 
 
 Observed `auth.sessions.not_after` values are null. Do not claim time-boxed sessions. Hosted Supabase controls are plan/settings dependent and remain manual.
 
+### SMTP — PREVIEW CUSTOM SMTP CONFIGURED; PRODUCTION TRANSACTIONAL SMTP OPEN
+
+Custom Gmail SMTP is now configured for Preview QA, allowing hosted templates to be edited and mailbox tests to proceed. Gmail is not treated as the final transactional sender. Before Production, move Auth mail to a dedicated provider/domain with SPF/DKIM/DMARC and link tracking disabled for Auth links.
+
 ### Still open before Production
 
-- real Stage 13 Vercel Preview deployment;
+- latest green Stage 13/14 Vercel Preview deployment after quota reset;
 - fresh mailbox signup-confirm E2E;
 - mailbox password-recovery E2E;
+- email-change two-address E2E;
 - real multi-browser/session revoke proof;
-- leaked-password hosted setting;
+- leaked-password control if/when plan supports it;
 - CAPTCHA runtime integration;
-- custom SMTP / branded sender;
+- dedicated transactional SMTP / branded Auth domain;
 - MFA policy/enrollment if product scope requires it;
-- email-change flow;
-- account deletion + reauthentication contract;
+- account deletion + proven reauthentication boundary;
 - intentional Production Auth URLs only when Production exists.
 
 ## P2 — product data completeness
@@ -203,15 +218,16 @@ Service Worker excludes `/api/`, `/auth/`, authorization-bearing requests and pr
 
 ## Current recommended order
 
-1. Complete the four manual Stage 13 hosted settings: Preview recovery secret, Site URL, Confirm template, Recovery template; enable leaked-password protection if available.
-2. After Vercel quota reset, deploy the same Stage 13 branch to the same `neofit-preview-lab`.
-3. Run fresh mailbox signup-confirm, password recovery, fresh-account `/today`, local/global logout and two-browser revoke E2E.
-4. Runtime-prove body measurements, truthful Nutrition and Google BYOK/Coach.
-5. Add AI request audit/budget foundation.
-6. Persist/version workout plans.
-7. Persist/version Nutrition plans through catalog/Core authority.
-8. Notifications and remaining account lifecycle flows.
-9. Controlled write-agent proposals only after the above.
+1. Make Stage 14 account-lifecycle CI fully green without another Vercel deployment.
+2. When the same Preview Lab quota resets, deploy the latest green stacked candidate once.
+3. Run fresh mailbox signup-confirm + recovery E2E, then password-change notification and two-browser session revoke proof.
+4. Sync/verify hosted Change Email template and run two-address Secure Email Change E2E.
+5. Runtime-prove body measurements, truthful Nutrition and Google BYOK/Coach.
+6. Add AI request audit/budget foundation.
+7. Persist/version workout plans.
+8. Persist/version Nutrition plans through catalog/Core authority.
+9. Notifications and remaining account lifecycle hardening (MFA/CAPTCHA/deletion) before public Production.
+10. Controlled write-agent proposals only after the above.
 
 ## Release rule
 

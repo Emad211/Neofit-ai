@@ -15,6 +15,10 @@ function authRedirect(value: string, status: 302 | 303 = 302): NextResponse {
   return NextResponse.redirect(new URL(authRedirectUrl(`/auth?${value}`)), status);
 }
 
+function accountLifecycleRedirect(value: string, status: 302 | 303 = 302): NextResponse {
+  return NextResponse.redirect(canonicalUrl(`/profile/security?${value}`), status);
+}
+
 function verificationInterstitial(tokenHash: string, type: string, next: string): NextResponse {
   const destination = canonicalUrl('/auth/verify');
   destination.searchParams.set('type', type);
@@ -29,39 +33,46 @@ function verificationInterstitial(tokenHash: string, type: string, next: string)
 export async function GET(request: NextRequest) {
   if (!hasSupabasePublicEnv()) return authRedirect('error=config');
 
-  const next = safeInternalPath(request.nextUrl.searchParams.get('next'), '/onboarding');
-  const recoveryFlow = next === '/auth/update-password';
+  const requestedType = request.nextUrl.searchParams.get('type');
+  const defaultNext = requestedType === 'email_change' ? '/profile/security' : '/onboarding';
+  const next = safeInternalPath(request.nextUrl.searchParams.get('next'), defaultNext);
+  const recoveryFlow = requestedType === 'recovery' || next === '/auth/update-password';
+  const emailChangeFlow = requestedType === 'email_change';
   if (recoveryFlow && !hasRecoveryIntentKey()) {
     return NextResponse.redirect(canonicalUrl('/auth/recover?error=config'), 303);
   }
 
   if (request.nextUrl.searchParams.get('error')) {
-    return recoveryFlow
-      ? NextResponse.redirect(canonicalUrl('/auth/recover?error=invalid-link'))
-      : authRedirect('error=callback');
+    if (recoveryFlow) return NextResponse.redirect(canonicalUrl('/auth/recover?error=invalid-link'));
+    if (emailChangeFlow) return accountLifecycleRedirect('error=email-change-link');
+    return authRedirect('error=callback');
   }
 
   const tokenHash = request.nextUrl.searchParams.get('token_hash');
-  const type = request.nextUrl.searchParams.get('type');
-  if (tokenHash && tokenHash.length <= 4096 && (type === 'email' || type === 'recovery')) {
+  const type = requestedType;
+  if (
+    tokenHash
+    && tokenHash.length <= 4096
+    && (type === 'email' || type === 'recovery' || type === 'email_change')
+  ) {
     return verificationInterstitial(tokenHash, type, next);
   }
 
   const code = request.nextUrl.searchParams.get('code');
   if (!code) {
-    return recoveryFlow
-      ? NextResponse.redirect(canonicalUrl('/auth/recover?error=invalid-link'))
-      : authRedirect('message=confirmed-login');
+    if (recoveryFlow) return NextResponse.redirect(canonicalUrl('/auth/recover?error=invalid-link'));
+    if (emailChangeFlow) return accountLifecycleRedirect('error=email-change-link');
+    return authRedirect('message=confirmed-login');
   }
 
-  // Legacy PKCE compatibility for already-issued links. New email templates use
+  // Legacy PKCE compatibility for already-issued links. New templates use
   // token_hash + explicit POST so this path can be removed after old links expire.
   const supabase = await createClient();
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error || !data.user) {
-    return recoveryFlow
-      ? NextResponse.redirect(canonicalUrl('/auth/recover?error=invalid-link'))
-      : authRedirect('message=confirmed-login');
+    if (recoveryFlow) return NextResponse.redirect(canonicalUrl('/auth/recover?error=invalid-link'));
+    if (emailChangeFlow) return accountLifecycleRedirect('error=email-change-link');
+    return authRedirect('message=confirmed-login');
   }
 
   try {

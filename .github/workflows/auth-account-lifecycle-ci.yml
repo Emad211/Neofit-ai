@@ -1,0 +1,117 @@
+name: Auth Account Lifecycle CI
+
+on:
+  push:
+    branches:
+      - 'stage14/**'
+    paths:
+      - 'web/app/auth/**'
+      - 'web/app/(main)/profile/security/**'
+      - 'web/tests/auth-account-lifecycle.test.ts'
+      - 'web/package.json'
+      - 'supabase/templates/**'
+      - 'docs/NEOFIT_STAGE14_AUTH_ACCOUNT_LIFECYCLE.md'
+      - '.github/workflows/auth-account-lifecycle-ci.yml'
+  pull_request:
+    branches:
+      - stage13/auth-recovery-abuse-hardening
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auth-lifecycle-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_VERCEL_ENV: development
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3100
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_test_value
+      AUTH_RECOVERY_INTENT_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+      - name: Install workspace dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: Account lifecycle contracts
+        working-directory: web
+        run: npm run test:auth-lifecycle
+      - name: Full Supabase app regression
+        working-directory: web
+        run: npm run test:supabase-app
+      - name: TypeScript
+        working-directory: web
+        run: npm run typecheck
+      - name: Production build
+        working-directory: web
+        run: npm run build
+      - name: Real Next email-change runtime smoke
+        working-directory: web
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm start -- --hostname 127.0.0.1 --port 3100 >/tmp/neofit-auth-lifecycle.log 2>&1 &
+          APP_PID=$!
+          cleanup() {
+            kill "$APP_PID" 2>/dev/null || true
+            wait "$APP_PID" 2>/dev/null || true
+            cat /tmp/neofit-auth-lifecycle.log || true
+          }
+          trap cleanup EXIT
+
+          ready=0
+          for _ in $(seq 1 30); do
+            status=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3100/auth 2>/dev/null || true)
+            if [ "$status" = "200" ]; then ready=1; break; fi
+            sleep 1
+          done
+          test "$ready" = 1
+
+          curl -sS -D /tmp/email-change.headers -o /dev/null \
+            'http://127.0.0.1:3100/auth/confirm?token_hash=dummy-email-change&type=email_change&next=/profile/security'
+          grep -Eq '^HTTP/.* 303' /tmp/email-change.headers
+          grep -qi '^location: http://127\.0\.0\.1:3100/auth/verify?type=email_change' /tmp/email-change.headers
+          if grep -qi '^location:.*token_hash' /tmp/email-change.headers; then
+            echo 'email_change token_hash leaked into clean redirect' >&2
+            exit 1
+          fi
+          grep -qi '^set-cookie: neofit-email-link-token=dummy-email-change' /tmp/email-change.headers
+          grep -qi 'Path=/auth/verify' /tmp/email-change.headers
+          grep -qi 'HttpOnly' /tmp/email-change.headers
+          grep -qi '^referrer-policy: no-referrer' /tmp/email-change.headers
+          grep -qi '^cache-control: private, no-store' /tmp/email-change.headers
+
+          curl -fsS \
+            -H 'Cookie: neofit-email-link-token=dummy-email-change' \
+            'http://127.0.0.1:3100/auth/verify?type=email_change&next=/profile/security' \
+            -o /tmp/email-change.html
+          grep -q 'تأیید تغییر ایمیل' /tmp/email-change.html
+      - name: Verify lifecycle boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "'email_change'" web/app/auth/confirm/route.ts
+          grep -q "'email_change'" web/app/auth/verify/actions.ts
+          grep -q 'activeAuthSession' web/app/'(main)'/profile/security/actions.ts
+          grep -q 'auth.updateUser({ email })' web/app/'(main)'/profile/security/actions.ts
+          grep -q 'type=email_change' supabase/templates/email-change.html
+          grep -q '{{ .Token }}' supabase/templates/reauthentication.html
+          if grep -R -E 'admin\.deleteUser|service[_-]?role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_' web/app/'(main)'/profile/security web/app/auth; then
+            echo 'Privileged deletion/admin material detected in browser Auth lifecycle slice.' >&2
+            exit 1
+          fi
