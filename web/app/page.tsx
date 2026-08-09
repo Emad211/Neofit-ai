@@ -31,8 +31,8 @@ export default async function HomePage() {
       .maybeSingle(),
   ]);
 
-  // The AI credential is the first real Onboarding gate. It now lives inside
-  // /onboarding/welcome rather than a non-existent /onboarding/ai route.
+  // The AI credential is the first real Onboarding gate and lives directly
+  // inside the welcome step rather than in a separate prerequisite screen.
   if (googleCredential.error || googleCredential.data?.status !== 'active') {
     redirect('/onboarding/welcome');
   }
