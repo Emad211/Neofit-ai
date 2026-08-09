@@ -199,7 +199,7 @@ export function OnboardingAiGate({
         {avalai.message ? <p className={avalai.error ? 'is-error' : 'is-success'} role="status">{avalai.message}</p> : null}
       </details>
 
-      <p className="onboarding-ai-gate__privacy">Raw key فقط در state موقت همین فرم است؛ داخل Onboarding JSON، localStorage، log یا analytics ذخیره نمی‌شود.</p>
+      <p className="onboarding-ai-gate__privacy">Raw key فقط در state موقت همین فرم است؛ داخل JSON آنبوردینگ، حافظه ماندگار مرورگر، log یا analytics ذخیره نمی‌شود.</p>
     </div>
   );
 }
