@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { resendConfirmation, signIn, signUp } from './actions';
 import { AuthSubmitButton } from './auth-submit-button';
 import { NeoFitIcon } from '@/components/neofit-icons';
+import { activeAuthSession } from '@/lib/auth/active-session';
 import { AUTH_PASSWORD_MAX_LENGTH, AUTH_PASSWORD_MIN_LENGTH } from '@/lib/auth/password';
 import { createClient } from '@/lib/supabase/server';
 import { hasSupabasePublicEnv } from '@/lib/supabase/env';
@@ -28,8 +29,11 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
   const configured = hasSupabasePublicEnv();
   if (configured) {
     const supabase = await createClient();
-    const { data } = await supabase.auth.getClaims();
-    if (data?.claims?.sub) redirect('/profile');
+    // Do not redirect from the Auth page on getClaims() alone. A deleted user
+    // can leave a still-signed JWT in the browser until expiry. The live Auth
+    // server must still recognize the user before we hide Sign in/Sign up.
+    const active = await activeAuthSession(supabase);
+    if (active) redirect('/');
   }
 
   const params = await searchParams;
@@ -72,7 +76,7 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
           <AuthSubmitButton disabled={!configured} pendingLabel="در حال ارسال...">ارسال دوباره</AuthSubmitButton>
         </form>
 
-        <div className="auth-boundary"><NeoFitIcon name="check" size={17} /><p>Session روی cookieهای SSR نگه‌داری می‌شود؛ identity سمت سرور با claims امضاشده بررسی می‌شود و داده‌ها زیر Policyهای مالک‌محور قرار دارند.</p></div>
+        <div className="auth-boundary"><NeoFitIcon name="check" size={17} /><p>Session روی cookieهای SSR نگه‌داری می‌شود؛ برای تصمیم‌های حساس و ورود به چرخه حساب، اعتبار user با Auth server نیز بررسی می‌شود.</p></div>
         <Link className="auth-guest-link" href="/today">ادامه در حالت مهمان و دادهٔ محلی</Link>
       </section>
     </main>
