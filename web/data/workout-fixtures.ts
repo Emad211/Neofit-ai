@@ -13,6 +13,8 @@ export interface WorkoutDay {
   readonly focus: string;
   readonly duration: string;
   readonly calories?: number;
+  readonly planId?: string;
+  readonly planVersion?: number;
   readonly exercises: readonly WorkoutExercise[];
 }
 
