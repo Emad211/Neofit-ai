@@ -54,17 +54,29 @@ test('request budget defaults are explicit and server-configurable within bounde
   else process.env.AI_REQUESTS_PER_HOUR = beforeHourly;
 });
 
-test('audit migration is metadata-only, immutable to authenticated table writes and rate reservation is atomic', async () => {
+test('audit schema is metadata-only and rate reservation is atomic', async () => {
   const migration = await readRepo('supabase/migrations/20260809131359_ai_request_audit_budget.sql');
   assert.match(migration, /create table public\.ai_request_audit/);
   assert.match(migration, /enable row level security/);
-  assert.match(migration, /grant select on table public\.ai_request_audit to authenticated/);
-  assert.doesNotMatch(migration, /grant (insert|update|delete).*ai_request_audit.*authenticated/i);
-  assert.match(migration, /security definer[\s\S]*set search_path = ''/);
   assert.match(migration, /pg_advisory_xact_lock/);
   assert.match(migration, /created_at >= v_now - interval '60 seconds'/);
   assert.match(migration, /created_at >= v_now - interval '1 hour'/);
   assert.doesNotMatch(migration, /\b(prompt|response_text|output_text|api_key|raw_payload)\s+text\b/i);
+});
+
+test('final audit privilege model is RLS-native SECURITY INVOKER with immutable budget fields', async () => {
+  const hardening = await readRepo('supabase/migrations/20260809132552_harden_ai_request_audit_rpc_invoker.sql');
+  assert.match(hardening, /grant select on table public\.ai_request_audit to authenticated/);
+  assert.match(hardening, /grant insert \(user_id, request_kind\)/);
+  assert.match(hardening, /grant update \([\s\S]*completed_at[\s\S]*\) on table public\.ai_request_audit to authenticated/);
+  assert.doesNotMatch(hardening, /grant delete/i);
+  assert.doesNotMatch(hardening, /grant insert \([^)]*created_at/i);
+  assert.doesNotMatch(hardening, /grant update \([^)]*created_at/i);
+  assert.doesNotMatch(hardening, /grant update \([^)]*user_id/i);
+  assert.match(hardening, /insert_own_pending/);
+  assert.match(hardening, /complete_own_pending/);
+  assert.match(hardening, /alter function public\.reserve_ai_request\([^;]+\) security invoker/);
+  assert.match(hardening, /alter function public\.complete_ai_request\([^;]+\) security invoker/);
 });
 
 test('provider router reserves one user request before the fallback chain and completes one audit row', async () => {
