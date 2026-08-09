@@ -1,6 +1,6 @@
 # NeoFit Stage 17 — Nutrition Plan Persistence
 
-Status: implementation / Preview-only; stacked on Stage 16.
+Status: code + live schema + CI complete / hosted runtime proof open / Preview-only; stacked on Stage 16.
 
 ## Goal
 
@@ -159,11 +159,25 @@ The plan page uses the existing lightweight account identity read plus one activ
 
 No AI call is made to display the plan.
 
-## Live migration
+## Live migration and DB QA
 
 - `20260809140618_nutrition_plan_versioning`
 
-Supabase Security Advisor reports no Stage 17 issue. Performance Advisor currently reports only unused-index INFO on empty/near-empty tables, including the newly created plan/history indexes; no uncovered FK warning was introduced.
+Supabase Security Advisor reports no Stage 17 issue. Performance Advisor reports only unused-index INFO on empty/near-empty tables; no uncovered FK warning was introduced.
+
+A transaction + rollback QA under an authenticated user context created two user-owned Nutrition Plan versions, activated the second version and ended with `persisted_qa_plans = 0`.
+
+## Final code / CI evidence
+
+- branch: `stage17/nutrition-plan-persistence`
+- green code head before this documentation update: `fa3d15c149f5f929ec4baf5238bd61d7f0f0c8c3`
+- `Nutrition Plan Persistence CI` run `31317881612`: **success**
+- Nutrition Plan contract tests: success
+- Nutrition Core adapter regression: success
+- full Supabase app regression: success
+- TypeScript: success
+- Next.js production build: success
+- Nutrition Plan authority/RLS/data-truth gate: success
 
 ## Deliberately not faked
 
