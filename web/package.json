@@ -27,6 +27,7 @@
     "test:youtube-tools": "node --import tsx --test tests/youtube-agent-tools.test.ts",
     "test:ui-polish": "node --import tsx --test tests/ui-polish-accessibility.test.ts",
     "test:ui-truth": "node --import tsx --test tests/ui-truth-audit.test.ts",
+    "test:runtime-recovery": "node --import tsx --test tests/runtime-recovery-gate.test.ts",
     "test:onboarding": "node --import tsx --test tests/onboarding-foundation.test.ts",
     "test:coach": "node --import tsx --test tests/coach-readonly.test.ts",
     "check:adapter": "npm run typecheck && npm run test:adapter",
