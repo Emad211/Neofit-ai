@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { NUTRITION_CORE_SCHEMA_VERSION } from '@neofit/nutrition-core';
 import { foodFixtures } from '@/data/fixtures';
-import { createWebDiaryEntry, type WebMealType } from '@/lib/nutrition-adapter';
+import { createWebDiaryEntry } from '@/lib/nutrition-adapter';
 import { parseNutritionPlanDocument, resolveNutritionPlanDocument } from '@/lib/nutrition-plan-core';
 import type { Database } from './database.types';
 
@@ -85,8 +85,11 @@ export async function persistActiveNutritionPlanMeal(input: {
 
   const loggedAt = new Date().toISOString();
   const rows = meal.items.map((item, itemIndex) => {
-    const food = foodFixtures.find((candidate) => candidate.id === item.foodId && candidate.sourceVersion === item.sourceVersion);
+    const food = foodFixtures.find(
+      (candidate) => candidate.id === item.foodId && candidate.sourceVersion === item.sourceVersion,
+    );
     if (!food) throw new NutritionPlanLogError('plan_invalid');
+
     const clientMutationId = mutationId({
       userId: input.userId,
       planId: row.id,
@@ -98,25 +101,29 @@ export async function persistActiveNutritionPlanMeal(input: {
       sourceVersion: item.sourceVersion,
       portionCount: item.portionCount,
     });
+
     const diaryEntry = createWebDiaryEntry({
-      food,
-      mealType: meal.mealType as WebMealType,
-      portionCount: item.portionCount,
+      id: clientMutationId,
+      label: food.nameFa,
+      mealType: meal.mealType,
+      portionText: `${item.portionCount} × ${food.portionLabelFa}`,
+      items: [{ foodId: food.id, portionCount: item.portionCount }],
+      foods: foodFixtures,
       localDate: input.localDate,
-      loggedAt,
-      clientMutationId,
+      timestamp: loggedAt,
     });
+
     return {
       user_id: input.userId,
       client_mutation_id: clientMutationId,
-      source_id: food.id,
-      source_type: 'food',
-      label: food.nameFa,
-      meal_type: meal.mealType,
-      local_date: input.localDate,
+      source_id: diaryEntry.core.sourceId,
+      source_type: diaryEntry.core.sourceType,
+      label: diaryEntry.core.label,
+      meal_type: diaryEntry.core.mealType,
+      local_date: diaryEntry.core.localDate,
       logged_at: loggedAt,
       core_schema_version: NUTRITION_CORE_SCHEMA_VERSION,
-      estimate: diaryEntry.estimate,
+      estimate: diaryEntry.core.estimate,
       nutrition_plan_id: row.id,
       nutrition_plan_version: row.version,
       nutrition_plan_meal_id: meal.id,
