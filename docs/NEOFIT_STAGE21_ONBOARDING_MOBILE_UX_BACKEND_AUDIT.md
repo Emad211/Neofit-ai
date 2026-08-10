@@ -11,7 +11,7 @@ mobile interaction
 + logical question order
 + interruption/resume
 + self-report truth
-+ AI credential prerequisite
++ resilient AI credential prerequisite
 + database ownership/concurrency
 + Planner-ready identifiers
 + truthful completion handoff
@@ -60,14 +60,24 @@ Resolution:
 - visible selected indicator on choice cards;
 - reduced-motion support.
 
-### 3. AI key prerequisite forced context switching without guidance
+### 3. AI key prerequisite was brittle and Google-only
+
+Problem:
+
+- the gate originally required Google even though the backend router can operate with an active AvalAI credential alone;
+- Google-only onboarding created a resilience gap when Google hits usage/rate limits;
+- UI copy described AvalAI as merely optional fallback even when product policy needed it for resilient account onboarding.
 
 Resolution:
 
-- direct official Google AI Studio key entry from step 1;
-- mobile-friendly secret field with show/hide;
-- key clears after successful Save;
-- optional AvalAI help is separate;
+- AvalAI is now the actual account gate: one active AvalAI credential is sufficient to advance;
+- Google alone does not unlock Continue;
+- if both are active, the existing router keeps Google first and AvalAI as fallback;
+- AvalAI setup is presented first and Google AI Studio is an optional provider enhancement;
+- Google-dependent capabilities such as the current YouTube-video route may still require Google later without blocking Onboarding itself;
+- direct official Google AI Studio key entry remains available;
+- both providers use mobile-friendly secret fields with show/hide;
+- raw keys clear after successful Save;
 - no clipboard permission;
 - raw keys remain ephemeral component state and never enter Onboarding JSON/browser persistence/logging.
 
@@ -226,6 +236,12 @@ Need exact-current candidate screenshots/interactions at approximately:
 
 Check keyboard opening, long Persian text, sticky footer, scroll/focus, Body Map, list fallback, Review and Ready.
 
+The AI gate runtime matrix must include:
+
+- AvalAI-only saves/tests and advances;
+- Google-only remains blocked;
+- Google + AvalAI advances and preserves Google-first fallback routing.
+
 ### P1 — field-addressable validation
 
 Current focused error summary is better but validation returns strings. Next UX polish should return stable field ids/error codes so:
@@ -252,6 +268,8 @@ Current NeoFit local-date helper uses the application default timezone (`Asia/Te
 Stage21 is ready to hand off to Program Cycle when current CI + runtime proof are green because Stage22 can depend on:
 
 - one parsed v2 self-report contract;
+- a resilient provider prerequisite with AvalAI guaranteed for completed account onboarding;
+- Google-first routing when both credentials are active;
 - stable equipment/weekday ids;
 - explicit duration/start date;
 - hard safety inputs;
@@ -264,6 +282,7 @@ Stage21 is ready to hand off to Program Cycle when current CI + runtime proof ar
 What Stage22 must not do:
 
 - read raw unparsed `draft` JSON;
+- assume Google exists merely because Onboarding completed;
 - infer missing equipment from an empty array;
 - treat nullable values as negative/false answers;
 - mutate completed historical data;
