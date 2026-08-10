@@ -39,7 +39,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [draft, setDraft] = useState<OnboardingDraft>(() => createEmptyOnboardingDraft());
   const [mode, setMode] = useState<PersistenceMode>('loading');
   const [accountId, setAccountId] = useState<string | null>(null);
-  const [databaseUpdatedAt, setDatabaseUpdatedAt] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('در حال بررسی محل ذخیره‌سازی...');
   const [editRevision, setEditRevision] = useState(0);
@@ -51,7 +50,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   const setDatabaseRevision = useCallback((revision: string | null) => {
     databaseUpdatedAtRef.current = revision;
-    setDatabaseUpdatedAt(revision);
   }, []);
 
   const enqueueWrite = useCallback(<T,>(operation: () => Promise<T>): Promise<T> => {
