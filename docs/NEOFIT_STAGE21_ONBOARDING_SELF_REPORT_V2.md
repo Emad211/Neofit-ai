@@ -9,7 +9,10 @@ Stage21 is the first executable slice of the revised NeoFit Coach lifecycle. It 
 The public journey is intentionally **13 focused steps**, not the earlier 15-click flow:
 
 ```text
-1  Coach / Google AI credential gate
+1  Coach / resilient AI credential gate
+   - AvalAI active => may continue
+   - Google active without AvalAI => may not continue
+   - Google + AvalAI => Google primary, AvalAI fallback
 2  Goal
 3  Basics
 4  Optional body measurements
@@ -41,7 +44,8 @@ Implemented:
 - validation summary receives focus and scrolls into view;
 - Review cards have direct Edit links;
 - long preference sets are grouped by task/domain;
-- AI key setup includes direct Google AI Studio entry, show/hide secret input and optional AvalAI fallback help;
+- AI key setup puts the required AvalAI path first and keeps Google AI Studio as an optional primary-provider enhancement;
+- Google key creation remains directly accessible from the gate with show/hide secret input;
 - no clipboard permission or Browser secret persistence;
 - Body Map shows one large front/back view at a time on mobile;
 - selected injury details collapse into accordions;
@@ -54,9 +58,17 @@ Rendered-device QA is still required on the next current Preview deployment. Sou
 
 Step 1 owns the prerequisite but not secret persistence.
 
-- real account requires an active Google credential before advancing;
-- Google is primary;
-- AvalAI is optional fallback;
+Resilience policy:
+
+- a real account requires an active **AvalAI** credential before advancing;
+- a valid AvalAI credential by itself is sufficient to advance;
+- a valid Google credential by itself is **not** sufficient to advance;
+- when both Google and AvalAI are active, Google remains the normal first provider and AvalAI remains fallback for allowed provider failures such as rate-limit/transient availability cases;
+- the existing provider router already supports AvalAI-only requests because it filters the configured provider priority down to credentials that are actually active;
+- Google-dependent capabilities such as the current YouTube-video path may still require Google later, but this does not block Onboarding completion.
+
+Credential handling remains unchanged:
+
 - `/api/ai/providers/*` + existing AES-GCM vault are reused;
 - validation is inference-free;
 - raw key exists only in temporary component state and is cleared after Save;
@@ -191,7 +203,7 @@ Current live table remains owner-RLS protected:
 - authenticated users have explicit table privileges but all row access is owner-scoped by RLS;
 - UPDATE has SELECT + `USING` + `WITH CHECK` ownership coverage.
 
-The historical DB constraint permits `current_step` 1–15 to preserve the v1 row. A compatible hardening migration may additionally require schema v2 rows to remain within app steps 1–13 while leaving schema v1 step 15 valid.
+The historical DB constraint permits `current_step` 1–15 to preserve the v1 row. The Stage21 hardening migration additionally requires schema v2 rows to remain within app steps 1–13 while leaving schema v1 step 15 valid.
 
 ## Nutrition authority
 
@@ -204,7 +216,7 @@ Shared Nutrition Core remains the only arithmetic authority. Later planners must
 `Onboarding v2 Lifecycle CI` is expected to prove at minimum:
 
 1. focused 13-step journey and no passive analysis/result routes;
-2. step 1 real AI gate;
+2. step 1 resilient provider gate: AvalAI-only passes policy, Google-only does not, both preserve Google-first fallback routing;
 3. no preselected personal self-report;
 4. conservative v1 migration + stable availability ids;
 5. exact 73-region Body Map plus mobile/list fallback contract;
@@ -223,7 +235,9 @@ After latest code CI is green:
 
 - pull/restart local Stage21;
 - verify mobile widths ~360/390/430px and desktop from rendered output;
-- real account -> Google key Save/Test inside step 1;
+- real account -> validate **AvalAI only** and confirm step 1 can advance;
+- confirm **Google only** remains blocked until AvalAI is also active;
+- confirm Google + AvalAI shows Google as normal first provider and AvalAI as fallback;
 - interrupt a long step before Continue and verify autosave survives refresh;
 - open a second tab/device and verify stale revision is blocked rather than overwriting;
 - complete all 13 steps and verify v2 stable equipment/weekday ids in the hosted row;
