@@ -37,13 +37,15 @@ test('empty Nutrition day is a zero macro view, not a sparse-vector crash', asyn
   assert.match(adapter, /requiredFiniteNutrient/);
 });
 
-test('protected Preview unregisters stale workers and NeoFit app-shell caches', async () => {
+test('PWA registration is production-only and non-production clears stale workers/caches', async () => {
   const register = await source('components/pwa-register.tsx');
   const layout = await source('app/layout.tsx');
-  assert.match(register, /environment === 'preview'/);
+  assert.match(register, /environment !== 'production'/);
   assert.match(register, /navigator\.serviceWorker\.getRegistrations\(\)/);
   assert.match(register, /registration\.unregister\(\)/);
   assert.match(register, /neofit-app-shell-/);
   assert.match(register, /window\.caches\.delete/);
+  assert.match(register, /\.register\('\/sw\.js'/);
+  assert.match(register, /mix stale Next\.js chunks with fresh server HTML/);
   assert.match(layout, /<PwaRegister environment=\{deploymentEnvironment\}/);
 });
