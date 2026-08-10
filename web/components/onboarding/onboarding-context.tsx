@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { hasSupabasePublicEnv } from '@/lib/supabase/env';
 import { clearGuestOnboardingDraft, readGuestOnboardingDraft, writeGuestOnboardingDraft } from '@/lib/onboarding/storage';
@@ -10,7 +10,14 @@ import {
   loadRemoteOnboarding,
   saveRemoteOnboarding,
 } from '@/lib/onboarding/persistence';
-import { ONBOARDING_TOTAL_STEPS, createEmptyOnboardingDraft, markStepCompleted, type OnboardingDraft } from '@/lib/onboarding/model';
+import {
+  ONBOARDING_TOTAL_STEPS,
+  createEmptyOnboardingDraft,
+  markStepCompleted,
+  parseOnboardingDraft,
+  resumeStepNumber,
+  type OnboardingDraft,
+} from '@/lib/onboarding/model';
 
 type PersistenceMode = 'loading' | 'account' | 'guest' | 'error';
 
@@ -26,6 +33,7 @@ interface OnboardingContextValue {
 }
 
 const OnboardingContext = createContext<OnboardingContextValue | null>(null);
+const AUTOSAVE_DELAY_MS = 650;
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [draft, setDraft] = useState<OnboardingDraft>(() => createEmptyOnboardingDraft());
@@ -34,6 +42,30 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [databaseUpdatedAt, setDatabaseUpdatedAt] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('در حال بررسی محل ذخیره‌سازی...');
+  const [editRevision, setEditRevision] = useState(0);
+
+  const databaseUpdatedAtRef = useRef<string | null>(null);
+  const writeQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastScheduledEditRef = useRef(0);
+
+  const setDatabaseRevision = useCallback((revision: string | null) => {
+    databaseUpdatedAtRef.current = revision;
+    setDatabaseUpdatedAt(revision);
+  }, []);
+
+  const enqueueWrite = useCallback(<T,>(operation: () => Promise<T>): Promise<T> => {
+    const queued = writeQueueRef.current.then(operation);
+    writeQueueRef.current = queued.then(() => undefined, () => undefined);
+    return queued;
+  }, []);
+
+  const cancelAutosave = useCallback(() => {
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,7 +97,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         const remote = await loadRemoteOnboarding(supabase, userId);
         if (cancelled) return;
         setAccountId(userId);
-        setDatabaseUpdatedAt(remote?.databaseUpdatedAt ?? null);
+        setDatabaseRevision(remote?.databaseUpdatedAt ?? null);
         setDraft(remote?.draft ?? createEmptyOnboardingDraft());
         setMode('account');
         if (remote?.migratedFromVersion === 1) {
@@ -84,26 +116,73 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       }
     }
     void initialize();
-    return () => { cancelled = true; };
-  }, []);
+    return () => {
+      cancelled = true;
+      cancelAutosave();
+    };
+  }, [cancelAutosave, setDatabaseRevision]);
+
+  useEffect(() => {
+    if (editRevision === 0 || editRevision === lastScheduledEditRef.current) return;
+    lastScheduledEditRef.current = editRevision;
+    cancelAutosave();
+
+    // Only persist a structurally valid draft. Temporary typing states such as
+    // an out-of-range partial number stay in memory until they become valid.
+    if (!parseOnboardingDraft(draft)) return;
+
+    autosaveTimerRef.current = setTimeout(() => {
+      autosaveTimerRef.current = null;
+      if (mode === 'guest') {
+        writeGuestOnboardingDraft(draft);
+        setMessage('پیش‌نویس به‌صورت خودکار در همین مرورگر ذخیره شد.');
+        return;
+      }
+      if (mode !== 'account' || !accountId) return;
+
+      void enqueueWrite(async () => {
+        const result = await saveRemoteOnboarding(
+          createClient(),
+          accountId,
+          draft,
+          resumeStepNumber(draft),
+          databaseUpdatedAtRef.current,
+        );
+        setDatabaseRevision(result.databaseUpdatedAt);
+      }).then(() => {
+        setMessage('پیش‌نویس به‌صورت خودکار ذخیره شد.');
+      }).catch((error) => {
+        if (error instanceof OnboardingConflictError) {
+          setMode('error');
+          setMessage('این Onboarding در تب یا دستگاه دیگری تغییر کرده است. صفحه را تازه کن تا نسخه جدید جایگزین نشود.');
+          return;
+        }
+        setMessage('ذخیره خودکار موقتاً انجام نشد؛ با «ادامه» دوباره تلاش می‌کنیم.');
+      });
+    }, AUTOSAVE_DELAY_MS);
+
+    return cancelAutosave;
+  }, [accountId, cancelAutosave, draft, editRevision, enqueueWrite, mode, setDatabaseRevision]);
 
   const updateSection = useCallback(<K extends keyof OnboardingDraft>(key: K, value: OnboardingDraft[K]) => {
     setDraft((current) => ({ ...current, [key]: value, updatedAt: new Date().toISOString() }));
+    setEditRevision((current) => current + 1);
   }, []);
 
   const saveStep = useCallback(async (step: number) => {
+    cancelAutosave();
     const nextDraft = markStepCompleted(draft, step);
     setSaving(true);
     try {
       if (mode === 'account' && accountId) {
-        const result = await saveRemoteOnboarding(
+        const result = await enqueueWrite(() => saveRemoteOnboarding(
           createClient(),
           accountId,
           nextDraft,
           Math.min(ONBOARDING_TOTAL_STEPS, step + 1),
-          databaseUpdatedAt,
-        );
-        setDatabaseUpdatedAt(result.databaseUpdatedAt);
+          databaseUpdatedAtRef.current,
+        ));
+        setDatabaseRevision(result.databaseUpdatedAt);
         setMessage('ذخیره شد.');
       } else if (mode === 'guest') {
         writeGuestOnboardingDraft(nextDraft);
@@ -115,15 +194,17 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       return nextDraft;
     } catch (error) {
       if (error instanceof OnboardingConflictError) {
+        setMode('error');
         setMessage('این Onboarding در تب یا دستگاه دیگری تغییر کرده است. صفحه را تازه کن تا نسخه جدید جایگزین نشود.');
       }
       throw error;
     } finally {
       setSaving(false);
     }
-  }, [accountId, databaseUpdatedAt, draft, mode]);
+  }, [accountId, cancelAutosave, draft, enqueueWrite, mode, setDatabaseRevision]);
 
   const complete = useCallback(async () => {
+    cancelAutosave();
     const now = new Date().toISOString();
     const completedDraft = markStepCompleted({
       ...draft,
@@ -132,8 +213,13 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setSaving(true);
     try {
       if (mode === 'account' && accountId) {
-        const result = await completeRemoteOnboarding(createClient(), accountId, completedDraft, databaseUpdatedAt);
-        setDatabaseUpdatedAt(result.databaseUpdatedAt);
+        const result = await enqueueWrite(() => completeRemoteOnboarding(
+          createClient(),
+          accountId,
+          completedDraft,
+          databaseUpdatedAtRef.current,
+        ));
+        setDatabaseRevision(result.databaseUpdatedAt);
         clearGuestOnboardingDraft();
         setDraft(result.draft);
         setMessage(result.metadataSyncWarning ? 'Onboarding ذخیره شد؛ همگام‌سازی بخشی از پروفایل بعداً تکرار می‌شود.' : 'Onboarding با موفقیت تکمیل شد.');
@@ -148,13 +234,14 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       throw new Error('Onboarding persistence is unavailable.');
     } catch (error) {
       if (error instanceof OnboardingConflictError) {
+        setMode('error');
         setMessage('قبل از تکمیل، داده در تب یا دستگاه دیگری تغییر کرده است. صفحه را تازه کن تا نسخه جدید از بین نرود.');
       }
       throw error;
     } finally {
       setSaving(false);
     }
-  }, [accountId, databaseUpdatedAt, draft, mode]);
+  }, [accountId, cancelAutosave, draft, enqueueWrite, mode, setDatabaseRevision]);
 
   const value = useMemo(() => ({ draft, mode, accountId, saving, message, updateSection, saveStep, complete }), [accountId, complete, draft, message, mode, saveStep, saving, updateSection]);
   return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;
