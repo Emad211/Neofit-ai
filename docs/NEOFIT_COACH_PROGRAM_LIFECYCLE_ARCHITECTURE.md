@@ -1,6 +1,8 @@
 # NeoFit Coach Program Lifecycle Architecture
 
-Status: **canonical product contract for the active Preview cycle**. Stage21 code is implemented and CI-green; Stage22 is the next domain stage. This document supersedes the older assumption that Onboarding, AI settings, plan persistence and Coach are independent features.
+Status: **canonical product contract for the active Preview cycle**. Stage21 code + DB hardening are implemented and CI-green; rendered/runtime proof is still open. Stage22 is the next domain stage.
+
+This document supersedes the older assumption that Onboarding, AI settings, plan persistence and Coach are independent features.
 
 ## Product promise
 
@@ -24,37 +26,69 @@ verified account
   -> completed history/provenance remains intact
 ```
 
-The user experiences **one NeoFit Coach**. Training, Nutrition, Safety, YouTube and future planner modules are internal tools/capabilities of that Coach, not a confusing swarm of user-facing agents.
+The user experiences **one NeoFit Coach**. Training, Nutrition, Safety, YouTube and future planner modules are internal capabilities of that Coach, not separate user-facing agents.
 
 ## Current execution status
 
-### Stage21 — IMPLEMENTED / CI GREEN / RUNTIME PROOF OPEN
+### Stage21 — CODE + DB HARDENING GREEN / RENDERED RUNTIME PROOF OPEN
 
-Current code now provides:
+Current implementation provides a focused **13-step** Onboarding journey:
 
-- exactly 15 public Onboarding steps;
-- first step is the real AI credential gate;
-- Google AI Studio key is required for account-mode continuation;
-- AvalAI is available as optional fallback in the same step;
-- existing AES-GCM BYOK vault/provider validation routes are reused;
-- raw provider key never enters the Onboarding document or persistent Browser storage;
+1. AI credential gate
+2. goal
+3. basics
+4. optional body measurements
+5. medical safety
+6. injury/pain Body Map
+7. lifestyle
+8. nutrition preferences/restrictions
+9. training history
+10. availability/equipment
+11. training/nutrition/Coach preferences
+12. review + deterministic safety/readiness
+13. start date + duration + generation consent
+
+The older passive `analysis` and `result` pages were removed because they collected no new data. Their useful safety/capacity information now lives inside Review.
+
+Stage21 also provides:
+
+- Google AI Studio credential required for real account continuation;
+- optional AvalAI fallback;
+- existing AES-GCM BYOK vault/provider routes reused;
+- raw provider key never enters Onboarding JSON or persistent Browser storage;
 - `ONBOARDING_SCHEMA_VERSION = 2`;
-- old personal categorical defaults are now `null/unset` until explicit user selection;
-- conservative v1 compatibility preserves only unambiguous data and does not promote old defaults to self-report;
-- 73-region injury Body Map remains intact;
-- final step captures program start date, requested duration and generation consent;
-- completion stops at `/onboarding/ready` instead of pretending a generated program already exists.
+- personal categorical/boolean values remain `null/unset` until explicit selection;
+- conservative v1 migration preserves only unambiguous values;
+- stable locale-independent weekday/equipment identifiers;
+- explicit `bodyweight` equipment truth;
+- 73-region Body Map with mobile front/back switching and non-precision list fallback;
+- bounded fail-closed persisted-draft parser;
+- debounced autosave for parse-valid edits;
+- serialized autosave/Continue/Complete write queue;
+- optimistic `updated_at` concurrency protection against multi-tab/device overwrite;
+- final start date + 14–84 day duration + generation consent;
+- server-verified `/onboarding/ready` handoff that does not pretend a program already exists.
 
-Validated implementation head: `7aac774147b66c8983daa4ef91265d3493dd8d5f`.
+Live DB hardening migration:
 
-- Runtime Recovery Gate CI `31341835609`: success.
-- Onboarding v2 Lifecycle CI `31341835614`: success.
+`20260810001227_harden_onboarding_v2_shape`
 
-Hosted/local account proof is still required before Stage21 is release-proven.
+It enforces:
+
+- persisted `draft.version == schema_version`;
+- schema v2 `current_step` is limited to 1..13;
+- the historical schema v1 row may remain at step 15.
+
+The current Stage21 contract and mobile/backend audit live in:
+
+- `docs/NEOFIT_STAGE21_ONBOARDING_SELF_REPORT_V2.md`
+- `docs/NEOFIT_STAGE21_ONBOARDING_MOBILE_UX_BACKEND_AUDIT.md`
+
+Rendered current-candidate 360/390/430px QA and real-account hosted proof remain required before Stage21 is release-proven.
 
 ### Stage22 — NEXT: Program Cycle
 
-Current Workout/Nutrition plan tables are useful immutable stores, but they do not yet represent the user's complete course lifecycle.
+Workout/Nutrition plan tables are immutable plan stores; they do not yet represent a complete user course lifecycle.
 
 Stage22 adds a user-owned `program_cycles` source of truth and idempotent generation-run boundary.
 
@@ -62,13 +96,14 @@ Stage22 adds a user-owned `program_cycles` source of truth and idempotent genera
 
 For a real account program, AI configuration is part of Onboarding rather than a hidden Profile prerequisite.
 
-- first real Onboarding step checks existing Google credential metadata;
-- if missing/inactive, user enters a Google AI Studio key there;
-- save/test uses existing authenticated provider routes and encrypted vault;
-- Google is the primary required Planner/Coach provider;
-- AvalAI remains optional fallback;
-- `/profile/ai` remains the post-Onboarding rotation/recovery/settings surface;
-- Guest mode may remain an explicit Demo but cannot claim a generated personal program.
+- Step 1 checks current Google credential metadata.
+- Missing/inactive Google can be created through the official AI Studio path and saved/tested inside Onboarding.
+- Provider validation is inference-free.
+- Google remains primary.
+- AvalAI remains optional fallback.
+- `/profile/ai` remains the post-Onboarding rotation/recovery/settings surface.
+- Guest remains explicit Demo and cannot claim a generated personal program.
+- Historical duplicate `/onboarding/ai` routes are deleted.
 
 Provider request policy remains request-efficient:
 
@@ -77,38 +112,113 @@ normal request -> Google only
 eligible Google failure -> AvalAI fallback
 ```
 
-No per-message provider health check and no hidden classifier inference should be added merely to route the normal Coach path.
+Do not add a hidden classifier inference or per-message health-check request merely to route the normal Coach path.
 
-## Onboarding v2 data contract
+## Onboarding v2 normalized input contract
 
 Core semantic rule:
 
 ```text
-unset != explicitly selected != technical default
+unset != explicit user value != technical default
 ```
 
-Personal facts are not inferred from untouched UI controls.
+Program code must never infer a personal fact from an untouched control or `null` value.
 
-Onboarding captures at minimum:
+Onboarding currently captures:
 
 - primary/secondary goal;
-- explicit body/profile data;
-- medical restrictions and 73-region injury map;
-- activity/sleep/stress/smoking only when explicitly reported;
-- nutrition preferences/allergies/dislikes;
+- explicit body/profile measurements;
+- medical restrictions;
+- 73-region injury/pain data;
+- activity/sleep/stress/smoking when explicitly reported;
+- nutrition preferences, allergies and dislikes;
 - training history;
-- available equipment/location;
-- training days/session duration;
-- coaching preferences;
+- stable equipment/location and optional custom equipment;
+- stable preferred weekday ids;
+- training days/session duration/time preference/schedule notes;
+- training/nutrition/Coach preferences that are backed by the current product;
 - program start date;
-- requested program duration;
-- final consent for coordinated Training + Nutrition generation.
+- requested duration;
+- final generation consent.
 
-Old v1 account/Guest drafts are handled conservatively. Ambiguous old categorical defaults are cleared and must be re-selected rather than guessed.
+Inactive notification/photo/imperial controls are not presented merely because compatibility fields still exist in the document shape.
+
+### Stable availability ids
+
+Planner logic must not depend on localized display strings.
+
+Weekday ids:
+
+` sat / sun / mon / tue / wed / thu / fri `
+
+Equipment ids include:
+
+`bodyweight`, `dumbbell`, `barbell`, `cable`, `bands`, `bench`, `full-gym`, `pull-up-bar`, `cardio-machine`.
+
+Legacy Persian labels are mapped conservatively during v1 migration.
+
+### Persisted-draft trust boundary
+
+`user_onboarding.draft` is JSON storage, not trusted Planner input.
+
+Stage22+ code must first use the Stage21 parser/normalizer. The parser bounds and verifies:
+
+- section structure;
+- completed-step range/uniqueness;
+- goal ids/relationships;
+- numeric ranges;
+- text/list sizes and duplicate lists;
+- exact InjuryArea key/face/bodyPart relationship;
+- injury enums and maximum 73 unique regions;
+- stable weekday/equipment ids;
+- date/timestamp shape;
+- requested duration.
+
+Do not read raw draft fields directly inside generation/planning code.
+
+## Onboarding persistence / concurrency contract
+
+Health/self-report data must not silently lose newer edits.
+
+### Autosave
+
+- parse-valid current-step edits debounce and persist automatically;
+- temporary invalid typing states remain in memory until structurally valid;
+- Guest autosave is Browser-local only;
+- account autosave uses the same serialized write queue as Continue/Complete;
+- explicit Continue remains the action that validates and marks a step complete.
+
+### Optimistic concurrency
+
+Existing account writes require the exact `updated_at` revision that was loaded:
+
+```text
+user_id = current user
+AND updated_at = expected revision
+```
+
+A stale tab/device write raises a conflict and stops progression instead of overwriting newer self-report.
+
+Stage22 should carry this expected-version/idempotency discipline into Program Cycle generation and later proposal application.
+
+## Ready / lifecycle handoff
+
+For configured accounts, `/onboarding/ready` verifies server-side:
+
+- live Auth user;
+- Onboarding row status is completed;
+- schema version is current;
+- persisted draft passes the parser.
+
+Invalid/incomplete/legacy state returns to Onboarding.
+
+Ready shows only real stored summary values and says explicitly that a generated program does not exist yet.
+
+The interactive Onboarding provider is scoped to `[step]` routes so Ready does not re-bootstrap the draft client-side.
 
 ## Program Cycle — Stage22 contract
 
-Add one user-owned program lifecycle source of truth with bounded state transitions, initially one active cycle per user.
+Add one user-owned program lifecycle source of truth with bounded transitions and initially one active cycle per user.
 
 Recommended states:
 
@@ -123,27 +233,27 @@ active/paused -> completed
 Minimum metadata:
 
 - id / user_id;
-- title;
 - requested duration days;
 - start date / derived end date;
-- Onboarding schema/version snapshot reference or bounded normalized goal snapshot;
+- normalized Onboarding schema/version provenance;
+- bounded normalized goal/safety snapshot reference or hash/provenance;
 - generation status and idempotency key;
 - active Workout Plan id/version;
 - active Nutrition Plan id/version;
 - revision number / source;
 - generated_at / activated_at / paused_at / completed_at;
 - created_at / updated_at;
-- no raw prompt, provider key, hidden chain-of-thought or private provider payload.
+- no raw prompt, provider key or private provider payload.
 
-Stage22 must enforce ownership with RLS and make generation replay/idempotency explicit.
+Stage22 must enforce RLS ownership, idempotent generation replay and stale-version protection.
 
 ## Course duration and bounded materialization
 
-Workout Plan v1 and Nutrition Plan v1 each cap one detailed document at 14 days. The product must not solve longer courses by asking one model call for a huge 60/90-day flat JSON document.
+Workout Plan v1 and Nutrition Plan v1 each cap one detailed document at 14 days. Longer courses must not be solved by requesting one giant 60/90-day flat model response.
 
 Preferred architecture:
 
-- Program Cycle defines full requested duration;
+- Program Cycle defines the requested full duration;
 - planner output defines bounded phases/blocks;
 - each phase has explicit date/day scope and progression intent;
 - compact weekly/day templates are materialized deterministically;
@@ -151,14 +261,38 @@ Preferred architecture:
 - future revisions affect future/uncompleted scope only;
 - completed sessions and diary history retain original provenance.
 
-Stage21 currently accepts a bounded 14–84-day course contract. Stage22 owns the domain model that makes those longer durations practical.
+Stage21 accepts 14–84 days. Stage22 owns the domain model that makes longer durations practical.
 
-## Post-Onboarding generation — Stage24 target
+## Exercise Registry / deterministic safety — Stage23
+
+Before Coach can professionally replace individual exercises, NeoFit needs a typed registry containing at least:
+
+- stable exercise id and display names;
+- movement pattern;
+- primary/secondary muscle groups;
+- equipment requirements;
+- difficulty/skill level;
+- contraindication tags;
+- injury/safety constraints;
+- substitute/alternative relationships;
+- optional trusted YouTube/search hints.
+
+AI may rank/select validated candidates but cannot invent arbitrary persisted exercise identities that bypass registry/safety checks.
+
+Medical/injury inputs are hard validator inputs, not prompt decoration.
+
+- physician restrictions override preferences;
+- current pain/severe injury can block unsafe exercises;
+- serious/new symptoms do not trigger autonomous treatment plans;
+- allergies are hard exclusions for persisted Nutrition Plans;
+- AI cannot bypass deterministic validators.
+
+## Structured post-Onboarding generation — Stage24
 
 After Program Cycle + exercise safety contracts exist:
 
 ```text
-validated Onboarding v2
+validated/normalized Onboarding v2
   -> create/reuse idempotent Program Cycle generation run
   -> normalized shared user/safety/program contract
   -> structured Training Planner
@@ -177,39 +311,15 @@ One user-facing Coach does not require one giant model response. Training and Nu
 
 ## Nutrition authority boundary
 
-Broad food-catalog expansion is explicitly deferred by product decision.
+Broad food-catalog expansion remains deferred by product decision.
 
 Therefore:
 
-- generated Nutrition Plans may persist only currently resolvable catalog food identities/source versions;
+- generated Nutrition Plans persist only currently resolvable catalog identities/source versions;
 - plan documents never persist model-authored calories/macros as authority;
 - Shared Nutrition Core remains the sole arithmetic authority;
-- unresolved foods may be discussed, but cannot silently become authoritative diary/plan nutrition values;
-- already logged diary history is never rewritten by Coach adaptation.
-
-## Exercise Registry / Safety — Stage23
-
-Before Coach can professionally replace individual exercises, NeoFit needs a typed exercise registry containing at least:
-
-- stable exercise id and display names;
-- movement pattern;
-- primary/secondary muscle groups;
-- equipment requirements;
-- difficulty/skill level;
-- contraindication tags;
-- injury/safety constraints;
-- substitute/alternative relationships;
-- optional trusted YouTube/search hints.
-
-AI may rank/select validated candidates but cannot invent arbitrary persisted exercise identities that bypass the registry or safety checks.
-
-Medical/injury constraints are hard validator inputs, not prompt decoration.
-
-- physician restrictions override user/AI preference;
-- current pain/severe injury can block unsafe proposals;
-- new or serious symptoms do not trigger autonomous medical treatment plans;
-- allergies are hard exclusions for persisted Nutrition Plans;
-- AI cannot bypass deterministic validators.
+- unresolved foods may be discussed but cannot silently become authoritative plan/diary nutrition values;
+- logged diary history is never rewritten by Coach adaptation.
 
 ## In-program Coach
 
@@ -245,32 +355,9 @@ user request
 
 No silent mutation is permitted in the first production generation.
 
-### Initial Training tool family
+Initial training proposals may include future exercise replacement, sets/reps/rest/load targets, schedule/intensity changes, safe adaptations to pain/equipment loss and bounded future-block regeneration. Completed Workout Sessions/Sets are never rewritten.
 
-- replace one future exercise;
-- change future sets/reps/rest/load target;
-- change future training day/schedule;
-- reduce/raise future intensity;
-- respond to pain/RPE/equipment loss with validated alternatives;
-- regenerate one future day/week/block;
-- pause/extend a Program Cycle;
-- never rewrite completed Workout Sessions/Sets.
-
-### Initial Nutrition tool family
-
-- replace a future meal/item with current authoritative catalog identities;
-- adjust future portion counts/timing within Core contracts;
-- regenerate one future day/week/block;
-- adapt around allergies/dislikes/availability;
-- never overwrite logged diary history;
-- never accept model-authored macro totals as persisted authority.
-
-### Program-level tools
-
-- explain the current program and rationale;
-- summarize adherence/progress;
-- propose coordinated Training + Nutrition revisions when goals/availability change;
-- show exact scope and diff before apply.
+Initial Nutrition proposals may replace future catalog-resolvable items, adjust portions/timing within Core contracts, regenerate bounded future scope and adapt around allergies/dislikes. Logged diary history is never overwritten and model-authored macro totals are never persisted as authority.
 
 ## Change/audit contract
 
@@ -279,7 +366,7 @@ Future proposal persistence should be metadata-focused:
 - proposal id / user / program id;
 - domain/tool name;
 - expected source plan ids/versions;
-- target scope (date/day/block/exercise/meal);
+- target future scope;
 - status: proposed / confirmed / rejected / applied / expired;
 - normalized reason code + bounded user-visible explanation;
 - resulting plan ids/versions;
@@ -289,11 +376,11 @@ Future proposal persistence should be metadata-focused:
 ## Idempotency and concurrency
 
 - finishing Onboarding twice must not create duplicate active Program Cycles;
-- generation must use an idempotency key;
-- only one initial active Program Cycle per user;
-- proposal apply must compare expected source versions;
-- stale proposals fail if current plan versions changed;
-- completed historical sessions/diary entries remain immutable provenance.
+- generation uses an explicit idempotency key;
+- initially only one active Program Cycle per user;
+- proposal apply compares expected source versions;
+- stale proposals fail if active plan versions changed;
+- completed sessions/diary history remain immutable provenance.
 
 ## Current foundations vs missing work
 
@@ -303,9 +390,9 @@ Future proposal persistence should be metadata-focused:
 - scanner-safe email/recovery architecture;
 - runtime recovery gate for stale/deleted Auth and Preview PWA state;
 - encrypted Google/AvalAI BYOK vault;
-- Google-first provider routing/fallback policy;
-- **Onboarding v2 AI gate + explicit self-report + duration contract**;
-- 73-region Body Map;
+- Google-first routing/fallback;
+- **mobile-first Onboarding v2 AI gate + explicit self-report + stable Planner ids + autosave/concurrency + duration contract**;
+- 73-region Body Map + accessible list fallback;
 - versioned immutable Workout Plans;
 - versioned immutable Nutrition Plans;
 - Workout session/set provenance;
@@ -331,9 +418,22 @@ Future proposal persistence should be metadata-focused:
 - adherence-driven coordinated adaptation;
 - hosted E2E for the full lifecycle.
 
+## Remaining Stage21 release-proof gaps
+
+- rendered exact-current mobile QA at ~360/390/430px + desktop;
+- real Google Save/Test inside mobile Onboarding;
+- refresh proof for autosaved long-step edits;
+- second-tab/device stale-revision proof;
+- real 13-step completion and persisted stable ids;
+- sign-out/in lifecycle resume;
+- `/ready` rejection proof for incomplete/v1 state;
+- field-addressable validation/inline error linking is the remaining interaction polish gap;
+- minor-user policy (current minimum age 10) requires explicit product/legal decision before Production;
+- international start-date boundary should use authenticated profile timezone rather than NeoFit default timezone.
+
 ## Active roadmap
 
-1. **Stage21 — Onboarding v2 + AI credential gate + program duration: CODE GREEN; runtime proof open.**
+1. **Stage21 — Onboarding v2 mobile/data hardening: CODE + DB GREEN; rendered/runtime proof open.**
 2. **Stage22 — Program Cycle schema/state machine + plan linkage + idempotent generation-run contract.**
 3. **Stage23 — Exercise Registry + deterministic Workout safety/substitution validation.**
 4. **Stage24 — structured Training + Nutrition planners + validators/materializers.**
@@ -363,4 +463,4 @@ signup
  -> resume program
 ```
 
-No unrestricted SQL is exposed to the model. No plan mutation is silently applied. Production remains out of scope until the runtime evidence is green.
+No unrestricted SQL is exposed to the model. No plan mutation is silently applied. Production remains out of scope until runtime evidence is green.
