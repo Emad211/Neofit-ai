@@ -9,6 +9,7 @@ on:
       - 'web/app/auth/**'
       - 'web/app/layout.tsx'
       - 'web/components/pwa-register.tsx'
+      - 'web/public/sw.js'
       - 'web/lib/auth/**'
       - 'web/lib/nutrition-adapter.ts'
       - 'web/lib/web-diary-storage.ts'
@@ -23,6 +24,7 @@ on:
       - 'web/app/auth/**'
       - 'web/app/layout.tsx'
       - 'web/components/pwa-register.tsx'
+      - 'web/public/sw.js'
       - 'web/lib/auth/**'
       - 'web/lib/nutrition-adapter.ts'
       - 'web/lib/web-diary-storage.ts'
@@ -99,6 +101,8 @@ jobs:
             exit 1
           fi
           grep -q 'neofit-app-shell-' /tmp/neofit-runtime-recovery-sw.tmp
+          grep -q 'LOCAL_DEVELOPMENT_HOSTS' /tmp/neofit-runtime-recovery-sw.tmp
+          grep -q 'self.registration.unregister()' /tmp/neofit-runtime-recovery-sw.tmp
       - name: Hard recovery boundaries
         shell: bash
         run: |
@@ -110,6 +114,8 @@ jobs:
             echo 'Auth page must not redirect using claims-only identity.' >&2
             exit 1
           fi
-          grep -q "environment === 'preview'" web/components/pwa-register.tsx
+          grep -q "environment !== 'production'" web/components/pwa-register.tsx
           grep -q 'getRegistrations' web/components/pwa-register.tsx
+          grep -q 'LOCAL_DEVELOPMENT_HOSTS' web/public/sw.js
+          grep -q 'self.registration.unregister()' web/public/sw.js
           grep -q 'ZERO_WEB_MACROS' web/lib/nutrition-adapter.ts
