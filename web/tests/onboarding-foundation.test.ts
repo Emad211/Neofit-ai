@@ -171,6 +171,21 @@ test('step validation requires explicit choices, equipment truth and bounded cou
   assert.equal(PROGRAM_DURATION_MAX_DAYS, 84);
 });
 
+test('preferences validation never requires the hidden future reminder setting', () => {
+  const draft = createEmptyOnboardingDraft();
+  draft.preferences = {
+    intensity: 'moderate',
+    cardioPreference: 'balanced',
+    trainingStyle: 'resistance',
+    variety: 'stable',
+    nutritionStrictness: 'structured',
+    coachingTone: 'analytical',
+    reminderLevel: null,
+  };
+  assert.deepEqual(validateOnboardingStep(draft, 11), []);
+  assert.ok(parseOnboardingDraft(draft));
+});
+
 test('step completion remains idempotent', () => {
   const draft = createEmptyOnboardingDraft();
   const once = markStepCompleted(draft, 4);
