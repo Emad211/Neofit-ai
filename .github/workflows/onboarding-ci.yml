@@ -89,17 +89,27 @@ jobs:
         run: |
           set -euo pipefail
           ONBOARDING_FILE=supabase/migrations/20260808132547_user_onboarding_v1.sql
+          HARDENING_FILE=supabase/migrations/20260810001227_harden_onboarding_v2_shape.sql
           CREDENTIAL_FILE=supabase/migrations/20260808160000_encrypted_provider_credentials.sql
           grep -q 'alter table public.user_onboarding enable row level security' "$ONBOARDING_FILE"
           grep -q 'to authenticated' "$ONBOARDING_FILE"
           grep -q '(select auth.uid()) = user_id' "$ONBOARDING_FILE"
           grep -q "status in ('draft', 'completed')" "$ONBOARDING_FILE"
           grep -q 'current_step between 1 and 15' "$ONBOARDING_FILE"
+          grep -q 'user_onboarding_draft_version_matches' "$HARDENING_FILE"
+          grep -q 'user_onboarding_v2_current_step_valid' "$HARDENING_FILE"
+          grep -q 'current_step between 1 and 13' "$HARDENING_FILE"
           grep -q 'enable row level security' "$CREDENTIAL_FILE"
           grep -q "provider in ('google', 'avalai')" "$CREDENTIAL_FILE"
           grep -q 'ONBOARDING_SCHEMA_VERSION = 2' web/lib/onboarding/model.ts
+          grep -q 'ONBOARDING_TOTAL_STEPS = 13' web/lib/onboarding/model.ts
           grep -q 'programDurationDays' web/lib/onboarding/model.ts
+          grep -q 'bodyweight' web/lib/onboarding/model.ts
           grep -q '/api/ai/providers' web/components/onboarding/onboarding-ai-gate.tsx
+          grep -q 'onboarding-body-map__list-picker' web/components/onboarding/body-map/injury-body-map.tsx
+          grep -q 'AUTOSAVE_DELAY_MS' web/components/onboarding/onboarding-context.tsx
+          grep -q 'OnboardingConflictError' web/lib/onboarding/persistence.ts
+          grep -q 'activeAuthSession(supabase)' web/app/onboarding/ready/page.tsx
           grep -q "google: 'gemini-3.5-flash-lite'" web/lib/ai/config.ts
           grep -q "avalai: 'gemini-flash-latest'" web/lib/ai/config.ts
           ! grep -q '/onboarding/ai' web/app/page.tsx
