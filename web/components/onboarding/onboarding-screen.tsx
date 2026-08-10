@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { InjuryBodyMap } from '@/components/onboarding/body-map/injury-body-map';
 import { OnboardingAiGate } from '@/components/onboarding/onboarding-ai-gate';
 import { useOnboarding } from '@/components/onboarding/onboarding-context';
+import { formatLocalDate } from '@/lib/local-date';
 import { OnboardingConflictError } from '@/lib/onboarding/persistence';
 import {
   NUTRITION_AUTHORITY_NOTE,
@@ -38,11 +39,7 @@ function toggleValue<T extends string>(list: T[], value: T): T[] {
 }
 
 function localToday() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return formatLocalDate(new Date());
 }
 
 function ListEditor({ values, onChange, placeholder }: { values: string[]; onChange(values: string[]): void; placeholder: string }) {
@@ -295,6 +292,9 @@ export function OnboardingScreen({ stepSlug }: { stepSlug: OnboardingStepSlug })
   const next = async () => {
     const validation = validateOnboardingStep(draft, step.number);
     if (step.number === 1 && mode === 'account' && !googleReady) validation.unshift('ابتدا کلید Google AI Studio معتبر را متصل کن.');
+    if (step.number === ONBOARDING_TOTAL_STEPS && draft.confirmation.startDate && draft.confirmation.startDate < localToday()) {
+      validation.unshift('تاریخ شروع نمی‌تواند قبل از امروز باشد.');
+    }
     setErrors(validation);
     setActionError('');
     if (validation.length) return;
