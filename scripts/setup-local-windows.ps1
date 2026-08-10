@@ -271,4 +271,4 @@ Write-Host ''
 
 Say "Starting Next.js dev server on port $Port ..."
 Set-Location (Join-Path $current 'web')
-& $npmCommand run dev -- -H 127.0.0.1 -p $Port
+& $npmCommand run dev -- -H localhost -p $Port
