@@ -99,13 +99,13 @@ function StepContent({
   draft,
   mode,
   updateSection,
-  onGoogleReadyChange,
+  onAiReadyChange,
 }: {
   step: number;
   draft: OnboardingDraft;
   mode: ReturnType<typeof useOnboarding>['mode'];
   updateSection: ReturnType<typeof useOnboarding>['updateSection'];
-  onGoogleReadyChange(ready: boolean): void;
+  onAiReadyChange(ready: boolean): void;
 }) {
   const preview = buildTrainingPreview(draft);
   const goals = Object.entries(goalLabels) as Array<[GoalId, string]>;
@@ -115,8 +115,8 @@ function StepContent({
     return <div className="onboarding-welcome">
       <span className="onboarding-mark">N</span>
       <h1>مربی شخصی NeoFit را متصل کن</h1>
-      <p>برای ساخت دوره واقعی، یک کلید معتبر Google AI Studio لازم است. کلید در پروفایل Onboarding ذخیره نمی‌شود و AvalAI فقط پشتیبان اختیاری است.</p>
-      <OnboardingAiGate mode={mode} onGoogleReadyChange={onGoogleReadyChange} />
+      <p>برای ساخت دوره واقعی، یک کلید معتبر AvalAI کافی است. Google اختیاری است؛ اگر آن را هم متصل کنی، درخواست‌های معمول ابتدا به Google می‌روند و AvalAI fallback باقی می‌ماند.</p>
+      <OnboardingAiGate mode={mode} onReadyChange={onAiReadyChange} />
       {draft.completedSteps.length ? <div className="onboarding-resume-note">پیشرفت قبلی پیدا شد؛ می‌توانی از مرحله {resume.toLocaleString('fa-IR')} ادامه بدهی.</div> : null}
       <div className="onboarding-boundary-note"><strong>حریم داده و ایمنی</strong><p>محدودیت پزشک، درد و آسیب همیشه بر ترجیح تمرین اولویت دارند. Raw API key وارد داده‌های self-report نمی‌شود.</p></div>
     </div>;
@@ -277,11 +277,11 @@ export function OnboardingScreen({ stepSlug }: { stepSlug: OnboardingStepSlug })
   const { draft, mode, saving, message, updateSection, saveStep, complete } = useOnboarding();
   const [errors, setErrors] = useState<string[]>([]);
   const [actionError, setActionError] = useState('');
-  const [googleReady, setGoogleReady] = useState(false);
+  const [aiReady, setAiReady] = useState(false);
   const errorsRef = useRef<HTMLDivElement>(null);
   const step = getOnboardingStep(stepSlug)!;
   const progress = Math.round((step.number / onboardingSteps.length) * 100);
-  const handleGoogleReadyChange = useCallback((ready: boolean) => setGoogleReady(ready), []);
+  const handleAiReadyChange = useCallback((ready: boolean) => setAiReady(ready), []);
 
   useEffect(() => {
     if (!errors.length) return;
@@ -291,7 +291,7 @@ export function OnboardingScreen({ stepSlug }: { stepSlug: OnboardingStepSlug })
 
   const next = async () => {
     const validation = validateOnboardingStep(draft, step.number);
-    if (step.number === 1 && mode === 'account' && !googleReady) validation.unshift('ابتدا کلید Google AI Studio معتبر را متصل کن.');
+    if (step.number === 1 && mode === 'account' && !aiReady) validation.unshift('برای ادامه یک کلید معتبر AvalAI را متصل کن. Google به‌تنهایی کافی نیست.');
     if (step.number === ONBOARDING_TOTAL_STEPS && draft.confirmation.startDate && draft.confirmation.startDate < localToday()) {
       validation.unshift('تاریخ شروع نمی‌تواند قبل از امروز باشد.');
     }
@@ -321,7 +321,7 @@ export function OnboardingScreen({ stepSlug }: { stepSlug: OnboardingStepSlug })
     <section className="onboarding-shell">
       <header className="onboarding-shell__header"><div><a href="/" className="onboarding-logo">NeoFit</a><p title={message}>{message}</p></div><span className={`onboarding-mode onboarding-mode--${mode}`}>{modeLabel}</span></header>
       <div className="onboarding-progress" aria-label={`مرحله ${step.number} از ${ONBOARDING_TOTAL_STEPS}`}><div><span>مرحله {step.number.toLocaleString('fa-IR')} از {ONBOARDING_TOTAL_STEPS.toLocaleString('fa-IR')}</span><strong>{step.label}</strong></div><div className="onboarding-progress__track" role="progressbar" aria-valuemin={1} aria-valuemax={ONBOARDING_TOTAL_STEPS} aria-valuenow={step.number}><span style={{ width: `${progress}%` }} /></div></div>
-      <div className="onboarding-content"><StepContent step={step.number} draft={draft} mode={mode} updateSection={updateSection} onGoogleReadyChange={handleGoogleReadyChange} />
+      <div className="onboarding-content"><StepContent step={step.number} draft={draft} mode={mode} updateSection={updateSection} onAiReadyChange={handleAiReadyChange} />
         {step.number === 1 && draft.completedSteps.length ? <button type="button" className="onboarding-resume-button" onClick={() => router.push(`/onboarding/${resume.slug}`)}>ادامه از «{resume.label}»</button> : null}
         {errors.length ? <div ref={errorsRef} className="onboarding-errors" role="alert" tabIndex={-1}><strong>برای ادامه این موارد را کامل کن:</strong><ul>{errors.map((error) => <li key={error}>{error}</li>)}</ul></div> : null}
         {actionError ? <p className="onboarding-action-error" role="alert" tabIndex={-1}>{actionError}</p> : null}
