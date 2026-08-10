@@ -10,9 +10,6 @@ The public journey is intentionally **13 focused steps**, not the earlier 15-cli
 
 ```text
 1  Coach / resilient AI credential gate
-   - AvalAI active => may continue
-   - Google active without AvalAI => may not continue
-   - Google + AvalAI => Google primary, AvalAI fallback
 2  Goal
 3  Basics
 4  Optional body measurements
@@ -44,8 +41,7 @@ Implemented:
 - validation summary receives focus and scrolls into view;
 - Review cards have direct Edit links;
 - long preference sets are grouped by task/domain;
-- AI key setup puts the required AvalAI path first and keeps Google AI Studio as an optional primary-provider enhancement;
-- Google key creation remains directly accessible from the gate with show/hide secret input;
+- AI key setup uses AvalAI as the required resilience credential and Google as optional primary;
 - no clipboard permission or Browser secret persistence;
 - Body Map shows one large front/back view at a time on mobile;
 - selected injury details collapse into accordions;
@@ -58,24 +54,47 @@ Rendered-device QA is still required on the next current Preview deployment. Sou
 
 Step 1 owns the prerequisite but not secret persistence.
 
-Resilience policy:
+Policy:
 
-- a real account requires an active **AvalAI** credential before advancing;
-- a valid AvalAI credential by itself is sufficient to advance;
-- a valid Google credential by itself is **not** sufficient to advance;
-- when both Google and AvalAI are active, Google remains the normal first provider and AvalAI remains fallback for allowed provider failures such as rate-limit/transient availability cases;
-- the existing provider router already supports AvalAI-only requests because it filters the configured provider priority down to credentials that are actually active;
-- Google-dependent capabilities such as the current YouTube-video path may still require Google later, but this does not block Onboarding completion.
+```text
+AvalAI active only     -> may advance; runtime can use AvalAI directly
+Google active only     -> may not advance; required resilience credential is missing
+Google + AvalAI active -> may advance; normal routing remains Google -> AvalAI fallback
+Guest                   -> explicit Demo boundary, no personal AI credential
+```
 
-Credential handling remains unchanged:
+Additional boundaries:
 
+- AvalAI is the required resilience credential for a real-account Onboarding completion;
+- Google is optional primary rather than an Onboarding blocker;
+- Google-specific capabilities such as the current YouTube-video path may still require Google when that capability is invoked;
 - `/api/ai/providers/*` + existing AES-GCM vault are reused;
 - validation is inference-free;
 - raw key exists only in temporary component state and is cleared after Save;
 - raw key never enters `OnboardingDraft`, persistent Browser storage, logs or analytics;
 - `/profile/ai` remains rotation/recovery management;
-- Guest remains an explicit Demo boundary;
 - historical `/onboarding/ai` and `/onboarding/ai/continue` duplicate routes were deleted.
+
+## Local/Preview runtime cache boundary
+
+PWA behavior must not make QA nondeterministic.
+
+Observed during live local QA: React reported a hydration mismatch where Server HTML still contained the previous Google-required copy while the Client bundle contained the new AvalAI-sufficient copy.
+
+Root cause was a stale non-production Service Worker path:
+
+- localhost is a secure context;
+- the old registrar installed `/sw.js` in development;
+- the worker used cache-first handling for `/_next/static/`;
+- changing commits/HMR could therefore combine stale client chunks with fresh server output.
+
+Current contract:
+
+- Service Worker registration is **production-only**;
+- Development and Preview unregister prior workers and clear NeoFit app-shell caches;
+- the worker itself detects `localhost`, `127.0.0.1` and `::1`, does not intercept fetches, clears NeoFit caches and unregisters itself;
+- Runtime Recovery CI gates this behavior;
+- after switching implementation commits during local QA, the dev process should be restarted and `.next` removed before the next proof pass.
 
 ## Self-report semantics
 
@@ -160,7 +179,7 @@ This closes the prior mobile failure mode where closing the browser before press
 
 ## Safe v1 compatibility
 
-Live inspection currently shows one hosted `user_onboarding` row at `schema_version=1,status=completed,current_step=15` and no v2 row.
+Live inspection currently shows one hosted `user_onboarding` row at `schema_version=1,status=completed,current_step=15` and no v2 row at the migration-time inspection boundary.
 
 Stage21 does not delete or silently trust that row.
 
@@ -203,7 +222,7 @@ Current live table remains owner-RLS protected:
 - authenticated users have explicit table privileges but all row access is owner-scoped by RLS;
 - UPDATE has SELECT + `USING` + `WITH CHECK` ownership coverage.
 
-The historical DB constraint permits `current_step` 1–15 to preserve the v1 row. The Stage21 hardening migration additionally requires schema v2 rows to remain within app steps 1–13 while leaving schema v1 step 15 valid.
+Hardening migration `20260810001227_harden_onboarding_v2_shape` additionally requires `draft.version == schema_version` and constrains schema-v2 rows to `current_step 1..13`, while preserving historical schema-v1 step 15.
 
 ## Nutrition authority
 
@@ -213,10 +232,10 @@ Shared Nutrition Core remains the only arithmetic authority. Later planners must
 
 ## CI contract
 
-`Onboarding v2 Lifecycle CI` is expected to prove at minimum:
+`Onboarding v2 Lifecycle CI` and `Runtime Recovery Gate CI` are expected to prove at minimum:
 
 1. focused 13-step journey and no passive analysis/result routes;
-2. step 1 resilient provider gate: AvalAI-only passes policy, Google-only does not, both preserve Google-first fallback routing;
+2. resilient Step 1 AI gate: AvalAI-only pass, Google-only block, both pass;
 3. no preselected personal self-report;
 4. conservative v1 migration + stable availability ids;
 5. exact 73-region Body Map plus mobile/list fallback contract;
@@ -227,27 +246,34 @@ Shared Nutrition Core remains the only arithmetic authority. Later planners must
 10. autosave + serialized writes + optimistic concurrency remain present;
 11. Review owns safety readiness and final screen only asks real course inputs;
 12. Ready is server-verified and user-facing rather than internal-stage copy;
-13. full Supabase app regression, AI provider regression, TypeScript and Next production build remain green.
+13. Development/Preview do not retain a Service Worker/app-shell cache capable of mixing stale Next chunks;
+14. full Supabase app regression, AI provider regression, TypeScript and Next production build remain green.
+
+Latest implementation proof for the hydration/PWA hardening is commit `72086965f0cca87cf3a30366a99e2e1997ca8c78`:
+
+- Onboarding v2 Lifecycle CI `31370699423`: SUCCESS;
+- Runtime Recovery Gate CI `31370699417`: SUCCESS.
 
 ## Runtime proof still required
 
 After latest code CI is green:
 
-- pull/restart local Stage21;
+- pull/restart local Stage21 from a clean `.next`;
+- verify old localhost Service Worker/app-shell state is removed;
 - verify mobile widths ~360/390/430px and desktop from rendered output;
-- real account -> validate **AvalAI only** and confirm step 1 can advance;
-- confirm **Google only** remains blocked until AvalAI is also active;
-- confirm Google + AvalAI shows Google as normal first provider and AvalAI as fallback;
+- real AI gate matrix: AvalAI-only advances, Google-only blocks, both advance;
 - interrupt a long step before Continue and verify autosave survives refresh;
 - open a second tab/device and verify stale revision is blocked rather than overwriting;
 - complete all 13 steps and verify v2 stable equipment/weekday ids in the hosted row;
 - verify start date/duration persist;
 - sign out/in and confirm root returns to the correct lifecycle state;
 - confirm `/ready` rejects an incomplete/v1 row;
-- run one latest stacked Preview deployment when quota permits and repeat mailbox/session/Service Worker proof.
+- run one latest stacked Preview deployment when quota permits and repeat mailbox/session/runtime proof.
 
 ## Next domain stage
 
 Stage22: `program_cycles` source of truth + state machine + idempotent generation-run contract + linkage to versioned Workout/Nutrition plans.
+
+Stage22 must consume parsed v2 and must not assume a Google credential exists merely because Onboarding completed.
 
 No autonomous write agent is enabled by Stage21.
