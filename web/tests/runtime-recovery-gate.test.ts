@@ -39,6 +39,7 @@ test('empty Nutrition day is a zero macro view, not a sparse-vector crash', asyn
 
 test('PWA registration is production-only and non-production clears stale workers/caches', async () => {
   const register = await source('components/pwa-register.tsx');
+  const worker = await source('public/sw.js');
   const layout = await source('app/layout.tsx');
   assert.match(register, /environment !== 'production'/);
   assert.match(register, /navigator\.serviceWorker\.getRegistrations\(\)/);
@@ -47,5 +48,11 @@ test('PWA registration is production-only and non-production clears stale worker
   assert.match(register, /window\.caches\.delete/);
   assert.match(register, /\.register\('\/sw\.js'/);
   assert.match(register, /mix stale Next\.js chunks with fresh server HTML/);
+  assert.match(worker, /LOCAL_DEVELOPMENT_HOSTS/);
+  assert.match(worker, /localhost/);
+  assert.match(worker, /IS_LOCAL_DEVELOPMENT/);
+  assert.match(worker, /self\.registration\.unregister\(\)/);
+  assert.match(worker, /clearNeoFitCaches\(\)/);
+  assert.match(worker, /if \(IS_LOCAL_DEVELOPMENT\) return;/);
   assert.match(layout, /<PwaRegister environment=\{deploymentEnvironment\}/);
 });
