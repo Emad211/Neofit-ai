@@ -5,7 +5,7 @@ import type { DeploymentEnvironment } from '@/lib/environment';
 
 const CACHE_PREFIX = 'neofit-app-shell-';
 
-async function clearPreviewPwaState() {
+async function clearNonProductionPwaState() {
   const registrations = await navigator.serviceWorker.getRegistrations();
   await Promise.all(registrations.map((registration) => registration.unregister()));
 
@@ -25,13 +25,15 @@ export function PwaRegister({ environment }: { environment: DeploymentEnvironmen
 
     let cancelled = false;
 
-    // Protected Vercel Preview URLs are not a stable PWA origin. A Service
-    // Worker update can be intercepted by Deployment Protection and older
-    // workers can keep stale app-shell/chunk caches alive. Preview is for live
-    // account QA, so actively remove any previous NeoFit worker/cache there.
-    if (environment === 'preview') {
-      void clearPreviewPwaState().catch((error) => {
-        if (!cancelled) console.warn('NeoFit Preview PWA cleanup failed.', error);
+    // Development and protected Preview are QA environments, not stable PWA
+    // origins. Dev chunks change continuously and Preview deployments can be
+    // protected or replaced. A cache-first worker in either environment can
+    // mix stale Next.js chunks with fresh server HTML and cause hydration
+    // mismatches. Keep PWA behavior production-only and actively remove any
+    // worker/app-shell cache left by an earlier build on these origins.
+    if (environment !== 'production') {
+      void clearNonProductionPwaState().catch((error) => {
+        if (!cancelled) console.warn('NeoFit non-production PWA cleanup failed.', error);
       });
       return () => { cancelled = true; };
     }
