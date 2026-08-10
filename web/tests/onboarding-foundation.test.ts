@@ -193,16 +193,23 @@ test('training preview only materializes from explicit availability and nutritio
   assert.doesNotMatch(model, /\b(calorieTarget|proteinGrams|carbohydrateGrams|fatGrams|\bbmr\b)\b/i);
 });
 
-test('AI key setup is mobile actionable without persisting raw secrets', async () => {
+test('AI key setup is mobile actionable and enforces the resilient provider policy without persisting raw secrets', async () => {
   const gate = await source('components/onboarding/onboarding-ai-gate.tsx');
   const screen = await source('components/onboarding/onboarding-screen.tsx');
+  const router = await source('lib/ai/provider-router.ts');
+  const config = await source('lib/ai/config.ts');
   assert.match(gate, /\/api\/ai\/providers/);
   assert.match(gate, /aistudio\.google\.com\/app\/apikey/);
   assert.match(gate, /SecretField/);
   assert.match(gate, /aria-pressed=\{revealed\}/);
-  assert.match(gate, /AvalAI/);
+  assert.match(gate, /const gateReady = mode === 'guest' \? true : avalaiReady/);
+  assert.match(gate, /Google به‌تنهایی شرط عبور نیست/);
+  assert.match(gate, /Google AI Studio — اختیاری/);
   assert.doesNotMatch(gate, /localStorage|sessionStorage/);
-  assert.match(screen, /mode === 'account'.*!googleReady/s);
+  assert.match(screen, /mode === 'account'.*!aiReady/s);
+  assert.match(screen, /Google به‌تنهایی کافی نیست/);
+  assert.match(config, /AI_PROVIDER_PRIORITY[^\n]*\['google', 'avalai'\]/);
+  assert.match(router, /const eligibleProviders = priority\.filter/);
   assert.doesNotMatch(await source('lib/onboarding/model.ts'), /apiKey|ciphertext|authTag/);
 });
 
