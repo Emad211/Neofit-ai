@@ -1,6 +1,8 @@
 const CACHE_PREFIX = 'neofit-app-shell-';
 const CACHE_VERSION = 'v4';
 const SHELL_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}`;
+const LOCAL_DEVELOPMENT_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
+const IS_LOCAL_DEVELOPMENT = LOCAL_DEVELOPMENT_HOSTS.has(self.location.hostname);
 const REQUIRED_DOCUMENTS = ['/offline'];
 const OPTIONAL_DOCUMENTS = [
   '/',
@@ -127,6 +129,15 @@ async function installAppShell() {
   }
 }
 
+async function clearNeoFitCaches() {
+  const keys = await caches.keys();
+  await Promise.all(
+    keys
+      .filter((key) => key.startsWith(CACHE_PREFIX))
+      .map((key) => caches.delete(key)),
+  );
+}
+
 async function cacheFirst(request) {
   const cached = await caches.match(request);
   if (cached) return cached;
@@ -165,10 +176,23 @@ async function navigationResponse(request) {
 }
 
 self.addEventListener('install', (event) => {
+  if (IS_LOCAL_DEVELOPMENT) {
+    event.waitUntil(self.skipWaiting());
+    return;
+  }
   event.waitUntil(installAppShell().then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {
+  if (IS_LOCAL_DEVELOPMENT) {
+    event.waitUntil(
+      clearNeoFitCaches()
+        .then(() => self.registration.unregister())
+        .then(() => self.clients.claim()),
+    );
+    return;
+  }
+
   event.waitUntil(
     caches
       .keys()
@@ -182,6 +206,8 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  if (IS_LOCAL_DEVELOPMENT) return;
+
   const request = event.request;
   const url = new URL(request.url);
   if (isSensitiveRequest(url, request)) return;
