@@ -45,15 +45,19 @@ test('injury body map retains exactly 73 unique front/back regions', () => {
   assert.ok(parts.some((part) => part.face === 'post'));
 });
 
-test('mobile injury map uses one-face navigation and collapsible detail cards', async () => {
+test('mobile injury map uses one-face navigation, collapsible details and a non-precision list fallback', async () => {
   const map = await source('components/onboarding/body-map/injury-body-map.tsx');
   const css = await source('app/onboarding/onboarding-mobile-polish.css');
+  const listCss = await source('app/onboarding/onboarding-body-map-list.css');
   assert.match(map, /onboarding-body-map__face-switch/);
   assert.match(map, /role="tablist"/);
+  assert.match(map, /onboarding-body-map__list-picker/);
+  assert.match(map, /<optgroup label="جلوی بدن"/);
   assert.match(map, /<details/);
   assert.match(css, /figure\.is-active/);
   assert.match(css, /59dvh/);
   assert.match(css, /safe-area-inset-bottom/);
+  assert.match(listCss, /min-block-size: 52px/);
 });
 
 test('empty v2 draft does not preselect self-report or future-only preferences', () => {
@@ -211,15 +215,31 @@ test('only one AI onboarding route exists and legacy duplicate route is deleted'
   await assert.rejects(() => source('app/onboarding/ai/continue/route.ts'));
 });
 
-test('account draft persistence uses optimistic concurrency instead of silent upsert overwrite', async () => {
+test('account draft persistence combines autosave, optimistic concurrency and serialized writes', async () => {
   const persistence = await source('lib/onboarding/persistence.ts');
   const context = await source('components/onboarding/onboarding-context.tsx');
   assert.match(persistence, /OnboardingConflictError/);
   assert.match(persistence, /\.eq\('updated_at', input\.expectedDatabaseUpdatedAt\)/);
   assert.match(persistence, /\.insert\(payload\)/);
   assert.doesNotMatch(persistence, /\.upsert\(\{\s*user_id: input\.userId/s);
-  assert.match(context, /databaseUpdatedAt/);
-  assert.match(context, /OnboardingConflictError/);
+  assert.match(context, /AUTOSAVE_DELAY_MS/);
+  assert.match(context, /parseOnboardingDraft\(draft\)/);
+  assert.match(context, /writeQueueRef/);
+  assert.match(context, /resumeStepNumber\(draft\)/);
+  assert.match(context, /databaseUpdatedAtRef/);
+});
+
+test('interactive provider is scoped to step routes and Ready verifies account state server-side', async () => {
+  const rootLayout = await source('app/onboarding/layout.tsx');
+  const stepLayout = await source('app/onboarding/[step]/layout.tsx');
+  const ready = await source('app/onboarding/ready/page.tsx');
+  assert.doesNotMatch(rootLayout, /OnboardingProvider/);
+  assert.match(stepLayout, /OnboardingProvider/);
+  assert.match(ready, /activeAuthSession\(supabase\)/);
+  assert.match(ready, /status,schema_version,draft/);
+  assert.match(ready, /parseOnboardingDraft/);
+  assert.match(ready, /status !== 'completed'/);
+  assert.doesNotMatch(ready, /Stage22|Stage24|read-only/);
 });
 
 test('review owns safety readiness and final onboarding asks only for real course inputs', async () => {
@@ -236,6 +256,8 @@ test('review owns safety readiness and final onboarding asks only for real cours
   assert.doesNotMatch(screen, /progressPhotoOptIn/);
   assert.doesNotMatch(screen, /<option value="imperial">/);
   assert.match(screen, /errorsRef\.current\?\.focus\(\)/);
+  assert.match(screen, /formatLocalDate\(new Date\(\)\)/);
+  assert.match(screen, /تاریخ شروع نمی‌تواند قبل از امروز باشد/);
 });
 
 test('lifecycle stops truthfully before planners exist', async () => {
