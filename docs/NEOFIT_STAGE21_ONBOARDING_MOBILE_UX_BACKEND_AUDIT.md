@@ -60,24 +60,17 @@ Resolution:
 - visible selected indicator on choice cards;
 - reduced-motion support.
 
-### 3. AI key prerequisite was brittle and Google-only
-
-Problem:
-
-- the gate originally required Google even though the backend router can operate with an active AvalAI credential alone;
-- Google-only onboarding created a resilience gap when Google hits usage/rate limits;
-- UI copy described AvalAI as merely optional fallback even when product policy needed it for resilient account onboarding.
+### 3. AI key prerequisite was not resilient enough
 
 Resolution:
 
-- AvalAI is now the actual account gate: one active AvalAI credential is sufficient to advance;
-- Google alone does not unlock Continue;
-- if both are active, the existing router keeps Google first and AvalAI as fallback;
-- AvalAI setup is presented first and Google AI Studio is an optional provider enhancement;
-- Google-dependent capabilities such as the current YouTube-video route may still require Google later without blocking Onboarding itself;
+- AvalAI is the required resilience credential for real-account Onboarding;
+- AvalAI-only can advance and is a valid runtime route;
+- Google-only cannot advance because it lacks the required fallback coverage;
+- Google remains optional primary; when both are active the router keeps `Google -> AvalAI` priority;
 - direct official Google AI Studio key entry remains available;
-- both providers use mobile-friendly secret fields with show/hide;
-- raw keys clear after successful Save;
+- mobile-friendly secret fields use show/hide;
+- keys clear after successful Save;
 - no clipboard permission;
 - raw keys remain ephemeral component state and never enter Onboarding JSON/browser persistence/logging.
 
@@ -143,6 +136,29 @@ Resolution:
 - legacy Persian values are mapped during v1 migration;
 - free-text custom equipment remains bounded separately;
 - schedule/shift notes are now captured.
+
+### 9. Local development could mix stale PWA chunks with fresh server HTML
+
+Observed rendered failure:
+
+- Server HTML still contained the previous Google-required Step 1 copy;
+- the Client bundle contained the new AvalAI-sufficient copy;
+- React correctly reported a hydration mismatch.
+
+Root cause:
+
+- localhost is a secure context;
+- the PWA registrar previously registered `/sw.js` in development;
+- the Service Worker used cache-first behavior for `/_next/static/` assets;
+- after Pull/HMR, stale Next chunks could therefore survive beside fresh server output.
+
+Resolution:
+
+- PWA registration is now production-only;
+- Development and Preview actively unregister prior workers and delete NeoFit app-shell caches;
+- `/sw.js` independently recognizes localhost/127.0.0.1/::1, skips fetch interception, clears NeoFit caches and unregisters itself;
+- Runtime Recovery CI now gates this behavior;
+- local QA should still restart the dev process and remove `.next` after switching implementation commits.
 
 ## Persistence / backend audit
 
@@ -236,12 +252,6 @@ Need exact-current candidate screenshots/interactions at approximately:
 
 Check keyboard opening, long Persian text, sticky footer, scroll/focus, Body Map, list fallback, Review and Ready.
 
-The AI gate runtime matrix must include:
-
-- AvalAI-only saves/tests and advances;
-- Google-only remains blocked;
-- Google + AvalAI advances and preserves Google-first fallback routing.
-
 ### P1 — field-addressable validation
 
 Current focused error summary is better but validation returns strings. Next UX polish should return stable field ids/error codes so:
@@ -265,17 +275,17 @@ Current NeoFit local-date helper uses the application default timezone (`Asia/Te
 
 ## Backend readiness for Stage22
 
-Stage21 is ready to hand off to Program Cycle when current CI + runtime proof are green because Stage22 can depend on:
+Stage21 is ready to hand off to Program Cycle when current runtime proof is complete because Stage22 can depend on:
 
 - one parsed v2 self-report contract;
-- a resilient provider prerequisite with AvalAI guaranteed for completed account onboarding;
-- Google-first routing when both credentials are active;
 - stable equipment/weekday ids;
 - explicit duration/start date;
 - hard safety inputs;
 - explicit generation consent;
 - owner-RLS draft storage;
 - concurrency-safe revision semantics;
+- at least one valid AvalAI credential at Onboarding completion;
+- optional Google primary with Google-first/AvalAI-fallback routing when present;
 - no AI secret inside the program input;
 - no Nutrition arithmetic claims inside Onboarding.
 
