@@ -76,6 +76,8 @@ export function InjuryBodyMap({ value, onChange }: { value: InjuryArea[]; onChan
   const anterior = useMemo(() => bodyParts.filter((part) => part.face === 'ant'), [bodyParts]);
   const posterior = useMemo(() => bodyParts.filter((part) => part.face === 'post'), [bodyParts]);
   const selected = useMemo(() => new Set(value.map((area) => area.key)), [value]);
+  const availableAnterior = useMemo(() => anterior.filter((part) => !selected.has(`${part.face}:${part.id}`)), [anterior, selected]);
+  const availablePosterior = useMemo(() => posterior.filter((part) => !selected.has(`${part.face}:${part.id}`)), [posterior, selected]);
   const anteriorCount = useMemo(() => value.filter((area) => area.face === 'ant').length, [value]);
   const posteriorCount = value.length - anteriorCount;
 
@@ -97,6 +99,7 @@ export function InjuryBodyMap({ value, onChange }: { value: InjuryArea[]; onChan
       notes: '',
     }]);
     setExpandedKey(key);
+    setActiveFace(part.face);
   };
 
   const update = (key: string, patch: Partial<InjuryArea>) => onChange(value.map((area) => area.key === key ? { ...area, ...patch } : area));
@@ -121,7 +124,28 @@ export function InjuryBodyMap({ value, onChange }: { value: InjuryArea[]; onChan
         <BodySvg parts={posterior} selected={selected} hovered={hovered} onHover={setHovered} onToggle={toggle} face="post" />
       </figure>
     </div>
-    <p className="onboarding-help">ناحیه را لمس کن تا انتخاب شود. برای حذف، همان ناحیه را دوباره لمس کن یا از فهرست پایین حذفش کن.</p>
+    <p className="onboarding-help">ناحیه را لمس کن تا انتخاب شود. اگر ناحیه کوچک است یا انتخاب دقیق سخت است، از فهرست جایگزین استفاده کن.</p>
+
+    <details className="onboarding-body-map__list-picker">
+      <summary>انتخاب ناحیه از فهرست</summary>
+      {availableAnterior.length || availablePosterior.length ? (
+        <label>ناحیه بدن
+          <select
+            value=""
+            onChange={(event) => {
+              const key = event.target.value;
+              if (!key) return;
+              const part = bodyParts.find((candidate) => `${candidate.face}:${candidate.id}` === key);
+              if (part) toggle(part);
+            }}
+          >
+            <option value="">ناحیه را انتخاب کن</option>
+            {availableAnterior.length ? <optgroup label="جلوی بدن">{availableAnterior.map((part) => <option key={`list:${part.face}:${part.id}`} value={`${part.face}:${part.id}`}>{persianBodyLabel(part.name)}</option>)}</optgroup> : null}
+            {availablePosterior.length ? <optgroup label="پشت بدن">{availablePosterior.map((part) => <option key={`list:${part.face}:${part.id}`} value={`${part.face}:${part.id}`}>{persianBodyLabel(part.name)}</option>)}</optgroup> : null}
+          </select>
+        </label>
+      ) : <p className="onboarding-help">همه ناحیه‌ها انتخاب شده‌اند.</p>}
+    </details>
 
     <div className="onboarding-selected-areas">
       <div className="onboarding-subheading">
@@ -148,8 +172,8 @@ export function InjuryBodyMap({ value, onChange }: { value: InjuryArea[]; onChan
               <label>وضعیت آسیب<select value={area.status} onChange={(event) => update(area.key, { status: event.target.value as InjuryArea['status'] })}><option value="current">الان درد یا محدودیت دارد</option><option value="past">آسیب قبلی و فعلاً کنترل‌شده</option></select></label>
               <label>شدت<select value={area.severity} onChange={(event) => update(area.key, { severity: event.target.value as InjuryArea['severity'] })}><option value="mild">خفیف</option><option value="moderate">متوسط</option><option value="severe">شدید</option></select></label>
             </div>
-            <label>حرکت‌های دردناک یا ممنوع<input value={area.forbiddenMovements} onChange={(event) => update(area.key, { forbiddenMovements: event.target.value })} placeholder="مثلاً اسکوات عمیق یا پرس بالای سر" /></label>
-            <label>توضیح تکمیلی<textarea value={area.notes} onChange={(event) => update(area.key, { notes: event.target.value })} placeholder="تشخیص قبلی، فیزیوتراپی یا شرایط تشدید درد" /></label>
+            <label>حرکت‌های دردناک یا ممنوع<input maxLength={700} value={area.forbiddenMovements} onChange={(event) => update(area.key, { forbiddenMovements: event.target.value })} placeholder="مثلاً اسکوات عمیق یا پرس بالای سر" /></label>
+            <label>توضیح تکمیلی<textarea maxLength={2000} value={area.notes} onChange={(event) => update(area.key, { notes: event.target.value })} placeholder="تشخیص قبلی، فیزیوتراپی یا شرایط تشدید درد" /></label>
             <button type="button" className="onboarding-area-card__remove" onClick={() => {
               onChange(value.filter((item) => item.key !== area.key));
               if (expandedKey === area.key) setExpandedKey(null);
