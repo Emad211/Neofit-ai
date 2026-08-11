@@ -49,7 +49,7 @@ test('provider adapters keep API keys in headers and never query-string credenti
 
 test('credential table is encrypted, owner-RLS protected and explicitly granted', async () => {
   const migration = await readFile(
-    resolve(repoRoot, 'supabase/migrations/20260808160000_encrypted_provider_credentials.sql'),
+    resolve(repoRoot, 'supabase/migrations/20260808123040_encrypted_provider_credentials.sql'),
     'utf8',
   );
   assert.match(migration, /encrypted_provider_credentials/);
