@@ -200,7 +200,9 @@ test('Program generation claims the cycle before spending two bounded planner re
   assert.equal((planners.match(/generateWithProviderFallback\(/g) ?? []).length, 2);
   assert.match(planners, /safeExercisesForProgram/);
   assert.match(planners, /eligibleFoodsForProgram/);
-  assert.ok(actions.indexOf("p_target_status: 'generating'") < actions.indexOf('generateProgramPlannerSelections'));
+  const transitionIndex = actions.indexOf("p_target_status: 'generating'");
+  const plannerCallIndex = actions.indexOf('const selections = await generateProgramPlannerSelections(draft);');
+  assert.ok(transitionIndex >= 0 && plannerCallIndex >= 0 && transitionIndex < plannerCallIndex);
   assert.match(actions, /materializeProgramPlans\(draft, selections\)/);
   assert.match(actions, /finalize_program_cycle_generation/);
   assert.match(actions, /activate_program_cycle_plans/);
