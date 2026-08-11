@@ -164,10 +164,17 @@ test('materializer fails closed for allergy and clinical nutrition review', () =
     (error) => error instanceof ProgramMaterializationError && error.code === 'allergy_review_required',
   );
 
-  const clinicalDraft = completeDraft();
-  clinicalDraft.medical.hasDiabetes = true;
+  const diabetesDraft = completeDraft();
+  diabetesDraft.medical.hasDiabetes = true;
   assert.throws(
-    () => eligibleFoodsForProgram(clinicalDraft),
+    () => eligibleFoodsForProgram(diabetesDraft),
+    (error) => error instanceof ProgramMaterializationError && error.code === 'nutrition_clinical_review_required',
+  );
+
+  const bloodPressureDraft = completeDraft();
+  bloodPressureDraft.medical.hasHighBloodPressure = true;
+  assert.throws(
+    () => eligibleFoodsForProgram(bloodPressureDraft),
     (error) => error instanceof ProgramMaterializationError && error.code === 'nutrition_clinical_review_required',
   );
 });
@@ -190,19 +197,23 @@ test('Stage 24 migration finalizes and activates both plan versions atomically',
   assert.match(migration, /security invoker/);
 });
 
-test('Program generation claims the cycle before spending two bounded planner requests', async () => {
+test('Program generation claims the cycle before spending two bounded planner requests and can recover a stale attempt', async () => {
   const page = await readFile(resolve(webRoot, 'app/(main)/program/page.tsx'), 'utf8');
   const actions = await readFile(resolve(webRoot, 'app/(main)/program/actions.ts'), 'utf8');
   const planners = await readFile(resolve(webRoot, 'lib/program-generation/planners.ts'), 'utf8');
 
   assert.match(page, /ساخت برنامهٔ تمرین و تغذیه/);
   assert.match(page, /فعال‌سازی برنامه/);
+  assert.match(page, /آزادسازی تلاش متوقف‌شده/);
   assert.equal((planners.match(/generateWithProviderFallback\(/g) ?? []).length, 2);
+  assert.match(planners, /plannerPreflight/);
   assert.match(planners, /safeExercisesForProgram/);
   assert.match(planners, /eligibleFoodsForProgram/);
   const transitionIndex = actions.indexOf("p_target_status: 'generating'");
   const plannerCallIndex = actions.indexOf('const selections = await generateProgramPlannerSelections(draft);');
   assert.ok(transitionIndex >= 0 && plannerCallIndex >= 0 && transitionIndex < plannerCallIndex);
+  assert.match(actions, /GENERATION_STALE_MS = 5 \* 60_000/);
+  assert.match(actions, /generation_stale_recovered/);
   assert.match(actions, /materializeProgramPlans\(draft, selections\)/);
   assert.match(actions, /finalize_program_cycle_generation/);
   assert.match(actions, /activate_program_cycle_plans/);
