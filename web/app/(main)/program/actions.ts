@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { activeAuthSession } from '@/lib/auth/active-session';
 import { parseOnboardingDraft } from '@/lib/onboarding/model';
 import { materializeProgramPlans, ProgramMaterializationError } from '@/lib/program-generation/materializer';
+import { generateProgramPlannerSelections, ProgramPlannerError } from '@/lib/program-generation/planners';
 import { createClient } from '@/lib/supabase/server';
 
 function text(formData: FormData, key: string): string {
@@ -18,7 +19,7 @@ function revisionValue(value: string): number | null {
 }
 
 function generationErrorCode(error: unknown): string {
-  if (error instanceof ProgramMaterializationError) return error.code;
+  if (error instanceof ProgramMaterializationError || error instanceof ProgramPlannerError) return error.code;
   return 'generation_failed';
 }
 
@@ -49,13 +50,8 @@ export async function generateProgramCycle(formData: FormData): Promise<void> {
     redirect('/program?error=stale_or_incomplete');
   }
 
-  let plans;
-  try {
-    plans = materializeProgramPlans(draft);
-  } catch (error) {
-    redirect(`/program?error=${encodeURIComponent(generationErrorCode(error))}`);
-  }
-
+  // Claim the generation revision before spending provider budget. A concurrent
+  // request must lose the revision race before either planner is invoked.
   const transition = await supabase.rpc('transition_program_cycle', {
     p_cycle_id: cycle.id,
     p_expected_revision: cycle.revision,
@@ -63,6 +59,21 @@ export async function generateProgramCycle(formData: FormData): Promise<void> {
   });
   const generating = transition.data?.[0];
   if (transition.error || !generating) redirect('/program?error=generation_start_failed');
+
+  let plans;
+  try {
+    const selections = await generateProgramPlannerSelections(draft);
+    plans = materializeProgramPlans(draft, selections);
+  } catch (error) {
+    const failureCode = generationErrorCode(error);
+    await supabase.rpc('transition_program_cycle', {
+      p_cycle_id: cycle.id,
+      p_expected_revision: generating.cycle_revision,
+      p_target_status: 'failed',
+      p_failure_code: failureCode,
+    });
+    redirect(`/program?error=${encodeURIComponent(failureCode)}`);
+  }
 
   const finalized = await supabase.rpc('finalize_program_cycle_generation', {
     p_cycle_id: cycle.id,

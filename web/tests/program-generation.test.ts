@@ -6,8 +6,19 @@ import { fileURLToPath } from 'node:url';
 import { EXERCISES, evaluateExerciseSafety } from '@neofit/exercise-registry';
 import { foodFixtures } from '@/data/fixtures';
 import { safetyProfileFromOnboarding } from '@/lib/exercise-registry/onboarding-safety';
-import { createEmptyOnboardingDraft } from '@/lib/onboarding/model';
-import { materializeProgramPlans, ProgramMaterializationError } from '@/lib/program-generation/materializer';
+import { createEmptyOnboardingDraft, type OnboardingDraft } from '@/lib/onboarding/model';
+import {
+  eligibleFoodsForProgram,
+  exercisesPerDayForProgram,
+  materializeProgramPlans,
+  ProgramMaterializationError,
+  safeExercisesForProgram,
+} from '@/lib/program-generation/materializer';
+import {
+  parseNutritionPlannerOutput,
+  parseTrainingPlannerOutput,
+  type ProgramPlannerSelections,
+} from '@/lib/program-generation/planner-contract';
 import { parseNutritionPlanDocument, resolveNutritionPlanDocument } from '@/lib/nutrition-plan-core';
 import { parseWorkoutPlanDocument } from '@/lib/workout-plan-core';
 
@@ -17,6 +28,7 @@ const repoRoot = resolve(webRoot, '..');
 function completeDraft() {
   const draft = createEmptyOnboardingDraft();
   draft.goal.primaryGoal = 'fitness';
+  draft.goal.targetTimeline = 'balanced';
   draft.basics.age = 31;
   draft.basics.gender = 'male';
   draft.basics.heightCm = 178;
@@ -61,9 +73,33 @@ function completeDraft() {
   return draft;
 }
 
-test('materializer creates registry-safe workout and catalog-resolvable nutrition plans', () => {
+function validSelections(draft: OnboardingDraft): ProgramPlannerSelections {
+  const exercises = safeExercisesForProgram(draft);
+  const exerciseCount = Math.min(exercisesPerDayForProgram(draft), exercises.length);
+  const trainingDays = draft.availability.daysPerWeek!;
+  const training = {
+    days: Array.from({ length: trainingDays }, (_, dayIndex) => {
+      const rotated = [...exercises.slice(dayIndex), ...exercises.slice(0, dayIndex)];
+      return rotated.slice(0, exerciseCount).map((exercise) => exercise.id);
+    }),
+  };
+
+  const foods = eligibleFoodsForProgram(draft);
+  const mealsPerDay = draft.nutrition.mealsPerDay!;
+  const nutrition = {
+    days: Array.from({ length: 7 }, (_, dayIndex) => (
+      Array.from({ length: mealsPerDay }, (_, mealIndex) => [{
+        id: foods[(dayIndex + mealIndex) % foods.length]!.id,
+        portion: 1,
+      }])
+    )),
+  };
+  return { training, nutrition };
+}
+
+test('materializer creates registry-safe workout and catalog-resolvable nutrition plans from bounded planner selections', () => {
   const draft = completeDraft();
-  const result = materializeProgramPlans(draft);
+  const result = materializeProgramPlans(draft, validSelections(draft));
   const workout = parseWorkoutPlanDocument(result.workoutPlan);
   const nutrition = parseNutritionPlanDocument(result.nutritionPlan);
 
@@ -90,12 +126,49 @@ test('materializer creates registry-safe workout and catalog-resolvable nutritio
   }
 });
 
-test('materializer fails closed when allergen metadata cannot prove a safe plan', () => {
+test('planner contracts reject invented identities and unbounded portions', () => {
   const draft = completeDraft();
-  draft.nutrition.allergies = ['بادام زمینی'];
+  const exercises = safeExercisesForProgram(draft);
+  const allowedExercises = new Set(exercises.map((exercise) => exercise.id));
+  const exerciseCount = Math.min(exercisesPerDayForProgram(draft), exercises.length);
+  const validExerciseIds = exercises.slice(0, exerciseCount).map((exercise) => exercise.id);
+  const trainingJson = JSON.stringify({ days: Array.from({ length: 4 }, () => validExerciseIds) });
+  assert.equal(parseTrainingPlannerOutput(trainingJson, {
+    expectedDays: 4,
+    exercisesPerDay: exerciseCount,
+    allowedIds: allowedExercises,
+  }).days.length, 4);
+  assert.throws(() => parseTrainingPlannerOutput(
+    JSON.stringify({ days: Array.from({ length: 4 }, () => [...validExerciseIds.slice(0, -1), 'invented-id']) }),
+    { expectedDays: 4, exercisesPerDay: exerciseCount, allowedIds: allowedExercises },
+  ));
+
+  const foods = eligibleFoodsForProgram(draft);
+  const allowedFoods = new Set(foods.map((food) => food.id));
+  const validMeal = [{ id: foods[0]!.id, portion: 1 }];
+  assert.equal(parseNutritionPlannerOutput(
+    JSON.stringify({ days: Array.from({ length: 7 }, () => Array.from({ length: 3 }, () => validMeal)) }),
+    { expectedDays: 7, mealsPerDay: 3, allowedIds: allowedFoods },
+  ).days.length, 7);
+  assert.throws(() => parseNutritionPlannerOutput(
+    JSON.stringify({ days: Array.from({ length: 7 }, () => Array.from({ length: 3 }, () => [{ id: foods[0]!.id, portion: 3.25 }])) }),
+    { expectedDays: 7, mealsPerDay: 3, allowedIds: allowedFoods },
+  ));
+});
+
+test('materializer fails closed for allergy and clinical nutrition review', () => {
+  const allergyDraft = completeDraft();
+  allergyDraft.nutrition.allergies = ['بادام زمینی'];
   assert.throws(
-    () => materializeProgramPlans(draft),
+    () => eligibleFoodsForProgram(allergyDraft),
     (error) => error instanceof ProgramMaterializationError && error.code === 'allergy_review_required',
+  );
+
+  const clinicalDraft = completeDraft();
+  clinicalDraft.medical.hasDiabetes = true;
+  assert.throws(
+    () => eligibleFoodsForProgram(clinicalDraft),
+    (error) => error instanceof ProgramMaterializationError && error.code === 'nutrition_clinical_review_required',
   );
 });
 
@@ -117,12 +190,18 @@ test('Stage 24 migration finalizes and activates both plan versions atomically',
   assert.match(migration, /security invoker/);
 });
 
-test('Program UI exposes generation, review and activation actions', async () => {
+test('Program generation claims the cycle before spending two bounded planner requests', async () => {
   const page = await readFile(resolve(webRoot, 'app/(main)/program/page.tsx'), 'utf8');
   const actions = await readFile(resolve(webRoot, 'app/(main)/program/actions.ts'), 'utf8');
+  const planners = await readFile(resolve(webRoot, 'lib/program-generation/planners.ts'), 'utf8');
+
   assert.match(page, /ساخت برنامهٔ تمرین و تغذیه/);
   assert.match(page, /فعال‌سازی برنامه/);
-  assert.match(actions, /materializeProgramPlans/);
+  assert.equal((planners.match(/generateWithProviderFallback\(/g) ?? []).length, 2);
+  assert.match(planners, /safeExercisesForProgram/);
+  assert.match(planners, /eligibleFoodsForProgram/);
+  assert.ok(actions.indexOf("p_target_status: 'generating'") < actions.indexOf('generateProgramPlannerSelections'));
+  assert.match(actions, /materializeProgramPlans\(draft, selections\)/);
   assert.match(actions, /finalize_program_cycle_generation/);
   assert.match(actions, /activate_program_cycle_plans/);
 });
