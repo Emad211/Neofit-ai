@@ -15,7 +15,7 @@ const navigation: readonly { href: string; label: string; icon: NeoFitIconName }
 ];
 
 function pageTitle(pathname: string, displayName: string | null): string {
-  if (pathname.startsWith('/program')) return 'چرخهٔ دوره';
+  if (pathname.startsWith('/program')) return 'برنامه من';
   if (pathname.startsWith('/nutrition/plan')) return 'برنامهٔ غذایی';
   if (pathname.startsWith('/nutrition')) return 'تغذیه';
   if (pathname.startsWith('/workout')) return 'تمرین';
@@ -50,20 +50,18 @@ export function AppShell({ children }: { children: ReactNode }) {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [pathname]);
 
+  const showStatus = !online || Boolean(loadError) || !account;
   const statusClass = !online || loadError ? 'offline-note' : 'offline-note offline-note--trusted';
-  let statusText: ReactNode;
+  let statusText: ReactNode = null;
+
   if (!online) {
-    statusText = account
-      ? 'آفلاین هستی؛ داده‌های حساب هنگام اتصال دوباره خوانده می‌شوند.'
-      : 'آفلاین هستی؛ داده‌های مهمان همین مرورگر همچنان در دسترس‌اند.';
+    statusText = 'اتصال اینترنت قطع است. بعضی تغییرات تا زمان اتصال دوباره ذخیره نمی‌شوند.';
   } else if (loadError) {
-    statusText = loadError;
-  } else if (account) {
-    statusText = 'حساب متصل است؛ هر بخش فقط داده‌های موردنیاز خودش را می‌خواند.';
-  } else if (configured) {
-    statusText = <><span>حالت مهمان فعال است.</span> <Link href="/auth">ورود برای ذخیره در حساب</Link></>;
-  } else {
-    statusText = 'حالت Preview محلی؛ اتصال حساب برای این محیط تنظیم نشده است.';
+    statusText = 'بخشی از اطلاعات حساب در دسترس نیست. صفحه را دوباره بارگذاری کن.';
+  } else if (!account && configured) {
+    statusText = <><span>برای ذخیره اطلاعات و دریافت برنامه شخصی وارد حساب شو.</span> <Link href="/auth">ورود یا ساخت حساب</Link></>;
+  } else if (!account) {
+    statusText = 'ورود به حساب در این محیط در دسترس نیست.';
   }
 
   return (
@@ -78,16 +76,18 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Link
           className="avatar-button avatar-link"
           href="/profile"
-          aria-label={account ? `پروفایل ${account.displayName}` : 'پروفایل مهمان'}
+          aria-label={account ? `پروفایل ${account.displayName}` : 'پروفایل'}
         >
           {accountInitial(account?.displayName ?? null, account?.email ?? null)}
         </Link>
       </header>
 
-      <div className={statusClass} role="status" data-account-state={account ? 'authenticated' : 'guest'}>
-        <NeoFitIcon name={!online || loadError ? 'offline' : 'check'} size={17} />
-        <span>{statusText}</span>
-      </div>
+      {showStatus ? (
+        <div className={statusClass} role="status" data-account-state={account ? 'authenticated' : 'guest'}>
+          <NeoFitIcon name={!online || loadError ? 'offline' : 'profile'} size={17} />
+          <span>{statusText}</span>
+        </div>
+      ) : null}
 
       <div className="screen-content" id="screen-content" tabIndex={-1}>{children}</div>
 
