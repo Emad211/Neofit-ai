@@ -27,7 +27,6 @@ create table public.workout_sessions (
   constraint workout_sessions_user_mutation_unique unique (user_id, client_mutation_id),
   constraint workout_sessions_id_user_unique unique (id, user_id)
 );
-
 create index workout_sessions_user_started_idx on public.workout_sessions (user_id, started_at desc);
 create index workout_sessions_user_status_idx on public.workout_sessions (user_id, status, started_at desc);
 
@@ -56,7 +55,6 @@ create table public.workout_sets (
   constraint workout_sets_completion_valid check ((completed_at is null and reps is null and weight_kg is null) or (completed_at is not null and reps is not null and weight_kg is not null)),
   constraint workout_sets_session_order_unique unique (session_id, exercise_order, set_order)
 );
-
 create index workout_sets_user_session_idx on public.workout_sets (user_id, session_id, exercise_order, set_order);
 create index workout_sets_user_exercise_idx on public.workout_sets (user_id, exercise_id, completed_at desc) where completed_at is not null;
 
@@ -85,4 +83,4 @@ create policy "workout_sets_update_own" on public.workout_sets for update to aut
 create policy "workout_sets_delete_own" on public.workout_sets for delete to authenticated using ((select auth.uid()) = user_id);
 
 comment on table public.workout_sessions is 'User-owned workout session summaries. Exercise/set detail lives in workout_sets; SQL performs no training arithmetic.';
-comment on table public.workout_sets is 'User-owned set-level workout log rows linked to the owning workout session by a composite owner foreign key.';
+comment on table public.workout_sets is 'User-owned set-level workout log rows linked to the owning workout session by a composite owner foreign key.';;

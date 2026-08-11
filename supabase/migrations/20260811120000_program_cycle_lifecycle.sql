@@ -292,3 +292,4 @@ revoke all on function public.transition_program_cycle(uuid,integer,text,text) f
 grant execute on function public.transition_program_cycle(uuid,integer,text,text) to authenticated;
 
 comment on table public.program_cycles is 'User-owned course lifecycle and plan-version linkage. Stores hashes/provenance only, never raw prompts, provider secrets or duplicated health narratives.';
+;

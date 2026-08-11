@@ -189,4 +189,4 @@ grant execute on function public.complete_ai_request(uuid, text, text, text, tex
 
 comment on table public.ai_request_audit is 'Metadata-only AI request audit. Never stores prompts, model output text, raw provider payloads, or API keys.';
 comment on function public.reserve_ai_request(text, integer, integer) is 'Atomically reserves a user AI request and enforces burst/hourly request budgets using auth.uid().';
-comment on function public.complete_ai_request(uuid, text, text, text, text, integer, integer, integer, integer, integer, integer, integer, integer, text) is 'Completes metadata for an already-reserved AI request owned by auth.uid().';
+comment on function public.complete_ai_request(uuid, text, text, text, text, integer, integer, integer, integer, integer, integer, integer, integer, text) is 'Completes metadata for an already-reserved AI request owned by auth.uid().';;

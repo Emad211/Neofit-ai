@@ -77,4 +77,4 @@ begin
   set status = 'active', activated_at = coalesce(activated_at, now()), archived_at = null
   where id = p_plan_id and user_id = v_uid;
 end;
-$$;
+$$;;

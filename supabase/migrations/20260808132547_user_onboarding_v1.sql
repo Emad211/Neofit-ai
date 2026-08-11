@@ -46,4 +46,4 @@ on public.user_onboarding for delete to authenticated
 using ((select auth.uid()) = user_id);
 
 comment on table public.user_onboarding is
-  'Versioned user-owned onboarding draft including goals, medical constraints, injury body-map selections, lifestyle, availability and coaching preferences.';
+  'Versioned user-owned onboarding draft including goals, medical constraints, injury body-map selections, lifestyle, availability and coaching preferences.';;
