@@ -15,13 +15,13 @@ export const PROGRAM_CYCLE_STATUSES = [
 export type ProgramCycleStatus = (typeof PROGRAM_CYCLE_STATUSES)[number];
 
 const STATUS_LABELS: Readonly<Record<ProgramCycleStatus, string>> = {
-  draft: 'پیش‌نویس چرخه',
-  generating: 'در حال آماده‌سازی',
-  ready: 'آمادهٔ بررسی',
-  failed: 'نیازمند تلاش دوباره',
+  draft: 'آمادهٔ ساخت',
+  generating: 'در حال ساخت',
+  ready: 'آمادهٔ فعال‌سازی',
+  failed: 'نیاز به بررسی',
   active: 'فعال',
-  paused: 'متوقف‌شده',
-  completed: 'تکمیل‌شده',
+  paused: 'متوقف',
+  completed: 'تمام‌شده',
 };
 
 export function parseProgramCycleStatus(value: unknown): ProgramCycleStatus | null {
