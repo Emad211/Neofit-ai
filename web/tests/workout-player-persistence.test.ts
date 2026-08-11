@@ -41,7 +41,7 @@ test('guest active-session parser is versioned and fails closed', () => {
 });
 
 test('workout schema has own-row RLS and composite parent ownership', async () => {
-  const migration = await readFile(resolve(repoRoot, 'supabase/migrations/20260808170000_workout_session_persistence.sql'), 'utf8');
+  const migration = await readFile(resolve(repoRoot, 'supabase/migrations/20260808125128_workout_session_persistence.sql'), 'utf8');
   assert.match(migration, /workout_sessions/);
   assert.match(migration, /workout_sets/);
   assert.match(migration, /foreign key \(session_id, user_id\).*workout_sessions \(id, user_id\)/s);
