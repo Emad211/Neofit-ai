@@ -8,6 +8,8 @@ import { materializeProgramPlans, ProgramMaterializationError } from '@/lib/prog
 import { generateProgramPlannerSelections, ProgramPlannerError } from '@/lib/program-generation/planners';
 import { createClient } from '@/lib/supabase/server';
 
+const GENERATION_STALE_MS = 5 * 60_000;
+
 function text(formData: FormData, key: string): string {
   const value = formData.get(key);
   return typeof value === 'string' ? value.trim() : '';
@@ -95,6 +97,42 @@ export async function generateProgramCycle(formData: FormData): Promise<void> {
 
   revalidatePath('/program');
   redirect('/program?message=plans-ready');
+}
+
+export async function recoverProgramCycleGeneration(formData: FormData): Promise<void> {
+  const cycleId = text(formData, 'cycleId');
+  const expectedRevision = revisionValue(text(formData, 'revision'));
+  if (!cycleId || expectedRevision === null) redirect('/program?error=invalid_request');
+
+  const supabase = await createClient();
+  const active = await activeAuthSession(supabase);
+  if (!active) redirect('/auth');
+
+  const { data: cycle, error } = await supabase
+    .from('program_cycles')
+    .select('id,status,revision,updated_at')
+    .eq('id', cycleId)
+    .eq('user_id', active.userId)
+    .maybeSingle();
+  if (error || !cycle || cycle.status !== 'generating' || cycle.revision !== expectedRevision) {
+    redirect('/program?error=stale_or_incomplete');
+  }
+
+  const updatedAt = Date.parse(cycle.updated_at);
+  if (!Number.isFinite(updatedAt) || Date.now() - updatedAt < GENERATION_STALE_MS) {
+    redirect('/program?error=generation_still_running');
+  }
+
+  const result = await supabase.rpc('transition_program_cycle', {
+    p_cycle_id: cycle.id,
+    p_expected_revision: cycle.revision,
+    p_target_status: 'failed',
+    p_failure_code: 'generation_stale_recovered',
+  });
+  if (result.error || !result.data?.[0]) redirect('/program?error=generation_recovery_failed');
+
+  revalidatePath('/program');
+  redirect('/program?message=generation-recovered');
 }
 
 export async function activateProgramCycle(formData: FormData): Promise<void> {
