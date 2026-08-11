@@ -153,3 +153,16 @@ test('repo contains scanner-safe confirmation and recovery templates', async () 
   assert.match(recovery, /type=recovery/);
   assert.match(recovery, /next=\/auth\/update-password/);
 });
+
+test('hosted root never silently falls back to Guest when Supabase public env is missing', async () => {
+  const home = await source('app/page.tsx');
+  const envGuard = home.indexOf('if (!hasSupabasePublicEnv())');
+  const hostedGuard = home.indexOf("deploymentEnvironment === 'preview' || deploymentEnvironment === 'production'");
+  const authRedirect = home.indexOf("redirect('/auth?error=config')");
+  const guestRedirect = home.indexOf("redirect('/today')");
+
+  assert.ok(envGuard >= 0, 'root must explicitly guard missing Supabase public configuration');
+  assert.ok(hostedGuard > envGuard, 'hosted environment check must happen inside the missing-config guard');
+  assert.ok(authRedirect > hostedGuard, 'hosted missing configuration must redirect to Auth');
+  assert.ok(guestRedirect > authRedirect, 'Guest fallback must remain development-only after hosted fail-closed logic');
+});
