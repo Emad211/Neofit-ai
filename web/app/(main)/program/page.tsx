@@ -12,9 +12,14 @@ const ERROR_MESSAGES: Readonly<Record<string, string>> = {
   invalid_request: 'درخواست معتبر نبود. صفحه را تازه کن و دوباره تلاش کن.',
   stale_or_incomplete: 'اطلاعات دوره تغییر کرده یا کامل نیست. صفحه را تازه کن و ورودی‌ها را مرور کن.',
   clinical_review_required: 'به‌دلیل محدودیت یا درد گزارش‌شده، تولید خودکار تمرین متوقف شد و نیاز به بررسی انسانی دارد.',
+  nutrition_clinical_review_required: 'به‌دلیل اطلاعات پزشکی یا دارویی ثبت‌شده، تولید خودکار برنامه غذایی متوقف شد و نیاز به بررسی تخصصی دارد.',
   allergy_review_required: 'برای حسابی که آلرژی غذایی ثبت کرده، تا تکمیل دادهٔ آلرژن کاتالوگ برنامهٔ خودکار ساخته نمی‌شود.',
   diet_catalog_unsupported: 'کاتالوگ فعلی هنوز پوشش ایمن کافی برای الگوی غذایی انتخاب‌شده ندارد.',
   insufficient_safe_exercises: 'با تجهیزات و محدودیت‌های فعلی، حرکت ایمن کافی در رجیستری پیدا نشد.',
+  insufficient_catalog_foods: 'پس از اعمال محدودیت‌های غذایی، غذای معتبر کافی در کاتالوگ باقی نماند.',
+  planner_unavailable: 'Planner هوشمند در دسترس نیست. اتصال AI حساب را بررسی کن و دوباره تلاش کن.',
+  planner_invalid_output: 'خروجی Planner قرارداد معتبر NeoFit را پاس نکرد؛ هیچ برنامه‌ای ذخیره یا فعال نشد.',
+  planner_selection_invalid: 'انتخاب‌های Planner بعد از اعتبارسنجی ایمنی یا کاتالوگ معتبر نبود؛ هیچ برنامه‌ای ذخیره نشد.',
   generation_start_failed: 'شروع ساخت برنامه ثبت نشد. دوباره تلاش کن.',
   generation_persist_failed: 'ساخت برنامه کامل نشد و هیچ برنامهٔ ناقصی فعال نشده است.',
   activation_failed: 'فعال‌سازی اتمیک دو برنامه انجام نشد؛ نسخه‌های قبلی دست‌نخورده باقی ماندند.',
@@ -78,7 +83,7 @@ export default async function ProgramPage({
 
       {cycle.status === 'generating' ? (
         <article className="program-cycle-command" aria-live="polite">
-          <div><p className="section-kicker">در حال ساخت</p><h3>دو برنامه در یک تراکنش آماده می‌شوند</h3><p>صفحه را تازه کن. تا وقتی هر دو خروجی معتبر نباشند، چیزی فعال نخواهد شد.</p></div>
+          <div><p className="section-kicker">در حال ساخت</p><h3>Planner تمرین و تغذیه در حال پردازش‌اند</h3><p>فقط وقتی هر دو خروجی اعتبارسنجی شوند، دو نسخهٔ پیش‌نویس با هم در پایگاه داده ثبت می‌شوند.</p></div>
         </article>
       ) : null}
 
