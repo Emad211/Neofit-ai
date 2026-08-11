@@ -111,7 +111,7 @@ jobs:
           grep -q 'OnboardingConflictError' web/lib/onboarding/persistence.ts
           grep -q 'activeAuthSession(supabase)' web/app/onboarding/ready/page.tsx
           grep -q "google: 'gemini-3.5-flash-lite'" web/lib/ai/config.ts
-          grep -q "avalai: 'gemini-flash-latest'" web/lib/ai/config.ts
+          grep -q "avalai: 'gemini-flash-lite-latest'" web/lib/ai/config.ts
           ! grep -q '/onboarding/ai' web/app/page.tsx
           ! grep -Eq 'localStorage|sessionStorage' web/components/onboarding/onboarding-ai-gate.tsx
           grep -q 'Nutrition Core' web/lib/onboarding/model.ts
