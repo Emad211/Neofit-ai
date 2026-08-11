@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { activeAuthSession } from '@/lib/auth/active-session';
+import { deploymentEnvironment } from '@/lib/environment';
 import { ONBOARDING_SCHEMA_VERSION } from '@/lib/onboarding/model';
 import { hasSupabasePublicEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
@@ -8,7 +9,14 @@ export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   // Local/no-config development may intentionally use the explicit Guest demo.
-  if (!hasSupabasePublicEnv()) redirect('/today');
+  // Hosted environments must fail closed to Auth instead of silently exposing
+  // fixture/demo state when Supabase configuration is missing or malformed.
+  if (!hasSupabasePublicEnv()) {
+    if (deploymentEnvironment === 'preview' || deploymentEnvironment === 'production') {
+      redirect('/auth?error=config');
+    }
+    redirect('/today');
+  }
 
   const supabase = await createClient();
   const active = await activeAuthSession(supabase);
