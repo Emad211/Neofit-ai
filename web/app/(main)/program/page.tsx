@@ -10,23 +10,132 @@ export const dynamic = 'force-dynamic';
 
 const GENERATION_STALE_MS = 5 * 60_000;
 
-const ERROR_MESSAGES: Readonly<Record<string, string>> = {
-  invalid_request: 'درخواست معتبر نبود. صفحه را تازه کن و دوباره تلاش کن.',
-  stale_or_incomplete: 'اطلاعات دوره تغییر کرده یا کامل نیست. صفحه را تازه کن و ورودی‌ها را مرور کن.',
-  clinical_review_required: 'به‌دلیل محدودیت یا درد گزارش‌شده، تولید خودکار تمرین متوقف شد و نیاز به بررسی انسانی دارد.',
-  nutrition_clinical_review_required: 'به‌دلیل اطلاعات پزشکی یا دارویی ثبت‌شده، تولید خودکار برنامه غذایی متوقف شد و نیاز به بررسی تخصصی دارد.',
-  allergy_review_required: 'برای حسابی که آلرژی غذایی ثبت کرده، تا تکمیل دادهٔ آلرژن کاتالوگ برنامهٔ خودکار ساخته نمی‌شود.',
-  diet_catalog_unsupported: 'کاتالوگ فعلی هنوز پوشش ایمن کافی برای الگوی غذایی انتخاب‌شده ندارد.',
-  insufficient_safe_exercises: 'با تجهیزات و محدودیت‌های فعلی، حرکت ایمن کافی در رجیستری پیدا نشد.',
-  insufficient_catalog_foods: 'پس از اعمال محدودیت‌های غذایی، غذای معتبر کافی در کاتالوگ باقی نماند.',
-  planner_unavailable: 'Planner هوشمند در دسترس نیست. اتصال AI حساب را بررسی کن و دوباره تلاش کن.',
-  planner_invalid_output: 'خروجی Planner قرارداد معتبر NeoFit را پاس نکرد؛ هیچ برنامه‌ای ذخیره یا فعال نشد.',
-  planner_selection_invalid: 'انتخاب‌های Planner بعد از اعتبارسنجی ایمنی یا کاتالوگ معتبر نبود؛ هیچ برنامه‌ای ذخیره نشد.',
-  generation_start_failed: 'شروع ساخت برنامه ثبت نشد. دوباره تلاش کن.',
-  generation_persist_failed: 'ساخت برنامه کامل نشد و هیچ برنامهٔ ناقصی فعال نشده است.',
-  generation_still_running: 'این تلاش هنوز در بازهٔ اجرای معتبر قرار دارد و قابل بازنشانی نیست.',
-  generation_recovery_failed: 'آزادسازی تلاش متوقف‌شده انجام نشد. صفحه را تازه کن و دوباره بررسی کن.',
-  activation_failed: 'فعال‌سازی اتمیک دو برنامه انجام نشد؛ نسخه‌های قبلی دست‌نخورده باقی ماندند.',
+type ProgramIssue = {
+  readonly text: string;
+  readonly tone: 'warning' | 'error';
+  readonly retry: boolean;
+  readonly actionHref?: string;
+  readonly actionLabel?: string;
+};
+
+const PROGRAM_ISSUES: Readonly<Record<string, ProgramIssue>> = {
+  invalid_request: {
+    text: 'این صفحه به‌روز نیست. یک‌بار صفحه را تازه کن و دوباره تلاش کن.',
+    tone: 'error',
+    retry: false,
+  },
+  stale_or_incomplete: {
+    text: 'بخشی از اطلاعات دوره تغییر کرده یا کامل نیست. قبل از ادامه، اطلاعاتت را مرور کن.',
+    tone: 'warning',
+    retry: false,
+    actionHref: '/onboarding/review',
+    actionLabel: 'مرور اطلاعات',
+  },
+  clinical_review_required: {
+    text: 'برای ساخت برنامه تمرین، یکی از محدودیت‌های سلامت یا دردهایی که ثبت کرده‌ای نیاز به مرور دارد.',
+    tone: 'warning',
+    retry: false,
+    actionHref: '/onboarding/review',
+    actionLabel: 'مرور اطلاعات سلامت',
+  },
+  nutrition_clinical_review_required: {
+    text: 'برای ساخت برنامه غذایی، اطلاعات سلامت یا دارویی ثبت‌شده نیاز به بررسی بیشتری دارد.',
+    tone: 'warning',
+    retry: false,
+    actionHref: '/onboarding/medical',
+    actionLabel: 'مرور اطلاعات سلامت',
+  },
+  allergy_review_required: {
+    text: 'به‌خاطر حساسیت غذایی ثبت‌شده، فعلاً برنامه غذایی خودکار ساخته نمی‌شود تا انتخاب غذا مطمئن بماند.',
+    tone: 'warning',
+    retry: false,
+    actionHref: '/onboarding/nutrition',
+    actionLabel: 'مرور حساسیت‌ها',
+  },
+  diet_catalog_unsupported: {
+    text: 'الگوی غذایی انتخاب‌شده هنوز در برنامه‌ساز فعلی پشتیبانی نمی‌شود.',
+    tone: 'warning',
+    retry: false,
+    actionHref: '/onboarding/nutrition',
+    actionLabel: 'تغییر الگوی غذایی',
+  },
+  insufficient_safe_exercises: {
+    text: 'با تجهیزات و محدودیت‌های فعلی، تمرین مناسب کافی برای ساخت یک برنامه کامل پیدا نشد.',
+    tone: 'warning',
+    retry: false,
+    actionHref: '/onboarding/availability',
+    actionLabel: 'مرور تجهیزات و زمان',
+  },
+  insufficient_catalog_foods: {
+    text: 'با انتخاب‌های غذایی فعلی، گزینه کافی برای ساخت یک برنامه هفتگی پیدا نشد.',
+    tone: 'warning',
+    retry: false,
+    actionHref: '/onboarding/nutrition',
+    actionLabel: 'مرور تغذیه',
+  },
+  planner_unavailable: {
+    text: 'ارتباط با مربی هوشمند برقرار نشد. اتصال هوش مصنوعی را بررسی کن.',
+    tone: 'error',
+    retry: false,
+    actionHref: '/profile/ai',
+    actionLabel: 'بررسی اتصال هوش مصنوعی',
+  },
+  planner_invalid_output: {
+    text: 'ساخت برنامه این بار کامل نشد. دوباره تلاش کن.',
+    tone: 'error',
+    retry: true,
+  },
+  planner_selection_invalid: {
+    text: 'ساخت برنامه این بار کامل نشد. دوباره تلاش کن.',
+    tone: 'error',
+    retry: true,
+  },
+  generation_start_failed: {
+    text: 'ساخت برنامه شروع نشد. دوباره تلاش کن.',
+    tone: 'error',
+    retry: true,
+  },
+  generation_persist_failed: {
+    text: 'ساخت برنامه کامل نشد. هیچ برنامه ناقصی فعال نشده؛ دوباره تلاش کن.',
+    tone: 'error',
+    retry: true,
+  },
+  materialization_persist_failed: {
+    text: 'ساخت برنامه کامل نشد. هیچ برنامه ناقصی فعال نشده؛ دوباره تلاش کن.',
+    tone: 'error',
+    retry: true,
+  },
+  generation_failed: {
+    text: 'ساخت برنامه کامل نشد. دوباره تلاش کن.',
+    tone: 'error',
+    retry: true,
+  },
+  generation_stale_recovered: {
+    text: 'تلاش قبلی بسته شد. می‌توانی ساخت برنامه را دوباره شروع کنی.',
+    tone: 'warning',
+    retry: true,
+  },
+  generation_still_running: {
+    text: 'ساخت برنامه هنوز در حال انجام است. کمی بعد صفحه را تازه کن.',
+    tone: 'warning',
+    retry: false,
+  },
+  generation_recovery_failed: {
+    text: 'تلاش قبلی هنوز بسته نشده است. صفحه را تازه کن و دوباره بررسی کن.',
+    tone: 'error',
+    retry: false,
+  },
+  activation_failed: {
+    text: 'فعال‌سازی برنامه کامل نشد. دوباره تلاش کن.',
+    tone: 'error',
+    retry: false,
+  },
+};
+
+const FALLBACK_ISSUE: ProgramIssue = {
+  text: 'ساخت برنامه کامل نشد. اطلاعاتت را مرور کن یا دوباره تلاش کن.',
+  tone: 'error',
+  retry: true,
 };
 
 export default async function ProgramPage({
@@ -40,53 +149,74 @@ export default async function ProgramPage({
 
   const cycle = snapshot.cycle;
   if (!cycle) {
-    return <section className="program-cycle-page"><p role="alert">{snapshot.loadError ?? 'چرخهٔ دوره در دسترس نیست.'}</p></section>;
+    return <section className="program-cycle-page"><p role="alert">{snapshot.loadError ?? 'برنامه در دسترس نیست.'}</p></section>;
   }
+
   const generated = snapshot.workoutPlan && snapshot.nutritionPlan;
   const cycleUpdatedAt = Date.parse(cycle.updated_at);
   const canRecoverGeneration = cycle.status === 'generating'
     && Number.isFinite(cycleUpdatedAt)
     && Date.now() - cycleUpdatedAt >= GENERATION_STALE_MS;
+
   const success = query.message === 'plans-ready'
-    ? 'هر دو برنامه ساخته شدند. پیش از فعال‌سازی خلاصه را بررسی کن.'
+    ? 'برنامه تمرین و تغذیه آماده‌اند. خلاصه را ببین و در صورت تأیید فعالشان کن.'
     : query.message === 'plans-active'
-      ? 'برنامهٔ تمرین و تغذیه با هم فعال شدند و اکنون در بخش‌های اصلی در دسترس‌اند.'
+      ? 'برنامه‌ها فعال شدند و حالا در بخش تمرین و تغذیه در دسترس‌اند.'
       : query.message === 'generation-recovered'
-        ? 'تلاش متوقف‌شده آزاد شد. اکنون می‌توانی ساخت برنامه را دوباره شروع کنی.'
+        ? 'تلاش قبلی بسته شد. حالا می‌توانی دوباره برنامه را بسازی.'
         : null;
-  const error = query.error ? ERROR_MESSAGES[query.error] ?? 'عملیات برنامه انجام نشد.' : snapshot.loadError;
+
+  const issueCode = query.error ?? (query.message ? null : cycle.generation_failure_code);
+  const issue = issueCode ? PROGRAM_ISSUES[issueCode] ?? FALLBACK_ISSUE : null;
+  const canGenerate = cycle.status === 'draft' || (cycle.status === 'failed' && (issue?.retry ?? true));
+  const needsUserAction = cycle.status === 'failed' && issue && !issue.retry && issue.actionHref && issue.actionLabel;
 
   return (
     <section className="page-stack program-cycle-page" aria-labelledby="program-cycle-heading">
       <header className="program-cycle-heading">
         <div>
-          <p className="section-kicker">مرکز برنامه‌ریزی NeoFit</p>
+          <p className="section-kicker">برنامه من</p>
           <h2 id="program-cycle-heading">دورهٔ شخصی تو</h2>
-          <p>از اطلاعات Onboarding تا دو برنامهٔ نسخه‌دار، قابل بررسی و قابل فعال‌سازی.</p>
+          <p>برنامه تمرین و تغذیه براساس اطلاعاتی که ثبت کرده‌ای آماده می‌شود.</p>
         </div>
         <span className={`program-cycle-status is-${cycle.status}`}>{programCycleStatusLabel(cycle.status)}</span>
       </header>
 
       {success ? <div className="auth-notice auth-notice--success" role="status">{success}</div> : null}
-      {error ? <div className="auth-notice auth-notice--error" role="alert">{error}</div> : null}
+      {issue ? (
+        <div className={`auth-notice ${issue.tone === 'error' ? 'auth-notice--error' : 'auth-notice--warning'}`} role={issue.tone === 'error' ? 'alert' : 'status'}>
+          {issue.text}
+        </div>
+      ) : null}
 
       <article className="program-cycle-hero">
-        <div><span>بازهٔ دوره</span><strong>{cycle.requested_duration_days.toLocaleString('fa-IR')} روز</strong><p>{cycle.start_date} تا {cycle.end_date}</p></div>
-        <div><span>نسخهٔ چرخه</span><strong>{cycle.revision.toLocaleString('fa-IR')}</strong><p>Onboarding v{cycle.onboarding_schema_version.toLocaleString('fa-IR')}</p></div>
-        <div><span>خروجی معتبر</span><strong>{generated ? '۲ برنامه' : 'هنوز صفر'}</strong><p>تمرین + تغذیه باید با هم آماده شوند</p></div>
+        <div><span>مدت دوره</span><strong>{cycle.requested_duration_days.toLocaleString('fa-IR')} روز</strong></div>
+        <div><span>شروع</span><strong>{cycle.start_date}</strong></div>
+        <div><span>پایان</span><strong>{cycle.end_date}</strong></div>
       </article>
 
-      {cycle.status === 'draft' || cycle.status === 'failed' ? (
+      {needsUserAction ? (
+        <article className="program-cycle-command">
+          <div>
+            <p className="section-kicker">قبل از ادامه</p>
+            <h3>یک مورد نیاز به مرور دارد</h3>
+            <p>اطلاعات مربوط را اصلاح یا تأیید کن، بعد برگرد و برنامه را بساز.</p>
+          </div>
+          <Link className="primary-button" href={issue.actionHref!}>{issue.actionLabel}</Link>
+        </article>
+      ) : null}
+
+      {canGenerate ? (
         <article className="program-cycle-command">
           <div>
             <p className="section-kicker">گام بعد</p>
             <h3>ساخت برنامهٔ تمرین و تغذیه</h3>
-            <p>NeoFit حرکت‌ها را فقط از رجیستری ایمن و غذاها را فقط از کاتالوگ نسخه‌دار انتخاب می‌کند. اگر آلرژی یا محدودیت مبهم باشد، فرایند متوقف می‌شود.</p>
+            <p>NeoFit محدودیت‌های سلامت، تجهیزات، زمان و ترجیحاتت را بررسی می‌کند و بعد برنامه را می‌سازد.</p>
           </div>
           <form action={generateProgramCycle}>
             <input type="hidden" name="cycleId" value={cycle.id} />
             <input type="hidden" name="revision" value={cycle.revision} />
-            <ProgramActionButton pendingLabel="در حال ساخت دو برنامه…">ساخت دو برنامه</ProgramActionButton>
+            <ProgramActionButton pendingLabel="در حال ساخت برنامه…">ساخت برنامه</ProgramActionButton>
           </form>
         </article>
       ) : null}
@@ -94,40 +224,44 @@ export default async function ProgramPage({
       {cycle.status === 'generating' ? (
         <article className="program-cycle-command" aria-live="polite">
           <div>
-            <p className="section-kicker">در حال ساخت</p>
-            <h3>Planner تمرین و تغذیه در حال پردازش‌اند</h3>
-            <p>فقط وقتی هر دو خروجی اعتبارسنجی شوند، دو نسخهٔ پیش‌نویس با هم در پایگاه داده ثبت می‌شوند.</p>
+            <p className="section-kicker">در حال آماده‌سازی</p>
+            <h3>برنامه‌ها در حال ساخته‌شدن هستند</h3>
+            <p>این مرحله ممکن است کمی زمان ببرد. وقتی هر دو برنامه آماده شوند، خلاصه‌شان همین‌جا نمایش داده می‌شود.</p>
           </div>
           {canRecoverGeneration ? (
             <form action={recoverProgramCycleGeneration}>
               <input type="hidden" name="cycleId" value={cycle.id} />
               <input type="hidden" name="revision" value={cycle.revision} />
-              <ProgramActionButton pendingLabel="در حال آزادسازی…">آزادسازی تلاش متوقف‌شده</ProgramActionButton>
+              <ProgramActionButton pendingLabel="در حال بازنشانی…">تلاش دوباره</ProgramActionButton>
             </form>
           ) : null}
         </article>
       ) : null}
 
       {generated ? (
-        <div className="program-plan-grid" aria-label="خلاصه برنامه‌های ساخته‌شده">
+        <div className="program-plan-grid" aria-label="خلاصه برنامه‌ها">
           <article>
-            <span>ایجنت تمرین</span>
+            <span>برنامه تمرین</span>
             <h3>{snapshot.workoutPlan!.title}</h3>
             <strong>{snapshot.workoutPlan!.document.days.length.toLocaleString('fa-IR')} جلسه</strong>
-            <p>{snapshot.workoutPlan!.document.days.reduce((sum, day) => sum + day.exercises.length, 0).toLocaleString('fa-IR')} حرکت رجیستری‌شده · نسخه {snapshot.workoutPlan!.version.toLocaleString('fa-IR')}</p>
+            <p>{snapshot.workoutPlan!.document.days.reduce((sum, day) => sum + day.exercises.length, 0).toLocaleString('fa-IR')} حرکت در کل برنامه</p>
           </article>
           <article>
-            <span>ایجنت تغذیه</span>
+            <span>برنامه غذایی</span>
             <h3>{snapshot.nutritionPlan!.title}</h3>
             <strong>{snapshot.nutritionPlan!.document.days.length.toLocaleString('fa-IR')} روز</strong>
-            <p>{snapshot.nutritionPlan!.document.days.reduce((sum, day) => sum + day.meals.length, 0).toLocaleString('fa-IR')} وعده از هویت‌های کاتالوگ · نسخه {snapshot.nutritionPlan!.version.toLocaleString('fa-IR')}</p>
+            <p>{snapshot.nutritionPlan!.document.days.reduce((sum, day) => sum + day.meals.length, 0).toLocaleString('fa-IR')} وعده در طول هفته</p>
           </article>
         </div>
       ) : null}
 
       {cycle.status === 'ready' && generated ? (
         <article className="program-cycle-command is-ready">
-          <div><p className="section-kicker">بازبینی نهایی</p><h3>هر دو برنامه آمادهٔ فعال‌سازی‌اند</h3><p>فعال‌سازی در یک عملیات اتمیک انجام می‌شود؛ نسخهٔ ناقص یا تک‌برنامه‌ای وارد حساب نمی‌شود.</p></div>
+          <div>
+            <p className="section-kicker">آماده است</p>
+            <h3>برنامه‌ها را فعال کن</h3>
+            <p>بعد از فعال‌سازی، برنامه تمرین و برنامه غذایی در بخش‌های اصلی اپ نمایش داده می‌شوند.</p>
+          </div>
           <form action={activateProgramCycle}>
             <input type="hidden" name="cycleId" value={cycle.id} />
             <input type="hidden" name="revision" value={cycle.revision} />
@@ -138,14 +272,14 @@ export default async function ProgramPage({
 
       {cycle.status === 'active' ? (
         <div className="program-cycle-destinations">
-          <Link className="primary-button" href="/workout">مشاهده برنامه تمرین</Link>
-          <Link className="primary-button" href="/nutrition/plan">مشاهده برنامه غذایی</Link>
+          <Link className="primary-button" href="/workout">برنامه تمرین</Link>
+          <Link className="primary-button" href="/nutrition/plan">برنامه غذایی</Link>
         </div>
       ) : null}
 
       <div className="program-cycle-links">
-        <Link href="/onboarding/review">مرور اطلاعات ورودی</Link>
-        <Link href="/profile/ai">مدیریت اتصال AI</Link>
+        <Link href="/onboarding/review">ویرایش اطلاعات من</Link>
+        <Link href="/profile/ai">تنظیمات مربی هوشمند</Link>
       </div>
     </section>
   );
