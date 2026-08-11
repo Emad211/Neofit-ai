@@ -54,7 +54,7 @@ The previous false-default problem is fixed in code. Current contract:
 - focused **13-step** mobile-first journey;
 - AI credential gate is step 1; duplicate `/onboarding/ai` routes deleted;
 - no preselected personal categorical/boolean self-report;
-- Google required for real account flow, AvalAI optional fallback;
+- AvalAI required as the resilient real-account provider, Google optional primary;
 - raw API keys never enter Onboarding JSON/browser persistence;
 - Body Map keeps all 73 regions but mobile shows one face at a time;
 - non-precision front/back list fallback exists for small regions;
@@ -82,7 +82,7 @@ Live data still had one schema v1 completed row and zero v2 rows at the time of 
 **Remaining Stage21 runtime/UX proof:**
 
 - exact-current 360/390/430px rendered QA;
-- Google Save/Test inside mobile Onboarding;
+- AvalAI Save/Test and optional Google Save/Test inside mobile Onboarding;
 - interrupt a long step and prove autosave survives refresh;
 - second-tab/device stale revision must fail instead of overwriting;
 - complete 13 steps and inspect stable v2 equipment/weekday ids;
@@ -144,9 +144,9 @@ Next write evolution remains typed proposals + visible diff + explicit confirmat
 
 ## P1 — next core domain
 
-### Stage22 Program Cycle — NEXT
+### Stage22 Program Cycle — CODE + LOCAL DB GREEN; HOSTED RUNTIME PROOF OPEN
 
-Now that Onboarding is a parseable/concurrency-safe input contract, add the user-owned program lifecycle source of truth:
+The user-owned lifecycle source of truth is now implemented in migration `20260811120000_program_cycle_lifecycle` and the `/program` handoff:
 
 - id/user ownership/RLS;
 - requested duration + start/end dates;
@@ -154,15 +154,15 @@ Now that Onboarding is a parseable/concurrency-safe input contract, add the user
 - generation state machine;
 - idempotent generation key/run;
 - linkage to immutable Workout/Nutrition plan versions;
-- bounded phases/blocks for programs longer than 14 days;
+- bounded phase/block materialization for programs longer than 14 days remains Stage24 work;
 - one-active-cycle rule initially;
 - no raw provider key/prompt/model payload.
 
-Stage22 must consume only parsed/normalized Onboarding v2, never raw JSON.
+The Ready Server Action consumes only `parseOnboardingDraft` output, stores hashes/provenance rather than duplicated health narrative and reuses a deterministic idempotency key. Hosted migration and real-account replay/concurrency proof remain open.
 
-### Stage23 Exercise Registry / safety — AFTER STAGE22
+### Stage23 Exercise Registry / safety — CODE + LOCAL DB + LIVE BENCHMARK GREEN; HOSTED RUNTIME PROOF OPEN
 
-Typed exercise identities, equipment requirements, movement patterns, contraindication tags and safe substitution relationships.
+The shared 23-exercise registry, versioned SQL mirror, read-only grants, Workout Plan identity/name trigger, deterministic Onboarding safety mapping, safe substitutions, critical no-inference safety guard, prompt/output budgets and dedicated CI are implemented. All 23 migrations and real SQL/REST permission/trigger probes passed locally. Live AvalAI tests passed 3/3 on both Flash and Flash Lite; Lite is now the measured low-cost default. Hosted migration and real-account runtime proof remain open.
 
 ### Stage24 structured planners — AFTER STAGE23
 
@@ -241,8 +241,8 @@ After the next single deployment, capture mobile/desktop evidence for Today, Nut
 ## Recommended order
 
 1. Finish latest Stage21 CI and local/rendered runtime proof.
-2. Implement Stage22 Program Cycle source of truth/state machine.
-3. Implement Stage23 Exercise Registry/safety contract.
+2. Apply and runtime-prove the Stage22 Program Cycle migration/state machine.
+3. Apply and runtime-prove the Stage23 Exercise Registry/safety migration on the hosted Preview project.
 4. Implement Stage24 bounded structured Training/Nutrition planners.
 5. Deploy one latest stacked green candidate once to existing Preview Lab.
 6. Run Auth mailbox/session E2E + Google/AvalAI/AI-audit proofs.

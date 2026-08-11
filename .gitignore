@@ -9,6 +9,8 @@ dist/
 mobile/dist/
 web-build/
 mobile/web-build/
+web/.next/
+web/public/icons/
 
 # Native build output
 android/
@@ -30,6 +32,7 @@ mobile/.env.*
 
 # Tooling
 .tools/
+supabase/.branches/
 coverage/
 *.tsbuildinfo
 npm-debug.log*

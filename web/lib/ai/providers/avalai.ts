@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { AI_PROVIDER_TIMEOUT_MS, AI_VALIDATION_TIMEOUT_MS } from '../config';
+import { AI_MAX_OUTPUT_TOKENS, AI_PROVIDER_TIMEOUT_MS, AI_VALIDATION_TIMEOUT_MS } from '../config';
 import type { AiGenerationInput } from '../types';
 import { fetchWithTimeout, providerHttpError } from './shared';
 
@@ -54,6 +54,7 @@ export async function generateAvalAi(
         model: modelId,
         input: request.input,
         ...(request.systemInstruction ? { instructions: request.systemInstruction } : {}),
+        max_output_tokens: AI_MAX_OUTPUT_TOKENS,
         store: false,
       }),
     },

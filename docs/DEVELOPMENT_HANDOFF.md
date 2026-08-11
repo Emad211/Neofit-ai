@@ -1,5 +1,7 @@
 # NeoFit Development Handoff
 
+> Historical handoff for the former `web/full-frontend-integration` cycle. Current authority is the Gap Audit plus the Stage 21/22/23 lifecycle documents. For the current local continuation use `NEOFIT_STAGE23_EXERCISE_REGISTRY.md`.
+
 **Last reconstructed:** 2026-08-06  
 **Architecture base:** `web/pwa-foundation`  
 **Active branch:** `web/full-frontend-integration`  

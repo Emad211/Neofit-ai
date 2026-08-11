@@ -516,7 +516,7 @@ export function validateOnboardingStep(draft: OnboardingDraft, step: number): st
     if (draft.availability.equipment.length === 0 && !draft.availability.customEquipment.trim()) errors.push('حداقل تجهیزات یا گزینه «فقط وزن بدن» را مشخص کن.');
   }
   if (step === 11) {
-    if (!draft.preferences.intensity || !draft.preferences.cardioPreference || !draft.preferences.trainingStyle || !draft.preferences.variety || !draft.preferences.nutritionStrictness || !draft.preferences.coachingTone) errors.push('شدت، هوازی، نوع تمرین، تنوع، ساختار تغذیه و لحن Coach را انتخاب کن.');
+    if (!draft.preferences.intensity || !draft.preferences.cardioPreference || !draft.preferences.trainingStyle || !draft.preferences.variety || !draft.preferences.nutritionStrictness || !draft.preferences.coachingTone) errors.push('همه ترجیحات مربی‌گری را خودت انتخاب کن.');
   }
   if (step === ONBOARDING_TOTAL_STEPS) {
     if (!draft.confirmation.startDate) errors.push('تاریخ شروع را انتخاب کن.');

@@ -15,6 +15,7 @@ on:
       - scripts/vercel-ignore.mjs
       - web/**
       - packages/nutrition-core/**
+      - packages/exercise-registry/**
       - .github/workflows/vercel-build-contract.yml
   pull_request:
     branches:
@@ -26,6 +27,7 @@ on:
       - scripts/vercel-ignore.mjs
       - web/**
       - packages/nutrition-core/**
+      - packages/exercise-registry/**
       - .github/workflows/vercel-build-contract.yml
   workflow_dispatch:
 
@@ -66,7 +68,8 @@ jobs:
           grep -q '"workspaces"' package.json
           grep -q '"web"' package.json
           grep -q '"packages/nutrition-core"' package.json
-          grep -q '"next": "16.2.12"' package.json
+          grep -q '"packages/exercise-registry"' package.json
+          grep -q '"next": "16.3.0"' package.json
           grep -q '"build:web": "npm --workspace @neofit/web run build"' package.json
           grep -q '"framework": "nextjs"' vercel.json
           grep -q '"ignoreCommand": "node scripts/vercel-ignore.mjs"' vercel.json

@@ -1,6 +1,6 @@
 # NeoFit Coach Program Lifecycle Architecture
 
-Status: **canonical product contract for the active Preview cycle**. Stage21 code + DB hardening are implemented and CI-green; rendered/runtime proof is still open. Stage22 is the next domain stage.
+Status: **canonical product contract for the active Preview cycle**. Stage21–23 code is implemented locally; current Supabase/Preview runtime proof is still open. Stage24 is the next domain stage.
 
 This document supersedes the older assumption that Onboarding, AI settings, plan persistence and Coach are independent features.
 
@@ -10,8 +10,8 @@ A real NeoFit account follows one coherent lifecycle:
 
 ```text
 verified account
-  -> Onboarding step 1: connect personal Google AI key
-  -> optional AvalAI fallback
+  -> Onboarding step 1: connect required AvalAI resilience key
+  -> optional Google primary key
   -> explicit self-report / safety / preferences
   -> choose program start date + duration
   -> Program Cycle generation
@@ -52,8 +52,8 @@ The older passive `analysis` and `result` pages were removed because they collec
 
 Stage21 also provides:
 
-- Google AI Studio credential required for real account continuation;
-- optional AvalAI fallback;
+- AvalAI resilience credential required for real account continuation;
+- Google remains an optional primary provider and is required only for Google-only capabilities;
 - existing AES-GCM BYOK vault/provider routes reused;
 - raw provider key never enters Onboarding JSON or persistent Browser storage;
 - `ONBOARDING_SCHEMA_VERSION = 2`;
@@ -86,21 +86,24 @@ The current Stage21 contract and mobile/backend audit live in:
 
 Rendered current-candidate 360/390/430px QA and real-account hosted proof remain required before Stage21 is release-proven.
 
-### Stage22 — NEXT: Program Cycle
+### Stage22 — CODE + LOCAL/HOSTED DB GREEN / REAL-ACCOUNT CREATE PROOF GREEN: Program Cycle
 
 Workout/Nutrition plan tables are immutable plan stores; they do not yet represent a complete user course lifecycle.
 
-Stage22 adds a user-owned `program_cycles` source of truth and idempotent generation-run boundary.
+Stage22 adds a user-owned `program_cycles` source of truth and idempotent generation-run boundary. Migration `20260811120000_program_cycle_lifecycle` now implements the bounded state machine, one-open-cycle rule, Onboarding provenance hashes, immutable plan-version linkage, idempotent ensure RPC and revision-checked transition RPC. The current UI creates only a truthful `draft` cycle; it does not claim that planners ran.
+
+On 2026-08-11 the migration was applied transactionally to hosted project `rjwrobltmjodfarnltal`. A completed real account then created its 15-day draft cycle through the actual Server Action and redirected from `/onboarding/ready` to `/program`. Hosted stale-revision, second-open-cycle and cross-account RLS proofs remain open.
 
 ## AI credential contract
 
 For a real account program, AI configuration is part of Onboarding rather than a hidden Profile prerequisite.
 
-- Step 1 checks current Google credential metadata.
-- Missing/inactive Google can be created through the official AI Studio path and saved/tested inside Onboarding.
+- Step 1 checks both provider metadata records.
+- Missing/inactive AvalAI blocks real-account completion; it can be saved/tested inside Onboarding.
+- Google can be added through the official AI Studio path as the optional primary provider.
 - Provider validation is inference-free.
 - Google remains primary.
-- AvalAI remains optional fallback.
+- AvalAI is the required resilient provider and remains the fallback when Google is configured as primary.
 - `/profile/ai` remains the post-Onboarding rotation/recovery/settings surface.
 - Guest remains explicit Demo and cannot claim a generated personal program.
 - Historical duplicate `/onboarding/ai` routes are deleted.
@@ -265,6 +268,8 @@ Stage21 accepts 14–84 days. Stage22 owns the domain model that makes longer du
 
 ## Exercise Registry / deterministic safety — Stage23
 
+**Implementation status: code + local DB/REST proof + live model benchmark green; hosted runtime proof open.** Registry v1 provides 23 stable identities, deterministic bounded search, equipment-aware curated substitutions and hard/review safety decisions. New Workout Plan writes are guarded by catalog version and canonical id/name. Critical pain/blocked exercise requests bypass inference with a deterministic response. AvalAI Flash Lite became the default after passing the same gates with lower latency/token cost.
+
 Before Coach can professionally replace individual exercises, NeoFit needs a typed registry containing at least:
 
 - stable exercise id and display names;
@@ -404,9 +409,9 @@ Future proposal persistence should be metadata-focused:
 
 ### Missing product-critical capabilities
 
-- Program Cycle entity/state machine;
-- idempotent generation-run lifecycle;
-- exercise registry/substitution safety engine;
+- hosted Program Cycle migration/runtime proof;
+- execution of the generation run beyond the implemented idempotent state boundary;
+- hosted exercise registry migration/runtime proof;
 - structured Training Planner;
 - structured Nutrition Planner;
 - phase/block course materialization;
@@ -434,9 +439,9 @@ Future proposal persistence should be metadata-focused:
 ## Active roadmap
 
 1. **Stage21 — Onboarding v2 mobile/data hardening: CODE + DB GREEN; rendered/runtime proof open.**
-2. **Stage22 — Program Cycle schema/state machine + plan linkage + idempotent generation-run contract.**
-3. **Stage23 — Exercise Registry + deterministic Workout safety/substitution validation.**
-4. **Stage24 — structured Training + Nutrition planners + validators/materializers.**
+2. **Stage22 — Program Cycle schema/state machine + plan linkage + idempotent generation-run contract: CODE + LOCAL/HOSTED DB + REAL-ACCOUNT CREATE/REDIRECT GREEN; adversarial hosted proof open.**
+3. **Stage23 — CODE + LOCAL DB + LIVE BENCHMARK GREEN; hosted runtime proof open.**
+4. **Stage24 — NEXT: structured Training + Nutrition planners + validators/materializers.**
 5. **Stage25 — coordinated Program review/activation UX.**
 6. **Stage26 — typed Coach Proposal / exact Diff / Confirmation layer.**
 7. **Stage27 — confirmed Workout/Nutrition future-version mutation tools.**
@@ -449,7 +454,7 @@ Preview-only until this real-account lifecycle is proven:
 
 ```text
 signup
- -> Google key inside Onboarding
+ -> required AvalAI key + optional Google primary inside Onboarding
  -> explicit Onboarding v2
  -> course duration
  -> Program Cycle

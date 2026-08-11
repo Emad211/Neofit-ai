@@ -263,6 +263,99 @@ export type Database = {
         }
         Relationships: []
       }
+      exercise_registry: {
+        Row: {
+          aliases_en: string[]
+          aliases_fa: string[]
+          catalog_version: number
+          contraindication_tags: string[]
+          created_at: string
+          difficulty: string
+          equipment: string[]
+          id: string
+          is_active: boolean
+          movement_pattern: string
+          name_en: string
+          name_fa: string
+          primary_muscles: string[]
+          secondary_muscles: string[]
+          video_search_hints: Json
+        }
+        Insert: {
+          aliases_en?: string[]
+          aliases_fa?: string[]
+          catalog_version?: number
+          contraindication_tags?: string[]
+          created_at?: string
+          difficulty: string
+          equipment: string[]
+          id: string
+          is_active?: boolean
+          movement_pattern: string
+          name_en: string
+          name_fa: string
+          primary_muscles: string[]
+          secondary_muscles?: string[]
+          video_search_hints: Json
+        }
+        Update: {
+          aliases_en?: string[]
+          aliases_fa?: string[]
+          catalog_version?: number
+          contraindication_tags?: string[]
+          created_at?: string
+          difficulty?: string
+          equipment?: string[]
+          id?: string
+          is_active?: boolean
+          movement_pattern?: string
+          name_en?: string
+          name_fa?: string
+          primary_muscles?: string[]
+          secondary_muscles?: string[]
+          video_search_hints?: Json
+        }
+        Relationships: []
+      }
+      exercise_substitutions: {
+        Row: {
+          created_at: string
+          priority: number
+          reason: string
+          source_exercise_id: string
+          substitute_exercise_id: string
+        }
+        Insert: {
+          created_at?: string
+          priority: number
+          reason: string
+          source_exercise_id: string
+          substitute_exercise_id: string
+        }
+        Update: {
+          created_at?: string
+          priority?: number
+          reason?: string
+          source_exercise_id?: string
+          substitute_exercise_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_substitutions_source_exercise_id_fkey"
+            columns: ["source_exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_registry"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exercise_substitutions_substitute_exercise_id_fkey"
+            columns: ["substitute_exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nutrition_entries: {
         Row: {
           client_mutation_id: string
@@ -394,6 +487,105 @@ export type Database = {
         }
         Relationships: []
       }
+      program_cycles: {
+        Row: {
+          activated_at: string | null
+          active_nutrition_plan_id: string | null
+          active_nutrition_plan_version: number | null
+          active_workout_plan_id: string | null
+          active_workout_plan_version: number | null
+          completed_at: string | null
+          created_at: string
+          end_date: string
+          generated_at: string | null
+          generation_attempt: number
+          generation_failure_code: string | null
+          generation_idempotency_key: string
+          id: string
+          onboarding_schema_version: number
+          onboarding_snapshot_sha256: string
+          onboarding_updated_at: string
+          paused_at: string | null
+          requested_duration_days: number
+          revision: number
+          schema_version: number
+          source: string
+          start_date: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string | null
+          active_nutrition_plan_id?: string | null
+          active_nutrition_plan_version?: number | null
+          active_workout_plan_id?: string | null
+          active_workout_plan_version?: number | null
+          completed_at?: string | null
+          created_at?: string
+          end_date?: string
+          generated_at?: string | null
+          generation_attempt?: number
+          generation_failure_code?: string | null
+          generation_idempotency_key: string
+          id?: string
+          onboarding_schema_version: number
+          onboarding_snapshot_sha256: string
+          onboarding_updated_at: string
+          paused_at?: string | null
+          requested_duration_days: number
+          revision?: number
+          schema_version?: number
+          source?: string
+          start_date: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string | null
+          active_nutrition_plan_id?: string | null
+          active_nutrition_plan_version?: number | null
+          active_workout_plan_id?: string | null
+          active_workout_plan_version?: number | null
+          completed_at?: string | null
+          created_at?: string
+          end_date?: string
+          generated_at?: string | null
+          generation_attempt?: number
+          generation_failure_code?: string | null
+          generation_idempotency_key?: string
+          id?: string
+          onboarding_schema_version?: number
+          onboarding_snapshot_sha256?: string
+          onboarding_updated_at?: string
+          paused_at?: string | null
+          requested_duration_days?: number
+          revision?: number
+          schema_version?: number
+          source?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_cycles_nutrition_plan_fk"
+            columns: ["active_nutrition_plan_id", "user_id", "active_nutrition_plan_version"]
+            isOneToOne: false
+            referencedRelation: "nutrition_plans"
+            referencedColumns: ["id", "user_id", "version"]
+          },
+          {
+            foreignKeyName: "program_cycles_workout_plan_fk"
+            columns: ["active_workout_plan_id", "user_id", "active_workout_plan_version"]
+            isOneToOne: false
+            referencedRelation: "workout_plans"
+            referencedColumns: ["id", "user_id", "version"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -483,6 +675,7 @@ export type Database = {
           activated_at: string | null
           archived_at: string | null
           created_at: string
+          exercise_catalog_version: number
           id: string
           plan: Json
           schema_version: number
@@ -496,6 +689,7 @@ export type Database = {
           activated_at?: string | null
           archived_at?: string | null
           created_at?: string
+          exercise_catalog_version?: number
           id?: string
           plan: Json
           schema_version?: number
@@ -509,6 +703,7 @@ export type Database = {
           activated_at?: string | null
           archived_at?: string | null
           created_at?: string
+          exercise_catalog_version?: number
           id?: string
           plan?: Json
           schema_version?: number
@@ -649,6 +844,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_program_cycle_plans: {
+        Args: { p_cycle_id: string; p_expected_revision: number }
+        Returns: {
+          cycle_id: string
+          cycle_revision: number
+        }[]
+      }
       activate_nutrition_plan: {
         Args: { p_plan_id: string }
         Returns: undefined
@@ -697,6 +899,53 @@ export type Database = {
           plan_version: number
         }[]
       }
+      ensure_program_cycle: {
+        Args: {
+          p_generation_idempotency_key: string
+          p_onboarding_schema_version: number
+          p_onboarding_snapshot_sha256: string
+          p_onboarding_updated_at: string
+          p_requested_duration_days: number
+          p_start_date: string
+        }
+        Returns: {
+          created: boolean
+          cycle_id: string
+          cycle_revision: number
+          cycle_status: string
+        }[]
+      }
+      finalize_program_cycle_generation: {
+        Args: {
+          p_cycle_id: string
+          p_expected_revision: number
+          p_workout_title: string
+          p_workout_plan: Json
+          p_nutrition_title: string
+          p_nutrition_plan: Json
+        }
+        Returns: {
+          cycle_id: string
+          cycle_revision: number
+          workout_plan_id: string
+          workout_plan_version: number
+          nutrition_plan_id: string
+          nutrition_plan_version: number
+        }[]
+      }
+      reserve_agent_tool_call: {
+        Args: {
+          p_query_fingerprint: string
+          p_tool_name: string
+        }
+        Returns: {
+          allowed: boolean
+          audit_id: string | null
+          burst_used: number
+          daily_used: number
+          retry_after_seconds: number
+        }[]
+      }
       reserve_ai_request: {
         Args: {
           p_burst_limit?: number
@@ -709,6 +958,19 @@ export type Database = {
           hourly_used: number
           request_id: string
           retry_after_seconds: number
+        }[]
+      }
+      transition_program_cycle: {
+        Args: {
+          p_cycle_id: string
+          p_expected_revision: number
+          p_failure_code?: string
+          p_target_status: string
+        }
+        Returns: {
+          cycle_id: string
+          cycle_revision: number
+          cycle_status: string
         }[]
       }
     }

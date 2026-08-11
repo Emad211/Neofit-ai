@@ -17,23 +17,31 @@ export default async function HomePage() {
   // the session was revoked, expose Sign in/Sign up instead of trapping them.
   if (!active) redirect('/auth');
 
-  const [googleCredential, onboarding] = await Promise.all([
+  const [avalaiCredential, onboarding, programCycle] = await Promise.all([
     supabase
       .from('encrypted_provider_credentials')
       .select('status')
       .eq('user_id', active.userId)
-      .eq('provider', 'google')
+      .eq('provider', 'avalai')
       .maybeSingle(),
     supabase
       .from('user_onboarding')
       .select('status,schema_version')
       .eq('user_id', active.userId)
       .maybeSingle(),
+    supabase
+      .from('program_cycles')
+      .select('id,status')
+      .eq('user_id', active.userId)
+      .neq('status', 'completed')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   // The AI credential is the first real Onboarding gate and lives directly
   // inside the welcome step rather than in a separate prerequisite screen.
-  if (googleCredential.error || googleCredential.data?.status !== 'active') {
+  if (avalaiCredential.error || avalaiCredential.data?.status !== 'active') {
     redirect('/onboarding/welcome');
   }
 
@@ -47,7 +55,9 @@ export default async function HomePage() {
     redirect('/onboarding/welcome');
   }
 
-  // Stage21 ends at a truthful lifecycle handoff. Until Program Cycle +
-  // planners exist, do not pretend that a personalized course was generated.
+  if (!programCycle.error && programCycle.data) redirect('/program');
+
+  // A completed Onboarding without a cycle reaches the explicit Stage22
+  // creation boundary. Ready never claims that planners have already run.
   redirect('/onboarding/ready');
 }

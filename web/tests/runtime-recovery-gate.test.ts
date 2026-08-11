@@ -13,6 +13,10 @@ test('app entry uses live Auth validation and does not blindly redirect to Today
   assert.match(entry, /if \(!active\) redirect\('\/auth'\)/);
   assert.match(entry, /user_onboarding/);
   assert.match(entry, /status.*completed/s);
+  assert.match(entry, /provider', 'avalai'/);
+  assert.doesNotMatch(entry, /provider', 'google'/);
+  assert.match(entry, /from\('program_cycles'\)/);
+  assert.match(entry, /redirect\('\/program'\)/);
   assert.doesNotMatch(entry, /export default function HomePage\(\)\s*\{\s*redirect\('\/today'\)/);
 });
 

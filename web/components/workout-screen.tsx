@@ -26,8 +26,8 @@ export function WorkoutScreen({ snapshot }: { snapshot: WorkoutPlanSnapshot }) {
           </div>
         </article>
         <div className="action-row">
-          <Link className="primary-button" href="/onboarding">تکمیل اطلاعات پایه</Link>
-          <Link className="text-button" href="/profile">بازگشت به پروفایل</Link>
+          <Link className="primary-button" href="/program">ساخت یا فعال‌سازی برنامه</Link>
+          <Link className="text-button" href="/onboarding/review">مرور اطلاعات پایه</Link>
         </div>
       </section>
     );

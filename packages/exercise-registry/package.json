@@ -1,0 +1,22 @@
+{
+  "name": "@neofit/exercise-registry",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "check": "npm run typecheck && npm test"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "tsx": "4.20.6",
+    "typescript": "6.0.3"
+  }
+}

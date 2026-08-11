@@ -1,0 +1,45 @@
+name: Program Cycle Lifecycle CI
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'web/app/(main)/program/**'
+      - 'web/app/onboarding/ready/**'
+      - 'web/lib/program-cycle/**'
+      - 'web/lib/supabase/database.types.ts'
+      - 'web/tests/program-cycle-lifecycle.test.ts'
+      - '.github/workflows/program-cycle-ci.yml'
+  push:
+    branches: ['main']
+    paths:
+      - 'supabase/migrations/**'
+      - 'web/app/(main)/program/**'
+      - 'web/app/onboarding/ready/**'
+      - 'web/lib/program-cycle/**'
+      - 'web/lib/supabase/database.types.ts'
+      - 'web/tests/program-cycle-lifecycle.test.ts'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+      - run: npm install --no-audit --no-fund
+      - run: npm run test:program-cycle
+      - run: npm run test:supabase-app
+      - run: npm run typecheck
+      - run: npm run build

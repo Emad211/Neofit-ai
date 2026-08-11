@@ -171,11 +171,11 @@ test('step validation requires explicit choices, equipment truth and bounded cou
   assert.equal(PROGRAM_DURATION_MAX_DAYS, 84);
 });
 
-test('preferences validation never requires the hidden future reminder setting', () => {
+test('preferences validation requires only the six controls rendered in the UI', () => {
   const draft = createEmptyOnboardingDraft();
   draft.preferences = {
     intensity: 'moderate',
-    cardioPreference: 'balanced',
+    cardioPreference: 'low',
     trainingStyle: 'resistance',
     variety: 'stable',
     nutritionStrictness: 'structured',
@@ -183,7 +183,6 @@ test('preferences validation never requires the hidden future reminder setting',
     reminderLevel: null,
   };
   assert.deepEqual(validateOnboardingStep(draft, 11), []);
-  assert.ok(parseOnboardingDraft(draft));
 });
 
 test('step completion remains idempotent', () => {

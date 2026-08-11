@@ -1,5 +1,7 @@
 # پلن مادر NeoFit
 
+> این فایل snapshot تاریخی چرخهٔ Stage 4 است. مرجع فعال اکنون `NEOFIT_GAP_AUDIT_2026-08-08.md`، قرارداد lifecycle و اسناد Stage 21/22 است؛ branch/PR/Previewهای پایین وضعیت جاری نیستند.
+
 **وضعیت:** مرجع واحد و اجباری پروژه  
 **آخرین بازبینی:** ۶ اوت ۲۰۲۶  
 **Architecture base:** `web/pwa-foundation`  
@@ -158,7 +160,7 @@ state: READY
 alias: neofit-ai-git-vercel-preview-emads-projects-41cb6447.vercel.app
 ```
 
-سه Probe هنوز باید دستی حذف شوند. Project Dashboard همچنین باید روی Next.js و Node 22 همگام شود؛ قرارداد Git در حال حاضر Next.js `16.2.12` و Node `22.x` است.
+سه Probe هنوز باید دستی حذف شوند. Project Dashboard همچنین باید روی Next.js و Node 22 همگام شود؛ قرارداد Git در حال حاضر Next.js `16.3.0` و Node `22.x` است.
 
 Environment کامل Preview:
 

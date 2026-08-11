@@ -79,7 +79,17 @@
   gap: 10px;
 }
 
-.onboarding-ready-card__actions a {
+.onboarding-ready-card__actions form {
+  display: contents;
+}
+
+.onboarding-ready-card__actions button {
+  font: inherit;
+  cursor: pointer;
+}
+
+.onboarding-ready-card__actions a,
+.onboarding-ready-card__actions button {
   min-block-size: 48px;
   display: inline-flex;
   align-items: center;
@@ -94,7 +104,8 @@
   text-decoration: none;
 }
 
-.onboarding-ready-card__actions a.is-primary {
+.onboarding-ready-card__actions a.is-primary,
+.onboarding-ready-card__actions button.is-primary {
   border-color: #176b47;
   background: #176b47;
   color: #fff;

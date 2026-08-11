@@ -272,7 +272,7 @@ After latest code CI is green:
 
 ## Next domain stage
 
-Stage22: `program_cycles` source of truth + state machine + idempotent generation-run contract + linkage to versioned Workout/Nutrition plans.
+Stage22 follow-up is now implemented locally: `program_cycles` source of truth + state machine + idempotent ensure/transition boundary + linkage to versioned Workout/Nutrition plans. Supabase/Preview runtime proof remains open.
 
 Stage22 must consume parsed v2 and must not assume a Google credential exists merely because Onboarding completed.
 

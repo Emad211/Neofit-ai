@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { AI_PROVIDER_TIMEOUT_MS, AI_VALIDATION_TIMEOUT_MS } from '../config';
+import { AI_MAX_OUTPUT_TOKENS, AI_PROVIDER_TIMEOUT_MS, AI_VALIDATION_TIMEOUT_MS } from '../config';
 import type { AiGenerationInput } from '../types';
 import { fetchWithTimeout, providerHttpError } from './shared';
 
@@ -72,6 +72,7 @@ export async function generateGoogle(
         model: modelId,
         input: interactionInput(request),
         ...(request.systemInstruction ? { system_instruction: request.systemInstruction } : {}),
+        generation_config: { max_output_tokens: AI_MAX_OUTPUT_TOKENS },
         store: false,
       }),
     },

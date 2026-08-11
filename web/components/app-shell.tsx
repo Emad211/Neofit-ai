@@ -15,6 +15,7 @@ const navigation: readonly { href: string; label: string; icon: NeoFitIconName }
 ];
 
 function pageTitle(pathname: string, displayName: string | null): string {
+  if (pathname.startsWith('/program')) return 'چرخهٔ دوره';
   if (pathname.startsWith('/nutrition/plan')) return 'برنامهٔ غذایی';
   if (pathname.startsWith('/nutrition')) return 'تغذیه';
   if (pathname.startsWith('/workout')) return 'تمرین';

@@ -1,0 +1,40 @@
+name: Exercise Registry Safety CI
+
+on:
+  pull_request:
+    paths:
+      - 'packages/exercise-registry/**'
+      - 'supabase/migrations/**'
+      - 'web/lib/exercise-registry/**'
+      - 'web/lib/coach/**'
+      - 'web/lib/ai/**'
+      - 'web/tests/exercise-registry-safety.test.ts'
+      - '.github/workflows/exercise-registry-ci.yml'
+  push:
+    branches: ['main']
+    paths:
+      - 'packages/exercise-registry/**'
+      - 'supabase/migrations/**'
+      - 'web/lib/exercise-registry/**'
+      - 'web/lib/coach/**'
+      - 'web/lib/ai/**'
+      - 'web/tests/exercise-registry-safety.test.ts'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm install --no-audit --no-fund
+      - run: npm run check:exercise-registry
+      - run: npm --workspace @neofit/web run test:exercise-registry
+      - run: npm run typecheck:web
+      - run: npm run build:web

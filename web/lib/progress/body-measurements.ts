@@ -2,6 +2,7 @@
 
 import { createBrowserClient } from '@supabase/ssr';
 import { parseSupabasePublicEnv } from '@/lib/supabase/env';
+import type { Database, Tables } from '@/lib/supabase/database.types';
 
 export interface BodyMeasurement {
   readonly id: string;
@@ -13,60 +14,6 @@ export interface BodyMeasurement {
   readonly bodyFatPercent: number | null;
   readonly note: string | null;
 }
-
-type MeasurementDatabase = {
-  __InternalSupabase: { PostgrestVersion: '14.15' };
-  public: {
-    Tables: {
-      body_measurements: {
-        Row: {
-          id: string;
-          user_id: string;
-          client_mutation_id: string;
-          local_date: string;
-          measured_at: string;
-          weight_kg: number | null;
-          waist_cm: number | null;
-          body_fat_percent: number | null;
-          note: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          client_mutation_id: string;
-          local_date: string;
-          measured_at?: string;
-          weight_kg?: number | null;
-          waist_cm?: number | null;
-          body_fat_percent?: number | null;
-          note?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          client_mutation_id?: string;
-          local_date?: string;
-          measured_at?: string;
-          weight_kg?: number | null;
-          waist_cm?: number | null;
-          body_fat_percent?: number | null;
-          note?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-    };
-    Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
-    Enums: { [_ in never]: never };
-    CompositeTypes: { [_ in never]: never };
-  };
-};
 
 const STORAGE_KEY = 'neofit:body-measurements:v1';
 const STORAGE_VERSION = 1;
@@ -116,10 +63,10 @@ export function createMeasurementClient() {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   });
-  return createBrowserClient<MeasurementDatabase>(url, publishableKey);
+  return createBrowserClient<Database>(url, publishableKey);
 }
 
-export function rowToBodyMeasurement(row: MeasurementDatabase['public']['Tables']['body_measurements']['Row']): BodyMeasurement {
+export function rowToBodyMeasurement(row: Tables<'body_measurements'>): BodyMeasurement {
   return {
     id: row.id,
     clientMutationId: row.client_mutation_id,

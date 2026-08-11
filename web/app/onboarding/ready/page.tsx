@@ -4,10 +4,22 @@ import { activeAuthSession } from '@/lib/auth/active-session';
 import { goalLabels, ONBOARDING_SCHEMA_VERSION, parseOnboardingDraft, type OnboardingDraft } from '@/lib/onboarding/model';
 import { createClient } from '@/lib/supabase/server';
 import { hasSupabasePublicEnv } from '@/lib/supabase/env';
+import { createProgramCycle } from './actions';
+import { CreateCycleButton } from './create-cycle-button';
 
 export const dynamic = 'force-dynamic';
 
-function ReadySummary({ draft, demo = false }: { draft: OnboardingDraft | null; demo?: boolean }) {
+function ReadySummary({
+  draft,
+  demo = false,
+  hasCycle = false,
+  cycleError = false,
+}: {
+  draft: OnboardingDraft | null;
+  demo?: boolean;
+  hasCycle?: boolean;
+  cycleError?: boolean;
+}) {
   const goal = draft?.goal.primaryGoal ? goalLabels[draft.goal.primaryGoal] : null;
   const duration = draft?.confirmation.programDurationDays ?? null;
   const startDate = draft?.confirmation.startDate || null;
@@ -35,11 +47,18 @@ function ReadySummary({ draft, demo = false }: { draft: OnboardingDraft | null; 
 
         <div className="onboarding-boundary-note">
           <strong>قدم بعدی NeoFit</strong>
-          <p>این داده‌ها ورودی معتبر چرخه برنامه هستند. تا وقتی چرخه برنامه و Plannerهای ساختاریافته فعال نشده‌اند، NeoFit برنامه ساختگی یا محاسبات تغذیه‌ای حدسی نمایش نمی‌دهد.</p>
+          <p>این داده‌ها ورودی معتبر چرخهٔ دوره هستند. برنامهٔ تمرین و تغذیه فقط بعد از تولید و اعتبارسنجی نمایش داده می‌شوند و هیچ برنامهٔ ساختگی جای آن‌ها را نمی‌گیرد.</p>
         </div>
 
+        {cycleError ? <p className="auth-message auth-message--error" role="alert">ساخت یا بازیابی چرخه انجام نشد. اگر چرخهٔ دیگری باز است، از مسیر اصلی وارد آن شو.</p> : null}
+
         <div className="onboarding-ready-card__actions">
-          {demo ? <Link className="is-primary" href="/auth">ورود و ساخت دوره واقعی</Link> : <Link className="is-primary" href="/onboarding/review">مرور دوباره اطلاعات</Link>}
+          {demo ? <Link className="is-primary" href="/auth">ورود و ساخت دوره واقعی</Link> : hasCycle ? (
+            <Link className="is-primary" href="/program">مشاهدهٔ چرخهٔ دوره</Link>
+          ) : (
+            <form action={createProgramCycle}><CreateCycleButton /></form>
+          )}
+          {!demo ? <Link href="/onboarding/review">مرور دوباره اطلاعات</Link> : null}
           <Link href={demo ? '/today' : '/profile/ai'}>{demo ? 'بازگشت به Demo' : 'مدیریت کلید AI'}</Link>
         </div>
       </section>
@@ -47,7 +66,7 @@ function ReadySummary({ draft, demo = false }: { draft: OnboardingDraft | null; 
   );
 }
 
-export default async function OnboardingReadyPage() {
+export default async function OnboardingReadyPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   if (!hasSupabasePublicEnv()) {
     return <ReadySummary draft={null} demo />;
   }
@@ -56,15 +75,33 @@ export default async function OnboardingReadyPage() {
   const active = await activeAuthSession(supabase);
   if (!active) redirect('/auth');
 
-  const { data, error } = await supabase
-    .from('user_onboarding')
-    .select('status,schema_version,draft')
-    .eq('user_id', active.userId)
-    .maybeSingle();
+  const [{ data, error }, avalaiCredential, cycle, params] = await Promise.all([
+    supabase
+      .from('user_onboarding')
+      .select('status,schema_version,draft')
+      .eq('user_id', active.userId)
+      .maybeSingle(),
+    supabase
+      .from('encrypted_provider_credentials')
+      .select('status')
+      .eq('user_id', active.userId)
+      .eq('provider', 'avalai')
+      .maybeSingle(),
+    supabase
+      .from('program_cycles')
+      .select('id')
+      .eq('user_id', active.userId)
+      .neq('status', 'completed')
+      .limit(1)
+      .maybeSingle(),
+    searchParams,
+  ]);
 
   const draft = parseOnboardingDraft(data?.draft ?? null);
   if (
     error ||
+    avalaiCredential.error ||
+    avalaiCredential.data?.status !== 'active' ||
     data?.status !== 'completed' ||
     data.schema_version !== ONBOARDING_SCHEMA_VERSION ||
     !draft
@@ -72,5 +109,5 @@ export default async function OnboardingReadyPage() {
     redirect('/onboarding/welcome');
   }
 
-  return <ReadySummary draft={draft} />;
+  return <ReadySummary draft={draft} hasCycle={Boolean(cycle.data)} cycleError={params.error === 'cycle' || Boolean(cycle.error)} />;
 }
