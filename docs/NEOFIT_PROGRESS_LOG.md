@@ -1,5 +1,7 @@
 # دفتر پیشرفت NeoFit
 
+> این دفتر cumulative و تاریخی است و authority وضعیت branch/roadmap جاری نیست؛ برای وضعیت فعال از Gap Audit و اسناد Stage 21/22 استفاده شود.
+
 **نقش:** حافظهٔ عملیاتی و شواهد توسعه  
 **آخرین به‌روزرسانی:** ۶ اوت ۲۰۲۶  
 **Active branch:** `web/full-frontend-integration`  
@@ -113,3 +115,12 @@ GitHub CI نتیجهٔ نهایی این Slice را پس از Push تعیین م
 ## Exact next
 
 پس از سبزشدن CI همین Slice، اقدامات دستی بالا انجام و سپس فقط یک Preview release ساخته می‌شود. بعد از real-account Runtime proof، توسعه با Workout Player ادامه می‌یابد.
+
+## Stage 22 hosted recovery — ۱۱ اوت ۲۰۲۶
+
+- علت شکست دکمه «ساخت چرخهٔ دوره» در لوکال، نبودن `public.program_cycles` و RPC مربوطه روی Supabase متصل بود؛ PostgREST کد `PGRST205` می‌داد.
+- migration `20260811120000_program_cycle_lifecycle` به‌صورت تراکنشی روی پروژه `rjwrobltmjodfarnltal` اعمال و در تاریخچه migrations ثبت شد.
+- API پس از migration دیگر خطای schema-cache نداد و جدول/RPC با سیاست دسترسی fail-closed پاسخ دادند.
+- در Chrome و حساب واقعی، ساخت چرخه موفق شد و مسیر به `/program` تغییر کرد.
+- صفحه Program چرخه `draft`، مدت ۱۵ روز و بازه `2026-09-10` تا `2026-09-24` را از داده persisted نمایش داد.
+- تست‌های adversarial hosted شامل stale revision، second open cycle و cross-account RLS هنوز باز هستند.

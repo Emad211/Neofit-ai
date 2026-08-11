@@ -7,7 +7,8 @@
   },
   "workspaces": [
     "web",
-    "packages/nutrition-core"
+    "packages/nutrition-core",
+    "packages/exercise-registry"
   ],
   "scripts": {
     "start": "npm --prefix mobile run start",
@@ -19,9 +20,10 @@
     "build:web": "npm --workspace @neofit/web run build",
     "typecheck:web": "npm --workspace @neofit/web run typecheck",
     "test:web": "npm --workspace @neofit/web run test:adapter",
-    "check:nutrition-core": "npm --workspace @neofit/nutrition-core run check"
+    "check:nutrition-core": "npm --workspace @neofit/nutrition-core run check",
+    "check:exercise-registry": "npm --workspace @neofit/exercise-registry run check"
   },
   "dependencies": {
-    "next": "16.2.12"
+    "next": "16.3.0"
   }
 }

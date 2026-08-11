@@ -21,9 +21,9 @@ test('AES-256-GCM primitive round-trips and binds ciphertext to AAD', () => {
   assert.throws(() => decryptSecret(encrypted, key, 'user-b:google'));
 });
 
-test('Google is primary and current Flash-Lite model is explicit', () => {
+test('Google is primary and provider defaults use documented model identifiers', () => {
   assert.equal(DEFAULT_AI_MODELS.google, 'gemini-3.5-flash-lite');
-  assert.equal(DEFAULT_AI_MODELS.avalai, 'gemini-3.5-flash');
+  assert.equal(DEFAULT_AI_MODELS.avalai, 'gemini-flash-lite-latest');
 });
 
 test('fallback only covers provider availability and credential failures', () => {

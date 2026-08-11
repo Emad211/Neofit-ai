@@ -4,7 +4,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  transpilePackages: ['@neofit/nutrition-core'],
+  transpilePackages: ['@neofit/nutrition-core', '@neofit/exercise-registry'],
   turbopack: {
     root: resolve(process.cwd(), '..'),
   },

@@ -5,6 +5,7 @@ import { AiCapabilityUnavailableError, generateWithProviderFallback } from '@/li
 import { AiBudgetExceededError, AiBudgetUnavailableError } from '@/lib/ai/request-audit';
 import { isSameOriginBrowserMutation } from '@/lib/auth/request-origin';
 import { loadCoachContext } from '@/lib/coach/context-loader';
+import { deterministicWorkoutSafetyResponse } from '@/lib/exercise-registry/coach-safety-guard';
 import { routeCoachDomains } from '@/lib/coach/context-router';
 import { routeCoachExternalTool } from '@/lib/coach/external-tool-router';
 import { buildCoachInput, COACH_MESSAGE_LIMIT, parseCoachHistory } from '@/lib/coach/request';
@@ -70,7 +71,21 @@ export async function POST(request: Request) {
       toolData = { youtube: { mode: 'video', url: externalIntent.url } };
     }
 
-    const context = await loadCoachContext(auth, domains);
+    const context = await loadCoachContext(auth, domains, message);
+    const deterministicSafetyAnswer = deterministicWorkoutSafetyResponse(context, domains);
+    if (deterministicSafetyAnswer) {
+      return privateJson({
+        answer: deterministicSafetyAnswer,
+        meta: {
+          provider: null,
+          modelId: null,
+          latencyMs: 0,
+          fallbackFrom: null,
+          contextDomains: domains,
+          deterministicSafety: true,
+        },
+      });
+    }
     try {
       const result = await generateWithProviderFallback({
         input: buildCoachInput(history, message),

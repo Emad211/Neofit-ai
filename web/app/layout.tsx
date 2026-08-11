@@ -39,5 +39,5 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#176b47', colorScheme: 'light' };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
-  return <html lang="fa" dir="rtl"><body data-deployment-environment={deploymentEnvironment}>{children}<PwaRegister /></body></html>;
+  return <html lang="fa" dir="rtl"><body data-deployment-environment={deploymentEnvironment}>{children}<PwaRegister environment={deploymentEnvironment} /></body></html>;
 }

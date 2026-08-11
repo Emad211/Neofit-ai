@@ -11,11 +11,25 @@ Status: canonical **current** backlog. Detailed implementation/incident history 
 
 ---
 
+## Product decisions / explicit non-goals
+
+### Food catalog expansion — DEFERRED BY PRODUCT DECISION
+
+Authoritative/versioned food-catalog expansion is **not part of the active roadmap**. Do not schedule IFKB/FNDDS/SR coverage expansion unless the product owner explicitly reopens it.
+
+Existing Nutrition safety rules remain unchanged:
+
+- current catalog identities remain versioned;
+- Shared Nutrition Core remains the sole arithmetic authority;
+- AI-generated calorie/macro claims remain prohibited as persisted authority.
+
+---
+
 ## P0 — hosted runtime proofs
 
 ### Latest Preview stack — OPEN
 
-Vercel build-rate remains constrained. Do not create another project or Production deployment. Keep using GitHub CI + Next production builds, then deploy one latest stacked green candidate to the existing Preview Lab.
+Do not create another Vercel project or Production deployment. Keep using GitHub CI + Next production builds, then deploy one latest stacked green candidate to the existing Preview Lab when quota permits.
 
 ### Auth mailbox/session E2E — OPEN
 
@@ -27,58 +41,80 @@ Need latest-Preview proof for:
 - Secure Email Change with old/new mailbox;
 - two-browser revoke-other-sessions.
 
-Hosted controls already configured: minimum password 12, current-password enforcement, Secure Email Change, OTP 3600, Preview SMTP and NeoFit TokenHash templates. Secure Password Change remains OFF until exact reauthentication nonce UX exists. Leaked-password protection remains plan-gated on current Free Supabase.
+The earlier local signup failure was traced to Gmail SMTP `535 BadCredentials`; later Auth logs show successful signup/verification after SMTP credentials were corrected. Do not classify that incident as an Onboarding routing bug.
 
 ---
 
-## P1 — user/data truth
+## P1 — Onboarding / program input truth
 
-### Onboarding defaults can become false self-report — HIGH P1 / NEXT STAGE
+### Stage21 Onboarding v2 — CODE + DB HARDENING GREEN; RENDERED/RUNTIME QA OPEN
 
-Stage 20 found that the empty Onboarding draft currently contains valid categorical answers before explicit user choice, including examples such as:
+The previous false-default problem is fixed in code. Current contract:
 
-- activity=`sedentary`
-- sleepQuality=`average`
-- stress=`medium`
-- smoking=`never`
-- diet=`balanced`
-- trainingLevel=`beginner`
-- location=`gym`
-- daysPerWeek=`3`
+- focused **13-step** mobile-first journey;
+- AI credential gate is step 1; duplicate `/onboarding/ai` routes deleted;
+- no preselected personal categorical/boolean self-report;
+- AvalAI required as the resilient real-account provider, Google optional primary;
+- raw API keys never enter Onboarding JSON/browser persistence;
+- Body Map keeps all 73 regions but mobile shows one face at a time;
+- non-precision front/back list fallback exists for small regions;
+- selected injury details are collapsible;
+- Review owns safety/data-readiness and direct Edit links;
+- passive analysis/result click-through pages removed;
+- final step asks only start date + duration + generation consent;
+- inactive notification/photo/imperial controls are not presented as working features;
+- stable Planner ids replace Persian display text for weekdays/equipment;
+- explicit `bodyweight` removes empty-equipment ambiguity;
+- draft parser is bounded and fails closed on malformed persisted JSON;
+- account writes use optimistic concurrency instead of silent whole-row overwrite;
+- parse-valid current-step edits autosave through a serialized write queue;
+- `/onboarding/ready` verifies live Auth + completed current schema + parse-valid draft server-side;
+- `OnboardingProvider` is scoped only to interactive step routes.
 
-Gender UI can also visually fall back to `prefer-not-to-say` while stored gender is null.
+Live DB hardening migration `20260810001227_harden_onboarding_v2_shape` adds:
 
-Because Coach later consumes Onboarding as user context, UI defaults must not silently become claimed self-report. Live Supabase currently has **0 `user_onboarding` rows**, so Stage 21 can redesign this contract before hosted user data exists.
+- `draft.version == schema_version`;
+- schema v2 `current_step` restricted to 1..13;
+- legacy schema v1 step 15 remains valid.
 
-### Food catalog coverage — HIGH P1
+Live data still had one schema v1 completed row and zero v2 rows at the time of hardening, so v2 structure was changed before hosted v2 user data existed.
 
-Current Web catalog remains a small seeded IFKB-shaped set. It limits useful Nutrition search, plan creation and Coach meal suggestions.
+**Remaining Stage21 runtime/UX proof:**
 
-Expansion must use authoritative/versioned IFKB/FNDDS/SR-compatible resolution while keeping Nutrition Core authoritative. AI-generated calorie/macro claims remain prohibited.
+- exact-current 360/390/430px rendered QA;
+- AvalAI Save/Test and optional Google Save/Test inside mobile Onboarding;
+- interrupt a long step and prove autosave survives refresh;
+- second-tab/device stale revision must fail instead of overwriting;
+- complete 13 steps and inspect stable v2 equipment/weekday ids;
+- sign-out/in lifecycle resume;
+- `/ready` rejects incomplete/v1 state;
+- field-addressable inline validation remains a polish gap (current summary is focusable but string-based).
+
+Canonical audit: `docs/NEOFIT_STAGE21_ONBOARDING_MOBILE_UX_BACKEND_AUDIT.md`.
+
+### Minor-user policy — OPEN PRODUCT/LEGAL DECISION
+
+Current model accepts age 10+. Do not silently convert this to 18+ as a UI fix. Before Production define whether minors are supported and the corresponding consent/data/safety rules.
+
+### Account timezone for program start date — OPEN INTERNATIONALIZATION GAP
+
+Current Onboarding date boundary uses NeoFit’s default `Asia/Tehran` local-date helper. Before international Production, use authenticated profile timezone explicitly.
 
 ### Progress — CODE REAL; HOSTED QA OPEN
 
-`body_measurements` replaces synthetic account progress. Stage 20 fixed metric/date mismatch so weight, waist and body-fat dates now come from their own source rows. Need real-account add/refresh/history proof.
+`body_measurements` replaces synthetic account progress. Need real-account add/refresh/history proof.
 
 ### Workout Plan — STAGE16 GREEN; HOSTED E2E OPEN
 
-Versioned immutable account plan, Player provenance, activation guard and Guest Demo boundary are implemented. Stage 20 removed the unsupported `بعدی` inference because no schedule/history source proves next-session order.
+Versioned immutable account plan, Player provenance, activation guard and Guest Demo boundary are implemented. Stage20 removed unsupported “next session” inference.
 
 ### Nutrition Plan — STAGE17 GREEN; HOSTED E2E OPEN
 
-Versioned plan stores only catalog identity/version + portion count. Stored nutrition claims are rejected; source-version mismatch fails closed; Guest Demo-only. Need real activation/resolution proof.
+Versioned plan stores only catalog identity/version + portion count. Stored nutrition claims are rejected; source-version mismatch fails closed; Guest Demo-only.
 
 ### Nutrition Plan → diary — STAGE18 GREEN; HOSTED E2E OPEN
 
-User-initiated logging is Core-backed, idempotent, bulk-written and owner/version provenance-bound. Stage 20 additionally fixes Nutrition state safety:
-
-- visible diary is current-local-date scoped;
-- account reset deletes only the current local date, not the user's entire history;
-- Guest reset preserves other dates;
-- local date refreshes while an open browser crosses midnight/focus;
-- manual mutation ids are UUID-backed.
-
-Need real runtime log → repeat click → unchanged row count → Today/Nutrition totals exactly once.
+User-initiated logging is Core-backed, idempotent, bulk-written and owner/version provenance-bound. Need runtime repeat-click/idempotency proof.
 
 ---
 
@@ -86,7 +122,7 @@ Need real runtime log → repeat click → unchanged row count → Today/Nutriti
 
 ### Google BYOK — CODE READY; HOSTED PROOF OPEN
 
-Need real Save/Test + Coach call on latest Preview.
+Need real Save/Test + Coach call on latest Preview. Onboarding now provides a direct official AI Studio key-creation path and mobile secret-field UX.
 
 ### AvalAI fallback — CODE READY; HOSTED CONTROLLED PROOF OPEN
 
@@ -98,23 +134,39 @@ Need real success/fallback audit rows.
 
 ### YouTube Agent Tool — STAGE19 GREEN; HOSTED E2E OPEN
 
-Current contract:
-
-- separate encrypted YouTube Data API v3 key;
-- normal Coach turn makes zero YouTube calls;
-- direct public URL uses Google video input with zero Data API search calls;
-- explicit search uses local intent → atomic tool budget → one search + one batched metadata call → one LLM request;
-- no transcript scraper/caption workaround/automatic iframe;
-- no fake AvalAI video fallback;
-- metadata-only tool audit with SHA-256 query fingerprint;
-- search budget 3/minute and 30/24h per user;
-- live DB QA proved attempts 1–3 allowed, 4 denied and zero QA rows persisted.
-
 Need real restricted YouTube key + cards/audit/direct-video/cooldown proof after deployment.
 
 ### Agent write capability — DELIBERATELY NOT ACTIVE
 
-Next write evolution should be typed proposals + visible diff + explicit user confirmation for new immutable plan versions. No silent mutation and no unrestricted SQL.
+Next write evolution remains typed proposals + visible diff + explicit confirmation for new immutable plan versions. No silent mutation and no unrestricted SQL.
+
+---
+
+## P1 — next core domain
+
+### Stage22 Program Cycle — CODE + LOCAL DB GREEN; HOSTED RUNTIME PROOF OPEN
+
+The user-owned lifecycle source of truth is now implemented in migration `20260811120000_program_cycle_lifecycle` and the `/program` handoff:
+
+- id/user ownership/RLS;
+- requested duration + start/end dates;
+- normalized goal/safety snapshot provenance;
+- generation state machine;
+- idempotent generation key/run;
+- linkage to immutable Workout/Nutrition plan versions;
+- bounded phase/block materialization for programs longer than 14 days remains Stage24 work;
+- one-active-cycle rule initially;
+- no raw provider key/prompt/model payload.
+
+The Ready Server Action consumes only `parseOnboardingDraft` output, stores hashes/provenance rather than duplicated health narrative and reuses a deterministic idempotency key. Hosted migration and real-account replay/concurrency proof remain open.
+
+### Stage23 Exercise Registry / safety — CODE + LOCAL DB + LIVE BENCHMARK GREEN; HOSTED RUNTIME PROOF OPEN
+
+The shared 23-exercise registry, versioned SQL mirror, read-only grants, Workout Plan identity/name trigger, deterministic Onboarding safety mapping, safe substitutions, critical no-inference safety guard, prompt/output budgets and dedicated CI are implemented. All 23 migrations and real SQL/REST permission/trigger probes passed locally. Live AvalAI tests passed 3/3 on both Flash and Flash Lite; Lite is now the measured low-cost default. Hosted migration and real-account runtime proof remain open.
+
+### Stage24 structured planners — AFTER STAGE23
+
+Bounded Training + Nutrition structured generation and deterministic validators/materializers. Nutrition Core remains arithmetic authority.
 
 ---
 
@@ -128,12 +180,7 @@ Nutrition history, Workout history, AI audit history and tool-audit history need
 
 Keep route-specific sources. Remove avoidable serial reads with request reuse/Promise.all when safe, but do not rebuild one giant account snapshot.
 
-### Current expensive paths — BOUNDED
-
-- Nutrition plan display: identity + one active-plan query.
-- Plan meal logging: live Auth + one plan read + one bulk write.
-- YouTube direct URL: zero Data API calls.
-- YouTube search: one DB reservation + two official API calls + one LLM request.
+Stage21 additionally removed an unnecessary Onboarding provider bootstrap from `/onboarding/ready` by scoping the client provider to `[step]` only.
 
 ---
 
@@ -147,58 +194,61 @@ Keep route-specific sources. Remove avoidable serial reads with request reuse/Pr
 - Production email: replace Gmail Preview SMTP with dedicated transactional provider/domain + SPF/DKIM/DMARC.
 - Leaked-password protection when plan supports it.
 
+Supabase Security Advisor after the Stage21 DB hardening still reports only the pre-existing plan-gated leaked-password-protection warning; no new RLS/DDL warning was introduced.
+
 ---
 
 ## P2 — product completeness
 
-- Notifications/push: no real persistence/delivery source.
+- Notifications/push: no real persistence/delivery source; therefore removed from active Onboarding questions.
 - Reports: must consume real Nutrition/Workout/Progress data.
-- Body photos/media: consent + private Storage RLS + deletion semantics.
-- Coach conversation persistence: intentionally session/device-local today; future persistence needs privacy/delete semantics.
-- Theme setting truth: `user_settings.theme` exists but no proven end-to-end user-facing theme control; do not claim it works.
+- Body photos/media: consent + private Storage RLS + deletion semantics; therefore photo opt-in removed from active Onboarding UI.
+- Coach conversation persistence: session/device-local today; future persistence needs privacy/delete semantics.
+- Theme setting truth: `user_settings.theme` exists but no proven end-to-end user-facing theme control.
+- Onboarding compatibility cleanup: v2 still carries some inactive legacy fields for compatibility; a future schema can remove them deliberately.
 
 ---
 
 ## P3 — UI/accessibility
 
-### Stage19 accessibility baseline — GREEN
+### Existing baseline — GREEN
 
 Global focus-visible, form font inheritance, common hit targets and reduced-motion are CI-gated.
 
-### Stage20 UI truth/data-safety — GREEN
+### Onboarding mobile source audit — GREEN; RENDERED QA OPEN
 
-`UI Truth Audit CI` run `31323084673`: **success**.
+Implemented source-level improvements include:
 
-Implemented and CI-gated:
+- 48px+ controls and 16px form text;
+- sticky progress + safe-area sticky actions;
+- selected-state affordances;
+- direct Edit from Review;
+- focusable error summary;
+- one-face Body Map + list fallback;
+- collapsible injury details;
+- AI key show/hide + direct official setup action;
+- grouped preference sections;
+- server-verified user-facing Ready screen.
 
-- stale Today fixture-backed copy removed;
-- dead Recent/Popular Nutrition filters replaced by real catalog categories;
-- Nutrition dialog Escape + focus restoration;
-- Workout no longer guesses first session is next;
-- Progress metric dates match their own rows;
-- Nutrition reset no longer deletes entire account history;
-- Nutrition Timeline is local-date scoped;
-- App Shell keyboard skip link;
-- app routes scanned for remaining `RoutePlaceholder` usage.
+Remaining accessibility polish: field-addressable summary links + inline errors + `aria-invalid`/`aria-describedby` per field.
 
 ### Rendered visual QA — OPEN
 
-After the next single deployment, capture mobile/desktop evidence for Today, Nutrition, Plan, Workout, Player, Progress, Profile, Coach, Auth, Onboarding and Settings. Fix spacing/card-density/typography from rendered evidence rather than CSS assumptions.
+After the next single deployment, capture mobile/desktop evidence for Today, Nutrition, Plan, Workout, Player, Progress, Profile, Coach, Auth, **all Onboarding interaction classes** and Settings. Fix from rendered evidence rather than CSS assumptions.
 
 ---
 
 ## Recommended order
 
-1. Close Stage 20 documentation on a final green HEAD.
-2. Stage 21: redesign Onboarding defaults/self-report semantics while the live table is empty.
-3. Expand authoritative/versioned food catalog coverage.
-4. Deploy latest stacked green candidate once to existing Preview Lab.
-5. Run Auth mailbox/session E2E.
-6. Run Google BYOK + AI audit + controlled AvalAI fallback proof.
-7. Runtime-prove YouTube search/direct-video/tool budget.
-8. Runtime-prove Workout/Nutrition/Progress + Stage18 idempotent meal logging.
-9. Then add typed Coach proposal/write flows with explicit confirmation.
+1. Finish latest Stage21 CI and local/rendered runtime proof.
+2. Apply and runtime-prove the Stage22 Program Cycle migration/state machine.
+3. Apply and runtime-prove the Stage23 Exercise Registry/safety migration on the hosted Preview project.
+4. Implement Stage24 bounded structured Training/Nutrition planners.
+5. Deploy one latest stacked green candidate once to existing Preview Lab.
+6. Run Auth mailbox/session E2E + Google/AvalAI/AI-audit proofs.
+7. Runtime-prove YouTube + Workout/Nutrition/Progress/meal logging.
+8. Then add typed Coach proposal/diff/confirmation and confirmed future-plan mutation tools.
 
 ## Release rule
 
-Preview-only. No Production promotion until P0/P1 hosted proofs are green with real account/provider/mailbox/tool traffic. The model never gets unrestricted database access.
+Preview-only. No Production promotion until P0/P1 hosted proofs are green with real account/provider/mailbox/tool/program traffic. The model never gets unrestricted database access.

@@ -42,7 +42,8 @@ test('Coach Progress context is bounded, user-filtered and uses the existing aut
   assert.match(loader, /from\('body_measurements'\)/);
   assert.match(loader, /\.eq\('user_id', userId\)/);
   assert.match(loader, /\.limit\(30\)/);
-  assert.match(loader, /supabase as unknown as SupabaseClient<CoachProgressDatabase>/);
+  assert.doesNotMatch(loader, /CoachProgressDatabase/);
+  assert.doesNotMatch(loader, /supabase as unknown as SupabaseClient/);
   assert.doesNotMatch(loader, /createClient\(/);
 });
 

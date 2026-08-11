@@ -14,20 +14,23 @@ test('signup confirmation targets the server confirm endpoint and exposes resend
   assert.match(actions, /type:\s*'signup'/);
 });
 
-test('repo confirmation template is token-hash based and independent of PKCE verifier cookies', async () => {
+test('repo confirmation template stages a token hash on the requested canonical redirect', async () => {
   const template = await readFile(new URL('../../supabase/templates/confirm-signup.html', import.meta.url), 'utf8');
-  assert.match(template, /\.SiteURL/);
+  assert.match(template, /\.RedirectTo/);
   assert.match(template, /token_hash=\{\{ \.TokenHash \}\}/);
   assert.match(template, /type=email/);
-  assert.match(template, /\/auth\/confirm/);
+  assert.doesNotMatch(template, /\.ConfirmationURL/);
 });
 
-test('confirm endpoint prefers verifyOtp and retains PKCE compatibility', async () => {
+test('confirm GET stages token while explicit verification POST consumes it and PKCE remains compatible', async () => {
   const confirm = await source('app/auth/confirm/route.ts');
-  assert.match(confirm, /verifyOtp\(\{ token_hash: tokenHash, type \}\)/);
+  const verify = await source('app/auth/verify/actions.ts');
+  assert.match(confirm, /verificationInterstitial\(tokenHash, type, next\)/);
+  assert.doesNotMatch(confirm, /verifyOtp\(/);
+  assert.match(verify, /verifyOtp\(\{ token_hash: tokenHash, type \}\)/);
   assert.match(confirm, /exchangeCodeForSession\(code\)/);
   assert.match(confirm, /message=confirmed-login/);
-  assert.doesNotMatch(confirm, /auth\.signOut\(/);
+  assert.match(verify, /clearPendingEmailLinkToken\(\)/);
 });
 
 test('legacy callback does not report a confirmed-email hostname mismatch as failed confirmation', async () => {

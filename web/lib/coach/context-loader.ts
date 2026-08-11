@@ -1,6 +1,5 @@
 import 'server-only';
 
-import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   NUTRIENT_KEYS,
   calculateGoalProgress,
@@ -12,64 +11,11 @@ import {
   type NutritionVector,
 } from '@neofit/nutrition-core';
 import { formatLocalDate, normalizeTimeZone } from '@/lib/local-date';
+import { exerciseRegistryContext } from '@/lib/exercise-registry/coach-context';
 import { goalLabels, parseOnboardingDraft } from '@/lib/onboarding/model';
 import type { Json } from '@/lib/supabase/database.types';
 import type { AiAuthenticatedContext } from '@/lib/ai/credential-store';
 import type { CoachContextDomain } from './context-router';
-
-type CoachProgressDatabase = {
-  __InternalSupabase: { PostgrestVersion: '14.15' };
-  public: {
-    Tables: {
-      body_measurements: {
-        Row: {
-          id: string;
-          user_id: string;
-          client_mutation_id: string;
-          local_date: string;
-          measured_at: string;
-          weight_kg: number | null;
-          waist_cm: number | null;
-          body_fat_percent: number | null;
-          note: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          client_mutation_id: string;
-          local_date: string;
-          measured_at?: string;
-          weight_kg?: number | null;
-          waist_cm?: number | null;
-          body_fat_percent?: number | null;
-          note?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          client_mutation_id?: string;
-          local_date?: string;
-          measured_at?: string;
-          weight_kg?: number | null;
-          waist_cm?: number | null;
-          body_fat_percent?: number | null;
-          note?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-    };
-    Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
-    Enums: { [_ in never]: never };
-    CompositeTypes: { [_ in never]: never };
-  };
-};
 
 function isRecord(value: Json | undefined | null): value is { [key: string]: Json | undefined } {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -121,6 +67,7 @@ function rounded(value: number | null | undefined) {
 export async function loadCoachContext(
   auth: AiAuthenticatedContext,
   domains: readonly CoachContextDomain[],
+  message = '',
 ) {
   const { supabase, userId } = auth;
   const [profileResult, onboardingResult] = await Promise.all([
@@ -158,9 +105,14 @@ export async function loadCoachContext(
         painDuringExercise: onboarding.injuries.painDuringExercise,
         painScale: onboarding.injuries.painScale,
         generalLimitations: bounded(onboarding.injuries.generalLimitations, 700),
-        areas: onboarding.injuries.areas.slice(0, 73).map((area) => ({ label: area.label, severity: area.severity, status: area.status, forbiddenMovements: bounded(area.forbiddenMovements, 240), notes: bounded(area.notes, 240) })),
+        areaCount: onboarding.injuries.areas.length,
+        areas: onboarding.injuries.areas.slice(0, 24).map((area) => ({ bodyPartId: area.bodyPartId, label: area.label, severity: area.severity, status: area.status, forbiddenMovements: bounded(area.forbiddenMovements, 160), notes: bounded(area.notes, 160) })),
       },
     } : null;
+  }
+
+  if (domains.includes('workout')) {
+    context.exerciseRegistry = exerciseRegistryContext(message, onboarding);
   }
 
   const tasks: Array<Promise<void>> = [];
@@ -241,10 +193,7 @@ export async function loadCoachContext(
 
   if (domains.includes('progress')) {
     tasks.push((async () => {
-      // Reuse the exact authenticated client/session. The cast only supplies the
-      // Stage 10 table type until the global generated type file is regenerated.
-      const progressClient = supabase as unknown as SupabaseClient<CoachProgressDatabase>;
-      const result = await progressClient
+      const result = await supabase
         .from('body_measurements')
         .select('local_date,measured_at,weight_kg,waist_cm,body_fat_percent')
         .eq('user_id', userId)

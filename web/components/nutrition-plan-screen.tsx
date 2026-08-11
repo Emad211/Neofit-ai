@@ -31,6 +31,10 @@ function AccountPlan({ snapshot }: { snapshot: NutritionPlanSnapshot }) {
           <span>دادهٔ واقعی حساب</span>
           <h3>هنوز برنامهٔ غذایی فعالی ثبت نشده</h3>
           <p>NeoFit برنامهٔ نمونه را به‌جای برنامهٔ شخصی نمایش نمی‌دهد. وقتی نسخهٔ معتبر و resolve‌شده‌ای از برنامه فعال شود، همین صفحه آن را نشان می‌دهد.</p>
+          <div className="action-row">
+            <Link className="primary-button" href="/program">ساخت یا فعال‌سازی برنامه</Link>
+            <Link className="text-button" href="/onboarding/review">مرور اطلاعات پایه</Link>
+          </div>
         </div>
       </article>
     );

@@ -18,6 +18,9 @@ const categoryLabels: Readonly<Record<FoodFixture['category'], string>> = {
   kebab: 'کباب',
   soup: 'آش و سوپ',
   breakfast: 'صبحانه',
+  bread: 'نان',
+  dairy_beverage: 'لبنیات و نوشیدنی',
+  street_food: 'غذای آماده',
 };
 
 const categoryFilters: readonly { id: CategoryFilter; label: string }[] = [
@@ -27,6 +30,9 @@ const categoryFilters: readonly { id: CategoryFilter; label: string }[] = [
   { id: 'kebab', label: 'کباب' },
   { id: 'soup', label: 'آش و سوپ' },
   { id: 'breakfast', label: 'صبحانه' },
+  { id: 'bread', label: 'نان' },
+  { id: 'dairy_beverage', label: 'لبنیات' },
+  { id: 'street_food', label: 'غذای آماده' },
 ];
 
 const mealOptions: readonly { id: MealType; label: string }[] = [

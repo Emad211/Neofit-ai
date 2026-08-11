@@ -1,0 +1,121 @@
+name: Runtime Recovery Gate CI
+
+on:
+  push:
+    branches:
+      - 'stage21/**'
+    paths:
+      - 'web/app/page.tsx'
+      - 'web/app/auth/**'
+      - 'web/app/layout.tsx'
+      - 'web/components/pwa-register.tsx'
+      - 'web/public/sw.js'
+      - 'web/lib/auth/**'
+      - 'web/lib/nutrition-adapter.ts'
+      - 'web/lib/web-diary-storage.ts'
+      - 'web/tests/runtime-recovery-gate.test.ts'
+      - 'web/package.json'
+      - '.github/workflows/runtime-recovery-gate-ci.yml'
+  pull_request:
+    branches:
+      - stage20/ui-truth-empty-states
+    paths:
+      - 'web/app/page.tsx'
+      - 'web/app/auth/**'
+      - 'web/app/layout.tsx'
+      - 'web/components/pwa-register.tsx'
+      - 'web/public/sw.js'
+      - 'web/lib/auth/**'
+      - 'web/lib/nutrition-adapter.ts'
+      - 'web/lib/web-diary-storage.ts'
+      - 'web/tests/runtime-recovery-gate.test.ts'
+      - 'web/package.json'
+      - '.github/workflows/runtime-recovery-gate-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runtime-recovery-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_VERCEL_ENV: preview
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3100
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_test_value
+      AI_CREDENTIAL_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+      AUTH_RECOVERY_INTENT_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+          cache-dependency-path: |
+            web/package.json
+            packages/nutrition-core/package.json
+      - name: Install workspace dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: Runtime recovery contracts
+        working-directory: web
+        run: npm run test:runtime-recovery
+      - name: Auth regression
+        working-directory: web
+        run: npm run test:auth-production
+      - name: Full Supabase app regression
+        working-directory: web
+        run: npm run test:supabase-app
+      - name: TypeScript
+        working-directory: web
+        run: npm run typecheck
+      - name: Production build
+        working-directory: web
+        run: npm run build
+      - name: Built Next static runtime smoke
+        working-directory: web
+        shell: bash
+        run: |
+          set -euo pipefail
+          ../node_modules/.bin/next start -H 127.0.0.1 -p 3100 >/tmp/neofit-runtime-recovery.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+
+          READY=0
+          for i in $(seq 1 30); do
+            STATUS=$(curl -sS -o /tmp/neofit-runtime-recovery-sw.tmp -w '%{http_code}' http://127.0.0.1:3100/sw.js || true)
+            if [ "$STATUS" = "200" ]; then READY=1; break; fi
+            sleep 1
+          done
+          if [ "$READY" != "1" ]; then
+            cat /tmp/neofit-runtime-recovery.log
+            exit 1
+          fi
+          grep -q 'neofit-app-shell-' /tmp/neofit-runtime-recovery-sw.tmp
+          grep -q 'LOCAL_DEVELOPMENT_HOSTS' /tmp/neofit-runtime-recovery-sw.tmp
+          grep -q 'self.registration.unregister()' /tmp/neofit-runtime-recovery-sw.tmp
+      - name: Hard recovery boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "activeAuthSession(supabase)" web/app/page.tsx
+          grep -q "if (!active) redirect('/auth')" web/app/page.tsx
+          grep -q "activeAuthSession(supabase)" web/app/auth/page.tsx
+          if grep -q "supabase.auth.getClaims()" web/app/auth/page.tsx; then
+            echo 'Auth page must not redirect using claims-only identity.' >&2
+            exit 1
+          fi
+          grep -q "environment !== 'production'" web/components/pwa-register.tsx
+          grep -q 'getRegistrations' web/components/pwa-register.tsx
+          grep -q 'LOCAL_DEVELOPMENT_HOSTS' web/public/sw.js
+          grep -q 'self.registration.unregister()' web/public/sw.js
+          grep -q 'ZERO_WEB_MACROS' web/lib/nutrition-adapter.ts

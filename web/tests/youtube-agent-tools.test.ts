@@ -135,4 +135,5 @@ test('generated Supabase types include integration credential and tool audit tab
   assert.match(types, /agent_tool_audit:/);
   assert.match(types, /encrypted_integration_credentials:/);
   assert.match(types, /nutrition_entries_plan_provenance_fk/);
+  assert.match(types, /reserve_agent_tool_call:/);
 });

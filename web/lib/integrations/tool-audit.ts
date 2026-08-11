@@ -15,13 +15,6 @@ interface ReserveAgentToolRow {
   readonly retry_after_seconds: number;
 }
 
-interface RpcResult {
-  readonly data: unknown;
-  readonly error: { readonly message?: string } | null;
-}
-
-type RpcCaller = (fn: string, args?: Record<string, unknown>) => PromiseLike<RpcResult>;
-
 export class AgentToolBudgetExceededError extends Error {
   readonly retryAfterSeconds: number;
   readonly burstUsed: number;
@@ -43,12 +36,6 @@ export class AgentToolBudgetUnavailableError extends Error {
   }
 }
 
-function rpc(context: IntegrationAuthenticatedContext): RpcCaller {
-  // The live database exposes reserve_agent_tool_call. Keep this narrow until
-  // the next full generated type refresh instead of widening the Supabase client.
-  return context.supabase.rpc.bind(context.supabase) as unknown as RpcCaller;
-}
-
 function count(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? Math.round(value) : 0;
 }
@@ -57,7 +44,7 @@ export async function beginYouTubeToolAudit(
   context: IntegrationAuthenticatedContext,
   query: string,
 ): Promise<AgentToolAuditReservation> {
-  const { data, error } = await rpc(context)('reserve_agent_tool_call', {
+  const { data, error } = await context.supabase.rpc('reserve_agent_tool_call', {
     p_tool_name: 'youtube_search',
     p_query_fingerprint: toolQueryFingerprint(query),
   });

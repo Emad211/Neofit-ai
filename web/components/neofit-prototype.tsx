@@ -44,6 +44,9 @@ const categoryLabels: Readonly<Record<FoodFixture['category'], string>> = {
   kebab: 'کباب',
   soup: 'آش و سوپ',
   breakfast: 'صبحانه',
+  bread: 'نان',
+  dairy_beverage: 'لبنیات و نوشیدنی',
+  street_food: 'غذای آماده',
 };
 
 const mealOptions: readonly { id: MealType; label: string }[] = [

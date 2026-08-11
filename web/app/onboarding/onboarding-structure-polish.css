@@ -1,0 +1,65 @@
+.onboarding-preference-group {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #e1e9e4;
+  border-radius: 18px;
+  background: #fbfdfc;
+}
+
+.onboarding-preference-group > header {
+  display: grid;
+  gap: 3px;
+}
+
+.onboarding-preference-group > header h3,
+.onboarding-preference-group > header p {
+  margin: 0;
+}
+
+.onboarding-preference-group > header h3 {
+  font-size: 1rem;
+}
+
+.onboarding-preference-group > header p {
+  color: #708078;
+  font-size: .82rem;
+  line-height: 1.65;
+}
+
+.onboarding-chip-grid--equipment button {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+}
+
+.onboarding-chip-grid--equipment button strong {
+  font: inherit;
+  font-weight: 850;
+}
+
+.onboarding-chip-grid--equipment button small {
+  color: #76867e;
+  font-size: .72rem;
+  font-weight: 600;
+}
+
+.onboarding-chip-grid--equipment button.is-selected small {
+  color: inherit;
+  opacity: .72;
+}
+
+@media (max-width: 720px) {
+  .onboarding-preference-group {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .onboarding-preference-group .onboarding-grid--2 {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-chip-grid--equipment button {
+    min-block-size: 66px;
+  }
+}

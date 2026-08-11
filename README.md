@@ -1,136 +1,68 @@
 # NeoFit AI
 
-NeoFit یک PWA فارسی و Mobile-first برای تغذیه و تمرین است. رابط وب با Next.js App Router ساخته می‌شود، محاسبات تغذیه فقط از Shared Nutrition Core می‌آیند و دادهٔ حساب با Supabase Auth/Postgres/RLS نگهداری می‌شود.
+NeoFit یک PWA فارسی و Mobile-first برای تغذیه، تمرین و مربی شخصی است. محصول فعال در `web/` قرار دارد، محاسبات تغذیه فقط از Shared Nutrition Core می‌آیند و دادهٔ حساب با Supabase Auth/Postgres/RLS نگهداری می‌شود.
 
-## مسیر فعال توسعه
-
-```text
-repository: Emad211/Neofit-ai
-architecture base: web/pwa-foundation
-active branch: web/full-frontend-integration
-active Draft PR: #36
-frontend UX reference: revival/full-ui-front / Draft PR #34
-```
-
-`master` شاخهٔ ادامهٔ وب نیست. PR #34 مرجع کامل UX محلی است؛ کد Production-connected به‌صورت مرحله‌ای داخل PR #36 Port می‌شود و PR #34 مستقیماً Merge نمی‌شود.
-
-## معماری قفل‌شده
-
-- Next.js App Router + strict TypeScript در `web/`
-- فارسی و RTL
-- `packages/nutrition-core` تنها مرجع محاسبات تغذیه
-- IFKB + USDA SR Legacy + FNDDS به‌عنوان مرجع داده
-- Supabase Auth + Postgres + own-row RLS
-- Guest Browser-local fallback
-- Service Worker فقط برای shell و دادهٔ عمومی قابل Cache
-- بدون Service Role یا Secret سروری در Browser
-- بدون محاسبهٔ دوبارهٔ Nutrition در SQL یا React
-- بدون Queue، Event Bus، IndexedDB یا Background Sync در برش فعلی
-
-## وضعیت پیاده‌سازی
-
-### Merge شده
+## وضعیت فعلی
 
 ```text
-Stage 4B SSR/Auth foundation — PR #30
-Stage 4C Identity schema/RLS — PR #33
-Stage 4D Nutrition persistence — PR #35
+active branch: stage21/onboarding-self-report-v2
+runtime target: neofit-preview-lab (Preview only)
+Stage21: code/DB hardening ready; rendered/runtime proof open
+Stage22: Program Cycle code + local migration green; hosted runtime proof open
+Stage23: Exercise Registry/safety local DB + live benchmark green; hosted runtime proof open
+next domain stage: Stage24 bounded structured planners
 ```
 
-Supabase tables:
+Production عمداً خارج از محدوده است تا چرخهٔ واقعی Auth، Provider، Onboarding، Program، Plan، logging و تغییرات تأییدشده روی Preview اثبات شود.
 
-```text
-profiles
-user_settings
-nutrition_goals
-nutrition_entries
+## معماری
+
+- `web/`: Next.js App Router، React، strict TypeScript، PWA فارسی/RTL.
+- `packages/nutrition-core/`: مرجع pure و deterministic برای تمام محاسبات تغذیه.
+- `packages/exercise-registry/`: مرجع versioned هویت حرکت، ایمنی و جایگزینی قطعی.
+- `supabase/`: migrationهای versioned، own-row RLS، plan versioning، audit و Program Cycle.
+- `ifkb/`: pipeline دادهٔ غذایی/تصویری و کاتالوگ versioned.
+- `mobile/`: اپ Expo/SQLite فریز‌شده و مرجع تاریخی Local-first.
+
+قواعد غیرقابل مذاکره:
+
+- Guest و Account هیچ‌وقت دادهٔ شخصی ساختگی را با هم مخلوط نمی‌کنند.
+- مدل، کالری یا macro authoritative تولید نمی‌کند؛ Nutrition Core مرجع است.
+- API key خام وارد Onboarding JSON، Browser storage یا audit نمی‌شود.
+- Coach دسترسی SQL آزاد ندارد و mutation خاموش انجام نمی‌دهد.
+- planها immutable/versioned هستند و تاریخچهٔ ثبت‌شده بازنویسی نمی‌شود.
+- AvalAI credential برای تاب‌آوری Onboarding واقعی الزامی است؛ Google primary اختیاری است.
+
+## توسعه و بررسی
+
+```bash
+npm install
+npm run check:nutrition-core
+npm run check:exercise-registry
+npm run typecheck:web
+npm run build:web
 ```
 
-### Routeهای متصل فعلی
+گیت‌های دقیق‌تر در `web/package.json` و `.github/workflows/` قرار دارند. Dependencyهای `mobile/` مستقل‌اند و برای بررسی آن بخش باید داخل همان پوشه نصب شوند.
 
-```text
-/today
-/nutrition
-/nutrition/plan
-/workout
-/workout/[id]
-/progress
-/profile
-/auth
-/auth/callback
-/auth/confirm
-/auth/signout
-```
+## رودمپ فعال
 
-### پایداری Auth و Guest state
+1. اثبات runtime و rendered QA برای Stage 21.
+2. اعمال و اثبات migration چرخهٔ دورهٔ Stage 22.
+3. اثبات hosted runtime رجیستری Stage 23.
+4. Stage 24: Plannerهای ساختاریافته و materialization محدود.
+5. Stage 25: Review و Activation هماهنگ.
+6. Stage 26: Proposal، Diff و Confirmation.
+7. Stage 27: ابزارهای تغییر نسخهٔ آینده پس از تأیید کاربر.
+8. یک Preview نهایی سبز و E2E کامل؛ سپس تصمیم جداگانه برای Production.
 
-برش جاری این موارد را سخت‌سازی می‌کند:
+## اسناد مرجع
 
-- Bootstrap حساب فقط ردیف‌های مفقود را می‌سازد و Login مجدد نام، Settings یا Nutrition Goals موجود را Reset نمی‌کند.
-- تاریخ Diary با Timezone پروفایل و پیش‌فرض `Asia/Tehran` ساخته می‌شود؛ UTC slicing حذف شده است.
-- تاریخ جاری هنگام Focus، Visibility change و عبور زمان به‌روز می‌شود.
-- Local diary با Envelope نسخه‌دار ذخیره می‌شود.
-- آرایهٔ خالی معتبر بعد از Refresh حفظ می‌شود.
-- Payload محلی پیش از استفاده اعتبارسنجی می‌شود.
-- Meal label و Macro view از دادهٔ معتبر Core دوباره مشتق می‌شوند و مقدار دست‌کاری‌شدهٔ ذخیره‌شده مورد اعتماد نیست.
-- مسیر Legacy array برای مهاجرت Storage قبلی حفظ شده است.
+1. `docs/NEOFIT_GAP_AUDIT_2026-08-08.md` — backlog جاری.
+2. `docs/NEOFIT_COACH_PROGRAM_LIFECYCLE_ARCHITECTURE.md` — قرارداد چرخهٔ محصول.
+3. `docs/NEOFIT_STAGE21_ONBOARDING_SELF_REPORT_V2.md` — ورودی Onboarding.
+4. `docs/NEOFIT_STAGE22_PROGRAM_CYCLE.md` — lifecycle و persistence دوره.
+5. `docs/NEOFIT_STAGE23_EXERCISE_REGISTRY.md` — هویت تمرین، safety gate و benchmark زنده.
+6. `docs/NEOFIT_PREVIEW_LAB.md` — مرز runtime.
 
-## Vercel
-
-تنها پروژهٔ کانونیکال:
-
-```text
-project: neofit-ai
-project id: prj_U4np29NAkTqZ6QjTbXmeEBkrcDNG
-release branch: vercel/preview
-stable Preview alias: neofit-ai-git-vercel-preview-emads-projects-41cb6447.vercel.app
-latest proven release deployment: dpl_2VARJ7A2EyEtUkU9aKU2DeTAxEHy
-state: READY
-```
-
-Development commitها توسط Ignored Build Step قبل از install/build متوقف می‌شوند، ولی Vercel همچنان ممکن است یک رکورد کوتاه `CANCELED` بسازد. بنابراین تغییرات باید Batch شوند و `vercel/preview` فقط یک بار پس از سبزشدن کامل CI به‌روزرسانی شود.
-
-این سه Probe هنوز Product نیستند و باید از Dashboard حذف شوند:
-
-```text
-neofit-direct-probe
-neofit-file-ref-probe
-neofit-ui-public-probe
-```
-
-## Environment لازم برای Runtime واقعی
-
-Preview کانونیکال به هر سه مقدار زیر نیاز دارد:
-
-```text
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-NEXT_PUBLIC_APP_URL=https://neofit-ai-git-vercel-preview-emads-projects-41cb6447.vercel.app
-```
-
-مقادیر واقعی در Git، Docs یا Artifact ثبت نمی‌شوند. Supabase Site URL و Redirect URLها نیز باید با Alias ثابت بالا هماهنگ شوند.
-
-## مرز ادعا
-
-ثابت شده است:
-
-- Build، TypeScript، Shared Core parity، PWA guest flow و قرارداد Auth در CI سبز بوده‌اند.
-- Canonical Preview واقعی Next.js ساخته شده و Runtime error cluster آن صفر بوده است.
-- Schema، RLS و Advisorهای Supabase سالم‌اند.
-
-هنوز ثابت نشده است:
-
-- Signup/confirmation واقعی روی Preview دارای Environment؛
-- Cookie round-trip واقعی؛
-- ثبت وعده در Remote و ماندگاری پس از sign-out/sign-in؛
-- فرانت کامل PR #34 داخل معماری جاری؛
-- Production.
-
-## منابع اجباری
-
-1. `docs/NEOFIT_MASTER_PLAN.md`
-2. `docs/NEOFIT_PROGRESS_LOG.md`
-3. `docs/NEOFIT_AUTH_PERSISTENCE_INTEGRATION_EVIDENCE.md`
-4. `docs/NEOFIT_VERCEL_CANONICAL_PREVIEW.md`
-5. `docs/DEVELOPMENT_HANDOFF.md`
-6. وضعیت زندهٔ PR، CI، Vercel و Supabase
+اسناد Stage قدیمی‌تر تاریخچهٔ تصمیم و evidence همان مقطع هستند؛ در تعارض‌ها، فهرست بالا authority دارد.
