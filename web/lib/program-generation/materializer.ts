@@ -159,7 +159,9 @@ export function eligibleFoodsForProgram(draft: OnboardingDraft): readonly FoodFi
   if (
     draft.basics.age === null
     || draft.basics.age < 18
+    || draft.medical.hasHighBloodPressure === true
     || draft.medical.hasDiabetes === true
+    || draft.medical.hasCardiacHistory === true
     || draft.medical.conditions.length > 0
     || draft.medical.medications.trim().length > 0
   ) {
@@ -274,8 +276,14 @@ function mealSlot(index: number, count: number): { type: 'breakfast' | 'lunch' |
   if (index === count - 1) return { type: 'dinner', label: 'شام' };
   const lunchIndex = Math.floor((count - 1) / 2);
   if (index === lunchIndex) return { type: 'lunch', label: 'ناهار' };
-  const snackNumber = index < lunchIndex ? index : index - lunchIndex;
+  const snackNumber = index < lunchIndex ? index : index - 1;
   return { type: 'snack', label: `میان‌وعده ${snackNumber}` };
+}
+
+function validQuarterPortion(value: number): boolean {
+  if (!Number.isFinite(value) || value < 0.25 || value > 3) return false;
+  const quarters = value * 4;
+  return Math.abs(quarters - Math.round(quarters)) <= 1e-9;
 }
 
 function nutritionDocument(
@@ -300,14 +308,20 @@ function nutritionDocument(
         day: weekdays[dayIndex]!,
         title: 'الگوی غذایی روزانه',
         meals: meals.map((items, mealIndex) => {
-          if (items.length < 1 || items.length > 2) throw new ProgramMaterializationError('planner_selection_invalid');
+          if (
+            items.length < 1
+            || items.length > 2
+            || new Set(items.map((item) => item.id)).size !== items.length
+          ) {
+            throw new ProgramMaterializationError('planner_selection_invalid');
+          }
           const slot = mealSlot(mealIndex, mealsPerDay);
           return {
             id: `meal-${dayIndex + 1}-${mealIndex + 1}`,
             mealType: slot.type,
             label: slot.label,
             items: items.map((item) => {
-              if (!allowedIds.has(item.id) || item.portion < 0.25 || item.portion > 3) {
+              if (!allowedIds.has(item.id) || !validQuarterPortion(item.portion)) {
                 throw new ProgramMaterializationError('planner_selection_invalid');
               }
               return catalogItem(item.id, item.portion);
