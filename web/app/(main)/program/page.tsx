@@ -2,11 +2,13 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { loadProgramCycleSnapshot } from '@/lib/program-cycle/data';
 import { programCycleStatusLabel } from '@/lib/program-cycle/core';
-import { activateProgramCycle, generateProgramCycle } from './actions';
+import { activateProgramCycle, generateProgramCycle, recoverProgramCycleGeneration } from './actions';
 import { ProgramActionButton } from './program-action-button';
 import './program.css';
 
 export const dynamic = 'force-dynamic';
+
+const GENERATION_STALE_MS = 5 * 60_000;
 
 const ERROR_MESSAGES: Readonly<Record<string, string>> = {
   invalid_request: 'درخواست معتبر نبود. صفحه را تازه کن و دوباره تلاش کن.',
@@ -22,6 +24,8 @@ const ERROR_MESSAGES: Readonly<Record<string, string>> = {
   planner_selection_invalid: 'انتخاب‌های Planner بعد از اعتبارسنجی ایمنی یا کاتالوگ معتبر نبود؛ هیچ برنامه‌ای ذخیره نشد.',
   generation_start_failed: 'شروع ساخت برنامه ثبت نشد. دوباره تلاش کن.',
   generation_persist_failed: 'ساخت برنامه کامل نشد و هیچ برنامهٔ ناقصی فعال نشده است.',
+  generation_still_running: 'این تلاش هنوز در بازهٔ اجرای معتبر قرار دارد و قابل بازنشانی نیست.',
+  generation_recovery_failed: 'آزادسازی تلاش متوقف‌شده انجام نشد. صفحه را تازه کن و دوباره بررسی کن.',
   activation_failed: 'فعال‌سازی اتمیک دو برنامه انجام نشد؛ نسخه‌های قبلی دست‌نخورده باقی ماندند.',
 };
 
@@ -39,11 +43,17 @@ export default async function ProgramPage({
     return <section className="program-cycle-page"><p role="alert">{snapshot.loadError ?? 'چرخهٔ دوره در دسترس نیست.'}</p></section>;
   }
   const generated = snapshot.workoutPlan && snapshot.nutritionPlan;
+  const cycleUpdatedAt = Date.parse(cycle.updated_at);
+  const canRecoverGeneration = cycle.status === 'generating'
+    && Number.isFinite(cycleUpdatedAt)
+    && Date.now() - cycleUpdatedAt >= GENERATION_STALE_MS;
   const success = query.message === 'plans-ready'
     ? 'هر دو برنامه ساخته شدند. پیش از فعال‌سازی خلاصه را بررسی کن.'
     : query.message === 'plans-active'
       ? 'برنامهٔ تمرین و تغذیه با هم فعال شدند و اکنون در بخش‌های اصلی در دسترس‌اند.'
-      : null;
+      : query.message === 'generation-recovered'
+        ? 'تلاش متوقف‌شده آزاد شد. اکنون می‌توانی ساخت برنامه را دوباره شروع کنی.'
+        : null;
   const error = query.error ? ERROR_MESSAGES[query.error] ?? 'عملیات برنامه انجام نشد.' : snapshot.loadError;
 
   return (
@@ -83,7 +93,18 @@ export default async function ProgramPage({
 
       {cycle.status === 'generating' ? (
         <article className="program-cycle-command" aria-live="polite">
-          <div><p className="section-kicker">در حال ساخت</p><h3>Planner تمرین و تغذیه در حال پردازش‌اند</h3><p>فقط وقتی هر دو خروجی اعتبارسنجی شوند، دو نسخهٔ پیش‌نویس با هم در پایگاه داده ثبت می‌شوند.</p></div>
+          <div>
+            <p className="section-kicker">در حال ساخت</p>
+            <h3>Planner تمرین و تغذیه در حال پردازش‌اند</h3>
+            <p>فقط وقتی هر دو خروجی اعتبارسنجی شوند، دو نسخهٔ پیش‌نویس با هم در پایگاه داده ثبت می‌شوند.</p>
+          </div>
+          {canRecoverGeneration ? (
+            <form action={recoverProgramCycleGeneration}>
+              <input type="hidden" name="cycleId" value={cycle.id} />
+              <input type="hidden" name="revision" value={cycle.revision} />
+              <ProgramActionButton pendingLabel="در حال آزادسازی…">آزادسازی تلاش متوقف‌شده</ProgramActionButton>
+            </form>
+          ) : null}
         </article>
       ) : null}
 
