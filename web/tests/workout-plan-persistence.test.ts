@@ -85,13 +85,15 @@ test('account session persistence stores immutable plan provenance', async () =>
   assert.match(persistence, /session\.workout_plan_version !== planVersion/);
 });
 
-test('workout UI does not present synthetic calorie burn as account plan truth', async () => {
+test('workout UI avoids synthetic calories and guest demo plans', async () => {
   const screen = await web('components/workout-screen.tsx');
   const details = await web('components/workout-details-screen.tsx');
   assert.doesNotMatch(screen, /\.calories|kcal/i);
   assert.doesNotMatch(details, /\.calories|kcal/i);
-  assert.match(screen, /برنامه نمونه مهمان/);
-  assert.match(screen, /هنوز برنامهٔ فعالی ثبت نشده/);
+  assert.match(screen, /برای ساخت برنامه شخصی وارد حساب شو/);
+  assert.match(screen, /هنوز برنامه تمرینی نداری/);
+  assert.match(screen, /رفتن به برنامه من/);
+  assert.doesNotMatch(screen, /برنامه نمونه مهمان|Demo|fixture/i);
 });
 
 test('generated Supabase types include workout plans and session provenance', async () => {
