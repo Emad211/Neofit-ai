@@ -204,11 +204,16 @@ test('Program generation claims the cycle before spending two bounded planner re
 
   assert.match(page, /ساخت برنامهٔ تمرین و تغذیه/);
   assert.match(page, /فعال‌سازی برنامه/);
-  assert.match(page, /آزادسازی تلاش متوقف‌شده/);
+  assert.match(page, /تلاش دوباره/);
   assert.equal((planners.match(/generateWithProviderFallback\(/g) ?? []).length, 2);
   assert.match(planners, /plannerPreflight/);
   assert.match(planners, /safeExercisesForProgram/);
   assert.match(planners, /eligibleFoodsForProgram/);
+  assert.match(planners, /recentBreakWeeks/);
+  assert.match(planners, /strengthExperience/);
+  assert.match(planners, /doNotInferPersonalCalorieOrMacroTargets/);
+  assert.match(planners, /avoidSameDayDuplicatesWhenAlternativesExist/);
+  assert.doesNotMatch(planners, /weightKg: draft\.basics\.weightKg/);
   const transitionIndex = actions.indexOf("p_target_status: 'generating'");
   const plannerCallIndex = actions.indexOf('const selections = await generateProgramPlannerSelections(draft);');
   assert.ok(transitionIndex >= 0 && plannerCallIndex >= 0 && transitionIndex < plannerCallIndex);
