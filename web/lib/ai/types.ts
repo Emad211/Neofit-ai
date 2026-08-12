@@ -23,6 +23,8 @@ export interface AiGenerationInput {
   readonly input: string;
   readonly systemInstruction?: string;
   readonly media?: readonly AiMediaInput[];
+  readonly responseSchema?: Readonly<Record<string, unknown>>;
+  readonly maxOutputTokens?: number;
 }
 
 export interface AiGenerationResult {
