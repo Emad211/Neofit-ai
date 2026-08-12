@@ -200,9 +200,11 @@ test('AI connection is mobile actionable without persisting raw secrets in brows
   assert.match(gate, /aistudio\.google\.com\/app\/apikey/);
   assert.match(gate, /SecretField/);
   assert.match(gate, /aria-pressed=\{revealed\}/);
-  assert.match(gate, /const gateReady = mode === 'guest' \? true : avalaiReady/);
+  assert.match(gate, /const providerReady = googleReady \|\| avalaiReady/);
+  assert.match(gate, /const gateReady = mode === 'guest' \? true : providerReady/);
   assert.match(gate, /مربی هوشمند آماده است/);
   assert.match(gate, /Google Gemini/);
+  assert.match(gate, /Google یا AvalAI کافی است/);
   assert.doesNotMatch(gate, /localStorage|sessionStorage|fallback معتبر|بدون inference/);
   assert.match(screen, /mode === 'account'.*!aiReady/s);
   assert.match(screen, /اتصال مربی هوشمند را کامل کن/);
@@ -243,6 +245,8 @@ test('interactive provider is scoped to step routes and Ready verifies account s
   assert.match(ready, /activeAuthSession\(supabase\)/);
   assert.match(ready, /status,schema_version,draft/);
   assert.match(ready, /parseOnboardingDraft/);
+  assert.match(ready, /\.eq\('status', 'active'\)/);
+  assert.doesNotMatch(ready, /\.eq\('provider', 'avalai'\)/);
   assert.match(ready, /status !== 'completed'/);
   assert.doesNotMatch(ready, /Stage22|Stage24|read-only|Demo Onboarding|ورودی معتبر چرخه/);
 });
