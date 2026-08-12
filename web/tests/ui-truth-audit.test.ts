@@ -109,3 +109,26 @@ test('core user screens do not expose internal architecture vocabulary', async (
   }
   assert.deepEqual(offenders, []);
 });
+
+test('auth, onboarding and connection settings do not surface implementation diagnostics', async () => {
+  const paths = [
+    'app/auth/page.tsx',
+    'app/auth/recover/page.tsx',
+    'app/auth/update-password/page.tsx',
+    'app/auth/verify/page.tsx',
+    'app/(main)/profile/security/page.tsx',
+    'app/onboarding/ready/page.tsx',
+    'components/onboarding/onboarding-screen.tsx',
+    'components/onboarding/onboarding-ai-gate.tsx',
+    'components/ai-provider-settings-screen.tsx',
+    'components/integration-settings-screen.tsx',
+    'components/coach-screen.tsx',
+  ];
+  const forbiddenVisibleCopy = /Demo Onboarding|Agent tools|Query حساب|بدون inference|fallback معتبر|Google به‌تنهایی شرط عبور نیست|بررسی زنده با Auth server|cookie کوتاه‌عمر|HttpOnly|refresh tokenهای نشست‌های دیگر|metadata فعلی Supabase|تحت RLS|ورودی معتبر چرخه/i;
+  const offenders: string[] = [];
+  for (const path of paths) {
+    const source = await read(path);
+    if (forbiddenVisibleCopy.test(source)) offenders.push(path);
+  }
+  assert.deepEqual(offenders, []);
+});
