@@ -24,7 +24,7 @@ test('Program Cycle core keeps status and duration boundaries deterministic', ()
   assert.equal(programCycleEndDate('2026-12-20', 84), '2027-03-13');
   assert.throws(() => programCycleEndDate('2026-02-30', 14));
   assert.throws(() => programCycleEndDate('2026-08-11', 85));
-  assert.equal(programCycleStatusLabel('generating'), 'در حال آماده‌سازی');
+  assert.equal(programCycleStatusLabel('generating'), 'در حال ساخت');
 });
 
 test('Program Cycle migration enforces ownership, one open cycle, idempotency and revision checks', async () => {
