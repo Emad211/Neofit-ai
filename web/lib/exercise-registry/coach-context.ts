@@ -8,13 +8,28 @@ import {
 import type { OnboardingDraft } from '@/lib/onboarding/model';
 import { safetyProfileFromOnboarding } from './onboarding-safety';
 
+const FULL_GYM_EQUIPMENT: readonly ExerciseEquipment[] = [
+  'bodyweight', 'dumbbell', 'barbell', 'cable', 'bands', 'bench', 'full-gym',
+  'pull-up-bar', 'cardio-machine',
+];
+
+function normalize(value: string): string {
+  return value
+    .trim()
+    .toLocaleLowerCase('fa-IR')
+    .replace(/[\u200c\u200f\u202a-\u202e]/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
 function availableEquipment(draft: OnboardingDraft): ExerciseEquipment[] {
-  const equipment = new Set<ExerciseEquipment>();
-  for (const item of draft.availability.equipment) equipment.add(item);
-  if (equipment.has('full-gym')) {
-    for (const item of ['dumbbell', 'barbell', 'cable', 'bench', 'landmine'] as const) equipment.add(item);
+  const equipment = new Set<ExerciseEquipment>(['bodyweight']);
+  if (draft.availability.equipment.includes('full-gym')) {
+    for (const item of FULL_GYM_EQUIPMENT) equipment.add(item);
+  } else {
+    for (const item of draft.availability.equipment) equipment.add(item);
   }
-  equipment.add('bodyweight');
+  const custom = normalize(draft.availability.customEquipment);
+  if (custom.includes('landmine') || custom.includes('لندماین')) equipment.add('landmine');
   return Array.from(equipment);
 }
 
