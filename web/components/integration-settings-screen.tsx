@@ -6,7 +6,7 @@ import { NeoFitIcon } from '@/components/neofit-icons';
 import type { IntegrationCredentialMetadata } from '@/lib/integrations/types';
 
 function formatDate(value: string | null | undefined) {
-  if (!value) return 'هنوز تست نشده';
+  if (!value) return 'هنوز بررسی نشده';
   return new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 }
 
@@ -32,7 +32,7 @@ export function IntegrationSettingsScreen() {
         const body = await response.json() as { credential?: IntegrationCredentialMetadata | null };
         if (alive) setCredential(body.credential ?? null);
       } catch {
-        if (alive) { setMessage('خواندن وضعیت اتصال YouTube ممکن نشد.'); setError(true); }
+        if (alive) { setMessage('وضعیت اتصال YouTube بارگذاری نشد. دوباره تلاش کن.'); setError(true); }
       } finally {
         if (alive) setLoading(false);
       }
@@ -43,8 +43,8 @@ export function IntegrationSettingsScreen() {
 
   async function save() {
     const key = apiKey.trim();
-    if (!key) { setMessage('ابتدا کلید YouTube Data API را وارد کن.'); setError(true); return; }
-    setBusy(true); setError(false); setMessage('در حال اعتبارسنجی کم‌هزینه و ذخیره امن...');
+    if (!key) { setMessage('ابتدا کلید YouTube را وارد کن.'); setError(true); return; }
+    setBusy(true); setError(false); setMessage('در حال بررسی اتصال...');
     try {
       const response = await fetch('/api/integrations/youtube', {
         method: 'PUT',
@@ -55,9 +55,9 @@ export function IntegrationSettingsScreen() {
       if (!response.ok) throw new Error(body.error ?? 'save_failed');
       setCredential(body);
       setApiKey('');
-      setMessage('کلید معتبر است و به‌صورت رمز‌شده ذخیره شد.');
+      setMessage('اتصال YouTube با موفقیت ذخیره شد.');
     } catch {
-      setMessage('اعتبارسنجی یا ذخیره کلید انجام نشد. فعال‌بودن YouTube Data API v3 و محدودیت‌های کلید را بررسی کن.');
+      setMessage('اتصال برقرار نشد. کلید و فعال‌بودن YouTube Data API را بررسی کن.');
       setError(true);
     } finally {
       setBusy(false);
@@ -66,15 +66,15 @@ export function IntegrationSettingsScreen() {
 
   async function test() {
     if (!credential || busy) return;
-    setBusy(true); setError(false); setMessage('در حال تست اتصال بدون search...');
+    setBusy(true); setError(false); setMessage('در حال بررسی اتصال...');
     try {
       const response = await fetch('/api/integrations/youtube', { method: 'POST' });
       const body = await response.json() as IntegrationCredentialMetadata & { error?: string };
       if (!response.ok) throw new Error(body.error ?? 'test_failed');
       setCredential(body);
-      setMessage('اتصال YouTube Data API سالم است؛ برای تست، search quota مصرف نشد.');
+      setMessage('اتصال YouTube سالم است.');
     } catch {
-      setMessage('تست اتصال ناموفق بود. کلید یا محدودیت API را بررسی کن.');
+      setMessage('اتصال YouTube برقرار نشد. کلید یا محدودیت‌های آن را بررسی کن.');
       setError(true);
     } finally {
       setBusy(false);
@@ -82,15 +82,15 @@ export function IntegrationSettingsScreen() {
   }
 
   async function remove() {
-    if (!credential || busy || !window.confirm('کلید YouTube از NeoFit حذف شود؟')) return;
+    if (!credential || busy || !window.confirm('اتصال YouTube از NeoFit حذف شود؟')) return;
     setBusy(true); setError(false); setMessage('در حال حذف...');
     try {
       const response = await fetch('/api/integrations/youtube', { method: 'DELETE' });
       if (!response.ok) throw new Error('delete_failed');
       setCredential(null);
-      setMessage('کلید YouTube حذف شد.');
+      setMessage('اتصال YouTube حذف شد.');
     } catch {
-      setMessage('حذف کلید انجام نشد.');
+      setMessage('حذف اتصال انجام نشد.');
       setError(true);
     } finally {
       setBusy(false);
@@ -100,10 +100,10 @@ export function IntegrationSettingsScreen() {
   if (authenticationRequired) {
     return (
       <section className="page-stack" aria-labelledby="integration-heading">
-        <div className="section-heading"><div><p className="section-kicker">Agent tools</p><h2 id="integration-heading">اتصال‌های خارجی</h2></div></div>
+        <div className="section-heading"><div><p className="section-kicker">اتصال‌ها</p><h2 id="integration-heading">YouTube</h2></div></div>
         <article className="ai-settings-auth-card">
           <NeoFitIcon name="profile" size={24} />
-          <div><h3>برای اتصال YouTube وارد حساب شو</h3><p>کلید Integration به حساب و RLS وابسته است و در Guest ذخیره نمی‌شود.</p></div>
+          <div><h3>برای مدیریت اتصال YouTube وارد حساب شو</h3><p>اتصال‌های شخصی فقط برای حساب خودت ذخیره می‌شوند.</p></div>
           <Link href="/auth">ورود یا ساخت حساب</Link>
         </article>
       </section>
@@ -114,55 +114,45 @@ export function IntegrationSettingsScreen() {
   return (
     <section className="page-stack" aria-labelledby="integration-heading">
       <div className="section-heading">
-        <div><p className="section-kicker">Agent tools</p><h2 id="integration-heading">اتصال YouTube</h2></div>
+        <div><p className="section-kicker">اتصال‌ها</p><h2 id="integration-heading">YouTube</h2><p>برای پیدا کردن آموزش‌های ویدیویی از داخل مربی NeoFit، کلید YouTube خودت را اضافه کن.</p></div>
         <Link className="ai-settings-back" href="/profile">بازگشت</Link>
       </div>
 
-      <article className="integration-explainer-card">
-        <div className="integration-explainer-card__icon"><NeoFitIcon name="sparkle" size={22} /></div>
-        <div>
-          <span>کلید مستقل</span>
-          <h3>YouTube Data API v3 برای جست‌وجو و metadata</h3>
-          <p>این کلید با Google AI Studio/Gemini فرق دارد. بهتر است در Google Cloud فقط به YouTube Data API v3 محدود شود. NeoFit آن را فقط سمت سرور decrypt می‌کند.</p>
-        </div>
-      </article>
-
       <article className="integration-card">
         <header>
-          <div><span className="integration-logo" aria-hidden="true">▶</span><div><h3>YouTube</h3><p>جست‌وجوی آموزش‌های ویدیویی فقط وقتی خودت درخواست ویدئو می‌کنی.</p></div></div>
-          <span className={`ai-provider-card__badge ${active ? 'is-active' : ''}`}>{active ? 'متصل' : credential ? 'نیازمند بررسی' : 'تنظیم نشده'}</span>
+          <div><span className="integration-logo" aria-hidden="true">▶</span><div><h3>YouTube</h3><p>جست‌وجوی ویدیو فقط وقتی خودت درخواستش کنی انجام می‌شود.</p></div></div>
+          <span className={`ai-provider-card__badge ${active ? 'is-active' : ''}`}>{active ? 'متصل' : credential ? 'نیاز به بررسی' : 'متصل نیست'}</span>
         </header>
 
         {loading ? <p className="ai-settings-loading" aria-busy="true">در حال خواندن وضعیت...</p> : null}
         {credential ? (
           <div className="ai-provider-meta">
             <span>کلید <strong>{credential.keyHint}</strong></span>
-            <span>آخرین اعتبارسنجی <strong>{formatDate(credential.lastValidatedAt)}</strong></span>
-            {credential.lastFailureCode ? <span>آخرین خطا <strong>{credential.lastFailureCode}</strong></span> : null}
+            <span>آخرین بررسی <strong>{formatDate(credential.lastValidatedAt)}</strong></span>
           </div>
         ) : null}
 
-        <label htmlFor="youtube-api-key">YouTube Data API key</label>
+        <label htmlFor="youtube-api-key">کلید YouTube</label>
         <input
           id="youtube-api-key"
           type="password"
           autoComplete="off"
           spellCheck={false}
           value={apiKey}
-          placeholder={credential ? 'برای جایگزینی، کلید جدید را وارد کن' : 'کلید محدودشده YouTube Data API v3'}
+          placeholder={credential ? 'برای جایگزینی، کلید جدید را وارد کن' : 'YouTube Data API key'}
           onChange={(event) => { setApiKey(event.target.value); setMessage(''); setError(false); }}
           disabled={busy}
         />
 
         <div className="ai-provider-actions">
-          <button type="button" onClick={() => void save()} disabled={busy || !apiKey.trim()}>{busy ? 'در حال انجام...' : credential ? 'جایگزینی کلید' : 'اعتبارسنجی و ذخیره'}</button>
-          <button type="button" className="is-secondary" onClick={() => void test()} disabled={busy || !credential}>تست بدون search</button>
+          <button type="button" onClick={() => void save()} disabled={busy || !apiKey.trim()}>{busy ? 'در حال انجام...' : credential ? 'جایگزینی کلید' : 'اتصال'}</button>
+          <button type="button" className="is-secondary" onClick={() => void test()} disabled={busy || !credential}>بررسی اتصال</button>
           {credential ? <button type="button" className="is-danger" onClick={() => void remove()} disabled={busy}>حذف</button> : null}
         </div>
         {message ? <p className={`ai-provider-message ${error ? 'is-error' : ''}`} role="status">{message}</p> : null}
       </article>
 
-      <div className="profile-boundary-note"><NeoFitIcon name="check" size={18} /><p>جست‌وجو با YouTube Data API انجام می‌شود؛ فهم محتوای یک ویدئوی عمومی در Coach با کلید Gemini خودت انجام می‌شود. کلیدها با هم قاطی نمی‌شوند.</p></div>
+      <div className="profile-boundary-note"><NeoFitIcon name="check" size={18} /><p>کلید واردشده پس از ذخیره دوباره در صفحه نمایش داده نمی‌شود.</p></div>
     </section>
   );
 }
