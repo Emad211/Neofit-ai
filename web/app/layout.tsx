@@ -18,6 +18,7 @@ import './auth.css';
 import './agent-tools-polish.css';
 import './ui-truth-polish.css';
 import './product-ui-v3.css';
+import './product-ui-v3-system.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(publicAppUrl),
