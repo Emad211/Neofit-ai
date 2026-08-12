@@ -113,15 +113,16 @@ function TodayFocus({ workout, weekday, account }: { workout: TodayWorkoutSnapsh
   );
 }
 
-export function TodayScreen({ workout }: { workout: TodayWorkoutSnapshot }) {
+export function TodayScreen({
+  workout,
+  dateLabel,
+  weekday,
+}: {
+  workout: TodayWorkoutSnapshot;
+  dateLabel: string;
+  weekday: string;
+}) {
   const { diary, summary, account } = useNutritionState();
-  const now = new Date();
-  const dateLabel = new Intl.DateTimeFormat('fa-IR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  }).format(now);
-  const weekday = new Intl.DateTimeFormat('fa-IR', { weekday: 'long' }).format(now);
   const target = summary.targets;
   const visibleDiary = diary.slice(0, 3);
 
