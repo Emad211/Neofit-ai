@@ -8,22 +8,11 @@ import { useAccountState } from '@/components/account-state';
 
 const navigation: readonly { href: string; label: string; icon: NeoFitIconName }[] = [
   { href: '/today', label: 'امروز', icon: 'home' },
-  { href: '/nutrition', label: 'تغذیه', icon: 'food' },
   { href: '/workout', label: 'تمرین', icon: 'workout' },
+  { href: '/nutrition', label: 'تغذیه', icon: 'food' },
   { href: '/progress', label: 'پیشرفت', icon: 'chart' },
   { href: '/profile', label: 'پروفایل', icon: 'profile' },
 ];
-
-function pageTitle(pathname: string, displayName: string | null): string {
-  if (pathname.startsWith('/program')) return 'برنامه من';
-  if (pathname.startsWith('/nutrition/plan')) return 'برنامهٔ غذایی';
-  if (pathname.startsWith('/nutrition')) return 'تغذیه';
-  if (pathname.startsWith('/workout')) return 'تمرین';
-  if (pathname.startsWith('/progress')) return 'پیشرفت';
-  if (pathname.startsWith('/coach')) return 'مربی نئوفیت';
-  if (pathname.startsWith('/profile')) return 'پروفایل';
-  return displayName ? `سلام ${displayName}، روزت چطوره؟` : 'سلام، روزت چطوره؟';
-}
 
 function accountInitial(displayName: string | null, email: string | null): string {
   const source = displayName?.trim() || email?.trim() || 'ن';
@@ -67,19 +56,24 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <main className="app-frame" id="main-content">
       <a className="skip-link" href="#screen-content">رفتن به محتوای اصلی</a>
-      <div className="app-frame__halo" aria-hidden="true" />
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">NeoFit</p>
-          <h1>{pageTitle(pathname, account?.displayName ?? null)}</h1>
-        </div>
-        <Link
-          className="avatar-button avatar-link"
-          href="/profile"
-          aria-label={account ? `پروفایل ${account.displayName}` : 'پروفایل'}
-        >
-          {accountInitial(account?.displayName ?? null, account?.email ?? null)}
+
+      <header className="topbar topbar--product">
+        <Link className="topbar-brand" href="/today" aria-label="NeoFit - امروز">
+          <span className="topbar-brand__mark" aria-hidden="true">N</span>
+          <span className="topbar-brand__copy"><strong>NeoFit</strong><small>مربی شخصی تو</small></span>
         </Link>
+        <div className="topbar-actions">
+          <Link className="coach-shortcut" href="/coach" aria-label="مربی NeoFit">
+            <NeoFitIcon name="sparkle" size={20} />
+          </Link>
+          <Link
+            className="avatar-button avatar-link"
+            href="/profile"
+            aria-label={account ? `پروفایل ${account.displayName}` : 'پروفایل'}
+          >
+            {accountInitial(account?.displayName ?? null, account?.email ?? null)}
+          </Link>
+        </div>
       </header>
 
       {showStatus ? (
@@ -101,7 +95,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               className={active ? 'bottom-nav__item is-active' : 'bottom-nav__item'}
               aria-current={active ? 'page' : undefined}
             >
-              <NeoFitIcon name={item.icon} />
+              <span className="bottom-nav__icon"><NeoFitIcon name={item.icon} /></span>
               <span>{item.label}</span>
             </Link>
           );
