@@ -22,14 +22,19 @@ function object(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
+function exactKeys(record: Record<string, unknown>, keys: readonly string[]): boolean {
+  const actual = Object.keys(record).sort();
+  const expected = [...keys].sort();
+  return actual.length === expected.length && actual.every((key, index) => key === expected[index]);
+}
+
 function parseObjectFromText(text: string): Record<string, unknown> {
-  if (text.length > 20_000) throw new Error('planner_output_too_large');
-  const start = text.indexOf('{');
-  const end = text.lastIndexOf('}');
-  if (start < 0 || end <= start) throw new Error('planner_json_missing');
-  const parsed = JSON.parse(text.slice(start, end + 1)) as unknown;
+  const trimmed = text.trim();
+  if (trimmed.length > 20_000) throw new Error('planner_output_too_large');
+  if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) throw new Error('planner_json_only_required');
+  const parsed = JSON.parse(trimmed) as unknown;
   const record = object(parsed);
-  if (!record) throw new Error('planner_json_invalid');
+  if (!record || !exactKeys(record, ['days'])) throw new Error('planner_json_invalid');
   return record;
 }
 
@@ -96,11 +101,13 @@ export function parseNutritionPlannerOutput(
         throw new Error('planner_nutrition_meal_size_invalid');
       }
       const items = meal.map((item) => {
-        const record = object(item);
-        if (!record) throw new Error('planner_nutrition_item_invalid');
+        const itemRecord = object(item);
+        if (!itemRecord || !exactKeys(itemRecord, ['id', 'portion'])) {
+          throw new Error('planner_nutrition_item_invalid');
+        }
         return {
-          id: allowedId(record.id, input.allowedIds),
-          portion: portion(record.portion),
+          id: allowedId(itemRecord.id, input.allowedIds),
+          portion: portion(itemRecord.portion),
         };
       });
       if (new Set(items.map((item) => item.id)).size !== items.length) {
