@@ -1,6 +1,11 @@
 import 'server-only';
 
-import { AI_MAX_OUTPUT_TOKENS, AI_PROVIDER_TIMEOUT_MS, AI_VALIDATION_TIMEOUT_MS } from '../config';
+import {
+  AI_HARD_MAX_OUTPUT_TOKENS,
+  AI_MAX_OUTPUT_TOKENS,
+  AI_PROVIDER_TIMEOUT_MS,
+  AI_VALIDATION_TIMEOUT_MS,
+} from '../config';
 import type { AiGenerationInput } from '../types';
 import { fetchWithTimeout, providerHttpError } from './shared';
 
@@ -26,6 +31,13 @@ function avalAiText(payload: AvalAiResponse): string {
     .map((item) => item.text ?? '')
     .join('')
     .trim();
+}
+
+function outputTokenLimit(request: AiGenerationInput): number {
+  const requested = request.maxOutputTokens;
+  return typeof requested === 'number' && Number.isInteger(requested) && requested > 0
+    ? Math.min(requested, AI_HARD_MAX_OUTPUT_TOKENS)
+    : AI_MAX_OUTPUT_TOKENS;
 }
 
 export async function validateAvalAiCredential(apiKey: string, modelId: string): Promise<void> {
@@ -54,7 +66,7 @@ export async function generateAvalAi(
         model: modelId,
         input: request.input,
         ...(request.systemInstruction ? { instructions: request.systemInstruction } : {}),
-        max_output_tokens: AI_MAX_OUTPUT_TOKENS,
+        max_output_tokens: outputTokenLimit(request),
         store: false,
       }),
     },
