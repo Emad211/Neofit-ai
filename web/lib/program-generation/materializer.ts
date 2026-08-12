@@ -262,9 +262,10 @@ function workoutDocument(
 }
 
 function catalogItem(foodId: string, portionCount: number): NutritionPlanItemDocument {
+  if (portionCount !== 1) throw new ProgramMaterializationError('planner_selection_invalid');
   const food = foodFixtures.find((candidate) => candidate.id === foodId);
   if (!food?.sourceVersion) throw new ProgramMaterializationError('insufficient_catalog_foods');
-  return { foodId: food.id, sourceVersion: food.sourceVersion, portionCount };
+  return { foodId: food.id, sourceVersion: food.sourceVersion, portionCount: 1 };
 }
 
 function mealSlot(index: number, count: number): { type: 'breakfast' | 'lunch' | 'dinner' | 'snack'; label: string } {
@@ -278,12 +279,6 @@ function mealSlot(index: number, count: number): { type: 'breakfast' | 'lunch' |
   if (index === lunchIndex) return { type: 'lunch', label: 'ناهار' };
   const snackNumber = index < lunchIndex ? index : index - 1;
   return { type: 'snack', label: `میان‌وعده ${snackNumber}` };
-}
-
-function validQuarterPortion(value: number): boolean {
-  if (!Number.isFinite(value) || value < 0.25 || value > 3) return false;
-  const quarters = value * 4;
-  return Math.abs(quarters - Math.round(quarters)) <= 1e-9;
 }
 
 function nutritionDocument(
@@ -321,7 +316,7 @@ function nutritionDocument(
             mealType: slot.type,
             label: slot.label,
             items: items.map((item) => {
-              if (!allowedIds.has(item.id) || !validQuarterPortion(item.portion)) {
+              if (!allowedIds.has(item.id) || item.portion !== 1) {
                 throw new ProgramMaterializationError('planner_selection_invalid');
               }
               return catalogItem(item.id, item.portion);
