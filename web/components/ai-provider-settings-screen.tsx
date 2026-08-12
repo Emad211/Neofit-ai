@@ -21,14 +21,14 @@ const providerCopy: Record<AiProvider, {
 }> = {
   avalai: {
     title: 'AvalAI',
-    badge: 'برای برنامه شخصی',
-    description: 'این اتصال برای ساخت برنامه شخصی NeoFit لازم است.',
+    badge: 'پشتیبانی‌شده',
+    description: 'برای مربی NeoFit و ساخت برنامه قابل استفاده است.',
     placeholder: 'کلید شخصی AvalAI',
   },
   google: {
     title: 'Google Gemini',
-    badge: 'اختیاری',
-    description: 'اگر کلید Google داری، می‌توانی آن را هم برای قابلیت‌های بیشتر اضافه کنی.',
+    badge: 'پشتیبانی‌شده',
+    description: 'برای مربی و ساخت برنامه قابل استفاده است و قابلیت بررسی مستقیم لینک ویدیو را هم فراهم می‌کند.',
     placeholder: 'کلید شخصی Google',
   },
 };
@@ -166,29 +166,30 @@ export function AiProviderSettingsScreen() {
   return (
     <section className="page-stack" aria-labelledby="ai-settings-heading">
       <div className="section-heading">
-        <div><p className="section-kicker">مربی هوشمند</p><h2 id="ai-settings-heading">اتصال هوش مصنوعی</h2><p>کلید سرویس‌هایی را که خودت استفاده می‌کنی اینجا مدیریت کن.</p></div>
+        <div>
+          <p className="section-kicker">مربی هوشمند</p>
+          <h2 id="ai-settings-heading">اتصال هوش مصنوعی</h2>
+          <p>برای استفاده از مربی و ساخت برنامه، اتصال یکی از سرویس‌های زیر کافی است. اتصال سرویس دوم اختیاری است.</p>
+        </div>
         <Link className="ai-settings-back" href="/profile">بازگشت</Link>
       </div>
 
       {loading ? <div className="ai-settings-loading" aria-busy="true">در حال خواندن تنظیمات...</div> : null}
 
       <div className="ai-provider-grid">
-        {providers.map((provider, index) => {
+        {providers.map((provider) => {
           const meta = byProvider.get(provider);
           const draft = drafts[provider];
           const active = meta?.status === 'active';
           return (
             <article className="ai-provider-card" key={provider}>
               <header>
-                <div>
-                  <span className="ai-provider-card__order">{index + 1}</span>
-                  <div><h3>{providerCopy[provider].title}</h3><p>{providerCopy[provider].description}</p></div>
-                </div>
-                <span className={`ai-provider-card__badge ${active ? 'is-active' : ''}`}>{providerCopy[provider].badge}</span>
+                <div><div><h3>{providerCopy[provider].title}</h3><p>{providerCopy[provider].description}</p></div></div>
+                <span className={`ai-provider-card__badge ${active ? 'is-active' : ''}`}>{active ? 'متصل' : providerCopy[provider].badge}</span>
               </header>
 
               <div className="ai-provider-status">
-                <span><NeoFitIcon name={active ? 'check' : 'offline'} size={16} />{active ? 'متصل' : meta ? 'نیاز به بررسی' : 'متصل نیست'}</span>
+                <span><NeoFitIcon name={active ? 'check' : 'offline'} size={16} />{active ? 'آماده استفاده' : meta ? 'نیاز به بررسی' : 'متصل نیست'}</span>
                 {meta ? <small>{meta.keyHint}</small> : null}
               </div>
 
