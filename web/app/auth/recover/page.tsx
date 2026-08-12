@@ -6,9 +6,9 @@ import { hasSupabasePublicEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 
 const errors: Readonly<Record<string, string>> = {
-  config: 'اتصال Auth برای این محیط کامل نیست.',
+  config: 'بازیابی حساب در این محیط موقتاً در دسترس نیست.',
   input: 'یک ایمیل معتبر وارد کن.',
-  session: 'نشست بازیابی معتبر نیست یا منقضی شده است. لینک جدید بگیر.',
+  session: 'لینک بازیابی معتبر نیست یا منقضی شده است. لینک جدید بگیر.',
   'invalid-link': 'لینک بازیابی معتبر نیست، منقضی شده یا قبلاً استفاده شده است.',
 };
 
@@ -32,7 +32,7 @@ export default async function RecoverPasswordPage({
     <main className="auth-page" id="main-content">
       <section className="auth-card auth-card--compact" aria-labelledby="recover-heading">
         <div className="auth-brand"><span aria-hidden="true">N</span><div><p>NeoFit</p><h1 id="recover-heading">بازیابی رمز عبور</h1></div></div>
-        <p className="auth-intro">ایمیل حساب را وارد کن. پاسخ صفحه برای ایمیل موجود و ناموجود یکسان است تا وجود حساب افشا نشود.</p>
+        <p className="auth-intro">ایمیل حسابت را وارد کن تا در صورت امکان لینک بازیابی برایت ارسال شود.</p>
         {errors[errorCode] ? <p className="auth-notice auth-notice--error" role="alert">{errors[errorCode]}</p> : null}
         {messageCode === 'sent' ? <p className="auth-notice auth-notice--success" role="status">اگر حسابی با این ایمیل وجود داشته باشد، لینک بازیابی ارسال شده است. جدیدترین ایمیل را بررسی کن.</p> : null}
         <form action={requestPasswordReset} className="auth-form auth-form--single">
