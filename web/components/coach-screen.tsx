@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { NeoFitIcon } from '@/components/neofit-icons';
 import { useAccountState } from '@/components/account-state';
 import type { YouTubeVideoCard } from '@/lib/integrations/types';
 
@@ -30,12 +31,12 @@ type Message = {
 const starter: Message = {
   id: 'welcome',
   role: 'assistant',
-  content: 'سلام. من مربی NeoFit هستم. می‌توانم درباره تمرین، تغذیه ثبت‌شده، پیشرفت و محدودیت‌هایی که خودت وارد کرده‌ای راهنمایی‌ات کنم. اگر بخواهی، برای آموزش حرکات ویدیو هم پیدا می‌کنم.',
+  content: 'سلام. درباره تمرین، تغذیه، پیشرفت یا محدودیت‌هایی که ثبت کرده‌ای از من بپرس.',
 };
 
 const prompts = [
-  'وضعیت تمرین‌های اخیرم را جمع‌بندی کن',
-  'امروز از نظر تغذیه چه چیزی ثبت کرده‌ام؟',
+  'تمرین‌های اخیرم را جمع‌بندی کن',
+  'تغذیه امروز را بررسی کن',
   'یک ویدیوی آموزش اسکوات پیدا کن',
 ];
 
@@ -78,6 +79,7 @@ export function CoachScreen() {
 
   const cooldownSeconds = cooldownUntil ? Math.max(0, Math.ceil((cooldownUntil - now) / 1000)) : 0;
   const blocked = loading || cooldownSeconds > 0;
+  const conversationStarted = messages.length > 1;
 
   useEffect(() => {
     if (!cooldownUntil) return;
@@ -184,12 +186,13 @@ export function CoachScreen() {
   }
 
   return (
-    <section className="coach-page" aria-labelledby="coach-heading" aria-busy={loading}>
+    <section className={conversationStarted ? 'coach-page coach-page--active' : 'coach-page'} aria-labelledby="coach-heading" aria-busy={loading}>
       <header className="coach-hero">
+        <span className="coach-hero__mark"><NeoFitIcon name="sparkle" size={22} /></span>
         <div>
           <p className="section-kicker">مربی NeoFit</p>
-          <h2 id="coach-heading">هر چیزی درباره برنامه‌ات بپرس</h2>
-          <p>مربی از اطلاعاتی که در حسابت ثبت کرده‌ای برای پاسخ مرتبط‌تر استفاده می‌کند و بدون تأیید تو چیزی را تغییر نمی‌دهد.</p>
+          <h2 id="coach-heading">چه کمکی می‌خواهی؟</h2>
+          {!conversationStarted ? <p>سؤالت را ساده بنویس؛ پاسخ با اطلاعاتی که خودت ثبت کرده‌ای هماهنگ می‌شود.</p> : null}
         </div>
       </header>
 
@@ -201,9 +204,11 @@ export function CoachScreen() {
         </article>
       ) : (
         <>
-          <div className="coach-prompts">
-            {prompts.map((prompt) => <button type="button" key={prompt} disabled={blocked} onClick={() => void sendMessage(prompt)}>{prompt}</button>)}
-          </div>
+          {!conversationStarted ? (
+            <div className="coach-prompts" aria-label="پیشنهاد سؤال">
+              {prompts.map((prompt) => <button type="button" key={prompt} disabled={blocked} onClick={() => void sendMessage(prompt)}>{prompt}</button>)}
+            </div>
+          ) : null}
 
           <div className="coach-thread" aria-live="polite" aria-relevant="additions">
             {messages.map((message) => (
@@ -230,13 +235,12 @@ export function CoachScreen() {
               maxLength={2400}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={composerKeyDown}
-              placeholder="مثلاً: برنامه امروز را توضیح بده یا یک آموزش اسکوات پیدا کن..."
+              placeholder="پیامت را بنویس..."
               disabled={blocked}
             />
-            <button type="submit" disabled={blocked || !input.trim()}>{loading ? 'در حال پاسخ...' : 'ارسال'}</button>
+            <button type="submit" aria-label="ارسال پیام" disabled={blocked || !input.trim()}><NeoFitIcon name="chevron" size={20} /></button>
           </form>
-          <p className="coach-composer-hint">Enter خط جدید · Ctrl/⌘ + Enter ارسال</p>
-          <p className="coach-boundary">مربی پیشنهاد و راهنمایی می‌دهد؛ تغییرات مهم فقط با اقدام و تأیید خودت انجام می‌شوند.</p>
+          <p className="coach-boundary">پیشنهادها جایگزین نظر پزشک یا متخصص درمانی نیستند.</p>
         </>
       )}
     </section>
