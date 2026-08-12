@@ -9,6 +9,21 @@ import { CreateCycleButton } from './create-cycle-button';
 
 export const dynamic = 'force-dynamic';
 
+function formatReadyDate(value: string | null): string {
+  if (!value) return '—';
+  const parts = value.split('-').map(Number);
+  if (parts.length !== 3 || parts.some((part) => !Number.isInteger(part))) return value;
+  const [year, month, day] = parts as [number, number, number];
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return value;
+  return new Intl.DateTimeFormat('fa-IR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date);
+}
+
 function ReadySummary({
   draft,
   guest = false,
@@ -22,7 +37,7 @@ function ReadySummary({
 }) {
   const goal = draft?.goal.primaryGoal ? goalLabels[draft.goal.primaryGoal] : null;
   const duration = draft?.confirmation.programDurationDays ?? null;
-  const startDate = draft?.confirmation.startDate || null;
+  const startDate = formatReadyDate(draft?.confirmation.startDate || null);
 
   return (
     <main className="onboarding-page onboarding-ready-page" id="main-content">
@@ -43,7 +58,7 @@ function ReadySummary({
           <div className="onboarding-ready-card__summary" aria-label="خلاصه دوره">
             <div><span>هدف</span><strong>{goal ?? '—'}</strong></div>
             <div><span>تمرین</span><strong>{draft.availability.daysPerWeek === null ? '—' : `${draft.availability.daysPerWeek.toLocaleString('fa-IR')} روز در هفته`}</strong></div>
-            <div><span>شروع</span><strong>{startDate ?? '—'}</strong></div>
+            <div><span>شروع</span><strong>{startDate}</strong></div>
             <div><span>دوره</span><strong>{duration === null ? '—' : `${duration.toLocaleString('fa-IR')} روز`}</strong></div>
           </div>
         ) : null}
@@ -72,7 +87,7 @@ export default async function OnboardingReadyPage({ searchParams }: { searchPara
   const active = await activeAuthSession(supabase);
   if (!active) redirect('/auth');
 
-  const [{ data, error }, avalaiCredential, cycle, params] = await Promise.all([
+  const [{ data, error }, activeCredential, cycle, params] = await Promise.all([
     supabase
       .from('user_onboarding')
       .select('status,schema_version,draft')
@@ -80,9 +95,10 @@ export default async function OnboardingReadyPage({ searchParams }: { searchPara
       .maybeSingle(),
     supabase
       .from('encrypted_provider_credentials')
-      .select('status')
+      .select('provider,status')
       .eq('user_id', active.userId)
-      .eq('provider', 'avalai')
+      .eq('status', 'active')
+      .limit(1)
       .maybeSingle(),
     supabase
       .from('program_cycles')
@@ -97,8 +113,8 @@ export default async function OnboardingReadyPage({ searchParams }: { searchPara
   const draft = parseOnboardingDraft(data?.draft ?? null);
   if (
     error ||
-    avalaiCredential.error ||
-    avalaiCredential.data?.status !== 'active' ||
+    activeCredential.error ||
+    !activeCredential.data ||
     data?.status !== 'completed' ||
     data.schema_version !== ONBOARDING_SCHEMA_VERSION ||
     !draft
