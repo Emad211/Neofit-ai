@@ -86,7 +86,8 @@ export function OnboardingAiGate({
   );
   const googleReady = mode === 'account' && googleCredential?.status === 'active';
   const avalaiReady = mode === 'account' && avalaiCredential?.status === 'active';
-  const gateReady = mode === 'guest' ? true : avalaiReady;
+  const providerReady = googleReady || avalaiReady;
+  const gateReady = mode === 'guest' ? true : providerReady;
 
   useEffect(() => {
     onReadyChange(gateReady);
@@ -145,21 +146,14 @@ export function OnboardingAiGate({
       const body = await response.json() as AiCredentialMetadata & { error?: string };
       if (!response.ok) throw new Error(body.error ?? 'credential_save_failed');
       upsertMetadata(body);
-      patch(provider, {
-        apiKey: '',
-        busy: false,
-        error: false,
-        message: provider === 'avalai' ? 'مربی هوشمند آماده است.' : 'اتصال Google هم آماده شد.',
-      });
+      patch(provider, { apiKey: '', busy: false, error: false, message: 'اتصال آماده است.' });
       if (provider === 'google') setShowGoogleKey(false);
       else setShowAvalaiKey(false);
     } catch {
       patch(provider, {
         busy: false,
         error: true,
-        message: provider === 'avalai'
-          ? 'اتصال AvalAI برقرار نشد. کلید را بررسی کن و دوباره تلاش کن.'
-          : 'اتصال Google برقرار نشد. کلید را بررسی کن و دوباره تلاش کن.',
+        message: `اتصال ${provider === 'google' ? 'Google' : 'AvalAI'} برقرار نشد. کلید را بررسی کن و دوباره تلاش کن.`,
       });
     }
   }
@@ -194,72 +188,73 @@ export function OnboardingAiGate({
     );
   }
 
+  if (providerReady) {
+    return (
+      <div className="onboarding-ai-gate">
+        <div className="onboarding-ai-gate__status is-ready" aria-live="polite">
+          <strong>مربی هوشمند آماده است</strong>
+          <span>{[googleReady ? 'Google Gemini' : null, avalaiReady ? 'AvalAI' : null].filter(Boolean).join(' و ')} متصل است.</span>
+        </div>
+        <div className="onboarding-ai-gate__actions">
+          {googleReady ? <button type="button" className="is-secondary" onClick={() => void retest('google')} disabled={google.busy}>{google.busy ? 'در حال بررسی...' : 'بررسی Google'}</button> : null}
+          {avalaiReady ? <button type="button" className="is-secondary" onClick={() => void retest('avalai')} disabled={avalai.busy}>{avalai.busy ? 'در حال بررسی...' : 'بررسی AvalAI'}</button> : null}
+          <a className="onboarding-ai-gate__manage-link" href="/profile/ai">مدیریت اتصال‌ها</a>
+        </div>
+        {google.message ? <p className={google.error ? 'is-error' : 'is-success'} role="status">{google.message}</p> : null}
+        {avalai.message ? <p className={avalai.error ? 'is-error' : 'is-success'} role="status">{avalai.message}</p> : null}
+      </div>
+    );
+  }
+
   return (
     <div className="onboarding-ai-gate">
-      <div className={`onboarding-ai-gate__status ${avalaiReady ? 'is-ready' : ''}`} aria-live="polite">
-        <strong>{avalaiReady ? 'مربی هوشمند آماده است' : 'اتصال مربی هوشمند را کامل کن'}</strong>
-        <span>{avalaiReady ? 'می‌توانی وارد مرحله بعد شوی.' : 'برای ساخت برنامه شخصی، یک اتصال فعال لازم است.'}</span>
+      <div className="onboarding-ai-gate__status" aria-live="polite">
+        <strong>یک سرویس هوش مصنوعی را وصل کن</strong>
+        <span>برای ساخت برنامه و استفاده از مربی، اتصال Google یا AvalAI کافی است.</span>
       </div>
 
       <div className="onboarding-ai-gate__provider">
         <div className="onboarding-ai-gate__provider-head">
-          <div><strong>AvalAI</strong><span>{avalaiReady ? 'متصل' : 'کلید حساب AvalAI خودت را وارد کن.'}</span></div>
+          <div><strong>AvalAI</strong><span>کلید حساب AvalAI خودت را وارد کن.</span></div>
           <a href="https://docs.avalai.ir/en/quickstart" target="_blank" rel="noreferrer">راهنمای دریافت کلید ↗</a>
         </div>
-        {avalaiReady ? (
-          <div className="onboarding-ai-gate__actions">
-            <span className="onboarding-ai-gate__status is-ready"><strong>اتصال فعال است</strong><span>{avalaiCredential?.keyHint ?? ''}</span></span>
-            <button type="button" className="is-secondary" onClick={() => void retest('avalai')} disabled={avalai.busy}>{avalai.busy ? 'در حال بررسی...' : 'بررسی دوباره'}</button>
-          </div>
-        ) : (
-          <>
-            <label htmlFor="onboarding-avalai-key">کلید AvalAI</label>
-            <SecretField
-              id="onboarding-avalai-key"
-              value={avalai.apiKey}
-              placeholder="کلید شخصی AvalAI"
-              disabled={avalai.busy || loading}
-              revealed={showAvalaiKey}
-              onRevealChange={setShowAvalaiKey}
-              onChange={(apiKey) => setAvalai((current) => ({ ...current, apiKey, message: '', error: false }))}
-            />
-            <small id="onboarding-avalai-key-privacy" className="onboarding-ai-gate__field-help">کلید پس از ذخیره دوباره در صفحه نمایش داده نمی‌شود.</small>
-            <div className="onboarding-ai-gate__actions">
-              <button type="button" onClick={() => void save('avalai')} disabled={avalai.busy || loading || !avalai.apiKey.trim()}>{avalai.busy ? 'در حال بررسی...' : 'اتصال AvalAI'}</button>
-            </div>
-          </>
-        )}
+        <label htmlFor="onboarding-avalai-key">کلید AvalAI</label>
+        <SecretField
+          id="onboarding-avalai-key"
+          value={avalai.apiKey}
+          placeholder="کلید شخصی AvalAI"
+          disabled={avalai.busy || loading}
+          revealed={showAvalaiKey}
+          onRevealChange={setShowAvalaiKey}
+          onChange={(apiKey) => setAvalai((current) => ({ ...current, apiKey, message: '', error: false }))}
+        />
+        <small id="onboarding-avalai-key-privacy" className="onboarding-ai-gate__field-help">کلید پس از ذخیره دوباره در صفحه نمایش داده نمی‌شود.</small>
+        <div className="onboarding-ai-gate__actions">
+          <button type="button" onClick={() => void save('avalai')} disabled={avalai.busy || loading || !avalai.apiKey.trim()}>{avalai.busy ? 'در حال بررسی...' : 'اتصال AvalAI'}</button>
+        </div>
         {avalai.message ? <p className={avalai.error ? 'is-error' : 'is-success'} role="status">{avalai.message}</p> : null}
       </div>
 
       <details className="onboarding-ai-gate__fallback">
-        <summary>Google Gemini <span className="onboarding-optional">اختیاری</span></summary>
-        <p>اگر کلید Google داری، می‌توانی آن را هم برای قابلیت‌های بیشتر به حسابت اضافه کنی.</p>
-        {googleReady ? (
-          <div className="onboarding-ai-gate__actions">
-            <span className="onboarding-ai-gate__status is-ready"><strong>Google متصل است</strong><span>{googleCredential?.keyHint ?? ''}</span></span>
-            <button type="button" className="is-secondary" onClick={() => void retest('google')} disabled={google.busy}>{google.busy ? 'در حال بررسی...' : 'بررسی دوباره'}</button>
+        <summary>یا Google Gemini را وصل کن</summary>
+        <div className="onboarding-ai-gate__provider">
+          <div className="onboarding-ai-gate__provider-head">
+            <div><strong>Google Gemini</strong><span>کلید Google AI Studio خودت را وارد کن.</span></div>
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">دریافت کلید ↗</a>
           </div>
-        ) : (
-          <div className="onboarding-ai-gate__provider">
-            <div className="onboarding-ai-gate__provider-head">
-              <div><strong>اتصال Google</strong><span>این بخش اختیاری است.</span></div>
-              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">دریافت کلید ↗</a>
-            </div>
-            <label htmlFor="onboarding-google-key">کلید Google</label>
-            <SecretField
-              id="onboarding-google-key"
-              value={google.apiKey}
-              placeholder="کلید شخصی Google"
-              disabled={google.busy || loading}
-              revealed={showGoogleKey}
-              onRevealChange={setShowGoogleKey}
-              onChange={(apiKey) => setGoogle((current) => ({ ...current, apiKey, message: '', error: false }))}
-            />
-            <small id="onboarding-google-key-privacy" className="onboarding-ai-gate__field-help">کلید پس از ذخیره دوباره در صفحه نمایش داده نمی‌شود.</small>
-            <div className="onboarding-ai-gate__actions"><button type="button" className="is-secondary" onClick={() => void save('google')} disabled={google.busy || loading || !google.apiKey.trim()}>{google.busy ? 'در حال بررسی...' : 'اتصال Google'}</button></div>
-          </div>
-        )}
+          <label htmlFor="onboarding-google-key">کلید Google</label>
+          <SecretField
+            id="onboarding-google-key"
+            value={google.apiKey}
+            placeholder="کلید شخصی Google"
+            disabled={google.busy || loading}
+            revealed={showGoogleKey}
+            onRevealChange={setShowGoogleKey}
+            onChange={(apiKey) => setGoogle((current) => ({ ...current, apiKey, message: '', error: false }))}
+          />
+          <small id="onboarding-google-key-privacy" className="onboarding-ai-gate__field-help">کلید پس از ذخیره دوباره در صفحه نمایش داده نمی‌شود.</small>
+          <div className="onboarding-ai-gate__actions"><button type="button" className="is-secondary" onClick={() => void save('google')} disabled={google.busy || loading || !google.apiKey.trim()}>{google.busy ? 'در حال بررسی...' : 'اتصال Google'}</button></div>
+        </div>
         {google.message ? <p className={google.error ? 'is-error' : 'is-success'} role="status">{google.message}</p> : null}
       </details>
     </div>
