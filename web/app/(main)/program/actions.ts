@@ -13,6 +13,7 @@ import {
 import { createClient } from '@/lib/supabase/server';
 
 const GENERATION_STALE_MS = 5 * 60_000;
+const RECENT_ABNORMAL_PAIN_REVIEW_THRESHOLD = 4;
 
 function text(formData: FormData, key: string): string {
   const value = formData.get(key);
@@ -41,6 +42,19 @@ async function recentPlannerEvidence(
     .order('started_at', { ascending: false })
     .limit(6);
   if (sessionsResult.error || !sessionsResult.data?.length) return {};
+
+  const latestPainScale = sessionsResult.data[0]?.pain_scale;
+  if (
+    typeof latestPainScale === 'number'
+    && Number.isFinite(latestPainScale)
+    && latestPainScale >= RECENT_ABNORMAL_PAIN_REVIEW_THRESHOLD
+  ) {
+    // The workout completion form explicitly labels this as abnormal pain or
+    // discomfort. Without a current body-part/restriction update we cannot
+    // deterministically map that feedback to safe substitutions, so fail
+    // closed before either planner request is sent.
+    throw new ProgramMaterializationError('clinical_review_required');
+  }
 
   const sessionIds = sessionsResult.data.map((session) => session.id);
   const setsResult = await supabase
