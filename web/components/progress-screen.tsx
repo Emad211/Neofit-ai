@@ -69,7 +69,7 @@ export function ProgressScreen() {
         .limit(180);
       if (cancelled) return;
       if (queryError) {
-        setError('خواندن اندازه‌گیری‌های حساب انجام نشد.');
+        setError('اندازه‌گیری‌ها بارگذاری نشدند. دوباره تلاش کن.');
         setMeasurements([]);
       } else {
         setMeasurements((data ?? []).map(rowToBodyMeasurement).reverse());
@@ -132,7 +132,7 @@ export function ProgressScreen() {
         setMeasurements(next);
         setWeight(''); setWaist(''); setBodyFat(''); setNote('');
       } catch {
-        setError('ذخیره اندازه‌گیری روی این مرورگر ممکن نشد.');
+        setError('ذخیره اندازه‌گیری روی این دستگاه ممکن نشد.');
       } finally {
         setSaving(false);
       }
@@ -155,7 +155,7 @@ export function ProgressScreen() {
       .select('*')
       .single();
     if (insertError || !data) {
-      setError('ذخیره اندازه‌گیری در حساب انجام نشد.');
+      setError('اندازه‌گیری ذخیره نشد. دوباره تلاش کن.');
       setSaving(false);
       return;
     }
@@ -171,7 +171,7 @@ export function ProgressScreen() {
     if (!account) {
       const next = measurements.filter((item) => item.id !== row.id);
       try { writeLocalBodyMeasurements(next); setMeasurements(next); }
-      catch { setError('حذف داده محلی انجام نشد.'); }
+      catch { setError('حذف اندازه‌گیری انجام نشد.'); }
       return;
     }
     const supabase = createMeasurementClient();
@@ -180,29 +180,29 @@ export function ProgressScreen() {
       .delete()
       .eq('user_id', account.id)
       .eq('id', row.id);
-    if (deleteError) setError('حذف اندازه‌گیری از حساب انجام نشد.');
+    if (deleteError) setError('حذف اندازه‌گیری انجام نشد.');
     else setMeasurements((current) => current.filter((item) => item.id !== row.id));
   }
 
   return (
     <section className="page-stack" aria-labelledby="progress-heading">
       <div className="section-heading">
-        <div><p className="section-kicker">دادهٔ واقعی</p><h2 id="progress-heading">پیشرفت</h2></div>
-        <span className="progress-period">{account ? 'حساب همگام' : 'همین مرورگر'}</span>
+        <div><p className="section-kicker">روند من</p><h2 id="progress-heading">پیشرفت</h2></div>
+        <span className="progress-period">{account ? 'حساب من' : 'این دستگاه'}</span>
       </div>
 
       <div className="progress-metrics">
-        <article><span>آخرین وزن</span>{metric(latestWeightRow?.weightKg, 'کیلوگرم')}<p>{weightChange === null ? 'برای روند، حداقل دو ثبت وزن لازم است' : `${faNumber.format(Math.abs(weightChange))} کیلوگرم ${weightChange < 0 ? 'کاهش' : weightChange > 0 ? 'افزایش' : 'بدون تغییر'}`}</p></article>
+        <article><span>آخرین وزن</span>{metric(latestWeightRow?.weightKg, 'کیلوگرم')}<p>{weightChange === null ? 'برای دیدن روند، حداقل دو وزن ثبت کن' : `${faNumber.format(Math.abs(weightChange))} کیلوگرم ${weightChange < 0 ? 'کاهش' : weightChange > 0 ? 'افزایش' : 'بدون تغییر'}`}</p></article>
         <article><span>آخرین دور کمر</span>{metric(latestWaistRow?.waistCm, 'سانتی‌متر')}<p>{metricDate(latestWaistRow)}</p></article>
         <article><span>درصد چربی بدن</span>{metric(latestBodyFatRow?.bodyFatPercent, '٪')}<p>{metricDate(latestBodyFatRow)}</p></article>
       </div>
 
       <article className="progress-chart-card">
         <div className="progress-chart-card__header">
-          <div><span>روند وزن</span><h3>{weightRows.length ? 'آخرین اندازه‌گیری‌های وزن' : 'هنوز داده‌ای برای نمودار نیست'}</h3></div>
+          <div><span>روند وزن</span><h3>{weightRows.length ? 'آخرین اندازه‌گیری‌ها' : 'هنوز داده‌ای برای نمودار نیست'}</h3></div>
           {weightChange === null ? <b>—</b> : <b>{weightChange > 0 ? '+' : ''}{faNumber.format(weightChange)} kg</b>}
         </div>
-        {loading ? <p className="progress-empty">در حال خواندن اندازه‌گیری‌ها...</p> : weightRows.length ? (
+        {loading ? <p className="progress-empty">در حال بارگذاری...</p> : weightRows.length ? (
           <div className="weight-bars" aria-label="روند وزن ثبت‌شده" style={{ gridTemplateColumns: `repeat(${weightRows.length}, minmax(0, 1fr))` }}>
             {weightRows.map((row) => {
               const normalized = ((row.weightKg ?? minWeight) - minWeight) / weightRange;
@@ -210,7 +210,7 @@ export function ProgressScreen() {
               return <div className="weight-bar" key={row.id}><span className="weight-bar__value">{faNumber.format(row.weightKg ?? 0)}</span><i style={{ blockSize: `${height}%` }} /><small>{dateFormatter.format(new Date(row.measuredAt))}</small></div>;
             })}
           </div>
-        ) : <p className="progress-empty">اولین وزن را پایین ثبت کن؛ NeoFit هیچ روند شخصی را از خودش نمی‌سازد.</p>}
+        ) : <p className="progress-empty">اولین وزن را ثبت کن تا روندت اینجا نمایش داده شود.</p>}
       </article>
 
       <form className="measurement-form" onSubmit={saveMeasurement}>
@@ -222,16 +222,14 @@ export function ProgressScreen() {
         </div>
         <label className="measurement-note">یادداشت<input maxLength={1000} value={note} onChange={(event) => setNote(event.target.value)} placeholder="مثلاً صبح، ناشتا" /></label>
         {error ? <p className="measurement-error" role="alert">{error}</p> : null}
-        <button type="submit" disabled={saving}>{saving ? 'در حال ذخیره...' : account ? 'ذخیره در حساب' : 'ذخیره روی این دستگاه'}</button>
+        <button type="submit" disabled={saving}>{saving ? 'در حال ذخیره...' : 'ذخیره اندازه‌گیری'}</button>
       </form>
 
       <article className="consistency-card">
-        <div className="consistency-card__copy"><span>مرز داده</span><h3>فقط اندازه‌گیری واقعی</h3><p>Progress برای نمایش کارت یا نمودار، Nutrition diary یا وزن‌های Demo را بارگیری نمی‌کند.</p></div>
+        <div className="consistency-card__copy"><span>نکته</span><h3>شرایط اندازه‌گیری را ثابت نگه دار</h3><p>برای مقایسه بهتر، وزن و اندازه‌ها را تا حد ممکن در زمان و شرایط مشابه ثبت کن.</p></div>
       </article>
 
       {measurements.length ? <section className="measurement-history" aria-labelledby="measurement-history-heading"><div className="section-heading section-heading--compact"><div><p className="section-kicker">تاریخچه</p><h2 id="measurement-history-heading">آخرین ثبت‌ها</h2></div></div>{[...measurements].reverse().slice(0, 6).map((row) => <article key={row.id}><div><strong>{dateFormatter.format(new Date(row.measuredAt))}</strong><p>{[row.weightKg !== null ? `${faNumber.format(row.weightKg)} kg` : null, row.waistCm !== null ? `${faNumber.format(row.waistCm)} cm کمر` : null, row.bodyFatPercent !== null ? `${faNumber.format(row.bodyFatPercent)}٪ چربی` : null].filter(Boolean).join(' · ')}</p>{row.note ? <small>{row.note}</small> : null}</div><button type="button" onClick={() => void deleteMeasurement(row)}>حذف</button></article>)}</section> : null}
-
-      <p className="progress-demo-note">این صفحه وزن یا روند ساختگی نمایش نمی‌دهد. مقادیر بالا فقط از ثبت‌های همین کاربر یا همین مرورگر می‌آیند.</p>
     </section>
   );
 }
