@@ -79,7 +79,7 @@ test('Today renders an explicit unconfigured target state without developer-faci
   const today = await source('components/today-screen.tsx');
   assert.match(today, /targetsConfigured/);
   assert.match(today, /هدف روزانه تنظیم نشده/);
-  assert.match(today, /وقتی هدف روزانه برای حسابت تنظیم شود/);
+  assert.match(today, /فقط مصرف ثبت‌شده نمایش داده می‌شود/);
   assert.doesNotMatch(today, /NeoFit برای حساب واقعی|کاتالوگ نسخه‌دار|Demo/);
   assert.doesNotMatch(today, /2200|140.*250.*70/);
 });
