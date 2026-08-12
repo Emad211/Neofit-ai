@@ -516,7 +516,7 @@ export function validateOnboardingStep(draft: OnboardingDraft, step: number): st
     if (draft.availability.equipment.length === 0 && !draft.availability.customEquipment.trim()) errors.push('حداقل تجهیزات یا گزینه «فقط وزن بدن» را مشخص کن.');
   }
   if (step === 11) {
-    if (!draft.preferences.intensity || !draft.preferences.cardioPreference || !draft.preferences.trainingStyle || !draft.preferences.variety || !draft.preferences.nutritionStrictness || !draft.preferences.coachingTone) errors.push('همه ترجیحات مربی‌گری را خودت انتخاب کن.');
+    if (!draft.preferences.intensity || !draft.preferences.trainingStyle || !draft.preferences.variety || !draft.preferences.nutritionStrictness || !draft.preferences.coachingTone) errors.push('همه ترجیحات فعال را خودت انتخاب کن.');
   }
   if (step === ONBOARDING_TOTAL_STEPS) {
     if (!draft.confirmation.startDate) errors.push('تاریخ شروع را انتخاب کن.');
@@ -531,13 +531,9 @@ export function buildTrainingPreview(draft: OnboardingDraft): TrainingPreview {
   const sessionMinutes = draft.availability.sessionDuration;
   const weeklyStructure = trainingDays === null
     ? []
-    : trainingDays <= 2
-      ? ['تمام بدن A', ...(trainingDays === 2 ? ['تمام بدن B'] : [])]
-      : trainingDays === 3
-        ? ['تمام بدن A', 'تمام بدن B', 'تمام بدن C']
-        : trainingDays === 4
-          ? ['بالاتنه A', 'پایین‌تنه A', 'بالاتنه B', 'پایین‌تنه B']
-          : ['فشار', 'کشش', 'پا', 'بالاتنه ترکیبی', 'پایین‌تنه و هوازی', ...(trainingDays === 6 ? ['ریکاوری فعال'] : [])];
+    : Array.from({ length: trainingDays }, (_, index) => (
+        trainingDays <= 3 ? `تمام بدن ${index + 1}` : `جلسه ${index + 1}`
+      ));
 
   const healthCautions: string[] = [];
   if (draft.medical.hasHighBloodPressure === true) healthCautions.push('شدت‌های بسیار بالا و حبس نفس باید محافظه‌کارانه مدیریت شوند.');
