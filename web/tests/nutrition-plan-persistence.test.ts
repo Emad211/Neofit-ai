@@ -86,7 +86,7 @@ test('database nutrition plans are owner-scoped, versioned and immutable in cont
   assert.match(migration, /nutrition_plan_meal_id text/);
 });
 
-test('account plan page loads a snapshot and keeps guest/no-plan states user-facing', async () => {
+test('account plan page is today-aware, guest-safe and avoids fake personalized nutrition claims', async () => {
   const page = await web('app/(main)/nutrition/plan/page.tsx');
   const screen = await web('components/nutrition-plan-screen.tsx');
   const loader = await web('lib/supabase/nutrition-plan-data.ts');
@@ -95,10 +95,17 @@ test('account plan page loads a snapshot and keeps guest/no-plan states user-fac
   assert.doesNotMatch(screen, /weeklyPlan|data\/fixtures/);
   assert.match(loader, /\.from\('nutrition_plans'\)/);
   assert.match(loader, /resolveNutritionPlanDocument\(parsed, foodFixtures\)/);
+  assert.match(loader, /localWeekday/);
+  assert.match(loader, /timeZone: identity\.account\.timezone/);
+  assert.match(screen, /snapshot\.localWeekday/);
+  assert.match(screen, /امروز · \{today\.day\}/);
+  assert.match(screen, /<details className="nutrition-plan-day"/);
   assert.match(screen, /هنوز برنامه غذایی فعالی نداری/);
-  assert.match(screen, /برای ساخت برنامه شخصی وارد حساب شو/);
+  assert.match(screen, /برای ساخت برنامه وارد حساب شو/);
+  assert.match(screen, /وعده‌های هفتگی بر اساس الگوی غذایی و ترجیحاتت/);
+  assert.match(screen, /یک سهم استاندارد تعریف‌شده/);
   assert.match(screen, /رفتن به برنامه من/);
-  assert.doesNotMatch(screen, /Demo مهمان|Nutrition Core|plan JSON|کاتالوگ نسخه‌دار/);
+  assert.doesNotMatch(screen, /Demo مهمان|Nutrition Core|plan JSON|کاتالوگ نسخه‌دار|هدف کالری شخصی/);
 });
 
 test('plan UI does not render stored calorie or macro fields', async () => {
