@@ -124,6 +124,10 @@
 
 .onboarding-grid { gap: 12px; }
 .onboarding-grid--2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+/* Legacy cardioPreference remains parse-compatible, but the current executable
+   workout schema has no duration-based cardio prescription yet. Do not ask the
+   user for a preference that the current Program cannot honestly execute. */
+.onboarding-preference-group:first-of-type .onboarding-grid > label:nth-child(2) { display: none; }
 .onboarding-content label,
 .onboarding-content fieldset { gap: 7px; color: #39483f; font-size: .78rem; font-weight: 800; }
 .onboarding-content legend { margin-block-end: 8px; font-size: .82rem; }
