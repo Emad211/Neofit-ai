@@ -138,6 +138,24 @@ const FALLBACK_ISSUE: ProgramIssue = {
   retry: true,
 };
 
+function formatProgramDate(value: string): string {
+  const parts = value.split('-').map(Number);
+  if (parts.length !== 3 || parts.some((part) => !Number.isInteger(part))) return value;
+  const [year, month, day] = parts as [number, number, number];
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year
+    || date.getUTCMonth() !== month - 1
+    || date.getUTCDate() !== day
+  ) return value;
+  return new Intl.DateTimeFormat('fa-IR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date);
+}
+
 export default async function ProgramPage({
   searchParams,
 }: {
@@ -170,6 +188,8 @@ export default async function ProgramPage({
   const issue = issueCode ? PROGRAM_ISSUES[issueCode] ?? FALLBACK_ISSUE : null;
   const canGenerate = cycle.status === 'draft' || (cycle.status === 'failed' && (issue?.retry ?? true));
   const needsUserAction = cycle.status === 'failed' && issue && !issue.retry && issue.actionHref && issue.actionLabel;
+  const startLabel = formatProgramDate(cycle.start_date);
+  const endLabel = formatProgramDate(cycle.end_date);
 
   return (
     <section className="page-stack program-cycle-page" aria-labelledby="program-cycle-heading">
@@ -177,7 +197,7 @@ export default async function ProgramPage({
         <div>
           <p className="section-kicker">برنامه من</p>
           <h2 id="program-cycle-heading">دورهٔ شخصی تو</h2>
-          <p>برنامه تمرین و تغذیه براساس اطلاعاتی که ثبت کرده‌ای آماده می‌شود.</p>
+          <p>تمرین و وعده‌های هفتگی براساس اطلاعات و ترجیحات ثبت‌شده‌ات آماده می‌شوند.</p>
         </div>
         <span className={`program-cycle-status is-${cycle.status}`}>{programCycleStatusLabel(cycle.status)}</span>
       </header>
@@ -189,10 +209,9 @@ export default async function ProgramPage({
         </div>
       ) : null}
 
-      <article className="program-cycle-hero">
-        <div><span>مدت دوره</span><strong>{cycle.requested_duration_days.toLocaleString('fa-IR')} روز</strong></div>
-        <div><span>شروع</span><strong>{cycle.start_date}</strong></div>
-        <div><span>پایان</span><strong>{cycle.end_date}</strong></div>
+      <article className="program-cycle-period" aria-label="بازه دوره">
+        <span>{cycle.requested_duration_days.toLocaleString('fa-IR')} روز</span>
+        <strong>{startLabel} تا {endLabel}</strong>
       </article>
 
       {needsUserAction ? (
@@ -211,7 +230,7 @@ export default async function ProgramPage({
           <div>
             <p className="section-kicker">گام بعد</p>
             <h3>ساخت برنامهٔ تمرین و تغذیه</h3>
-            <p>NeoFit محدودیت‌های سلامت، تجهیزات، زمان و ترجیحاتت را بررسی می‌کند و بعد برنامه را می‌سازد.</p>
+            <p>محدودیت‌های سلامت، تجهیزات، سابقه تمرین و ترجیحاتت بررسی می‌شوند؛ بخش غذایی فعلاً وعده‌ها را بدون تعیین هدف کالری یا سهم شخصی می‌چیند.</p>
           </div>
           <form action={generateProgramCycle}>
             <input type="hidden" name="cycleId" value={cycle.id} />
@@ -279,7 +298,6 @@ export default async function ProgramPage({
 
       <div className="program-cycle-links">
         <Link href="/onboarding/review">ویرایش اطلاعات من</Link>
-        <Link href="/profile/ai">تنظیمات مربی هوشمند</Link>
       </div>
     </section>
   );
