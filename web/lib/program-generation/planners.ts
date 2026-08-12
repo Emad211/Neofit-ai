@@ -97,8 +97,6 @@ function favoriteFoodIds(
 }
 
 function plannerPreflight(draft: OnboardingDraft): ProgramPlannerPreflight {
-  // Run every deterministic blocker before the first provider request so a
-  // known-invalid nutrition profile never consumes Training Planner budget.
   const candidates = safeExercisesForProgram(draft);
   const foods = eligibleFoodsForProgram(draft);
   const dayCount = draft.availability.daysPerWeek;
@@ -123,7 +121,6 @@ function trainingResponseSchema(preflight: ProgramPlannerPreflight): Readonly<Re
           type: 'array',
           minItems: preflight.exerciseCountPerDay,
           maxItems: preflight.exerciseCountPerDay,
-          uniqueItems: true,
           items: { type: 'string', enum: preflight.candidates.map((exercise) => exercise.id) },
         },
       },
@@ -149,7 +146,6 @@ function nutritionResponseSchema(preflight: ProgramPlannerPreflight): Readonly<R
             type: 'array',
             minItems: 1,
             maxItems: 2,
-            uniqueItems: true,
             items: {
               type: 'object',
               additionalProperties: false,
