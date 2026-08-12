@@ -27,21 +27,24 @@ function ReadySummary({
   return (
     <main className="onboarding-page onboarding-ready-page" id="main-content">
       <section className="onboarding-ready-card" aria-labelledby="onboarding-ready-heading">
-        <div className="onboarding-ready-card__mark" aria-hidden="true">✓</div>
-        <p className="section-kicker">اطلاعاتت کامل شد</p>
-        <h1 id="onboarding-ready-heading">آماده‌ای برنامه‌ات را بسازی</h1>
-        <p className="onboarding-ready-card__intro">
-          {guest
-            ? 'برای ذخیره دائمی اطلاعات و دریافت برنامه شخصی، وارد حساب شو یا یک حساب بساز.'
-            : 'خلاصه اطلاعاتت را یک‌بار ببین. اگر همه‌چیز درست است، وارد بخش برنامه شو و برنامه تمرین و تغذیه‌ات را بساز.'}
-        </p>
+        <Link className="onboarding-ready-brand" href="/today">NeoFit</Link>
+        <span className="onboarding-ready-card__mark" aria-hidden="true">✓</span>
+        <div className="onboarding-ready-card__copy">
+          <p className="section-kicker">اطلاعاتت کامل شد</p>
+          <h1 id="onboarding-ready-heading">حالا برنامه‌ات را بساز</h1>
+          <p className="onboarding-ready-card__intro">
+            {guest
+              ? 'برای ذخیره اطلاعات و دریافت برنامه شخصی، وارد حساب شو یا حساب بساز.'
+              : 'این خلاصه مبنای ساخت برنامه است. اگر درست است، وارد برنامه شو.'}
+          </p>
+        </div>
 
         {draft ? (
           <div className="onboarding-ready-card__summary" aria-label="خلاصه دوره">
             <div><span>هدف</span><strong>{goal ?? '—'}</strong></div>
-            <div><span>شروع</span><strong>{startDate ?? '—'}</strong></div>
-            <div><span>مدت</span><strong>{duration === null ? '—' : `${duration.toLocaleString('fa-IR')} روز`}</strong></div>
             <div><span>تمرین</span><strong>{draft.availability.daysPerWeek === null ? '—' : `${draft.availability.daysPerWeek.toLocaleString('fa-IR')} روز در هفته`}</strong></div>
+            <div><span>شروع</span><strong>{startDate ?? '—'}</strong></div>
+            <div><span>دوره</span><strong>{duration === null ? '—' : `${duration.toLocaleString('fa-IR')} روز`}</strong></div>
           </div>
         ) : null}
 
@@ -53,8 +56,7 @@ function ReadySummary({
           ) : (
             <form action={createProgramCycle}><CreateCycleButton /></form>
           )}
-          {!guest ? <Link href="/onboarding/review">مرور دوباره اطلاعات</Link> : null}
-          {!guest ? <Link href="/profile/ai">تنظیمات مربی هوشمند</Link> : null}
+          {!guest ? <Link href="/onboarding/review">ویرایش اطلاعات</Link> : null}
         </div>
       </section>
     </main>
