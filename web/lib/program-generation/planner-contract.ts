@@ -45,13 +45,9 @@ function allowedId(value: unknown, allowedIds: ReadonlySet<string>): string {
   return value;
 }
 
-function portion(value: unknown): number {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0.25 || value > 3) {
-    throw new Error('planner_portion_invalid');
-  }
-  const quarters = value * 4;
-  if (Math.abs(quarters - Math.round(quarters)) > 1e-9) throw new Error('planner_portion_step_invalid');
-  return value;
+function standardServing(value: unknown): 1 {
+  if (value !== 1) throw new Error('planner_portion_authority_invalid');
+  return 1;
 }
 
 export function parseTrainingPlannerOutput(
@@ -107,7 +103,7 @@ export function parseNutritionPlannerOutput(
         }
         return {
           id: allowedId(itemRecord.id, input.allowedIds),
-          portion: portion(itemRecord.portion),
+          portion: standardServing(itemRecord.portion),
         };
       });
       if (new Set(items.map((item) => item.id)).size !== items.length) {
