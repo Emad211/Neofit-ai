@@ -125,10 +125,10 @@ export function NutritionPlanScreen({
     return (
       <section className="page-stack nutrition-plan-page" aria-labelledby="plan-heading">
         <Link className="back-button" href="/nutrition"><NeoFitIcon name="chevron" /> تغذیه</Link>
-        <div className="section-heading"><div><p className="section-kicker">برنامه غذایی</p><h2 id="plan-heading">برنامه شخصی تو</h2></div></div>
+        <div className="section-heading"><div><p className="section-kicker">برنامه غذایی</p><h2 id="plan-heading">برنامه هفتگی تو</h2></div></div>
         <article className="screen-empty-card">
           <span className="screen-empty-card__icon"><NeoFitIcon name="food" size={28} /></span>
-          <div><h3>برای ساخت برنامه شخصی وارد حساب شو</h3><p>بعد از تکمیل اطلاعاتت، برنامه غذایی متناسب با انتخاب‌ها و شرایطت آماده می‌شود.</p></div>
+          <div><h3>برای ساخت برنامه وارد حساب شو</h3><p>بعد از تکمیل اطلاعاتت، وعده‌های هفتگی بر اساس الگوی غذایی و ترجیحاتت آماده می‌شوند.</p></div>
           <Link className="primary-button" href="/auth">ورود یا ساخت حساب</Link>
         </article>
       </section>
@@ -139,7 +139,11 @@ export function NutritionPlanScreen({
     <section className="page-stack nutrition-plan-page" aria-labelledby="plan-heading">
       <Link className="back-button" href="/nutrition"><NeoFitIcon name="chevron" /> تغذیه</Link>
       <div className="section-heading nutrition-plan-page__heading">
-        <div><p className="section-kicker">برنامه غذایی</p><h2 id="plan-heading">{snapshot.title ?? 'برنامه غذایی من'}</h2><p className="page-intro">برنامه امروز را ببین؛ روزهای دیگر فقط وقتی لازم باشد باز می‌شوند.</p></div>
+        <div>
+          <p className="section-kicker">برنامه غذایی</p>
+          <h2 id="plan-heading">{snapshot.title ?? 'برنامه غذایی من'}</h2>
+          <p className="page-intro">وعده‌ها بر اساس الگوی غذایی و ترجیحاتت چیده شده‌اند؛ مقدار هر آیتم همان یک سهم استاندارد تعریف‌شده برای آن غذاست.</p>
+        </div>
         <Link className="text-button" href="/program">برنامه من</Link>
       </div>
 
