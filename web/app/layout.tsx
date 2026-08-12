@@ -20,6 +20,7 @@ import './ui-truth-polish.css';
 import './product-ui-v3.css';
 import './product-ui-v3-system.css';
 import './product-ui-v3-workout.css';
+import './product-ui-v3-plans.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(publicAppUrl),
