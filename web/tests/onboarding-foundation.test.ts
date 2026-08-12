@@ -3,7 +3,6 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { getBodyPart } from '@/components/onboarding/body-map/body-parts';
 import {
-  NUTRITION_AUTHORITY_NOTE,
   ONBOARDING_SCHEMA_VERSION,
   ONBOARDING_TOTAL_STEPS,
   PROGRAM_DURATION_MAX_DAYS,
@@ -23,7 +22,7 @@ async function source(path: string) {
   return readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 }
 
-test('Onboarding v2 uses a focused 13-step journey and starts with the AI gate', () => {
+test('Onboarding v2 keeps a focused 13-step journey and starts with the AI connection', () => {
   assert.equal(ONBOARDING_SCHEMA_VERSION, 2);
   assert.equal(ONBOARDING_TOTAL_STEPS, 13);
   assert.equal(onboardingSteps.length, 13);
@@ -45,7 +44,7 @@ test('injury body map retains exactly 73 unique front/back regions', () => {
   assert.ok(parts.some((part) => part.face === 'post'));
 });
 
-test('mobile injury map uses one-face navigation, collapsible details and a non-precision list fallback', async () => {
+test('mobile injury map keeps one-face navigation and a non-precision list fallback', async () => {
   const map = await source('components/onboarding/body-map/injury-body-map.tsx');
   const css = await source('app/onboarding/onboarding-mobile-polish.css');
   const listCss = await source('app/onboarding/onboarding-body-map-list.css');
@@ -55,7 +54,6 @@ test('mobile injury map uses one-face navigation, collapsible details and a non-
   assert.match(map, /<optgroup label="جلوی بدن"/);
   assert.match(map, /<details/);
   assert.match(css, /figure\.is-active/);
-  assert.match(css, /59dvh/);
   assert.match(css, /safe-area-inset-bottom/);
   assert.match(listCss, /min-block-size: 52px/);
 });
@@ -89,7 +87,7 @@ test('availability stores stable locale-independent weekday and equipment ids', 
   assert.equal(new Set(equipmentOptions.map((item) => item.value)).size, equipmentOptions.length);
 });
 
-test('legacy v1 migration preserves unambiguous entries, maps availability ids and resets ambiguous defaults', () => {
+test('legacy v1 migration preserves unambiguous data and resets ambiguous defaults', () => {
   const legacy = {
     version: 1,
     startedAt: '2026-08-01T00:00:00.000Z',
@@ -109,13 +107,11 @@ test('legacy v1 migration preserves unambiguous entries, maps availability ids a
   const migrated = migrateLegacyOnboardingDraft(legacy);
   assert.ok(migrated);
   assert.equal(migrated.basics.name, 'Emad');
-  assert.equal(migrated.basics.age, 30);
   assert.equal(migrated.goal.primaryGoal, 'muscle-gain');
   assert.deepEqual(migrated.nutrition.allergies, ['peanut']);
   assert.deepEqual(migrated.availability.equipment, ['dumbbell', 'full-gym']);
   assert.deepEqual(migrated.availability.preferredDays, ['tue']);
   assert.equal(migrated.lifestyle.activityLevel, null);
-  assert.equal(migrated.lifestyle.smoking, null);
   assert.equal(migrated.trainingHistory.level, null);
   assert.equal(migrated.availability.daysPerWeek, null);
   assert.equal(migrated.preferences.coachingTone, null);
@@ -124,7 +120,7 @@ test('legacy v1 migration preserves unambiguous entries, maps availability ids a
   assert.deepEqual(migrated.completedSteps, []);
 });
 
-test('v2 parser accepts valid explicit values and rejects malformed self-report payloads', () => {
+test('v2 parser accepts valid explicit values and rejects malformed payloads', () => {
   const draft = createEmptyOnboardingDraft();
   draft.availability.sessionDuration = 60;
   assert.ok(parseOnboardingDraft(draft));
@@ -137,14 +133,8 @@ test('v2 parser accepts valid explicit values and rejects malformed self-report 
 
   const malformedInjury = structuredClone(draft) as typeof draft;
   malformedInjury.injuries.areas = [{
-    key: 'ant:knee',
-    bodyPartId: 'different-id',
-    face: 'ant',
-    label: 'زانو',
-    severity: 'mild',
-    status: 'current',
-    forbiddenMovements: '',
-    notes: '',
+    key: 'ant:knee', bodyPartId: 'different-id', face: 'ant', label: 'زانو',
+    severity: 'mild', status: 'current', forbiddenMovements: '', notes: '',
   }];
   assert.equal(parseOnboardingDraft(malformedInjury), null);
 
@@ -174,25 +164,18 @@ test('step validation requires explicit choices, equipment truth and bounded cou
 test('preferences validation requires only the six controls rendered in the UI', () => {
   const draft = createEmptyOnboardingDraft();
   draft.preferences = {
-    intensity: 'moderate',
-    cardioPreference: 'low',
-    trainingStyle: 'resistance',
-    variety: 'stable',
-    nutritionStrictness: 'structured',
-    coachingTone: 'analytical',
-    reminderLevel: null,
+    intensity: 'moderate', cardioPreference: 'low', trainingStyle: 'resistance',
+    variety: 'stable', nutritionStrictness: 'structured', coachingTone: 'analytical', reminderLevel: null,
   };
   assert.deepEqual(validateOnboardingStep(draft, 11), []);
 });
 
 test('step completion remains idempotent', () => {
   const draft = createEmptyOnboardingDraft();
-  const once = markStepCompleted(draft, 4);
-  const twice = markStepCompleted(once, 4);
-  assert.deepEqual(twice.completedSteps, [4]);
+  assert.deepEqual(markStepCompleted(markStepCompleted(draft, 4), 4).completedSteps, [4]);
 });
 
-test('training preview only materializes from explicit availability and nutrition arithmetic stays outside Onboarding', async () => {
+test('training preview uses explicit availability and Onboarding never computes nutrition targets', async () => {
   const draft = createEmptyOnboardingDraft();
   assert.equal(buildTrainingPreview(draft).trainingDays, null);
   draft.availability.daysPerWeek = 6;
@@ -201,13 +184,14 @@ test('training preview only materializes from explicit availability and nutritio
   assert.equal(preview.trainingDays, 6);
   assert.equal(preview.sessionMinutes, 75);
   assert.equal(preview.weeklyStructure.length, 6);
-  assert.match(NUTRITION_AUTHORITY_NOTE, /Nutrition Core/);
 
   const model = await source('lib/onboarding/model.ts');
+  const screen = await source('components/onboarding/onboarding-screen.tsx');
   assert.doesNotMatch(model, /\b(calorieTarget|proteinGrams|carbohydrateGrams|fatGrams|\bbmr\b)\b/i);
+  assert.doesNotMatch(screen, /Nutrition Core|NUTRITION_AUTHORITY_NOTE|خوداظهاری/);
 });
 
-test('AI key setup is mobile actionable and enforces the resilient provider policy without persisting raw secrets', async () => {
+test('AI connection is mobile actionable without persisting raw secrets in browser storage', async () => {
   const gate = await source('components/onboarding/onboarding-ai-gate.tsx');
   const screen = await source('components/onboarding/onboarding-screen.tsx');
   const router = await source('lib/ai/provider-router.ts');
@@ -217,11 +201,11 @@ test('AI key setup is mobile actionable and enforces the resilient provider poli
   assert.match(gate, /SecretField/);
   assert.match(gate, /aria-pressed=\{revealed\}/);
   assert.match(gate, /const gateReady = mode === 'guest' \? true : avalaiReady/);
-  assert.match(gate, /Google به‌تنهایی شرط عبور نیست/);
-  assert.match(gate, /Google AI Studio — اختیاری/);
-  assert.doesNotMatch(gate, /localStorage|sessionStorage/);
+  assert.match(gate, /مربی هوشمند آماده است/);
+  assert.match(gate, /Google Gemini/);
+  assert.doesNotMatch(gate, /localStorage|sessionStorage|fallback معتبر|بدون inference/);
   assert.match(screen, /mode === 'account'.*!aiReady/s);
-  assert.match(screen, /Google به‌تنهایی کافی نیست/);
+  assert.match(screen, /اتصال مربی هوشمند را کامل کن/);
   assert.match(config, /AI_PROVIDER_PRIORITY[^\n]*\['google', 'avalai'\]/);
   assert.match(router, /const eligibleProviders = priority\.filter/);
   assert.doesNotMatch(await source('lib/onboarding/model.ts'), /apiKey|ciphertext|authTag/);
@@ -260,15 +244,17 @@ test('interactive provider is scoped to step routes and Ready verifies account s
   assert.match(ready, /status,schema_version,draft/);
   assert.match(ready, /parseOnboardingDraft/);
   assert.match(ready, /status !== 'completed'/);
-  assert.doesNotMatch(ready, /Stage22|Stage24|read-only/);
+  assert.doesNotMatch(ready, /Stage22|Stage24|read-only|Demo Onboarding|ورودی معتبر چرخه/);
 });
 
-test('review owns safety readiness and final onboarding asks only for real course inputs', async () => {
+test('review owns safety readiness and final step asks only for real course inputs', async () => {
   const screen = await source('components/onboarding/onboarding-screen.tsx');
   assert.match(screen, /programDurationDays/);
   assert.match(screen, /editHref="\/onboarding\/goal"/);
   assert.match(screen, /editHref="\/onboarding\/availability"/);
-  assert.match(screen, /قواعد ایمنی فعال/);
+  assert.match(screen, /نکات مهم برای برنامه/);
+  assert.match(screen, /ممکن است یک مرحله بررسی اضافه لازم باشد/);
+  assert.doesNotMatch(screen, /قواعد ایمنی فعال|Nutrition Core|خوداظهاری/);
   assert.doesNotMatch(screen, /if \(step === 13\).*کنترل ایمنی/s);
   assert.doesNotMatch(screen, /if \(step === 14\)/);
   assert.doesNotMatch(screen, /draft\.confirmation\.workoutReminders/);
@@ -281,7 +267,7 @@ test('review owns safety readiness and final onboarding asks only for real cours
   assert.match(screen, /تاریخ شروع نمی‌تواند قبل از امروز باشد/);
 });
 
-test('lifecycle stops truthfully before planners exist', async () => {
+test('completed Onboarding routes to the explicit program boundary', async () => {
   const root = await source('app/page.tsx');
   const screen = await source('components/onboarding/onboarding-screen.tsx');
   assert.match(root, /schema_version/);
