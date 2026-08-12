@@ -233,9 +233,14 @@ test('Program generation claims the cycle before adaptive bounded planner reques
   assert.match(planners, /validateTrainingQuality/);
   assert.match(planners, /coverPushPullAndLowerBodyWhenCandidatesAllow/);
   assert.match(planners, /responseSchema/);
+  assert.match(planners, /uniqueItems: true/);
   assert.match(planners, /AI_MAX_STRUCTURED_OUTPUT_TOKENS/);
-  assert.match(planners, /doNotInferPersonalCalorieOrMacroTargets/);
+  assert.match(planners, /portionMustEqual: 1/);
+  assert.match(planners, /doNotInferPersonalCalorieMacroOrPortionTargets/);
   assert.match(planners, /avoidSameDayDuplicatesWhenAlternativesExist/);
+  const nutritionPlanner = planners.split("task: 'select_meal_structure'")[1] ?? '';
+  assert.ok(nutritionPlanner.length > 0);
+  assert.doesNotMatch(nutritionPlanner, /goal: draft\.goal|targetTimeline:|activityLevel:/);
   assert.doesNotMatch(planners, /weightKg: draft\.basics\.weightKg/);
   assert.match(google, /response_format/);
   assert.match(google, /application\/json/);
