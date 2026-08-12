@@ -8,26 +8,34 @@ export function WorkoutScreen({ snapshot }: { snapshot: WorkoutPlanSnapshot }) {
   if (snapshot.mode === 'unavailable') {
     return (
       <section className="page-stack" aria-labelledby="workout-heading">
-        <div className="section-heading"><div><p className="section-kicker">برنامه تمرینی</p><h2 id="workout-heading">برنامه در دسترس نیست</h2></div></div>
-        <article className="local-data-card"><div><span>خطای اتصال</span><h3>برنامه تمرینی خوانده نشد</h3><p>{snapshot.loadError ?? 'دوباره تلاش کن.'}</p></div></article>
+        <div className="section-heading"><div><p className="section-kicker">تمرین</p><h2 id="workout-heading">برنامه در دسترس نیست</h2></div></div>
+        <article className="local-data-card"><div><h3>برنامه تمرینی بارگذاری نشد</h3><p>{snapshot.loadError ?? 'صفحه را تازه کن و دوباره تلاش کن.'}</p></div></article>
       </section>
     );
   }
 
-  if (snapshot.mode === 'account' && snapshot.days.length === 0) {
+  if (snapshot.mode === 'guest') {
     return (
       <section className="page-stack" aria-labelledby="workout-heading">
-        <div className="section-heading"><div><p className="section-kicker">برنامهٔ حساب</p><h2 id="workout-heading">هنوز برنامهٔ فعالی ثبت نشده</h2></div></div>
+        <div className="section-heading"><div><p className="section-kicker">تمرین</p><h2 id="workout-heading">برنامه شخصی تمرین</h2></div></div>
         <article className="local-data-card">
-          <div>
-            <span>دادهٔ واقعی حساب</span>
-            <h3>NeoFit برنامهٔ نمونه را به‌جای برنامهٔ شخصی نمایش نمی‌دهد</h3>
-            <p>وقتی یک نسخهٔ معتبر از برنامه برای حساب فعال شود، جلسه‌ها و Player از همان نسخه استفاده می‌کنند.</p>
-          </div>
+          <div><h3>برای ساخت برنامه شخصی وارد حساب شو</h3><p>بعد از تکمیل اطلاعاتت، NeoFit برنامه تمرین مناسب شرایطت را آماده می‌کند.</p></div>
+        </article>
+        <div className="action-row"><Link className="primary-button" href="/auth">ورود یا ساخت حساب</Link></div>
+      </section>
+    );
+  }
+
+  if (snapshot.days.length === 0) {
+    return (
+      <section className="page-stack" aria-labelledby="workout-heading">
+        <div className="section-heading"><div><p className="section-kicker">تمرین</p><h2 id="workout-heading">هنوز برنامه تمرینی نداری</h2></div></div>
+        <article className="local-data-card">
+          <div><h3>برنامه‌ات را بساز</h3><p>اطلاعاتت را مرور کن و از بخش «برنامه من» برنامه تمرین و تغذیه را آماده کن.</p></div>
         </article>
         <div className="action-row">
-          <Link className="primary-button" href="/program">ساخت یا فعال‌سازی برنامه</Link>
-          <Link className="text-button" href="/onboarding/review">مرور اطلاعات پایه</Link>
+          <Link className="primary-button" href="/program">رفتن به برنامه من</Link>
+          <Link className="text-button" href="/onboarding/review">ویرایش اطلاعات</Link>
         </div>
       </section>
     );
@@ -43,23 +51,9 @@ export function WorkoutScreen({ snapshot }: { snapshot: WorkoutPlanSnapshot }) {
   return (
     <section className="page-stack" aria-labelledby="workout-heading">
       <div className="section-heading">
-        <div>
-          <p className="section-kicker">{snapshot.mode === 'guest' ? 'برنامه نمونه مهمان' : 'برنامهٔ فعال حساب'}</p>
-          <h2 id="workout-heading">{snapshot.title ?? 'تمرین‌های برنامه'}</h2>
-        </div>
-        <span className="status-pill">
-          <NeoFitIcon name="workout" size={15} />
-          {snapshot.version ? `نسخه ${faNumber.format(snapshot.version)}` : `${faNumber.format(workoutPlan.length)} جلسه`}
-        </span>
+        <div><p className="section-kicker">برنامه تمرین</p><h2 id="workout-heading">{snapshot.title ?? 'تمرین‌های من'}</h2></div>
+        <span className="status-pill"><NeoFitIcon name="workout" size={15} />{faNumber.format(workoutPlan.length)} جلسه</span>
       </div>
-
-      {snapshot.mode === 'guest' ? (
-        <div className="auth-notice auth-notice--warning" role="status">این برنامه فقط Demo مهمان است و برنامهٔ شخصی یا تجویز‌شده محسوب نمی‌شود.</div>
-      ) : null}
-
-      {snapshot.mode === 'account' ? (
-        <div className="auth-notice" role="status">ترتیب زیر ترتیب نسخهٔ فعال برنامه است. NeoFit تا وقتی schedule/history جداگانه نداشته باشد، جلسه‌ای را به‌عنوان «بعدی» حدس نمی‌زند.</div>
-      ) : null}
 
       <article className="workout-summary-card">
         <div><span>جلسه</span><strong>{faNumber.format(workoutPlan.length)}</strong></div>
