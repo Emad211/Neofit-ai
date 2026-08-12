@@ -1,6 +1,5 @@
 import 'server-only';
 
-import { workoutPlan as guestWorkoutPlan } from '@/data/workout-fixtures';
 import {
   WORKOUT_PLAN_SCHEMA_VERSION,
   parseWorkoutPlanDocument,
@@ -25,9 +24,9 @@ function guestSnapshot(): WorkoutPlanSnapshot {
     planId: null,
     version: null,
     schemaVersion: WORKOUT_PLAN_SCHEMA_VERSION,
-    title: 'برنامه نمونه مهمان',
-    source: 'demo',
-    days: guestWorkoutPlan,
+    title: null,
+    source: null,
+    days: [],
     loadError: null,
   };
 }
@@ -48,10 +47,10 @@ function emptyAccountSnapshot(userId: string | null, loadError: string | null = 
 
 function rowSnapshot(userId: string, row: WorkoutPlanRow): WorkoutPlanSnapshot {
   if (row.schema_version !== WORKOUT_PLAN_SCHEMA_VERSION) {
-    return emptyAccountSnapshot(userId, 'نسخهٔ برنامه تمرینی با این نسخه از NeoFit سازگار نیست.');
+    return emptyAccountSnapshot(userId, 'این برنامه تمرینی با نسخه فعلی NeoFit سازگار نیست.');
   }
   const document = parseWorkoutPlanDocument(row.plan);
-  if (!document) return emptyAccountSnapshot(userId, 'ساختار برنامه تمرینی حساب معتبر نیست.');
+  if (!document) return emptyAccountSnapshot(userId, 'برنامه تمرینی فعلاً قابل نمایش نیست.');
   return {
     mode: 'account',
     userId,
@@ -83,11 +82,11 @@ export async function loadWorkoutPlanSnapshot(): Promise<WorkoutPlanSnapshot> {
       .eq('user_id', identity.account.id)
       .eq('status', 'active')
       .maybeSingle();
-    if (result.error) return emptyAccountSnapshot(identity.account.id, 'خواندن برنامه تمرینی حساب ناموفق بود.');
+    if (result.error) return emptyAccountSnapshot(identity.account.id, 'برنامه تمرینی بارگذاری نشد.');
     if (!result.data) return emptyAccountSnapshot(identity.account.id);
     return rowSnapshot(identity.account.id, result.data);
   } catch {
-    return emptyAccountSnapshot(identity.account.id, 'برنامه تمرینی حساب در دسترس نبود.');
+    return emptyAccountSnapshot(identity.account.id, 'برنامه تمرینی در دسترس نیست.');
   }
 }
 
