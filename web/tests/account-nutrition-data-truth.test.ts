@@ -75,11 +75,12 @@ test('non-nutrition screens do not depend on the global Nutrition diary', async 
   }
 });
 
-test('Today renders an explicit unconfigured target state', async () => {
+test('Today renders an explicit unconfigured target state without developer-facing copy', async () => {
   const today = await source('components/today-screen.tsx');
   assert.match(today, /targetsConfigured/);
-  assert.match(today, /هدف شخصی تنظیم نشده/);
-  assert.match(today, /NeoFit برای حساب واقعی هدف تغذیه‌ای از خودش نمی‌سازد/);
+  assert.match(today, /هدف روزانه تنظیم نشده/);
+  assert.match(today, /وقتی هدف روزانه برای حسابت تنظیم شود/);
+  assert.doesNotMatch(today, /NeoFit برای حساب واقعی|کاتالوگ نسخه‌دار|Demo/);
   assert.doesNotMatch(today, /2200|140.*250.*70/);
 });
 
