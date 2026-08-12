@@ -9,7 +9,7 @@ test('intent router is local and selects only relevant context domains', () => {
   assert.deepEqual(routeCoachDomains('سلام، حالت چطوره؟'), ['profile']);
   assert.deepEqual(routeCoachDomains('امروز چیکار کنم؟'), ['profile', 'safety', 'nutrition', 'workout', 'progress']);
   assert.deepEqual(routeCoachDomains('برنامه من چیه؟'), ['profile', 'safety', 'nutrition', 'workout']);
-  assert.deepEqual(routeCoachDomains('پروتئین و غذای امروز را بررسی کن'), ['profile', 'safety', 'nutrition', 'workout', 'progress']);
+  assert.deepEqual(routeCoachDomains('پروتئین و غذای امروز را بررسی کن'), ['profile', 'safety', 'nutrition']);
   assert.deepEqual(routeCoachDomains('برای تمرین و درد زانو چه کار کنم؟'), ['profile', 'safety', 'workout']);
   assert.deepEqual(routeCoachDomains('روند پیشرفت من چطور بوده؟'), ['profile', 'progress']);
   assert.deepEqual(routeCoachDomains('دور کمر و وزن بدنم چه تغییری کرده؟'), ['profile', 'progress']);
