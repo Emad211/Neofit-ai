@@ -10,12 +10,17 @@ import {
   type NutritionGoals,
   type NutritionVector,
 } from '@neofit/nutrition-core';
+import { foodFixtures } from '@/data/fixtures';
 import { formatLocalDate, normalizeTimeZone } from '@/lib/local-date';
+import { parseNutritionPlanDocument, resolveNutritionPlanDocument } from '@/lib/nutrition-plan-core';
 import { exerciseRegistryContext } from '@/lib/exercise-registry/coach-context';
 import { goalLabels, parseOnboardingDraft } from '@/lib/onboarding/model';
 import type { Json } from '@/lib/supabase/database.types';
 import type { AiAuthenticatedContext } from '@/lib/ai/credential-store';
+import { parseWorkoutPlanDocument } from '@/lib/workout-plan-core';
 import type { CoachContextDomain } from './context-router';
+
+const WEEKDAY_LABELS = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'] as const;
 
 function isRecord(value: Json | undefined | null): value is { [key: string]: Json | undefined } {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -64,6 +69,91 @@ function rounded(value: number | null | undefined) {
   return typeof value === 'number' && Number.isFinite(value) ? Math.round(value * 10) / 10 : null;
 }
 
+function normalizedLookup(value: string): string {
+  return value
+    .toLocaleLowerCase('fa-IR')
+    .replace(/[\u200c\u200f\u202a-\u202e\s]/g, '');
+}
+
+function requestedWeekday(message: string, timezone: string): string {
+  const normalizedMessage = normalizedLookup(message);
+  const mentioned = WEEKDAY_LABELS.find((label) => normalizedMessage.includes(normalizedLookup(label)));
+  if (mentioned) return mentioned;
+  return new Intl.DateTimeFormat('fa-IR', { weekday: 'long', timeZone: timezone }).format(new Date());
+}
+
+function activeWorkoutPlanContext(
+  row: { id: string; version: number; title: string; plan: Json } | null,
+  focusWeekday: string,
+) {
+  if (!row) return null;
+  const document = parseWorkoutPlanDocument(row.plan);
+  if (!document) return null;
+  const focusDay = document.days.find((day) => normalizedLookup(day.day) === normalizedLookup(focusWeekday)) ?? null;
+  return {
+    source: 'active_workout_plan',
+    title: row.title,
+    version: row.version,
+    schedule: document.days.slice(0, 14).map((day) => ({
+      day: day.day,
+      title: day.title,
+      focus: day.focus,
+      durationMinutes: day.durationMinutes,
+      exerciseCount: day.exercises.length,
+    })),
+    focusDay: focusDay ? {
+      day: focusDay.day,
+      title: focusDay.title,
+      focus: focusDay.focus,
+      durationMinutes: focusDay.durationMinutes,
+      exercises: focusDay.exercises.slice(0, 12).map((exercise) => ({
+        id: exercise.id,
+        name: exercise.name,
+        sets: exercise.sets,
+        targetReps: exercise.targetReps,
+        restSeconds: exercise.restSeconds,
+      })),
+    } : null,
+  };
+}
+
+function activeNutritionPlanContext(
+  row: { id: string; version: number; title: string; plan: Json } | null,
+  focusWeekday: string,
+) {
+  if (!row) return null;
+  const document = parseNutritionPlanDocument(row.plan);
+  if (!document) return null;
+  const resolved = resolveNutritionPlanDocument(document, foodFixtures);
+  if (!resolved) return null;
+  const focusDay = resolved.find((day) => normalizedLookup(day.day) === normalizedLookup(focusWeekday)) ?? null;
+  return {
+    source: 'active_nutrition_plan',
+    title: row.title,
+    version: row.version,
+    schedule: resolved.slice(0, 14).map((day) => ({
+      day: day.day,
+      title: day.title,
+      mealCount: day.meals.length,
+      meals: day.meals.map((meal) => meal.label),
+    })),
+    focusDay: focusDay ? {
+      day: focusDay.day,
+      title: focusDay.title,
+      meals: focusDay.meals.map((meal) => ({
+        mealType: meal.mealType,
+        label: meal.label,
+        items: meal.items.slice(0, 4).map((item) => ({
+          foodId: item.foodId,
+          nameFa: item.nameFa,
+          portionLabelFa: item.portionLabelFa,
+          portionCount: item.portionCount,
+        })),
+      })),
+    } : null,
+  };
+}
+
 export async function loadCoachContext(
   auth: AiAuthenticatedContext,
   domains: readonly CoachContextDomain[],
@@ -78,15 +168,34 @@ export async function loadCoachContext(
 
   const onboarding = parseOnboardingDraft(onboardingResult.data?.draft ?? null);
   const timezone = normalizeTimeZone(profileResult.data?.timezone);
+  const focusWeekday = requestedWeekday(message, timezone);
   const context: Record<string, unknown> = {
     generatedAt: new Date().toISOString(),
     domains,
+    focusWeekday,
     profile: {
       displayName: bounded(profileResult.data?.display_name, 80),
       onboardingStatus: onboardingResult.data?.status ?? 'missing',
       primaryGoal: onboarding?.goal.primaryGoal ? goalLabels[onboarding.goal.primaryGoal] : null,
       basics: onboarding ? { age: onboarding.basics.age, gender: onboarding.basics.gender, heightCm: onboarding.basics.heightCm, weightKg: onboarding.basics.weightKg } : null,
       availability: onboarding ? { daysPerWeek: onboarding.availability.daysPerWeek, sessionDuration: onboarding.availability.sessionDuration, location: onboarding.availability.location, equipment: onboarding.availability.equipment.slice(0, 20) } : null,
+      trainingHistory: onboarding ? {
+        level: onboarding.trainingHistory.level,
+        trainingAgeMonths: onboarding.trainingHistory.trainingAgeMonths,
+        recentBreakWeeks: onboarding.trainingHistory.recentBreakWeeks,
+        strengthExperience: onboarding.trainingHistory.strengthExperience,
+        cardioExperience: onboarding.trainingHistory.cardioExperience,
+        familiarMovements: onboarding.trainingHistory.familiarMovements.slice(0, 12),
+      } : null,
+      nutritionPreferences: onboarding ? {
+        dietType: onboarding.nutrition.dietType,
+        mealsPerDay: onboarding.nutrition.mealsPerDay,
+        budget: onboarding.nutrition.budget,
+        cookingAbility: onboarding.nutrition.cookingAbility,
+        kitchenAccess: onboarding.nutrition.kitchenAccess,
+        eatingOutFrequency: onboarding.nutrition.eatingOutFrequency,
+        favoriteFoods: onboarding.nutrition.favoriteIranianFoods.slice(0, 12).map((item) => bounded(item, 120)),
+      } : null,
       coachingPreferences: onboarding ? { tone: onboarding.preferences.coachingTone, intensity: onboarding.preferences.intensity, trainingStyle: onboarding.preferences.trainingStyle, nutritionStrictness: onboarding.preferences.nutritionStrictness } : null,
     },
   };
@@ -100,6 +209,11 @@ export async function loadCoachContext(
         diabetes: onboarding.medical.hasDiabetes,
         cardiacHistory: onboarding.medical.hasCardiacHistory,
         physicianRestrictions: bounded(onboarding.medical.physicianRestrictions, 700),
+      },
+      nutrition: {
+        allergies: onboarding.nutrition.allergies.slice(0, 20).map((item) => bounded(item, 120)),
+        dislikedFoods: onboarding.nutrition.dislikedFoods.slice(0, 20).map((item) => bounded(item, 120)),
+        dietType: onboarding.nutrition.dietType,
       },
       injuries: {
         painDuringExercise: onboarding.injuries.painDuringExercise,
@@ -120,11 +234,13 @@ export async function loadCoachContext(
   if (domains.includes('nutrition')) {
     tasks.push((async () => {
       const localDate = formatLocalDate(new Date(), timezone);
-      const [goalsResult, entriesResult] = await Promise.all([
+      const [goalsResult, entriesResult, planResult] = await Promise.all([
         supabase.from('nutrition_goals').select('daily').eq('user_id', userId).maybeSingle(),
         supabase.from('nutrition_entries').select('id,local_date,meal_type,label,source_type,source_id,estimate,created_at,updated_at').eq('user_id', userId).eq('local_date', localDate).order('logged_at', { ascending: true }).limit(40),
+        supabase.from('nutrition_plans').select('id,version,title,plan').eq('user_id', userId).eq('status', 'active').maybeSingle(),
       ]);
-      if (goalsResult.error || entriesResult.error) throw new Error('Unable to load Coach nutrition context.');
+      if (goalsResult.error || entriesResult.error || planResult.error) throw new Error('Unable to load Coach nutrition context.');
+      const activePlan = activeNutritionPlanContext(planResult.data ?? null, focusWeekday);
       const daily = parseVector(goalsResult.data?.daily ?? null);
       const goals: NutritionGoals | null = daily ? { daily } : null;
       const diary: DiaryEntry[] = [];
@@ -138,7 +254,7 @@ export async function loadCoachContext(
         meals.push({ label: row.label.slice(0, 160), mealType, grams: estimate.grams });
       }
       if (!goals) {
-        context.nutrition = { localDate, goalsConfigured: false, meals };
+        context.nutrition = { localDate, goalsConfigured: false, meals, activePlan };
         return;
       }
       const summary = summarizeDiaryDay(diary, localDate);
@@ -155,6 +271,7 @@ export async function loadCoachContext(
         remaining,
         entryCount: summary.entryCount,
         meals,
+        activePlan,
         authority: '@neofit/nutrition-core',
       };
     })());
@@ -162,10 +279,13 @@ export async function loadCoachContext(
 
   if (domains.includes('workout')) {
     tasks.push((async () => {
-      const sessionsResult = await supabase.from('workout_sessions')
-        .select('id,workout_id,workout_title,status,started_at,completed_at,duration_minutes,total_volume_kg,rpe,pain_scale')
-        .eq('user_id', userId).order('started_at', { ascending: false }).limit(6);
-      if (sessionsResult.error) throw new Error('Unable to load Coach workout context.');
+      const [sessionsResult, planResult] = await Promise.all([
+        supabase.from('workout_sessions')
+          .select('id,workout_id,workout_title,status,started_at,completed_at,duration_minutes,total_volume_kg,rpe,pain_scale')
+          .eq('user_id', userId).order('started_at', { ascending: false }).limit(6),
+        supabase.from('workout_plans').select('id,version,title,plan').eq('user_id', userId).eq('status', 'active').maybeSingle(),
+      ]);
+      if (sessionsResult.error || planResult.error) throw new Error('Unable to load Coach workout context.');
       const sessions = sessionsResult.data ?? [];
       const sessionIds = sessions.map((session) => session.id);
       let sets: Array<{ session_id: string; exercise_id: string; exercise_name: string; reps: number | null; weight_kg: number | null; completed_at: string | null }> = [];
@@ -176,14 +296,15 @@ export async function loadCoachContext(
         if (setsResult.error) throw new Error('Unable to load Coach workout sets.');
         sets = setsResult.data ?? [];
       }
-      const bestWeights = new Map<string, { exerciseName: string; weightKg: number }>();
+      const bestWeights = new Map<string, { exerciseId: string; exerciseName: string; weightKg: number }>();
       for (const set of sets) {
         if (typeof set.weight_kg !== 'number') continue;
         const current = bestWeights.get(set.exercise_id);
-        if (!current || set.weight_kg > current.weightKg) bestWeights.set(set.exercise_id, { exerciseName: set.exercise_name, weightKg: set.weight_kg });
+        if (!current || set.weight_kg > current.weightKg) bestWeights.set(set.exercise_id, { exerciseId: set.exercise_id, exerciseName: set.exercise_name, weightKg: set.weight_kg });
       }
       context.workout = {
-        active: sessions.find((session) => session.status === 'active') ?? null,
+        activePlan: activeWorkoutPlanContext(planResult.data ?? null, focusWeekday),
+        activeSession: sessions.find((session) => session.status === 'active') ?? null,
         recent: sessions.filter((session) => session.status === 'completed').slice(0, 5),
         recentCompletedSetCount: sets.length,
         bestWeights: Array.from(bestWeights.values()).slice(0, 20),
