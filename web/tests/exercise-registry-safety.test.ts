@@ -89,13 +89,19 @@ test('Coach system context fails closed before unbounded prompt cost', () => {
   );
 });
 
-test('provider payloads enforce a code-level output-token ceiling', async () => {
+test('provider payloads enforce default and hard per-request output-token ceilings', async () => {
   const config = await readWeb('lib/ai/config.ts');
   const google = await readWeb('lib/ai/providers/google.ts');
   const avalai = await readWeb('lib/ai/providers/avalai.ts');
-  assert.match(config, /AI_MAX_OUTPUT_TOKENS/);
-  assert.match(google, /max_output_tokens:\s*AI_MAX_OUTPUT_TOKENS/);
-  assert.match(avalai, /max_output_tokens:\s*AI_MAX_OUTPUT_TOKENS/);
+  assert.match(config, /AI_MAX_OUTPUT_TOKENS = 700/);
+  assert.match(config, /AI_MAX_STRUCTURED_OUTPUT_TOKENS = 1_800/);
+  assert.match(config, /AI_HARD_MAX_OUTPUT_TOKENS = 2_000/);
+  for (const provider of [google, avalai]) {
+    assert.match(provider, /function outputTokenLimit/);
+    assert.match(provider, /Math\.min\(requested, AI_HARD_MAX_OUTPUT_TOKENS\)/);
+    assert.match(provider, /: AI_MAX_OUTPUT_TOKENS/);
+    assert.match(provider, /max_output_tokens: outputTokenLimit\(request\)/);
+  }
 });
 
 test('live benchmark requires an explicit secret path and never embeds a credential', async () => {
