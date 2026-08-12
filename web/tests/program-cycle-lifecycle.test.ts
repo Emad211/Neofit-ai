@@ -55,8 +55,8 @@ test('Ready creates a real draft cycle without claiming planner output', async (
   const button = await web('app/onboarding/ready/create-cycle-button.tsx');
   assert.match(ready, /createProgramCycle/);
   assert.match(ready, /CreateCycleButton/);
-  assert.match(button, /ساخت چرخهٔ دوره/);
-  assert.doesNotMatch(ready, /برنامه با موفقیت ساخته شد/);
+  assert.match(button, /رفتن به برنامه من/);
+  assert.doesNotMatch(ready, /برنامه با موفقیت ساخته شد|Demo Onboarding|ورودی معتبر چرخه/);
   assert.match(actions, /activeAuthSession/);
   assert.match(actions, /\.eq\('provider', 'avalai'\)/);
   assert.match(actions, /parseOnboardingDraft/);
