@@ -11,12 +11,12 @@ export const dynamic = 'force-dynamic';
 
 function ReadySummary({
   draft,
-  demo = false,
+  guest = false,
   hasCycle = false,
   cycleError = false,
 }: {
   draft: OnboardingDraft | null;
-  demo?: boolean;
+  guest?: boolean;
   hasCycle?: boolean;
   cycleError?: boolean;
 }) {
@@ -28,12 +28,12 @@ function ReadySummary({
     <main className="onboarding-page onboarding-ready-page" id="main-content">
       <section className="onboarding-ready-card" aria-labelledby="onboarding-ready-heading">
         <div className="onboarding-ready-card__mark" aria-hidden="true">✓</div>
-        <p className="section-kicker">{demo ? 'Demo Onboarding' : 'Onboarding کامل شد'}</p>
-        <h1 id="onboarding-ready-heading">اطلاعات دوره آماده است</h1>
+        <p className="section-kicker">اطلاعاتت کامل شد</p>
+        <h1 id="onboarding-ready-heading">آماده‌ای برنامه‌ات را بسازی</h1>
         <p className="onboarding-ready-card__intro">
-          {demo
-            ? 'این پیش‌نویس فقط روی همین مرورگر است و برنامه AI شخصی برای آن ساخته نمی‌شود.'
-            : 'پاسخ‌ها، محدودیت‌های ایمنی و بازه دوره ذخیره شده‌اند. هنوز هیچ برنامه تمرین یا تغذیه‌ای را ساخته‌شده اعلام نمی‌کنیم.'}
+          {guest
+            ? 'برای ذخیره دائمی اطلاعات و دریافت برنامه شخصی، وارد حساب شو یا یک حساب بساز.'
+            : 'خلاصه اطلاعاتت را یک‌بار ببین. اگر همه‌چیز درست است، وارد بخش برنامه شو و برنامه تمرین و تغذیه‌ات را بساز.'}
         </p>
 
         {draft ? (
@@ -41,25 +41,20 @@ function ReadySummary({
             <div><span>هدف</span><strong>{goal ?? '—'}</strong></div>
             <div><span>شروع</span><strong>{startDate ?? '—'}</strong></div>
             <div><span>مدت</span><strong>{duration === null ? '—' : `${duration.toLocaleString('fa-IR')} روز`}</strong></div>
-            <div><span>تمرین</span><strong>{draft.availability.daysPerWeek === null ? '—' : `${draft.availability.daysPerWeek.toLocaleString('fa-IR')} روز/هفته`}</strong></div>
+            <div><span>تمرین</span><strong>{draft.availability.daysPerWeek === null ? '—' : `${draft.availability.daysPerWeek.toLocaleString('fa-IR')} روز در هفته`}</strong></div>
           </div>
         ) : null}
 
-        <div className="onboarding-boundary-note">
-          <strong>قدم بعدی NeoFit</strong>
-          <p>این داده‌ها ورودی معتبر چرخهٔ دوره هستند. برنامهٔ تمرین و تغذیه فقط بعد از تولید و اعتبارسنجی نمایش داده می‌شوند و هیچ برنامهٔ ساختگی جای آن‌ها را نمی‌گیرد.</p>
-        </div>
-
-        {cycleError ? <p className="auth-message auth-message--error" role="alert">ساخت یا بازیابی چرخه انجام نشد. اگر چرخهٔ دیگری باز است، از مسیر اصلی وارد آن شو.</p> : null}
+        {cycleError ? <p className="auth-message auth-message--error" role="alert">ورود به برنامه انجام نشد. صفحه را تازه کن و دوباره تلاش کن.</p> : null}
 
         <div className="onboarding-ready-card__actions">
-          {demo ? <Link className="is-primary" href="/auth">ورود و ساخت دوره واقعی</Link> : hasCycle ? (
-            <Link className="is-primary" href="/program">مشاهدهٔ چرخهٔ دوره</Link>
+          {guest ? <Link className="is-primary" href="/auth">ورود یا ساخت حساب</Link> : hasCycle ? (
+            <Link className="is-primary" href="/program">رفتن به برنامه من</Link>
           ) : (
             <form action={createProgramCycle}><CreateCycleButton /></form>
           )}
-          {!demo ? <Link href="/onboarding/review">مرور دوباره اطلاعات</Link> : null}
-          <Link href={demo ? '/today' : '/profile/ai'}>{demo ? 'بازگشت به Demo' : 'مدیریت کلید AI'}</Link>
+          {!guest ? <Link href="/onboarding/review">مرور دوباره اطلاعات</Link> : null}
+          {!guest ? <Link href="/profile/ai">تنظیمات مربی هوشمند</Link> : null}
         </div>
       </section>
     </main>
@@ -68,7 +63,7 @@ function ReadySummary({
 
 export default async function OnboardingReadyPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   if (!hasSupabasePublicEnv()) {
-    return <ReadySummary draft={null} demo />;
+    return <ReadySummary draft={null} guest />;
   }
 
   const supabase = await createClient();
