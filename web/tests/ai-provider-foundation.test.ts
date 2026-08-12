@@ -36,15 +36,22 @@ test('fallback only covers provider availability and credential failures', () =>
   assert.ok(cooldownUntilFor(new ProviderRequestError({ kind: 'rate_limit', code: 'x' }), 0));
 });
 
-test('provider adapters keep API keys in headers and never query-string credentials', async () => {
+test('provider adapters keep credentials out of URLs and respect verified structured-output boundaries', async () => {
   const google = await read('lib/ai/providers/google.ts');
   const avalai = await read('lib/ai/providers/avalai.ts');
   assert.match(google, /x-goog-api-key/);
   assert.match(google, /\/v1/);
   assert.match(google, /\/interactions/);
   assert.doesNotMatch(google, /\?key=/);
+  assert.match(google, /response_format/);
+  assert.match(google, /mime_type: 'application\/json'/);
+  assert.match(google, /schema: request\.responseSchema/);
+  assert.match(google, /max_output_tokens: outputTokenLimit\(request\)/);
+
   assert.match(avalai, /Authorization: `Bearer \$\{apiKey\}`/);
   assert.match(avalai, /\/responses/);
+  assert.match(avalai, /max_output_tokens: outputTokenLimit\(request\)/);
+  assert.doesNotMatch(avalai, /response_format|json_schema/);
 });
 
 test('credential table is encrypted, owner-RLS protected and explicitly granted', async () => {
