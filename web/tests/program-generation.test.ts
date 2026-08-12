@@ -126,18 +126,29 @@ test('materializer creates registry-safe workout and catalog-resolvable nutritio
   }
 });
 
-test('planner contracts reject invented identities and unbounded portions', () => {
+test('planner contracts reject prose, extra fields, invented identities and unbounded portions', () => {
   const draft = completeDraft();
   const exercises = safeExercisesForProgram(draft);
   const allowedExercises = new Set(exercises.map((exercise) => exercise.id));
   const exerciseCount = Math.min(exercisesPerDayForProgram(draft), exercises.length);
   const validExerciseIds = exercises.slice(0, exerciseCount).map((exercise) => exercise.id);
-  const trainingJson = JSON.stringify({ days: Array.from({ length: 4 }, () => validExerciseIds) });
+  const trainingObject = { days: Array.from({ length: 4 }, () => validExerciseIds) };
+  const trainingJson = JSON.stringify(trainingObject);
   assert.equal(parseTrainingPlannerOutput(trainingJson, {
     expectedDays: 4,
     exercisesPerDay: exerciseCount,
     allowedIds: allowedExercises,
   }).days.length, 4);
+  assert.throws(() => parseTrainingPlannerOutput(`result: ${trainingJson}`, {
+    expectedDays: 4,
+    exercisesPerDay: exerciseCount,
+    allowedIds: allowedExercises,
+  }));
+  assert.throws(() => parseTrainingPlannerOutput(JSON.stringify({ ...trainingObject, note: 'extra' }), {
+    expectedDays: 4,
+    exercisesPerDay: exerciseCount,
+    allowedIds: allowedExercises,
+  }));
   assert.throws(() => parseTrainingPlannerOutput(
     JSON.stringify({ days: Array.from({ length: 4 }, () => [...validExerciseIds.slice(0, -1), 'invented-id']) }),
     { expectedDays: 4, exercisesPerDay: exerciseCount, allowedIds: allowedExercises },
@@ -150,6 +161,10 @@ test('planner contracts reject invented identities and unbounded portions', () =
     JSON.stringify({ days: Array.from({ length: 7 }, () => Array.from({ length: 3 }, () => validMeal)) }),
     { expectedDays: 7, mealsPerDay: 3, allowedIds: allowedFoods },
   ).days.length, 7);
+  assert.throws(() => parseNutritionPlannerOutput(
+    JSON.stringify({ days: Array.from({ length: 7 }, () => Array.from({ length: 3 }, () => [{ id: foods[0]!.id, portion: 1, calories: 100 }])) }),
+    { expectedDays: 7, mealsPerDay: 3, allowedIds: allowedFoods },
+  ));
   assert.throws(() => parseNutritionPlannerOutput(
     JSON.stringify({ days: Array.from({ length: 7 }, () => Array.from({ length: 3 }, () => [{ id: foods[0]!.id, portion: 3.25 }])) }),
     { expectedDays: 7, mealsPerDay: 3, allowedIds: allowedFoods },
@@ -197,10 +212,11 @@ test('Stage 24 migration finalizes and activates both plan versions atomically',
   assert.match(migration, /security invoker/);
 });
 
-test('Program generation claims the cycle before spending two bounded planner requests and can recover a stale attempt', async () => {
+test('Program generation claims the cycle before adaptive bounded planner requests and can recover a stale attempt', async () => {
   const page = await readFile(resolve(webRoot, 'app/(main)/program/page.tsx'), 'utf8');
   const actions = await readFile(resolve(webRoot, 'app/(main)/program/actions.ts'), 'utf8');
   const planners = await readFile(resolve(webRoot, 'lib/program-generation/planners.ts'), 'utf8');
+  const google = await readFile(resolve(webRoot, 'lib/ai/providers/google.ts'), 'utf8');
 
   assert.match(page, /ساخت برنامهٔ تمرین و تغذیه/);
   assert.match(page, /فعال‌سازی برنامه/);
@@ -211,12 +227,27 @@ test('Program generation claims the cycle before spending two bounded planner re
   assert.match(planners, /eligibleFoodsForProgram/);
   assert.match(planners, /recentBreakWeeks/);
   assert.match(planners, /strengthExperience/);
+  assert.match(planners, /recentTraining/);
+  assert.match(planners, /recentExerciseIds/);
+  assert.match(planners, /completedSessions/);
+  assert.match(planners, /validateTrainingQuality/);
+  assert.match(planners, /coverPushPullAndLowerBodyWhenCandidatesAllow/);
+  assert.match(planners, /responseSchema/);
+  assert.match(planners, /AI_MAX_STRUCTURED_OUTPUT_TOKENS/);
   assert.match(planners, /doNotInferPersonalCalorieOrMacroTargets/);
   assert.match(planners, /avoidSameDayDuplicatesWhenAlternativesExist/);
   assert.doesNotMatch(planners, /weightKg: draft\.basics\.weightKg/);
+  assert.match(google, /response_format/);
+  assert.match(google, /application\/json/);
+  assert.match(google, /schema: request\.responseSchema/);
+
   const transitionIndex = actions.indexOf("p_target_status: 'generating'");
-  const plannerCallIndex = actions.indexOf('const selections = await generateProgramPlannerSelections(draft);');
-  assert.ok(transitionIndex >= 0 && plannerCallIndex >= 0 && transitionIndex < plannerCallIndex);
+  const evidenceIndex = actions.indexOf('const evidence = await recentPlannerEvidence');
+  const plannerCallIndex = actions.indexOf('const selections = await generateProgramPlannerSelections(draft, evidence);');
+  assert.ok(transitionIndex >= 0 && evidenceIndex >= 0 && plannerCallIndex >= 0);
+  assert.ok(transitionIndex < evidenceIndex && evidenceIndex < plannerCallIndex);
+  assert.match(actions, /from\('workout_sessions'\)/);
+  assert.match(actions, /from\('workout_sets'\)/);
   assert.match(actions, /GENERATION_STALE_MS = 5 \* 60_000/);
   assert.match(actions, /generation_stale_recovered/);
   assert.match(actions, /materializeProgramPlans\(draft, selections\)/);
