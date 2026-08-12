@@ -1,6 +1,11 @@
 import 'server-only';
 
-import { AI_MAX_OUTPUT_TOKENS, AI_PROVIDER_TIMEOUT_MS, AI_VALIDATION_TIMEOUT_MS } from '../config';
+import {
+  AI_HARD_MAX_OUTPUT_TOKENS,
+  AI_MAX_OUTPUT_TOKENS,
+  AI_PROVIDER_TIMEOUT_MS,
+  AI_VALIDATION_TIMEOUT_MS,
+} from '../config';
 import type { AiGenerationInput } from '../types';
 import { fetchWithTimeout, providerHttpError } from './shared';
 
@@ -46,6 +51,13 @@ function interactionInput(request: AiGenerationInput): string | Array<{ type: 't
   ];
 }
 
+function outputTokenLimit(request: AiGenerationInput): number {
+  const requested = request.maxOutputTokens;
+  return typeof requested === 'number' && Number.isInteger(requested) && requested > 0
+    ? Math.min(requested, AI_HARD_MAX_OUTPUT_TOKENS)
+    : AI_MAX_OUTPUT_TOKENS;
+}
+
 export async function validateGoogleCredential(apiKey: string, modelId: string): Promise<void> {
   const response = await fetchWithTimeout(
     `${GOOGLE_API_BASE}/models/${encodeURIComponent(modelId)}`,
@@ -72,7 +84,14 @@ export async function generateGoogle(
         model: modelId,
         input: interactionInput(request),
         ...(request.systemInstruction ? { system_instruction: request.systemInstruction } : {}),
-        generation_config: { max_output_tokens: AI_MAX_OUTPUT_TOKENS },
+        ...(request.responseSchema ? {
+          response_format: {
+            type: 'text',
+            mime_type: 'application/json',
+            schema: request.responseSchema,
+          },
+        } : {}),
+        generation_config: { max_output_tokens: outputTokenLimit(request) },
         store: false,
       }),
     },
