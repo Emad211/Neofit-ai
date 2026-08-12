@@ -126,7 +126,7 @@ test('materializer creates registry-safe workout and catalog-resolvable nutritio
   }
 });
 
-test('planner contracts reject prose, extra fields, invented identities and unbounded portions', () => {
+test('planner contracts reject prose, extra fields, duplicate or invented identities and unbounded portions', () => {
   const draft = completeDraft();
   const exercises = safeExercisesForProgram(draft);
   const allowedExercises = new Set(exercises.map((exercise) => exercise.id));
@@ -153,6 +153,12 @@ test('planner contracts reject prose, extra fields, invented identities and unbo
     JSON.stringify({ days: Array.from({ length: 4 }, () => [...validExerciseIds.slice(0, -1), 'invented-id']) }),
     { expectedDays: 4, exercisesPerDay: exerciseCount, allowedIds: allowedExercises },
   ));
+  if (exerciseCount >= 2) {
+    assert.throws(() => parseTrainingPlannerOutput(
+      JSON.stringify({ days: Array.from({ length: 4 }, () => [validExerciseIds[0], validExerciseIds[0], ...validExerciseIds.slice(2)]) }),
+      { expectedDays: 4, exercisesPerDay: exerciseCount, allowedIds: allowedExercises },
+    ));
+  }
 
   const foods = eligibleFoodsForProgram(draft);
   const allowedFoods = new Set(foods.map((food) => food.id));
@@ -167,6 +173,13 @@ test('planner contracts reject prose, extra fields, invented identities and unbo
   ));
   assert.throws(() => parseNutritionPlannerOutput(
     JSON.stringify({ days: Array.from({ length: 7 }, () => Array.from({ length: 3 }, () => [{ id: foods[0]!.id, portion: 3.25 }])) }),
+    { expectedDays: 7, mealsPerDay: 3, allowedIds: allowedFoods },
+  ));
+  assert.throws(() => parseNutritionPlannerOutput(
+    JSON.stringify({ days: Array.from({ length: 7 }, () => Array.from({ length: 3 }, () => [
+      { id: foods[0]!.id, portion: 1 },
+      { id: foods[0]!.id, portion: 1 },
+    ])) }),
     { expectedDays: 7, mealsPerDay: 3, allowedIds: allowedFoods },
   ));
 });
@@ -233,7 +246,8 @@ test('Program generation claims the cycle before adaptive bounded planner reques
   assert.match(planners, /validateTrainingQuality/);
   assert.match(planners, /coverPushPullAndLowerBodyWhenCandidatesAllow/);
   assert.match(planners, /responseSchema/);
-  assert.match(planners, /uniqueItems: true/);
+  assert.doesNotMatch(planners, /uniqueItems:/);
+  assert.match(planners, /planner_training_duplicate_exercise|uniqueExerciseIdsWithinDay/);
   assert.match(planners, /AI_MAX_STRUCTURED_OUTPUT_TOKENS/);
   assert.match(planners, /portionMustEqual: 1/);
   assert.match(planners, /doNotInferPersonalCalorieMacroOrPortionTargets/);
