@@ -106,7 +106,7 @@ export function OnboardingAiGate({
         const body = await response.json() as { providers?: AiCredentialMetadata[] };
         if (alive) setCredentials(body.providers ?? []);
       } catch {
-        if (alive) setAvalai((current) => ({ ...current, error: true, message: 'خواندن وضعیت کلیدهای AI ممکن نشد.' }));
+        if (alive) setAvalai((current) => ({ ...current, error: true, message: 'وضعیت اتصال بارگذاری نشد. دوباره تلاش کن.' }));
       } finally {
         if (alive) setLoading(false);
       }
@@ -131,11 +131,11 @@ export function OnboardingAiGate({
     const state = provider === 'google' ? google : avalai;
     const apiKey = state.apiKey.trim();
     if (!apiKey) {
-      patch(provider, { error: true, message: 'API key را وارد کن.' });
+      patch(provider, { error: true, message: 'کلید را وارد کن.' });
       return;
     }
 
-    patch(provider, { busy: true, error: false, message: 'در حال اعتبارسنجی و ذخیره امن...' });
+    patch(provider, { busy: true, error: false, message: 'در حال بررسی اتصال...' });
     try {
       const response = await fetch(`/api/ai/providers/${provider}`, {
         method: 'PUT',
@@ -149,13 +149,7 @@ export function OnboardingAiGate({
         apiKey: '',
         busy: false,
         error: false,
-        message: provider === 'google'
-          ? (avalaiReady
-            ? 'Google معتبر است؛ درخواست‌های معمول ابتدا از Google و در خطای مجاز از AvalAI می‌روند.'
-            : 'Google معتبر است؛ برای ادامه باید AvalAI معتبر را هم متصل کنی.')
-          : (googleReady
-            ? 'AvalAI معتبر است؛ Google اصلی و AvalAI fallback آماده‌اند.'
-            : 'AvalAI معتبر است؛ می‌توانی ادامه بدهی.'),
+        message: provider === 'avalai' ? 'مربی هوشمند آماده است.' : 'اتصال Google هم آماده شد.',
       });
       if (provider === 'google') setShowGoogleKey(false);
       else setShowAvalaiKey(false);
@@ -163,15 +157,15 @@ export function OnboardingAiGate({
       patch(provider, {
         busy: false,
         error: true,
-        message: provider === 'google'
-          ? 'کلید Google معتبر نشد یا Provider در دسترس نبود.'
-          : 'کلید AvalAI معتبر نشد یا Provider در دسترس نبود.',
+        message: provider === 'avalai'
+          ? 'اتصال AvalAI برقرار نشد. کلید را بررسی کن و دوباره تلاش کن.'
+          : 'اتصال Google برقرار نشد. کلید را بررسی کن و دوباره تلاش کن.',
       });
     }
   }
 
   async function retest(provider: AiProvider) {
-    patch(provider, { busy: true, error: false, message: 'در حال تست اتصال بدون inference...' });
+    patch(provider, { busy: true, error: false, message: 'در حال بررسی اتصال...' });
     try {
       const response = await fetch(`/api/ai/providers/${provider}`, { method: 'POST' });
       const body = await response.json() as AiCredentialMetadata & { error?: string };
@@ -179,61 +173,47 @@ export function OnboardingAiGate({
       upsertMetadata(body);
       patch(provider, { busy: false, error: false, message: 'اتصال سالم است.' });
     } catch {
-      patch(provider, { busy: false, error: true, message: 'تست اتصال ناموفق بود.' });
+      patch(provider, { busy: false, error: true, message: 'اتصال برقرار نشد. دوباره تلاش کن.' });
     }
   }
 
   if (mode === 'loading') {
-    return <div className="onboarding-ai-gate is-loading" aria-busy="true">در حال بررسی حساب و کلید AI...</div>;
+    return <div className="onboarding-ai-gate is-loading" aria-busy="true">در حال بررسی اتصال مربی هوشمند...</div>;
   }
 
   if (mode === 'error') {
-    return <div className="onboarding-ai-gate is-error" role="alert">اتصال حساب در دسترس نیست؛ کلید AI تا بازگشت اتصال ذخیره نمی‌شود.</div>;
+    return <div className="onboarding-ai-gate is-error" role="alert">اتصال حساب در دسترس نیست. صفحه را تازه کن و دوباره تلاش کن.</div>;
   }
 
   if (mode === 'guest') {
     return (
       <div className="onboarding-ai-gate">
-        <div className="onboarding-ai-gate__status is-demo"><strong>حالت Demo</strong><span>کلید AI در حالت مهمان دریافت یا ذخیره نمی‌شود.</span></div>
-        <p>می‌توانی تجربه Onboarding را ببینی، اما دوره AI شخصی فقط برای حساب واقعی ساخته می‌شود.</p>
+        <div className="onboarding-ai-gate__status"><strong>برای ادامه وارد حساب شو</strong><span>برنامه شخصی و تنظیمات مربی هوشمند فقط برای حساب ذخیره می‌شوند.</span></div>
         <a className="onboarding-ai-gate__auth-link" href="/auth">ورود یا ساخت حساب</a>
       </div>
     );
   }
 
-  const connectionTitle = avalaiReady
-    ? (googleReady ? 'Google + AvalAI آماده‌اند' : 'AvalAI متصل است؛ آماده ادامه‌ای')
-    : (googleReady ? 'Google متصل است؛ AvalAI را هم اضافه کن' : 'AvalAI را برای ادامه متصل کن');
-  const connectionDetail = avalaiReady
-    ? (googleReady
-      ? 'درخواست‌های معمول ابتدا به Google می‌روند و AvalAI fallback معتبر باقی می‌ماند.'
-      : 'NeoFit می‌تواند مستقیماً از AvalAI استفاده کند؛ Google برای ادامه اجباری نیست.')
-    : (googleReady
-      ? 'Google به‌تنهایی شرط عبور نیست؛ AvalAI برای پوشش محدودیت مصرف یا خطای مجاز لازم است.'
-      : 'یک AvalAI معتبر برای عبور کافی است. اگر Google را هم اضافه کنی، Google مسیر اول می‌شود.');
-
   return (
     <div className="onboarding-ai-gate">
-      <div className={`onboarding-ai-gate__status ${gateReady ? 'is-ready' : ''}`} aria-live="polite">
-        <strong>{connectionTitle}</strong>
-        <span>{connectionDetail}</span>
+      <div className={`onboarding-ai-gate__status ${avalaiReady ? 'is-ready' : ''}`} aria-live="polite">
+        <strong>{avalaiReady ? 'مربی هوشمند آماده است' : 'اتصال مربی هوشمند را کامل کن'}</strong>
+        <span>{avalaiReady ? 'می‌توانی وارد مرحله بعد شوی.' : 'برای ساخت برنامه شخصی، یک اتصال فعال لازم است.'}</span>
       </div>
 
       <div className="onboarding-ai-gate__provider">
         <div className="onboarding-ai-gate__provider-head">
-          <div><strong>۱. AvalAI را متصل کن</strong><span>برای ادامه Onboarding همین کلید به‌تنهایی کافی است و fallback پایدار NeoFit را هم فراهم می‌کند.</span></div>
-          <a href="https://docs.avalai.ir/en/quickstart" target="_blank" rel="noreferrer">راهنمای رسمی ↗</a>
+          <div><strong>AvalAI</strong><span>{avalaiReady ? 'متصل' : 'کلید حساب AvalAI خودت را وارد کن.'}</span></div>
+          <a href="https://docs.avalai.ir/en/quickstart" target="_blank" rel="noreferrer">راهنمای دریافت کلید ↗</a>
         </div>
         {avalaiReady ? (
-          <>
-            <div className="onboarding-ai-gate__status is-ready"><strong>AvalAI متصل است</strong><span>{avalaiCredential?.keyHint ?? ''} · {avalaiCredential?.modelId ?? DEFAULT_AI_MODELS.avalai}</span></div>
-            <div className="onboarding-ai-gate__actions">
-              <button type="button" className="is-secondary" onClick={() => void retest('avalai')} disabled={avalai.busy}>{avalai.busy ? 'در حال تست...' : 'تست دوباره AvalAI'}</button>
-            </div>
-          </>
+          <div className="onboarding-ai-gate__actions">
+            <span className="onboarding-ai-gate__status is-ready"><strong>اتصال فعال است</strong><span>{avalaiCredential?.keyHint ?? ''}</span></span>
+            <button type="button" className="is-secondary" onClick={() => void retest('avalai')} disabled={avalai.busy}>{avalai.busy ? 'در حال بررسی...' : 'بررسی دوباره'}</button>
+          </div>
         ) : (
           <>
-            <label htmlFor="onboarding-avalai-key">AvalAI API key</label>
+            <label htmlFor="onboarding-avalai-key">کلید AvalAI</label>
             <SecretField
               id="onboarding-avalai-key"
               value={avalai.apiKey}
@@ -243,9 +223,9 @@ export function OnboardingAiGate({
               onRevealChange={setShowAvalaiKey}
               onChange={(apiKey) => setAvalai((current) => ({ ...current, apiKey, message: '', error: false }))}
             />
-            <small id="onboarding-avalai-key-privacy" className="onboarding-ai-gate__field-help">کلید بعد از Save از فیلد پاک می‌شود و از API NeoFit برنمی‌گردد.</small>
+            <small id="onboarding-avalai-key-privacy" className="onboarding-ai-gate__field-help">کلید پس از ذخیره دوباره در صفحه نمایش داده نمی‌شود.</small>
             <div className="onboarding-ai-gate__actions">
-              <button type="button" onClick={() => void save('avalai')} disabled={avalai.busy || loading || !avalai.apiKey.trim()}>{avalai.busy ? 'در حال بررسی...' : 'اعتبارسنجی و ذخیره AvalAI'}</button>
+              <button type="button" onClick={() => void save('avalai')} disabled={avalai.busy || loading || !avalai.apiKey.trim()}>{avalai.busy ? 'در حال بررسی...' : 'اتصال AvalAI'}</button>
             </div>
           </>
         )}
@@ -253,22 +233,20 @@ export function OnboardingAiGate({
       </div>
 
       <details className="onboarding-ai-gate__fallback">
-        <summary>Google AI Studio — اختیاری</summary>
-        <p>اگر Google را هم متصل کنی، درخواست‌های معمول اول به Google می‌روند؛ AvalAI شرط عبور و fallback معتبر باقی می‌ماند. بعضی قابلیت‌های وابسته به ویدیوی YouTube ممکن است بعداً Google بخواهند.</p>
+        <summary>Google Gemini <span className="onboarding-optional">اختیاری</span></summary>
+        <p>اگر کلید Google داری، می‌توانی آن را هم برای قابلیت‌های بیشتر به حسابت اضافه کنی.</p>
         {googleReady ? (
-          <>
-            <div className="onboarding-ai-gate__status is-ready"><strong>Google Gemini متصل است</strong><span>{googleCredential?.keyHint ?? ''} · {googleCredential?.modelId ?? DEFAULT_AI_MODELS.google}</span></div>
-            <div className="onboarding-ai-gate__actions">
-              <button type="button" className="is-secondary" onClick={() => void retest('google')} disabled={google.busy}>{google.busy ? 'در حال تست...' : 'تست دوباره Google'}</button>
-            </div>
-          </>
+          <div className="onboarding-ai-gate__actions">
+            <span className="onboarding-ai-gate__status is-ready"><strong>Google متصل است</strong><span>{googleCredential?.keyHint ?? ''}</span></span>
+            <button type="button" className="is-secondary" onClick={() => void retest('google')} disabled={google.busy}>{google.busy ? 'در حال بررسی...' : 'بررسی دوباره'}</button>
+          </div>
         ) : (
           <div className="onboarding-ai-gate__provider">
             <div className="onboarding-ai-gate__provider-head">
-              <div><strong>کلید Google داری؟</strong><span>Google اختیاری است؛ بدون AvalAI به‌تنهایی اجازه عبور نمی‌دهد.</span></div>
-              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">باز کردن AI Studio ↗</a>
+              <div><strong>اتصال Google</strong><span>این بخش اختیاری است.</span></div>
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">دریافت کلید ↗</a>
             </div>
-            <label htmlFor="onboarding-google-key">Google API key</label>
+            <label htmlFor="onboarding-google-key">کلید Google</label>
             <SecretField
               id="onboarding-google-key"
               value={google.apiKey}
@@ -278,14 +256,12 @@ export function OnboardingAiGate({
               onRevealChange={setShowGoogleKey}
               onChange={(apiKey) => setGoogle((current) => ({ ...current, apiKey, message: '', error: false }))}
             />
-            <small id="onboarding-google-key-privacy" className="onboarding-ai-gate__field-help">کلید بعد از Save از فیلد پاک می‌شود و از API NeoFit برنمی‌گردد.</small>
-            <div className="onboarding-ai-gate__actions"><button type="button" className="is-secondary" onClick={() => void save('google')} disabled={google.busy || loading || !google.apiKey.trim()}>{google.busy ? 'در حال بررسی...' : 'اعتبارسنجی و ذخیره Google'}</button></div>
+            <small id="onboarding-google-key-privacy" className="onboarding-ai-gate__field-help">کلید پس از ذخیره دوباره در صفحه نمایش داده نمی‌شود.</small>
+            <div className="onboarding-ai-gate__actions"><button type="button" className="is-secondary" onClick={() => void save('google')} disabled={google.busy || loading || !google.apiKey.trim()}>{google.busy ? 'در حال بررسی...' : 'اتصال Google'}</button></div>
           </div>
         )}
         {google.message ? <p className={google.error ? 'is-error' : 'is-success'} role="status">{google.message}</p> : null}
       </details>
-
-      <p className="onboarding-ai-gate__privacy">Raw key فقط در state موقت همین فرم است؛ داخل JSON آنبوردینگ، حافظه ماندگار مرورگر، log یا analytics ذخیره نمی‌شود.</p>
     </div>
   );
 }
