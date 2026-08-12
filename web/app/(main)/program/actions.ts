@@ -5,7 +5,11 @@ import { redirect } from 'next/navigation';
 import { activeAuthSession } from '@/lib/auth/active-session';
 import { parseOnboardingDraft } from '@/lib/onboarding/model';
 import { materializeProgramPlans, ProgramMaterializationError } from '@/lib/program-generation/materializer';
-import { generateProgramPlannerSelections, ProgramPlannerError } from '@/lib/program-generation/planners';
+import {
+  generateProgramPlannerSelections,
+  ProgramPlannerError,
+  type ProgramPlannerEvidence,
+} from '@/lib/program-generation/planners';
 import { createClient } from '@/lib/supabase/server';
 
 const GENERATION_STALE_MS = 5 * 60_000;
@@ -23,6 +27,43 @@ function revisionValue(value: string): number | null {
 function generationErrorCode(error: unknown): string {
   if (error instanceof ProgramMaterializationError || error instanceof ProgramPlannerError) return error.code;
   return 'generation_failed';
+}
+
+async function recentPlannerEvidence(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<ProgramPlannerEvidence> {
+  const sessionsResult = await supabase
+    .from('workout_sessions')
+    .select('id,completed_at,duration_minutes,rpe,pain_scale')
+    .eq('user_id', userId)
+    .eq('status', 'completed')
+    .order('started_at', { ascending: false })
+    .limit(6);
+  if (sessionsResult.error || !sessionsResult.data?.length) return {};
+
+  const sessionIds = sessionsResult.data.map((session) => session.id);
+  const setsResult = await supabase
+    .from('workout_sets')
+    .select('exercise_id')
+    .eq('user_id', userId)
+    .in('session_id', sessionIds)
+    .not('completed_at', 'is', null)
+    .limit(120);
+
+  return {
+    training: {
+      completedSessions: sessionsResult.data.map((session) => ({
+        completedAt: session.completed_at,
+        durationMinutes: session.duration_minutes,
+        rpe: session.rpe,
+        painScale: session.pain_scale,
+      })),
+      recentExerciseIds: setsResult.error
+        ? []
+        : Array.from(new Set((setsResult.data ?? []).map((set) => set.exercise_id))).slice(0, 24),
+    },
+  };
 }
 
 export async function generateProgramCycle(formData: FormData): Promise<void> {
@@ -64,7 +105,8 @@ export async function generateProgramCycle(formData: FormData): Promise<void> {
 
   let plans;
   try {
-    const selections = await generateProgramPlannerSelections(draft);
+    const evidence = await recentPlannerEvidence(supabase, active.userId);
+    const selections = await generateProgramPlannerSelections(draft, evidence);
     plans = materializeProgramPlans(draft, selections);
   } catch (error) {
     const failureCode = generationErrorCode(error);
