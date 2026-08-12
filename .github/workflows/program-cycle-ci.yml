@@ -11,6 +11,8 @@ on:
       - 'web/lib/supabase/database.types.ts'
       - 'web/tests/program-cycle-lifecycle.test.ts'
       - 'web/tests/program-generation.test.ts'
+      - 'web/tests/ui-truth-audit.test.ts'
+      - 'web/tests/ui-polish-accessibility.test.ts'
       - '.github/workflows/program-cycle-ci.yml'
   push:
     branches: ['main']
@@ -23,6 +25,8 @@ on:
       - 'web/lib/supabase/database.types.ts'
       - 'web/tests/program-cycle-lifecycle.test.ts'
       - 'web/tests/program-generation.test.ts'
+      - 'web/tests/ui-truth-audit.test.ts'
+      - 'web/tests/ui-polish-accessibility.test.ts'
 
 jobs:
   verify:
@@ -47,5 +51,7 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npm run test:program-cycle
       - run: npm run test:supabase-app
+      - run: npm run test:ui-truth
+      - run: npm run test:ui-polish
       - run: npm run typecheck
       - run: npm run build
