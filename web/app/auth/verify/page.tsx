@@ -22,15 +22,15 @@ export default async function VerifyAuthLinkPage({
 
   const heading = recovery ? 'بازیابی حساب' : emailChange ? 'تأیید تغییر ایمیل' : 'تأیید ایمیل';
   const intro = recovery
-    ? 'برای ساخت نشست بازیابی و انتخاب رمز جدید، این مرحله را خودت تأیید کن.'
+    ? 'برای ادامه بازیابی حساب و انتخاب رمز جدید، این درخواست را تأیید کن.'
     : emailChange
-      ? 'برای ادامه تغییر ایمیل حساب، این درخواست را خودت تأیید کن. اگر Secure Email Change فعال باشد ممکن است تأیید هر دو آدرس لازم باشد.'
-      : 'برای فعال‌سازی حساب و ساخت نشست امن، تأیید را خودت انجام بده.';
+      ? 'برای ادامه تغییر ایمیل، این درخواست را تأیید کن.'
+      : 'برای فعال‌شدن حساب، ایمیلت را تأیید کن.';
   const submitLabel = recovery
-    ? 'تأیید بازیابی و ادامه'
+    ? 'تأیید و ادامه'
     : emailChange
       ? 'تأیید تغییر ایمیل'
-      : 'تأیید ایمیل و ورود';
+      : 'تأیید ایمیل';
   const fallbackHref = recovery ? '/auth/recover' : emailChange ? '/profile/security' : '/auth';
   const fallbackLabel = recovery ? 'درخواست لینک بازیابی جدید' : emailChange ? 'بازگشت به امنیت حساب' : 'بازگشت به ورود';
 
@@ -40,14 +40,14 @@ export default async function VerifyAuthLinkPage({
         <div className="auth-brand"><span aria-hidden="true">N</span><div><p>NeoFit</p><h1 id="verify-heading">{heading}</h1></div></div>
         {supported ? <>
           <p className="auth-intro">{intro}</p>
-          <div className="auth-notice auth-notice--warning" role="status">لینک ایمیل با بازشدن خودکار مصرف نمی‌شود؛ توکن در cookie کوتاه‌عمر و HttpOnly نگه‌داری شده و فقط بعد از زدن دکمه استفاده می‌شود.</div>
+          <div className="auth-notice auth-notice--warning" role="status">این مرحله فقط با تأیید خودت انجام می‌شود.</div>
           <form action={verifyEmailLink} className="auth-confirm-form">
             <input type="hidden" name="type" value={type} />
             <input type="hidden" name="next" value={next} />
             <AuthSubmitButton pendingLabel="در حال تأیید...">{submitLabel}</AuthSubmitButton>
           </form>
         </> : <>
-          <p className="auth-notice auth-notice--error" role="alert">این لینک ناقص، منقضی یا بدون توکن معتبر است.</p>
+          <p className="auth-notice auth-notice--error" role="alert">این لینک ناقص، منقضی یا قبلاً استفاده شده است.</p>
           <Link className="auth-guest-link" href={fallbackHref}>{fallbackLabel}</Link>
         </>}
       </section>
