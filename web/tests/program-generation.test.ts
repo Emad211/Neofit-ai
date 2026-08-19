@@ -207,6 +207,151 @@ test('materializer fails closed for allergy and clinical nutrition review', () =
   );
 });
 
+test('an absurd daily energy total is rejected by the Core-computed sanity ceiling, a real day is not', () => {
+  const draft = completeDraft();
+  const training = validSelections(draft).training;
+  // Two highest-energy catalog rice dishes at the max portion, in every meal —
+  // a Core-computed daily total far above any real plan. The numbers come from
+  // Nutrition Core (invariant 1), never from the model or this test.
+  const absurdMeal = [{ id: 'zereshk-polo-morgh', portion: 3 }, { id: 'loobia-polo', portion: 3 }];
+  const absurd = { days: Array.from({ length: 7 }, () => Array.from({ length: 3 }, () => absurdMeal)) };
+  assert.throws(
+    () => materializeProgramPlans(draft, { training, nutrition: absurd }),
+    (error) => error instanceof ProgramMaterializationError && error.code === 'planner_selection_invalid',
+  );
+  // The ceiling is an integrity guard, not a hidden calorie target: the same
+  // foods at a normal portion materialize without complaint.
+  const realMeal = [{ id: 'zereshk-polo-morgh', portion: 1 }, { id: 'loobia-polo', portion: 1 }];
+  const real = { days: Array.from({ length: 7 }, () => Array.from({ length: 3 }, () => realMeal)) };
+  assert.ok(materializeProgramPlans(draft, { training, nutrition: real }));
+});
+
+test('exercise safety fails closed for unset medical history and prototype-chain injury ids', () => {
+  // unset (null) is neither an explicit "no" nor a technical default: an
+  // unanswered cardiovascular question must go to clinical review, never be
+  // silently treated as "no risk".
+  const unsetMedical = completeDraft();
+  unsetMedical.medical.hasHighBloodPressure = null;
+  assert.throws(
+    () => safeExercisesForProgram(unsetMedical),
+    (error) => error instanceof ProgramMaterializationError && error.code === 'clinical_review_required',
+  );
+
+  // A forged injury body-part id that only exists on Object's prototype
+  // ('constructor') must resolve to no mapping and fail closed, never inherit a
+  // function off the prototype chain.
+  const prototypeInjury = completeDraft();
+  prototypeInjury.injuries.noInjuries = false;
+  prototypeInjury.injuries.areas = [{
+    key: 'forged-1', bodyPartId: 'constructor', face: 'ant', label: 'x', severity: 'severe', status: 'current', forbiddenMovements: '', notes: '',
+  }];
+  assert.throws(
+    () => safeExercisesForProgram(prototypeInjury),
+    (error) => error instanceof ProgramMaterializationError && error.code === 'clinical_review_required',
+  );
+
+  // The fully-answered explicit-"no" baseline must still yield a usable set, so
+  // the fail-closed checks above are the null/forged paths, not a blanket block.
+  assert.ok(safeExercisesForProgram(completeDraft()).length >= 4);
+});
+
+test('free-text equipment is affirmed by presence but never by a negated mention', () => {
+  const affirmed = completeDraft();
+  affirmed.availability.customEquipment = 'لندماین دارم';
+  const negated = completeDraft();
+  negated.availability.customEquipment = 'بدون لندماین';
+
+  const affirmedIds = new Set(safeExercisesForProgram(affirmed).map((exercise) => exercise.id));
+  const negatedIds = new Set(safeExercisesForProgram(negated).map((exercise) => exercise.id));
+  // A positive mention adds the landmine-only movement; a negated mention of the
+  // same equipment must not, or the plan would offer a movement the user said
+  // they cannot perform.
+  assert.equal(affirmedIds.has('half-kneeling-landmine-press'), true);
+  assert.equal(negatedIds.has('half-kneeling-landmine-press'), false);
+});
+
+test('disliked-food exclusion folds Arabic orthography onto Persian before matching', () => {
+  const baseline = new Set(eligibleFoodsForProgram(completeDraft()).map((food) => food.id));
+  assert.equal(baseline.has('zereshk-polo-morgh'), true);
+
+  const disliked = completeDraft();
+  // Written with the Arabic kaf (U+0643) rather than the Persian keheh (U+06A9);
+  // normalize() must fold it so the disliked dish is still excluded.
+  disliked.nutrition.dislikedFoods = ['زرشك پلو'];
+  const filtered = new Set(eligibleFoodsForProgram(disliked).map((food) => food.id));
+  assert.equal(filtered.has('zereshk-polo-morgh'), false);
+});
+
+test('materializer fails closed on incomplete profile fields and unsupported diet catalogs', () => {
+  const noMeals = completeDraft();
+  noMeals.nutrition.mealsPerDay = null;
+  assert.throws(
+    () => materializeProgramPlans(noMeals, validSelections(completeDraft())),
+    (error) => error instanceof ProgramMaterializationError && error.code === 'profile_incomplete',
+  );
+
+  const noSession = completeDraft();
+  noSession.availability.sessionDuration = null;
+  assert.throws(
+    () => exercisesPerDayForProgram(noSession),
+    (error) => error instanceof ProgramMaterializationError && error.code === 'profile_incomplete',
+  );
+
+  for (const diet of ['vegan', 'low-carb'] as const) {
+    const unsupported = completeDraft();
+    unsupported.nutrition.dietType = diet;
+    assert.throws(
+      () => eligibleFoodsForProgram(unsupported),
+      (error) => error instanceof ProgramMaterializationError && error.code === 'diet_catalog_unsupported',
+    );
+  }
+});
+
+test('planner contract enforces the quarter-portion step and the one-to-two items-per-meal bound', () => {
+  const draft = completeDraft();
+  const foods = eligibleFoodsForProgram(draft);
+  const allowedFoods = new Set(foods.map((food) => food.id));
+
+  // A portion that is in range but not a multiple of 0.25 is a distinct, named
+  // rejection from an out-of-range portion.
+  assert.throws(
+    () => parseNutritionPlannerOutput(
+      JSON.stringify({ days: Array.from({ length: 7 }, () => Array.from({ length: 3 }, () => [{ id: foods[0]!.id, portion: 0.3 }])) }),
+      { expectedDays: 7, mealsPerDay: 3, allowedIds: allowedFoods },
+    ),
+    /planner_portion_step_invalid/,
+  );
+
+  // A meal may hold one or two catalog items; three is rejected before any id or
+  // portion is even inspected.
+  const threeItemMeal = [
+    { id: foods[0]!.id, portion: 1 },
+    { id: foods[1]!.id, portion: 1 },
+    { id: foods[2]!.id, portion: 1 },
+  ];
+  assert.throws(
+    () => parseNutritionPlannerOutput(
+      JSON.stringify({ days: Array.from({ length: 7 }, () => Array.from({ length: 3 }, () => threeItemMeal)) }),
+      { expectedDays: 7, mealsPerDay: 3, allowedIds: allowedFoods },
+    ),
+    /planner_nutrition_meal_size_invalid/,
+  );
+
+  // A training day whose size does not match the requested exercises-per-day is
+  // rejected rather than silently truncated or padded.
+  const exercises = safeExercisesForProgram(draft);
+  const allowedExercises = new Set(exercises.map((exercise) => exercise.id));
+  const exerciseCount = Math.min(exercisesPerDayForProgram(draft), exercises.length);
+  const shortDay = exercises.slice(0, exerciseCount - 1).map((exercise) => exercise.id);
+  assert.throws(
+    () => parseTrainingPlannerOutput(
+      JSON.stringify({ days: Array.from({ length: 4 }, () => shortDay) }),
+      { expectedDays: 4, exercisesPerDay: exerciseCount, allowedIds: allowedExercises },
+    ),
+    /planner_training_day_size_invalid/,
+  );
+});
+
 test('web catalog is no longer the six-item placeholder', () => {
   assert.ok(foodFixtures.length >= 20);
   assert.ok(foodFixtures.some((food) => food.id === 'adasi'));
