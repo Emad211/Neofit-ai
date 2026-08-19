@@ -26,6 +26,16 @@ function sha256(value: string): string {
   return createHash('sha256').update(value).digest('hex');
 }
 
+// The single source of truth for a Program Cycle's onboarding provenance hash.
+// Creation pins it; generation must recompute it from the live draft with the
+// exact same function and refuse when it no longer matches — otherwise a plan
+// could be materialized from a draft the immutable cycle row does not record.
+// parseOnboardingDraft returns the validated object unchanged, so stringifying
+// an unchanged `user_onboarding.draft` column is byte-stable across reads.
+export function onboardingSnapshotSha256(draft: OnboardingDraft): string {
+  return sha256(JSON.stringify(draft));
+}
+
 export async function ensureProgramCycle(input: {
   readonly supabase: SupabaseClient<Database>;
   readonly userId: string;
@@ -53,7 +63,7 @@ export async function ensureProgramCycle(input: {
     throw new ProgramCyclePersistenceError();
   }
 
-  const snapshotSha256 = sha256(JSON.stringify(input.draft));
+  const snapshotSha256 = onboardingSnapshotSha256(input.draft);
   const idempotencyKey = sha256([
     `program-cycle-v${PROGRAM_CYCLE_SCHEMA_VERSION}`,
     input.userId,

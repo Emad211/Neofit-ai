@@ -31,6 +31,20 @@ const PROGRAM_ISSUES: Readonly<Record<string, ProgramIssue>> = {
     actionHref: '/onboarding/review',
     actionLabel: 'مرور اطلاعات',
   },
+  profile_incomplete: {
+    text: 'برای ساخت برنامه، بخشی از اطلاعات لازم هنوز کامل نیست. اطلاعاتت را تکمیل کن و دوباره برگرد.',
+    tone: 'warning',
+    retry: false,
+    actionHref: '/onboarding/review',
+    actionLabel: 'تکمیل اطلاعات',
+  },
+  onboarding_snapshot_changed: {
+    text: 'اطلاعاتت بعد از شروع این دوره تغییر کرده است. یک‌بار آن را مرور و تأیید کن تا برنامه بر اساس آخرین اطلاعات ساخته شود.',
+    tone: 'warning',
+    retry: false,
+    actionHref: '/onboarding/review',
+    actionLabel: 'مرور و تأیید اطلاعات',
+  },
   clinical_review_required: {
     text: 'برای ساخت برنامه تمرین، یکی از محدودیت‌های سلامت یا دردهایی که ثبت کرده‌ای نیاز به مرور دارد.',
     tone: 'warning',
@@ -84,6 +98,13 @@ const PROGRAM_ISSUES: Readonly<Record<string, ProgramIssue>> = {
     text: 'ساخت برنامه این بار کامل نشد. دوباره تلاش کن.',
     tone: 'error',
     retry: true,
+  },
+  planner_output_incomplete: {
+    text: 'پاسخ مربی هوشمند این بار ناتمام ماند و برنامه کامل ساخته نشد. اتصال هوش مصنوعی و مدل انتخاب‌شده را بررسی کن.',
+    tone: 'error',
+    retry: false,
+    actionHref: '/profile/ai',
+    actionLabel: 'بررسی اتصال هوش مصنوعی',
   },
   planner_selection_invalid: {
     text: 'ساخت برنامه این بار کامل نشد. دوباره تلاش کن.',
@@ -176,18 +197,37 @@ export default async function ProgramPage({
     && Number.isFinite(cycleUpdatedAt)
     && Date.now() - cycleUpdatedAt >= GENERATION_STALE_MS;
 
-  const success = query.message === 'plans-ready'
+  const success = query.message === 'plans-ready' && cycle.status === 'ready'
     ? 'برنامه تمرین و تغذیه آماده‌اند. خلاصه را ببین و در صورت تأیید فعالشان کن.'
-    : query.message === 'plans-active'
+    : query.message === 'plans-active' && cycle.status === 'active'
       ? 'برنامه‌ها فعال شدند و حالا در بخش تمرین و تغذیه در دسترس‌اند.'
       : query.message === 'generation-recovered'
         ? 'تلاش قبلی بسته شد. حالا می‌توانی دوباره برنامه را بسازی.'
         : null;
 
-  const issueCode = query.error ?? (query.message ? null : cycle.generation_failure_code);
-  const issue = issueCode ? PROGRAM_ISSUES[issueCode] ?? FALLBACK_ISSUE : null;
-  const canGenerate = cycle.status === 'draft' || (cycle.status === 'failed' && (issue?.retry ?? true));
-  const needsUserAction = cycle.status === 'failed' && issue && !issue.retry && issue.actionHref && issue.actionLabel;
+  // Generation eligibility and the "needs review" prompt derive ONLY from the
+  // persisted cycle row, never from the user-controllable URL. A ?message= or
+  // ?error= param may color the transient banner below, but it can never
+  // re-open a fail-closed cycle for generation or hide a required review step.
+  const persistedFailureCode = cycle.status === 'failed' ? cycle.generation_failure_code : null;
+  const persistedIssue = persistedFailureCode ? PROGRAM_ISSUES[persistedFailureCode] ?? FALLBACK_ISSUE : null;
+  // A cycle pinned to a now-diverged onboarding draft cannot be generated: the
+  // action fails closed on the same mismatch. Route to review instead of
+  // offering a dead button, and treat it as the reason needing user action.
+  const snapshotChanged = snapshot.onboardingChanged;
+  const canGenerate = !snapshotChanged && (
+    cycle.status === 'draft'
+    || (cycle.status === 'failed' && (persistedIssue?.retry ?? true))
+  );
+  const reviewIssue = snapshotChanged
+    ? PROGRAM_ISSUES.onboarding_snapshot_changed
+    : (cycle.status === 'failed' && persistedIssue && !persistedIssue.retry ? persistedIssue : null);
+  const needsUserAction = Boolean(reviewIssue?.actionHref && reviewIssue.actionLabel);
+
+  // Banner: an explicit ?error= wins; otherwise fall back to the persisted
+  // failure reason, suppressed while a fresh success message is showing.
+  const bannerCode = query.error ?? (query.message ? null : persistedFailureCode);
+  const issue = bannerCode ? PROGRAM_ISSUES[bannerCode] ?? FALLBACK_ISSUE : null;
   const startLabel = formatProgramDate(cycle.start_date);
   const endLabel = formatProgramDate(cycle.end_date);
 
@@ -221,7 +261,7 @@ export default async function ProgramPage({
             <h3>یک مورد نیاز به مرور دارد</h3>
             <p>اطلاعات مربوط را اصلاح یا تأیید کن، بعد برگرد و برنامه را بساز.</p>
           </div>
-          <Link className="primary-button" href={issue.actionHref!}>{issue.actionLabel}</Link>
+          <Link className="primary-button" href={reviewIssue!.actionHref!}>{reviewIssue!.actionLabel}</Link>
         </article>
       ) : null}
 

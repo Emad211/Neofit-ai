@@ -1,6 +1,8 @@
 import 'server-only';
 
 import { activeAuthSession } from '@/lib/auth/active-session';
+import { parseOnboardingDraft } from '@/lib/onboarding/model';
+import { onboardingSnapshotSha256 } from '@/lib/program-cycle/persistence';
 import { hasSupabasePublicEnv } from '@/lib/supabase/env';
 import type { Tables } from '@/lib/supabase/database.types';
 import { createClient } from '@/lib/supabase/server';
@@ -25,11 +27,16 @@ export interface ProgramCycleSnapshot {
     readonly status: string;
     readonly document: NutritionPlanDocument;
   } | null;
+  // True only for a generation-eligible cycle whose live onboarding draft no
+  // longer matches the provenance hash pinned when the cycle was created. The
+  // page uses this to route the user back to review instead of offering a
+  // generate action that would fail closed on the same mismatch.
+  readonly onboardingChanged: boolean;
   readonly loadError: string | null;
 }
 
 export async function loadProgramCycleSnapshot(): Promise<ProgramCycleSnapshot> {
-  const emptyPlans = { workoutPlan: null, nutritionPlan: null } as const;
+  const emptyPlans = { workoutPlan: null, nutritionPlan: null, onboardingChanged: false } as const;
   if (!hasSupabasePublicEnv()) return { mode: 'guest', cycle: null, ...emptyPlans, loadError: null };
   const supabase = await createClient();
   const active = await activeAuthSession(supabase);
@@ -49,7 +56,22 @@ export async function loadProgramCycleSnapshot(): Promise<ProgramCycleSnapshot> 
   if (!status) return { mode: 'unavailable', cycle: null, ...emptyPlans, loadError: 'وضعیت چرخهٔ دوره معتبر نیست.' };
 
   if (!data.active_workout_plan_id || !data.active_nutrition_plan_id) {
-    return { mode: 'account', cycle: { ...data, status }, ...emptyPlans, loadError: null };
+    // Only draft/failed cycles can still be generated, so only they need the
+    // provenance check. A mismatch means onboarding was re-completed after the
+    // cycle was pinned; the page turns the generate action into a review prompt.
+    let onboardingChanged = false;
+    if (status === 'draft' || status === 'failed') {
+      const onboarding = await supabase
+        .from('user_onboarding')
+        .select('draft,status')
+        .eq('user_id', active.userId)
+        .maybeSingle();
+      if (!onboarding.error && onboarding.data?.status === 'completed') {
+        const draft = parseOnboardingDraft(onboarding.data.draft ?? null);
+        onboardingChanged = !draft || onboardingSnapshotSha256(draft) !== data.onboarding_snapshot_sha256;
+      }
+    }
+    return { mode: 'account', cycle: { ...data, status }, ...emptyPlans, onboardingChanged, loadError: null };
   }
   const [workoutResult, nutritionResult] = await Promise.all([
     supabase.from('workout_plans').select('title,version,status,plan').eq('id', data.active_workout_plan_id).eq('user_id', active.userId).maybeSingle(),
@@ -68,6 +90,7 @@ export async function loadProgramCycleSnapshot(): Promise<ProgramCycleSnapshot> 
     cycle: { ...data, status },
     workoutPlan: { ...workoutResult.data, document: workoutDocument },
     nutritionPlan: { ...nutritionResult.data, document: nutritionDocument },
+    onboardingChanged: false,
     loadError: null,
   };
 }

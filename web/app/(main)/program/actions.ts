@@ -10,6 +10,7 @@ import {
   ProgramPlannerError,
   type ProgramPlannerEvidence,
 } from '@/lib/program-generation/planners';
+import { onboardingSnapshotSha256 } from '@/lib/program-cycle/persistence';
 import { createClient } from '@/lib/supabase/server';
 
 const GENERATION_STALE_MS = 5 * 60_000;
@@ -90,7 +91,7 @@ export async function generateProgramCycle(formData: FormData): Promise<void> {
   if (!active) redirect('/auth');
 
   const [cycleResult, onboardingResult] = await Promise.all([
-    supabase.from('program_cycles').select('id,status,revision').eq('id', cycleId).eq('user_id', active.userId).maybeSingle(),
+    supabase.from('program_cycles').select('id,status,revision,onboarding_snapshot_sha256').eq('id', cycleId).eq('user_id', active.userId).maybeSingle(),
     supabase.from('user_onboarding').select('draft,status').eq('user_id', active.userId).maybeSingle(),
   ]);
   const cycle = cycleResult.data;
@@ -105,6 +106,15 @@ export async function generateProgramCycle(formData: FormData): Promise<void> {
     || !draft
   ) {
     redirect('/program?error=stale_or_incomplete');
+  }
+
+  // The cycle pins the onboarding provenance hash at creation and that row is
+  // immutable. If the user edited and re-completed onboarding after the cycle
+  // was opened, the live draft no longer matches — building a plan from it would
+  // silently misattribute its provenance (invariant 6). Recompute with the same
+  // helper the cycle was created with and refuse rather than persist a lie.
+  if (onboardingSnapshotSha256(draft) !== cycle.onboarding_snapshot_sha256) {
+    redirect('/program?error=onboarding_snapshot_changed');
   }
 
   // Claim the generation revision before spending provider budget. A concurrent
@@ -124,12 +134,16 @@ export async function generateProgramCycle(formData: FormData): Promise<void> {
     plans = materializeProgramPlans(draft, selections);
   } catch (error) {
     const failureCode = generationErrorCode(error);
-    await supabase.rpc('transition_program_cycle', {
+    const failed = await supabase.rpc('transition_program_cycle', {
       p_cycle_id: cycle.id,
       p_expected_revision: generating.cycle_revision,
       p_target_status: 'failed',
       p_failure_code: failureCode,
     });
+    // If we could not even record the failure, the cycle is still 'generating'.
+    // Surface that truthfully — stale-recovery will reopen it — instead of a
+    // failure banner whose retry/review actions do not match the persisted state.
+    if (failed.error || !failed.data?.[0]) redirect('/program?error=generation_still_running');
     redirect(`/program?error=${encodeURIComponent(failureCode)}`);
   }
 
