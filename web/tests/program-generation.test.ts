@@ -307,19 +307,22 @@ test('materializer fails closed on incomplete profile fields and unsupported die
   }
 });
 
-test('planner contract enforces the quarter-portion step and the one-to-two items-per-meal bound', () => {
+test('planner contract rejects a non-standard portion, an oversized meal and a wrong-sized training day, each with its own named code', () => {
   const draft = completeDraft();
   const foods = eligibleFoodsForProgram(draft);
   const allowedFoods = new Set(foods.map((food) => food.id));
 
-  // A portion that is in range but not a multiple of 0.25 is a distinct, named
-  // rejection from an out-of-range portion.
+  // A model may select a catalog identity but never author its own serving
+  // multiplier: portion must equal exactly 1 (one catalog-defined serving).
+  // Prescribing more or fewer servings is a distinct, named portion-authority
+  // rejection — the plan document owns the portion count and Nutrition Core owns
+  // the arithmetic, not the planner selection.
   assert.throws(
     () => parseNutritionPlannerOutput(
-      JSON.stringify({ days: Array.from({ length: 7 }, () => Array.from({ length: 3 }, () => [{ id: foods[0]!.id, portion: 0.3 }])) }),
+      JSON.stringify({ days: Array.from({ length: 7 }, () => Array.from({ length: 3 }, () => [{ id: foods[0]!.id, portion: 2 }])) }),
       { expectedDays: 7, mealsPerDay: 3, allowedIds: allowedFoods },
     ),
-    /planner_portion_step_invalid/,
+    /planner_portion_authority_invalid/,
   );
 
   // A meal may hold one or two catalog items; three is rejected before any id or

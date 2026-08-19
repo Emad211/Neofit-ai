@@ -46,11 +46,18 @@ test('provider adapters keep credentials out of URLs and respect verified struct
   assert.match(google, /response_format/);
   assert.match(google, /mime_type: 'application\/json'/);
   assert.match(google, /schema: request\.responseSchema/);
-  assert.match(google, /max_output_tokens: outputTokenLimit\(request\)/);
+  // The output ceiling is resolved once from the clamped outputTokenLimit and the
+  // same value is reused for the request body and truncation detection, so a
+  // caller above the hard cap can never silently under-report truncation.
+  assert.match(google, /const maxOutputTokens = outputTokenLimit\(request\)/);
+  assert.match(google, /max_output_tokens: maxOutputTokens/);
+  assert.match(google, /outputReachedCeiling\(payload\.usage, maxOutputTokens\)/);
 
   assert.match(avalai, /Authorization: `Bearer \$\{apiKey\}`/);
   assert.match(avalai, /\/responses/);
-  assert.match(avalai, /max_output_tokens: outputTokenLimit\(request\)/);
+  assert.match(avalai, /const maxOutputTokens = outputTokenLimit\(request\)/);
+  assert.match(avalai, /max_output_tokens: maxOutputTokens/);
+  assert.match(avalai, /outputReachedCeiling\(payload\.usage, maxOutputTokens\)/);
   assert.doesNotMatch(avalai, /response_format|json_schema/);
 });
 
