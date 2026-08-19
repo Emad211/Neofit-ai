@@ -1,5 +1,7 @@
 import { EXERCISES, evaluateExerciseSafety, type ExerciseDefinition, type ExerciseEquipment, type MovementPattern } from '@neofit/exercise-registry';
+import { calculateRecipe } from '@neofit/nutrition-core';
 import { foodFixtures, type FoodFixture } from '@/data/fixtures';
+import { estimateWebFood, webMacrosFromEstimate } from '@/lib/nutrition-adapter';
 import { safetyProfileFromOnboarding } from '@/lib/exercise-registry/onboarding-safety';
 import type { OnboardingDraft, WeekdayId } from '@/lib/onboarding/model';
 import type { Json } from '@/lib/supabase/database.types';
@@ -84,6 +86,8 @@ function databaseJson(value: unknown): Json {
 function normalize(value: string): string {
   return value
     .trim()
+    .replace(/\u064a/g, '\u06cc') // Arabic yeh -> Persian yeh
+    .replace(/\u0643/g, '\u06a9') // Arabic kaf -> Persian keheh
     .toLocaleLowerCase('fa-IR')
     .replace(/[\u200c\u200f\u202a-\u202e]/g, ' ')
     .replace(/\s+/g, ' ');
@@ -106,6 +110,26 @@ function safetyInput(draft: OnboardingDraft) {
   };
 }
 
+// Whole-token negations. Matched against space-delimited tokens (never as bare
+// substrings) so "نه" inside "خانه" or "no" inside "another" cannot false-fire.
+const EQUIPMENT_NEGATION_TOKENS: ReadonlySet<string> = new Set([
+  'بدون', 'ندارم', 'نداریم', 'نداره', 'نیست', 'نه',
+  'no', 'not', 'without', 'dont', "don't", 'none',
+]);
+
+// Infer a positive equipment capability from a short free-text field ONLY when
+// an alias is present AND no negation token appears. Free text often expresses
+// an absence ("بدون لندماین", "no landmine"); adding equipment the user does not
+// have would offer exercises they cannot perform, so we fail closed toward not
+// adding it.
+function customEquipmentAffirms(customEquipment: string, aliases: readonly string[]): boolean {
+  const normalized = normalize(customEquipment);
+  if (!normalized) return false;
+  const tokens = normalized.split(' ');
+  if (tokens.some((token) => EQUIPMENT_NEGATION_TOKENS.has(token))) return false;
+  return aliases.some((alias) => normalized.includes(normalize(alias)));
+}
+
 function availableEquipment(draft: OnboardingDraft): ReadonlySet<ExerciseEquipment> {
   const equipment = new Set<ExerciseEquipment>(['bodyweight']);
   if (draft.availability.equipment.includes('full-gym')) {
@@ -113,8 +137,9 @@ function availableEquipment(draft: OnboardingDraft): ReadonlySet<ExerciseEquipme
   } else {
     for (const item of draft.availability.equipment) equipment.add(item);
   }
-  const custom = normalize(draft.availability.customEquipment);
-  if (custom.includes('landmine') || custom.includes('لندماین')) equipment.add('landmine');
+  if (customEquipmentAffirms(draft.availability.customEquipment, ['landmine', 'لندماین'])) {
+    equipment.add('landmine');
+  }
   return equipment;
 }
 
@@ -147,10 +172,14 @@ function foodMatchesAny(food: FoodFixture, values: readonly string[]): boolean {
     food.nameEn,
     ...food.aliasesFa,
     ...food.aliasesEn,
-  ].map(normalize);
+  ].map(normalize).filter((candidate) => candidate.length >= 2);
+  // Disliked-food exclusion is a preference, applied only after allergies have
+  // already failed closed upstream. A single-character needle would substring-
+  // match unrelated foods and silently shrink the catalog, so require at least
+  // two characters — this can only keep a food, never hide an allergen.
   return values.some((value) => {
     const needle = normalize(value);
-    return needle.length > 0 && haystack.some((candidate) => candidate.includes(needle) || needle.includes(candidate));
+    return needle.length >= 2 && haystack.some((candidate) => candidate.includes(needle) || needle.includes(candidate));
   });
 }
 
@@ -281,6 +310,27 @@ function mealSlot(index: number, count: number): { type: 'breakfast' | 'lunch' |
   return { type: 'snack', label: `میان‌وعده ${snackNumber}` };
 }
 
+// A pure integrity ceiling, deliberately far above any real daily plan — it is
+// NOT a personalized calorie target (inferring one is forbidden), only a guard
+// so an absurd planner selection can never resolve into persisted authority.
+// All arithmetic stays inside Nutrition Core (invariant 1): per-item energy via
+// calculateVariantNutrition, the daily sum via calculateRecipe.
+const DAILY_ENERGY_SANITY_CEILING_KCAL = 8000;
+
+function dayEnergyKcal(
+  items: readonly NutritionPlanItemDocument[],
+  foodsById: ReadonlyMap<string, FoodFixture>,
+): number {
+  if (items.length === 0) return 0;
+  const ingredients = items.map((item, index) => {
+    const food = foodsById.get(item.foodId);
+    if (!food) throw new ProgramMaterializationError('insufficient_catalog_foods');
+    return { id: `day-energy-${index}`, label: food.id, estimate: estimateWebFood(food, item.portionCount).estimate };
+  });
+  const total = calculateRecipe({ id: 'day-energy', name: 'day-energy', ingredients, servingCount: 1 }).total;
+  return webMacrosFromEstimate(total).calories;
+}
+
 function nutritionDocument(
   draft: OnboardingDraft,
   selection: ProgramPlannerSelections['nutrition'],
@@ -292,13 +342,15 @@ function nutritionDocument(
 
   const foods = eligibleFoodsForProgram(draft);
   const allowedIds = new Set(foods.map((food) => food.id));
+  const foodsById = new Map(foods.map((food) => [food.id, food]));
   if (selection.days.length !== 7) throw new ProgramMaterializationError('planner_selection_invalid');
   const weekdays = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'] as const;
 
   return {
     days: selection.days.map((meals, dayIndex) => {
       if (meals.length !== mealsPerDay) throw new ProgramMaterializationError('planner_selection_invalid');
-      return {
+      const dayItems: NutritionPlanItemDocument[] = [];
+      const day = {
         id: `cycle-nutrition-${dayIndex + 1}`,
         day: weekdays[dayIndex]!,
         title: 'الگوی غذایی روزانه',
@@ -319,11 +371,19 @@ function nutritionDocument(
               if (!allowedIds.has(item.id) || item.portion !== 1) {
                 throw new ProgramMaterializationError('planner_selection_invalid');
               }
-              return catalogItem(item.id, item.portion);
+              const resolved = catalogItem(item.id, item.portion);
+              dayItems.push(resolved);
+              return resolved;
             }),
           };
         }),
       };
+      // Core-computed integrity ceiling: reject an absurd day rather than persist
+      // model-selected portions that resolve to an impossible daily energy total.
+      if (dayEnergyKcal(dayItems, foodsById) > DAILY_ENERGY_SANITY_CEILING_KCAL) {
+        throw new ProgramMaterializationError('planner_selection_invalid');
+      }
+      return day;
     }),
   };
 }

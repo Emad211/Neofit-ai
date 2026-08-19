@@ -17,7 +17,10 @@ import {
   type TrainingPlannerSelection,
 } from './planner-contract';
 
-export type ProgramPlannerErrorCode = 'planner_unavailable' | 'planner_invalid_output';
+export type ProgramPlannerErrorCode =
+  | 'planner_unavailable'
+  | 'planner_invalid_output'
+  | 'planner_output_incomplete';
 
 export class ProgramPlannerError extends Error {
   constructor(readonly code: ProgramPlannerErrorCode) {
@@ -78,6 +81,8 @@ interface ProgramPlannerPreflight {
 function normalize(value: string): string {
   return value
     .trim()
+    .replace(/\u064a/g, '\u06cc') // Arabic yeh -> Persian yeh
+    .replace(/\u0643/g, '\u06a9') // Arabic kaf -> Persian keheh
     .toLocaleLowerCase('fa-IR')
     .replace(/[\u200c\u200f\u202a-\u202e]/g, ' ')
     .replace(/\s+/g, ' ');
@@ -87,11 +92,16 @@ function favoriteFoodIds(
   values: readonly string[],
   foods: ReturnType<typeof eligibleFoodsForProgram>,
 ): string[] {
-  const favorites = values.map(normalize).filter(Boolean);
+  // A one-character favorite (or a name that normalizes to one) is too coarse a
+  // needle: substring matching would sweep in unrelated catalog foods. Require
+  // at least two characters so a matched favorite is a deliberate signal.
+  const favorites = values.map(normalize).filter((favorite) => favorite.length >= 2);
   if (favorites.length === 0) return [];
   return foods
     .filter((food) => {
-      const names = [food.id, food.nameFa, food.nameEn, ...food.aliasesFa, ...food.aliasesEn].map(normalize);
+      const names = [food.id, food.nameFa, food.nameEn, ...food.aliasesFa, ...food.aliasesEn]
+        .map(normalize)
+        .filter((name) => name.length >= 2);
       return favorites.some((favorite) => names.some((name) => name.includes(favorite) || favorite.includes(name)));
     })
     .map((food) => food.id);
@@ -273,6 +283,7 @@ async function trainingSelection(
           difficulty: exercise.difficulty,
         })),
       }),
+      maxOutputTokens: AI_MAX_STRUCTURED_OUTPUT_TOKENS,
     }, undefined, 'respond');
   } catch {
     throw new ProgramPlannerError('planner_unavailable');
@@ -288,7 +299,10 @@ async function trainingSelection(
     return selection;
   } catch (error) {
     if (error instanceof ProgramPlannerError) throw error;
-    throw new ProgramPlannerError('planner_invalid_output');
+    // A truncated completion is a genuine parse failure, but retrying sends the
+    // same request into the same ceiling — so it gets its own non-retryable
+    // code instead of the retryable "invalid output".
+    throw new ProgramPlannerError(result.incomplete ? 'planner_output_incomplete' : 'planner_invalid_output');
   }
 }
 
@@ -346,7 +360,9 @@ async function nutritionSelection(draft: OnboardingDraft, preflight: ProgramPlan
     return selection;
   } catch (error) {
     if (error instanceof ProgramPlannerError) throw error;
-    throw new ProgramPlannerError('planner_invalid_output');
+    // A truncated 7-day meal plan is the original motivating failure: retrying
+    // hits the same ceiling, so it is non-retryable.
+    throw new ProgramPlannerError(result.incomplete ? 'planner_output_incomplete' : 'planner_invalid_output');
   }
 }
 
