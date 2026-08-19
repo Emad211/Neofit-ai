@@ -80,7 +80,5 @@ for update to authenticated
 using ((select auth.uid()) = user_id and status = 'pending')
 with check ((select auth.uid()) = user_id and status in ('success','failure'));
 
-comment on table public.encrypted_integration_credentials is
-  'User-owned encrypted external integration credentials. Raw keys are never stored in plaintext or returned to the browser.';
-comment on table public.agent_tool_audit is
-  'Metadata-only audit for bounded external Agent Tool calls. Raw search queries and result content are not stored.';
+comment on table public.encrypted_integration_credentials is 'User-owned encrypted external integration credentials. Raw keys are never stored in plaintext or returned to the browser.';
+comment on table public.agent_tool_audit is 'Metadata-only audit for bounded external Agent Tool calls. Raw search queries and result content are not stored.';;

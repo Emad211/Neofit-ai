@@ -1,0 +1,344 @@
+/* NeoFit Product UI v3 — plan review / onboarding handoff */
+
+.nutrition-plan-page {
+  max-inline-size: 820px;
+  margin-inline: auto;
+}
+
+.nutrition-plan-page__heading {
+  align-items: flex-start;
+}
+
+.nutrition-plan-flow {
+  display: grid;
+  gap: 24px;
+}
+
+.nutrition-plan-today {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--surface);
+}
+
+.nutrition-plan-today > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 18px 14px;
+  border-block-end: 1px solid var(--border);
+  background: #edf5f0;
+}
+
+.nutrition-plan-today > header span {
+  color: var(--primary);
+  font-size: .68rem;
+  font-weight: 850;
+}
+
+.nutrition-plan-today > header h3 {
+  margin: 3px 0 0;
+  font-size: 1.08rem;
+}
+
+.nutrition-plan-today > header b {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text-soft);
+  font-size: .66rem;
+  font-weight: 850;
+}
+
+.nutrition-plan-meals {
+  display: grid;
+  gap: 0;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.nutrition-plan-meal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-block-size: 86px;
+  padding: 14px 16px;
+  border-block-end: 1px solid var(--border);
+}
+
+.nutrition-plan-meal:last-child {
+  border-block-end: 0;
+}
+
+.nutrition-plan-meal__copy > span {
+  display: block;
+  margin-block-end: 1px;
+  color: var(--text-faint);
+  font-size: .64rem;
+  font-weight: 750;
+}
+
+.nutrition-plan-meal__copy > strong {
+  display: block;
+  font-size: .88rem;
+}
+
+.nutrition-plan-meal__copy > ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  padding: 0;
+  margin: 6px 0 0;
+  list-style: none;
+}
+
+.nutrition-plan-meal__copy > ul li {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--text-soft);
+  font-size: .7rem;
+}
+
+.nutrition-plan-meal__copy > ul small {
+  color: var(--text-faint);
+  font-size: .62rem;
+}
+
+.nutrition-plan-meal form .text-button {
+  min-block-size: 38px;
+  padding-inline: 11px;
+  border: 1px solid #d5e3da;
+  border-radius: 11px;
+  background: #f6faf7;
+  white-space: nowrap;
+  font-size: .67rem;
+}
+
+.nutrition-plan-week {
+  display: grid;
+  gap: 10px;
+}
+
+.nutrition-plan-day-list {
+  display: grid;
+  gap: 8px;
+}
+
+.nutrition-plan-day {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: var(--surface);
+}
+
+.nutrition-plan-day > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-block-size: 62px;
+  padding: 11px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.nutrition-plan-day > summary::-webkit-details-marker {
+  display: none;
+}
+
+.nutrition-plan-day > summary > span:first-child {
+  display: grid;
+}
+
+.nutrition-plan-day > summary strong {
+  font-size: .82rem;
+}
+
+.nutrition-plan-day > summary small {
+  margin-block-start: 1px;
+  color: var(--text-faint);
+  font-size: .64rem;
+}
+
+.nutrition-plan-day > summary > span:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-faint);
+  font-size: .64rem;
+  font-weight: 750;
+}
+
+.nutrition-plan-day > summary svg {
+  transform: rotate(180deg);
+  transition: transform 160ms ease;
+}
+
+.nutrition-plan-day[open] > summary svg {
+  transform: rotate(90deg);
+}
+
+.nutrition-plan-day[open] > summary {
+  background: #fafcf9;
+  border-block-end: 1px solid var(--border);
+}
+
+/* Ready is a handoff, not another settings dashboard. */
+.onboarding-ready-page {
+  display: grid;
+  place-items: start center;
+  min-block-size: 100svh;
+  padding: clamp(28px, 7vh, 72px) 18px;
+  background: var(--bg);
+}
+
+.onboarding-ready-card {
+  display: grid;
+  justify-items: start;
+  inline-size: min(100%, 690px);
+  gap: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: start;
+}
+
+.onboarding-ready-brand {
+  color: var(--primary-strong);
+  font-size: .9rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.onboarding-ready-card__mark {
+  display: grid;
+  place-items: center;
+  inline-size: 52px;
+  block-size: 52px;
+  border-radius: 16px;
+  background: var(--primary-strong);
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.onboarding-ready-card__copy h1 {
+  margin: 5px 0 7px;
+  max-inline-size: 590px;
+  font-size: clamp(1.75rem, 6vw, 2.35rem);
+  line-height: 1.3;
+}
+
+.onboarding-ready-card__intro {
+  margin: 0;
+  max-inline-size: 570px;
+  color: var(--text-soft);
+  font-size: .86rem;
+  line-height: 1.85;
+}
+
+.onboarding-ready-card__summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  inline-size: 100%;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.onboarding-ready-card__summary > div {
+  display: grid;
+  gap: 3px;
+  min-block-size: 82px;
+  align-content: center;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.onboarding-ready-card__summary span {
+  color: var(--text-faint);
+  font-size: .63rem;
+}
+
+.onboarding-ready-card__summary strong {
+  font-size: .82rem;
+  line-height: 1.55;
+}
+
+.onboarding-ready-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  inline-size: 100%;
+}
+
+.onboarding-ready-card__actions form {
+  margin: 0;
+}
+
+.onboarding-ready-card__actions a,
+.onboarding-ready-card__actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 46px;
+  padding-inline: 16px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font: inherit;
+  font-size: .76rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.onboarding-ready-card__actions .is-primary,
+.onboarding-ready-card__actions form button {
+  border-color: var(--primary-strong);
+  background: var(--primary-strong);
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  .nutrition-plan-meal {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .nutrition-plan-meal form .text-button {
+    inline-size: 100%;
+    justify-content: center;
+  }
+
+  .onboarding-ready-card__summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .onboarding-ready-card__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-ready-card__actions form,
+  .onboarding-ready-card__actions a,
+  .onboarding-ready-card__actions button {
+    inline-size: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nutrition-plan-day > summary svg { transition: none; }
+}

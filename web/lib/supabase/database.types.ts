@@ -915,6 +915,14 @@ export type Database = {
           cycle_status: string
         }[]
       }
+      discard_program_cycle: {
+        Args: { p_cycle_id: string; p_expected_revision: number }
+        Returns: {
+          cycle_id: string
+          cycle_revision: number
+          cycle_status: string
+        }[]
+      }
       finalize_program_cycle_generation: {
         Args: {
           p_cycle_id: string

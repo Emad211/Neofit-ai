@@ -1,0 +1,425 @@
+/* NeoFit Product UI v3 — onboarding, auth and settings surfaces. */
+
+/* Onboarding: one question at a time, calm hierarchy, minimal chrome. */
+.onboarding-page {
+  min-block-size: 100svh;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.onboarding-shell {
+  inline-size: min(100%, 900px);
+  min-block-size: 100svh;
+  margin-inline: auto;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.onboarding-shell__header {
+  position: sticky;
+  z-index: 30;
+  inset-block-start: 0;
+  min-block-size: 64px;
+  padding: max(12px, env(safe-area-inset-top)) 20px 10px;
+  border-block-end: 1px solid rgba(221,228,222,.9);
+  background: rgba(245,247,244,.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.onboarding-shell__header p { display: none; }
+.onboarding-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary-strong);
+  font-size: .98rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+.onboarding-logo::before {
+  content: 'N';
+  display: grid;
+  place-items: center;
+  inline-size: 32px;
+  block-size: 32px;
+  border-radius: 10px;
+  background: var(--primary-strong);
+  color: #fff;
+  font-size: .8rem;
+}
+.onboarding-mode {
+  padding: 5px 9px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  color: var(--text-soft);
+  font-size: .62rem;
+  font-weight: 800;
+}
+.onboarding-mode--account { background: var(--primary-soft); color: var(--primary); }
+.onboarding-mode--error { background: #faeaea; color: #9e3939; }
+
+.onboarding-progress {
+  padding: 12px 20px 0;
+  background: transparent;
+}
+.onboarding-progress > div:first-child {
+  color: var(--text-faint);
+  font-size: .66rem;
+  font-weight: 700;
+}
+.onboarding-progress strong { color: var(--text-soft); font-weight: 800; }
+.onboarding-progress__track {
+  block-size: 4px;
+  margin-block-start: 9px;
+  border-radius: 99px;
+  background: #dfe6e1;
+}
+.onboarding-progress__track span { background: var(--primary-strong); }
+
+.onboarding-content {
+  inline-size: min(100% - 40px, 720px);
+  margin-inline: auto;
+  padding: clamp(30px, 6vw, 64px) 0 120px;
+  gap: 28px;
+}
+
+.onboarding-step-title { max-inline-size: 650px; }
+.onboarding-step-title span {
+  color: var(--primary);
+  font-size: .68rem;
+  font-weight: 850;
+}
+.onboarding-step-title h1,
+.onboarding-welcome h1 {
+  margin: 7px 0 9px;
+  max-inline-size: 650px;
+  font-size: clamp(1.7rem, 6vw, 2.45rem);
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+.onboarding-step-title p,
+.onboarding-welcome > p,
+.onboarding-help {
+  max-inline-size: 620px;
+  color: var(--text-soft);
+  font-size: .9rem;
+  line-height: 1.9;
+}
+
+.onboarding-welcome { gap: 20px; }
+.onboarding-mark {
+  inline-size: 52px;
+  block-size: 52px;
+  border-radius: 16px;
+  background: var(--primary-strong);
+  font-size: 1.25rem;
+  box-shadow: none;
+}
+
+.onboarding-grid { gap: 12px; }
+.onboarding-grid--2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+/* Legacy cardioPreference remains parse-compatible, but the current executable
+   workout schema has no duration-based cardio prescription yet. Do not ask the
+   user for a preference that the current Program cannot honestly execute. */
+.onboarding-preference-group:first-of-type .onboarding-grid > label:nth-child(2) { display: none; }
+.onboarding-content label,
+.onboarding-content fieldset { gap: 7px; color: #39483f; font-size: .78rem; font-weight: 800; }
+.onboarding-content legend { margin-block-end: 8px; font-size: .82rem; }
+.onboarding-content input,
+.onboarding-content select,
+.onboarding-content textarea {
+  min-block-size: 50px;
+  padding: 12px 13px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: none;
+}
+.onboarding-content textarea { min-block-size: 96px; }
+.onboarding-content input:focus,
+.onboarding-content select:focus,
+.onboarding-content textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(18,107,74,.08);
+}
+
+.onboarding-choice-grid,
+.onboarding-goal-grid,
+.onboarding-chip-grid {
+  grid-template-columns: repeat(auto-fit,minmax(160px,1fr));
+  gap: 8px;
+}
+.onboarding-choice-grid button,
+.onboarding-goal-grid button,
+.onboarding-chip-grid button {
+  min-block-size: 58px;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: none;
+  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+.onboarding-choice-grid button:hover,
+.onboarding-goal-grid button:hover,
+.onboarding-chip-grid button:hover { border-color: #bfcdc4; }
+.onboarding-choice-grid button strong { font-size: .82rem; }
+.onboarding-choice-grid button small { margin-block-start: 3px; color: var(--text-faint); font-size: .68rem; line-height: 1.6; }
+.onboarding-choice-grid button.is-selected,
+.onboarding-goal-grid button.is-selected,
+.onboarding-chip-grid button.is-selected {
+  border-color: var(--primary-strong);
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+  box-shadow: inset 0 0 0 1px var(--primary-strong);
+}
+
+.onboarding-toggle-row {
+  min-block-size: 62px;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--surface);
+}
+.onboarding-toggle-row small { color: var(--text-faint); font-size: .68rem; }
+.onboarding-toggle-row input { accent-color: var(--primary-strong); }
+
+.onboarding-resume-note,
+.onboarding-boundary-note,
+.onboarding-analysis-card {
+  padding: 15px 16px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--surface-soft);
+  color: var(--text-soft);
+  box-shadow: none;
+}
+.onboarding-boundary-note strong,
+.onboarding-analysis-card h3 { color: var(--text); font-size: .8rem; }
+.onboarding-boundary-note p { margin-block-start: 4px; font-size: .72rem; line-height: 1.75; }
+
+.onboarding-review-grid { grid-template-columns: 1fr; gap: 8px; }
+.onboarding-review-card {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: none;
+}
+.onboarding-review-card header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.onboarding-review-card h3 { margin: 0; color: var(--text); font-size: .86rem; }
+.onboarding-review-card header a { color: var(--primary); font-size: .7rem; font-weight: 850; }
+.onboarding-review-card p { color: var(--text-soft); font-size: .75rem; }
+
+.onboarding-plan-preview { grid-template-columns: repeat(2,1fr); gap: 8px; }
+.onboarding-plan-preview > div {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+.onboarding-plan-preview span { color: var(--text-faint); font-size: .68rem; }
+.onboarding-plan-preview strong { font-size: 1.25rem; }
+
+.onboarding-body-map__figures {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+}
+.onboarding-body-part { fill: #b2bdb6; }
+.onboarding-body-part.is-hovered { fill: #72a88d; }
+.onboarding-body-part.is-selected { fill: var(--primary); }
+.onboarding-area-card { border-color: var(--border); border-radius: 16px; box-shadow:none; }
+.onboarding-empty { border-color: #d6ded8; color: var(--text-faint); }
+
+.onboarding-list-editor > div { gap: 7px; }
+.onboarding-list-editor button { border-radius: 12px; background: var(--primary-strong); }
+.onboarding-list-editor li { background: var(--primary-soft); color: var(--primary-strong); }
+
+.onboarding-errors,
+.onboarding-action-error {
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 14px;
+  background: #f9e8e5;
+  color: #92372d;
+  font-size: .75rem;
+}
+
+.onboarding-actions {
+  position: fixed;
+  z-index: 35;
+  inset-block-end: 0;
+  inset-inline: 0;
+  inline-size: 100%;
+  min-block-size: calc(74px + env(safe-area-inset-bottom));
+  justify-content: center;
+  gap: 10px;
+  padding: 11px max(20px, calc((100% - 720px)/2)) max(11px, env(safe-area-inset-bottom));
+  border-block-start: 1px solid rgba(219,226,220,.92);
+  background: rgba(250,252,249,.96);
+  box-shadow: 0 -8px 30px rgba(19,35,26,.045);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.onboarding-actions .primary,
+.onboarding-actions .secondary {
+  min-inline-size: 150px;
+  min-block-size: 48px;
+  padding: 11px 18px;
+  border-radius: 14px;
+  box-shadow: none;
+}
+.onboarding-actions .primary { border-color: var(--primary-strong); background: var(--primary-strong); }
+.onboarding-actions .secondary { border-color: var(--border); background: var(--surface); color: var(--text-soft); }
+
+/* AI gate inside onboarding: connection as a compact setup task, not a dashboard. */
+.onboarding-ai-gate { display: grid; gap: 10px; }
+.onboarding-ai-gate__status,
+.onboarding-ai-gate__provider,
+.onboarding-ai-gate__fallback {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: none;
+}
+.onboarding-ai-gate__status { padding: 12px 14px; }
+.onboarding-ai-gate__status strong { font-size: .78rem; }
+.onboarding-ai-gate__status span { color: var(--text-soft); font-size: .68rem; line-height:1.7; }
+.onboarding-ai-gate__status.is-ready { border-color: #cfe2d6; background: #eef6f1; }
+.onboarding-ai-gate__provider { padding: 15px; }
+.onboarding-ai-gate__provider-head { gap:12px; }
+.onboarding-ai-gate__provider-head strong { font-size: .82rem; }
+.onboarding-ai-gate__provider-head span,
+.onboarding-ai-gate__field-help { color: var(--text-faint); font-size: .66rem; line-height:1.7; }
+.onboarding-ai-gate__provider-head a { color:var(--primary); font-size:.66rem; font-weight:800; }
+.onboarding-secret-field input { border-color:var(--border); border-radius:13px; }
+.onboarding-secret-field__toggle { color:var(--primary); }
+.onboarding-ai-gate__actions button { min-block-size:44px; border-radius:12px; background:var(--primary-strong); }
+.onboarding-ai-gate__fallback { padding: 0 14px; }
+.onboarding-ai-gate__fallback summary { min-block-size:48px; display:flex; align-items:center; cursor:pointer; font-size:.74rem; font-weight:850; }
+.onboarding-ai-gate__fallback > p { color:var(--text-soft); font-size:.68rem; }
+
+/* Auth: clear entry point, restrained form treatment. */
+.auth-page {
+  place-items: start center;
+  padding: clamp(28px,7vh,72px) 18px;
+  background: var(--bg);
+}
+.auth-card {
+  inline-size: min(100%, 760px);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.auth-card--compact { inline-size:min(100%,500px); }
+.auth-brand { gap: 11px; }
+.auth-brand > span {
+  inline-size: 44px;
+  block-size: 44px;
+  border-radius: 14px;
+  background: var(--primary-strong);
+  box-shadow:none;
+}
+.auth-brand p { color: var(--primary); font-size:.67rem; }
+.auth-brand h1 { font-size: clamp(1.5rem,5vw,1.9rem); }
+.auth-intro { margin: 12px 0 24px; max-inline-size:560px; color:var(--text-soft); font-size:.82rem; }
+.auth-grid { gap: 10px; }
+.auth-form {
+  gap: 8px;
+  padding: 19px;
+  border: 1px solid var(--border);
+  border-radius: 19px;
+  background: var(--surface);
+  box-shadow:none;
+}
+.auth-form--secondary { background:#fbfcfa; }
+.auth-form h2 { font-size:1.02rem; }
+.auth-form input { min-block-size:50px; border-radius:13px; }
+.auth-form button,
+.auth-confirm-form button { background: var(--primary-strong); border-radius:13px; }
+.auth-resend-form {
+  grid-template-columns:1fr;
+  gap:9px;
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:var(--surface-soft);
+}
+.auth-resend-form button { justify-self:start; min-block-size:42px; padding-inline:14px; border:0; border-radius:12px; background:var(--surface); color:var(--primary); font-weight:850; }
+.auth-boundary { display:none; }
+.auth-guest-link { margin-block-start:12px; border:0; color:var(--primary); background:transparent; font-size:.78rem; }
+.auth-notice { border:0; box-shadow:none; }
+
+/* Settings: flatten technical setup into quiet account rows. */
+.ai-settings-back { border-color:var(--border); background:var(--surface); }
+.ai-routing-card { display:none; }
+.ai-provider-grid { gap:9px; }
+.ai-provider-card,
+.integration-card,
+.integration-explainer-card,
+.ai-settings-auth-card {
+  border:1px solid var(--border);
+  border-radius:19px;
+  background:var(--surface);
+  box-shadow:none;
+}
+.ai-provider-card { padding:17px; }
+.ai-provider-card__order { display:none; }
+.ai-provider-card__badge { background:var(--surface-soft); }
+.ai-provider-card__badge.is-active { background:var(--primary-soft); color:var(--primary); }
+.ai-provider-status { background:#f7f9f7; }
+.ai-provider-card input { min-block-size:48px; border-color:var(--border); border-radius:13px; }
+.ai-provider-meta { border:0; border-radius:12px; background:var(--surface-soft); }
+.ai-provider-actions button { min-block-size:42px; border-radius:12px; background:var(--primary-strong); }
+.profile-boundary-note { border:0; border-radius:14px; background:var(--surface-soft); color:var(--text-soft); }
+.integration-explainer-card { padding:16px; background:var(--surface-soft); }
+.integration-card { padding:17px; }
+
+@media (min-width: 760px) {
+  .onboarding-shell { min-block-size:auto; }
+  .onboarding-shell__header { padding-inline: 28px; }
+  .onboarding-progress { padding-inline:28px; }
+  .onboarding-content { padding-block-start:54px; }
+  .auth-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+@media (max-width: 720px) {
+  .onboarding-shell { min-block-size:100dvh; }
+  .onboarding-content { inline-size:min(100% - 28px,720px); padding-block-start:30px; }
+  .onboarding-grid--2,
+  .onboarding-review-grid { grid-template-columns:1fr; }
+  .onboarding-body-map__figures { grid-template-columns:repeat(2,minmax(0,1fr)); padding:10px; gap:7px; }
+  .onboarding-actions { padding-inline:14px; }
+  .onboarding-actions .primary,
+  .onboarding-actions .secondary { min-inline-size:0; flex:1; }
+  .auth-grid { grid-template-columns:1fr; }
+}
+
+@media (max-width: 420px) {
+  .onboarding-content { inline-size:min(100% - 24px,720px); }
+  .onboarding-step-title h1,
+  .onboarding-welcome h1 { font-size:1.65rem; }
+  .onboarding-choice-grid,
+  .onboarding-goal-grid,
+  .onboarding-chip-grid { grid-template-columns:1fr; }
+  .onboarding-plan-preview { grid-template-columns:1fr; }
+  .auth-page { padding-inline:14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-choice-grid button,
+  .onboarding-goal-grid button,
+  .onboarding-chip-grid button { transition:none; }
+}

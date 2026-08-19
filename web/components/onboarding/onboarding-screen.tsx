@@ -8,7 +8,6 @@ import { useOnboarding } from '@/components/onboarding/onboarding-context';
 import { formatLocalDate } from '@/lib/local-date';
 import { OnboardingConflictError } from '@/lib/onboarding/persistence';
 import {
-  NUTRITION_AUTHORITY_NOTE,
   ONBOARDING_TOTAL_STEPS,
   PROGRAM_DURATION_MAX_DAYS,
   PROGRAM_DURATION_MIN_DAYS,
@@ -114,11 +113,11 @@ function StepContent({
     const resume = resumeStepNumber(draft);
     return <div className="onboarding-welcome">
       <span className="onboarding-mark">N</span>
-      <h1>مربی شخصی NeoFit را متصل کن</h1>
-      <p>برای ساخت دوره واقعی، یک کلید معتبر AvalAI کافی است. Google اختیاری است؛ اگر آن را هم متصل کنی، درخواست‌های معمول ابتدا به Google می‌روند و AvalAI fallback باقی می‌ماند.</p>
+      <h1>مربی هوشمند NeoFit را آماده کن</h1>
+      <p>برای ساخت برنامه شخصی، اتصال مربی هوشمند حسابت را کامل کن. جزئیات اتصال را همین‌جا می‌توانی بررسی کنی.</p>
       <OnboardingAiGate mode={mode} onReadyChange={onAiReadyChange} />
       {draft.completedSteps.length ? <div className="onboarding-resume-note">پیشرفت قبلی پیدا شد؛ می‌توانی از مرحله {resume.toLocaleString('fa-IR')} ادامه بدهی.</div> : null}
-      <div className="onboarding-boundary-note"><strong>حریم داده و ایمنی</strong><p>محدودیت پزشک، درد و آسیب همیشه بر ترجیح تمرین اولویت دارند. Raw API key وارد داده‌های self-report نمی‌شود.</p></div>
+      <div className="onboarding-boundary-note"><strong>سلامت و حریم داده</strong><p>محدودیت پزشک، درد و آسیب همیشه بر ترجیح تمرین اولویت دارند. اطلاعات اتصال به‌صورت امن نگهداری می‌شود.</p></div>
     </div>;
   }
 
@@ -137,7 +136,7 @@ function StepContent({
       <NumberField label="قد" value={draft.basics.heightCm} min={100} max={250} suffix="cm" onChange={(heightCm) => updateSection('basics', { ...draft.basics, heightCm, unitSystem: 'metric' })} />
       <NumberField label="وزن فعلی" value={draft.basics.weightKg} min={25} max={350} step={0.1} suffix="kg" onChange={(weightKg) => updateSection('basics', { ...draft.basics, weightKg, unitSystem: 'metric' })} />
     </div>
-    <p className="onboarding-unset-note">ورودی‌های بدنی در این نسخه با kg و cm دریافت و canonical ذخیره می‌شوند تا تبدیل واحد مبهم وارد Planner نشود.</p>
+    <p className="onboarding-unset-note">قد و وزن را فعلاً با سانتی‌متر و کیلوگرم وارد کن.</p>
     <fieldset><legend>جنسیت</legend><ChoiceGrid value={draft.basics.gender} onChange={(gender) => updateSection('basics', { ...draft.basics, gender })} options={[{ value: 'male', label: 'مرد' }, { value: 'female', label: 'زن' }, { value: 'other', label: 'سایر' }, { value: 'prefer-not-to-say', label: 'ترجیح می‌دهم نگویم' }]} /></fieldset>
   </>;
 
@@ -153,7 +152,7 @@ function StepContent({
   </>;
 
   if (step === 5) return <>
-    <header className="onboarding-step-title"><span>ایمنی</span><h1>محدودیت‌های پزشکی مهم</h1><p>این پاسخ‌ها برای محدودکردن پیشنهادهای تمرینی استفاده می‌شوند، نه برای تشخیص پزشکی.</p></header>
+    <header className="onboarding-step-title"><span>سلامت</span><h1>محدودیت‌های مهم سلامت</h1><p>این اطلاعات کمک می‌کنند پیشنهادهای نامناسب برای شرایطت کنار گذاشته شوند.</p></header>
     <label>شرایط یا تشخیص‌های مهم <small className="onboarding-optional">اختیاری</small><ListEditor values={draft.medical.conditions} onChange={(conditions) => updateSection('medical', { ...draft.medical, conditions })} placeholder="مثلاً کم‌کاری تیروئید" /></label>
     <label>داروهای مرتبط <small className="onboarding-optional">اختیاری</small><textarea maxLength={2000} value={draft.medical.medications} onChange={(event) => updateSection('medical', { ...draft.medical, medications: event.target.value })} /></label>
     <fieldset><legend>فشار خون بالا داری؟</legend><BooleanChoice value={draft.medical.hasHighBloodPressure} onChange={(hasHighBloodPressure) => updateSection('medical', { ...draft.medical, hasHighBloodPressure })} /></fieldset>
@@ -164,7 +163,7 @@ function StepContent({
   </>;
 
   if (step === 6) return <>
-    <header className="onboarding-step-title"><span>آسیب‌ها</span><h1>درد و محدودیت را روی بدن مشخص کن</h1><p>در موبایل بین نمای جلو و پشت جابه‌جا شو و فقط ناحیه‌هایی را که واقعاً مهم‌اند انتخاب کن.</p></header>
+    <header className="onboarding-step-title"><span>آسیب‌ها</span><h1>درد و محدودیت را روی بدن مشخص کن</h1><p>بین نمای جلو و پشت جابه‌جا شو و فقط ناحیه‌هایی را که واقعاً مهم‌اند انتخاب کن.</p></header>
     <fieldset><legend>در حال حاضر آسیب یا محدودیت مهمی داری؟</legend><ChoiceGrid value={draft.injuries.noInjuries === null ? null : draft.injuries.noInjuries ? 'no' : 'yes'} onChange={(answer) => updateSection('injuries', { ...draft.injuries, noInjuries: answer === 'no', areas: answer === 'no' ? [] : draft.injuries.areas })} options={[{ value: 'yes', label: 'بله' }, { value: 'no', label: 'خیر' }]} /></fieldset>
     {draft.injuries.noInjuries === false ? <InjuryBodyMap value={draft.injuries.areas} onChange={(areas) => updateSection('injuries', { ...draft.injuries, areas })} /> : null}
     <fieldset><legend>هنگام تمرین درد تجربه می‌کنی؟</legend><BooleanChoice value={draft.injuries.painDuringExercise} onChange={(painDuringExercise) => updateSection('injuries', { ...draft.injuries, painDuringExercise, painScale: painDuringExercise ? draft.injuries.painScale : null })} /></fieldset>
@@ -173,7 +172,7 @@ function StepContent({
   </>;
 
   if (step === 7) return <>
-    <header className="onboarding-step-title"><span>سبک زندگی</span><h1>بدن تو بیرون از باشگاه چه شرایطی دارد؟</h1><p>خواب، استرس و فعالیت روزانه روی ظرفیت برنامه اثر می‌گذارند.</p></header>
+    <header className="onboarding-step-title"><span>سبک زندگی</span><h1>روزهای معمولت چطور می‌گذرد؟</h1><p>خواب، استرس و فعالیت روزانه روی ظرفیت تمرین و انتخاب‌های غذایی اثر می‌گذارند.</p></header>
     <div className="onboarding-grid onboarding-grid--2">
       <label>شغل یا فعالیت روزانه <small className="onboarding-optional">اختیاری</small><input maxLength={160} value={draft.lifestyle.occupation} onChange={(event) => updateSection('lifestyle', { ...draft.lifestyle, occupation: event.target.value })} /></label>
       <label>سطح فعالیت<select value={nullableSelectValue(draft.lifestyle.activityLevel)} onChange={(event) => updateSection('lifestyle', { ...draft.lifestyle, activityLevel: (event.target.value || null) as OnboardingDraft['lifestyle']['activityLevel'] })}><option value="">انتخاب کن</option><option value="sedentary">کم‌تحرک</option><option value="light">سبک</option><option value="moderate">متوسط</option><option value="high">زیاد</option></select></label>
@@ -188,7 +187,7 @@ function StepContent({
   </>;
 
   if (step === 8) return <>
-    <header className="onboarding-step-title"><span>تغذیه</span><h1>غذا باید با زندگی تو سازگار باشد</h1><p>اینجا فقط ترجیح، محدودیت و دسترسی ثبت می‌شود؛ کالری و ماکرو را AI حدس نمی‌زند.</p></header>
+    <header className="onboarding-step-title"><span>تغذیه</span><h1>غذا باید با زندگی تو سازگار باشد</h1><p>تعداد وعده‌ها، سبک غذایی، حساسیت‌ها و شرایط روزمره‌ات را ثبت کن.</p></header>
     <div className="onboarding-grid onboarding-grid--2">
       <NumberField label="تعداد وعده در روز" value={draft.nutrition.mealsPerDay} min={1} max={8} onChange={(mealsPerDay) => updateSection('nutrition', { ...draft.nutrition, mealsPerDay })} />
       <label>الگوی غذایی<select value={nullableSelectValue(draft.nutrition.dietType)} onChange={(event) => updateSection('nutrition', { ...draft.nutrition, dietType: (event.target.value || null) as OnboardingDraft['nutrition']['dietType'] })}><option value="">انتخاب کن</option><option value="balanced">متعادل</option><option value="vegetarian">گیاه‌خواری</option><option value="vegan">وگان</option><option value="pescatarian">پسکتارین</option><option value="low-carb">کم‌کربوهیدرات</option><option value="other">سایر</option></select></label>
@@ -204,7 +203,7 @@ function StepContent({
   </>;
 
   if (step === 9) return <>
-    <header className="onboarding-step-title"><span>سابقه تمرین</span><h1>از چه نقطه‌ای شروع می‌کنی؟</h1><p>سطح فعلی را خودت گزارش کن؛ Planner بعداً باید با همین سابقه محافظه‌کارانه شروع کند.</p></header>
+    <header className="onboarding-step-title"><span>سابقه تمرین</span><h1>از چه نقطه‌ای شروع می‌کنی؟</h1><p>سطح و سابقه فعلی‌ات را ثبت کن تا برنامه از نقطه مناسب شروع شود.</p></header>
     <ChoiceGrid value={draft.trainingHistory.level} onChange={(level) => updateSection('trainingHistory', { ...draft.trainingHistory, level })} options={[{ value: 'beginner', label: 'مبتدی' }, { value: 'intermediate', label: 'متوسط' }, { value: 'advanced', label: 'پیشرفته' }]} />
     <div className="onboarding-grid onboarding-grid--2"><NumberField label="سابقه تمرین منظم" value={draft.trainingHistory.trainingAgeMonths} min={0} max={1200} suffix="ماه" onChange={(trainingAgeMonths) => updateSection('trainingHistory', { ...draft.trainingHistory, trainingAgeMonths })} /><NumberField label="وقفه اخیر" value={draft.trainingHistory.recentBreakWeeks} min={0} max={520} suffix="هفته" onChange={(recentBreakWeeks) => updateSection('trainingHistory', { ...draft.trainingHistory, recentBreakWeeks })} /></div>
     <label>ورزش‌های قبلی <small className="onboarding-optional">اختیاری</small><ListEditor values={draft.trainingHistory.previousSports} onChange={(previousSports) => updateSection('trainingHistory', { ...draft.trainingHistory, previousSports })} placeholder="مثلاً فوتبال" /></label>
@@ -220,7 +219,7 @@ function StepContent({
       updateSection('availability', { ...draft.availability, equipment: next });
     };
     return <>
-      <header className="onboarding-step-title"><span>زمان و تجهیزات</span><h1>برنامه باید در زندگی واقعی جا شود</h1><p>ظرفیت و ابزار واقعی را ثبت کن تا Planner حرکت غیرقابل اجرا پیشنهاد ندهد.</p></header>
+      <header className="onboarding-step-title"><span>زمان و تجهیزات</span><h1>برنامه باید در زندگی واقعی جا شود</h1><p>زمان و تجهیزاتی را انتخاب کن که واقعاً در دسترست هستند.</p></header>
       <ChoiceGrid value={draft.availability.location} onChange={(location) => updateSection('availability', { ...draft.availability, location })} options={[{ value: 'home', label: 'خانه' }, { value: 'gym', label: 'باشگاه' }, { value: 'both', label: 'هر دو' }]} />
       <div className="onboarding-grid onboarding-grid--2"><NumberField label="روز تمرین در هفته" value={draft.availability.daysPerWeek} min={1} max={6} onChange={(daysPerWeek) => updateSection('availability', { ...draft.availability, daysPerWeek })} /><label>مدت هر جلسه<select value={draft.availability.sessionDuration ?? ''} onChange={(event) => updateSection('availability', { ...draft.availability, sessionDuration: event.target.value ? Number(event.target.value) as OnboardingDraft['availability']['sessionDuration'] : null })}><option value="">انتخاب کن</option>{[30,45,60,75,90].map((minute) => <option key={minute} value={minute}>{minute.toLocaleString('fa-IR')} دقیقه</option>)}</select></label></div>
       <fieldset><legend>روزهای ترجیحی <small className="onboarding-optional">اختیاری</small></legend><div className="onboarding-chip-grid">{weekdayOptions.map((day) => <button type="button" key={day.value} className={draft.availability.preferredDays.includes(day.value) ? 'is-selected' : ''} aria-pressed={draft.availability.preferredDays.includes(day.value)} onClick={() => updateSection('availability', { ...draft.availability, preferredDays: toggleValue(draft.availability.preferredDays, day.value) })}>{day.label}</button>)}</div></fieldset>
@@ -232,37 +231,38 @@ function StepContent({
   }
 
   if (step === 11) return <>
-    <header className="onboarding-step-title"><span>ترجیحات</span><h1>NeoFit چطور با تو کار کند؟</h1><p>این‌ها preference هستند؛ ایمنی و داده واقعی همیشه اولویت بالاتری دارند.</p></header>
+    <header className="onboarding-step-title"><span>ترجیحات</span><h1>NeoFit چطور با تو کار کند؟</h1><p>سبک تمرین، میزان تنوع و لحن همراهی را مطابق ترجیحت انتخاب کن.</p></header>
     <PreferenceGroup title="سبک تمرین" description="احساس کلی و ساختار تمرین را مشخص کن.">
       <label>شدت تمرین<select value={nullableSelectValue(draft.preferences.intensity)} onChange={(event) => updateSection('preferences', { ...draft.preferences, intensity: (event.target.value || null) as OnboardingDraft['preferences']['intensity'] })}><option value="">انتخاب کن</option><option value="gentle">ملایم</option><option value="moderate">متوسط</option><option value="challenging">چالش‌برانگیز</option></select></label>
       <label>میزان هوازی<select value={nullableSelectValue(draft.preferences.cardioPreference)} onChange={(event) => updateSection('preferences', { ...draft.preferences, cardioPreference: (event.target.value || null) as OnboardingDraft['preferences']['cardioPreference'] })}><option value="">انتخاب کن</option><option value="low">کم</option><option value="balanced">متعادل</option><option value="high">زیاد</option></select></label>
       <label>نوع تمرین<select value={nullableSelectValue(draft.preferences.trainingStyle)} onChange={(event) => updateSection('preferences', { ...draft.preferences, trainingStyle: (event.target.value || null) as OnboardingDraft['preferences']['trainingStyle'] })}><option value="">انتخاب کن</option><option value="resistance">مقاومتی</option><option value="functional">عملکردی</option><option value="mixed">ترکیبی</option></select></label>
       <label>تنوع برنامه<select value={nullableSelectValue(draft.preferences.variety)} onChange={(event) => updateSection('preferences', { ...draft.preferences, variety: (event.target.value || null) as OnboardingDraft['preferences']['variety'] })}><option value="">انتخاب کن</option><option value="stable">ثابت‌تر</option><option value="balanced">متعادل</option><option value="varied">متنوع</option></select></label>
     </PreferenceGroup>
-    <PreferenceGroup title="تغذیه و Coach" description="میزان ساختار و لحن همراهی را مشخص کن.">
+    <PreferenceGroup title="تغذیه و مربی" description="میزان ساختار و لحن همراهی را مشخص کن.">
       <label>ساختار تغذیه<select value={nullableSelectValue(draft.preferences.nutritionStrictness)} onChange={(event) => updateSection('preferences', { ...draft.preferences, nutritionStrictness: (event.target.value || null) as OnboardingDraft['preferences']['nutritionStrictness'] })}><option value="">انتخاب کن</option><option value="flexible">انعطاف‌پذیر</option><option value="structured">ساختاریافته</option><option value="strict">دقیق‌تر</option></select></label>
-      <label>لحن Coach<select value={nullableSelectValue(draft.preferences.coachingTone)} onChange={(event) => updateSection('preferences', { ...draft.preferences, coachingTone: (event.target.value || null) as OnboardingDraft['preferences']['coachingTone'] })}><option value="">انتخاب کن</option><option value="supportive">حمایتی</option><option value="direct">مستقیم</option><option value="analytical">تحلیلی</option></select></label>
+      <label>لحن مربی<select value={nullableSelectValue(draft.preferences.coachingTone)} onChange={(event) => updateSection('preferences', { ...draft.preferences, coachingTone: (event.target.value || null) as OnboardingDraft['preferences']['coachingTone'] })}><option value="">انتخاب کن</option><option value="supportive">حمایتی</option><option value="direct">مستقیم</option><option value="analytical">تحلیلی</option></select></label>
     </PreferenceGroup>
-    <p className="onboarding-unset-note">تنظیم یادآوری‌ها را الان نمی‌پرسیم؛ تا وقتی delivery واقعی ساخته نشده، این تصمیم به زمان استفاده موکول می‌شود.</p>
   </>;
 
   if (step === 12) return <>
-    <header className="onboarding-step-title"><span>مرور و ایمنی</span><h1>قبل از ساخت دوره، همه چیز را یک‌جا ببین</h1><p>هر بخش را مستقیم ویرایش کن. جمع‌بندی ایمنی همین‌جا انجام می‌شود تا دو صفحه عبوری اضافه نداشته باشیم.</p></header>
+    <header className="onboarding-step-title"><span>مرور</span><h1>قبل از ساخت دوره، همه چیز را یک‌جا ببین</h1><p>اگر چیزی نیاز به اصلاح دارد، مستقیم همان بخش را ویرایش کن.</p></header>
     <div className="onboarding-review-grid">
       <ReviewCard title="هدف" editHref="/onboarding/goal"><p>{draft.goal.primaryGoal ? goalLabels[draft.goal.primaryGoal] : 'ثبت نشده'}</p><p>{draft.goal.targetTimeline ?? 'سرعت انتخاب نشده'}</p></ReviewCard>
       <ReviewCard title="مشخصات" editHref="/onboarding/basics"><p>{draft.basics.name || 'نام ثبت نشده'}</p><p>{draft.basics.weightKg === null ? 'وزن ثبت نشده' : `${draft.basics.weightKg.toLocaleString('fa-IR')} kg`}</p></ReviewCard>
-      <ReviewCard title="ایمنی و آسیب" editHref="/onboarding/injuries"><p>{draft.medical.conditions.length.toLocaleString('fa-IR')} مورد پزشکی متنی</p><p>{draft.injuries.areas.length.toLocaleString('fa-IR')} ناحیه Body Map</p></ReviewCard>
+      <ReviewCard title="سلامت و آسیب" editHref="/onboarding/medical"><p>{draft.medical.conditions.length ? `${draft.medical.conditions.length.toLocaleString('fa-IR')} مورد سلامت ثبت شده` : 'شرایط خاصی ثبت نشده'}</p><p>{draft.injuries.areas.length ? `${draft.injuries.areas.length.toLocaleString('fa-IR')} ناحیه آسیب ثبت شده` : 'آسیب ناحیه‌ای ثبت نشده'}</p></ReviewCard>
       <ReviewCard title="سبک زندگی" editHref="/onboarding/lifestyle"><p>{draft.lifestyle.activityLevel ?? 'فعالیت ثبت نشده'}</p><p>{draft.lifestyle.sleepHours === null ? 'خواب ثبت نشده' : `${draft.lifestyle.sleepHours.toLocaleString('fa-IR')} ساعت خواب`}</p></ReviewCard>
       <ReviewCard title="تغذیه" editHref="/onboarding/nutrition"><p>{draft.nutrition.dietType ?? 'الگوی غذایی ثبت نشده'}</p><p>{draft.nutrition.allergies.length.toLocaleString('fa-IR')} حساسیت ثبت‌شده</p></ReviewCard>
       <ReviewCard title="تمرین و زمان" editHref="/onboarding/availability"><p>{draft.availability.daysPerWeek === null ? 'روز تمرین ثبت نشده' : `${draft.availability.daysPerWeek.toLocaleString('fa-IR')} روز در هفته`}</p><p>{draft.availability.sessionDuration === null ? 'مدت جلسه ثبت نشده' : `${draft.availability.sessionDuration.toLocaleString('fa-IR')} دقیقه`}</p></ReviewCard>
     </div>
-    <div className="onboarding-analysis-card"><h3>قواعد ایمنی فعال</h3><ul>{preview.healthCautions.map((item) => <li key={item}>{item}</li>)}</ul></div>
+    <div className="onboarding-analysis-card"><h3>نکات مهم برای برنامه</h3><ul>{preview.healthCautions.map((item) => <li key={item}>{item}</li>)}</ul></div>
     <div className="onboarding-plan-preview"><div><span>روز تمرین</span><strong>{preview.trainingDays === null ? '—' : preview.trainingDays.toLocaleString('fa-IR')}</strong></div><div><span>مدت جلسه</span><strong>{preview.sessionMinutes === null ? '—' : `${preview.sessionMinutes.toLocaleString('fa-IR')} دقیقه`}</strong></div></div>
-    <div className="onboarding-boundary-note"><strong>Nutrition Core</strong><p>{NUTRITION_AUTHORITY_NOTE}</p></div>
+    {(draft.medical.conditions.length > 0 || draft.medical.medications.trim() || draft.medical.hasHighBloodPressure || draft.medical.hasDiabetes || draft.medical.hasCardiacHistory || draft.nutrition.allergies.length > 0) ? (
+      <div className="onboarding-boundary-note"><strong>ممکن است یک مرحله بررسی اضافه لازم باشد</strong><p>بعضی اطلاعات سلامت یا حساسیت غذایی می‌توانند ساخت خودکار بخشی از برنامه را متوقف کنند تا انتخاب‌های نامطمئن وارد برنامه نشوند.</p></div>
+    ) : null}
   </>;
 
   return <>
-    <header className="onboarding-step-title"><span>دوره</span><h1>بازه دوره را مشخص کن</h1><p>فقط تاریخ، مدت و رضایت ساخت دوره ثبت می‌شود؛ هنوز هیچ برنامه‌ای را ساخته‌شده وانمود نمی‌کنیم.</p></header>
+    <header className="onboarding-step-title"><span>دوره</span><h1>بازه دوره را مشخص کن</h1><p>تاریخ شروع و مدت دوره را مشخص کن. بعد از تأیید، می‌توانی برنامه‌ات را بسازی.</p></header>
     <div className="onboarding-grid onboarding-grid--2">
       <label>تاریخ شروع<input type="date" min={localToday()} value={draft.confirmation.startDate} onChange={(event) => updateSection('confirmation', { ...draft.confirmation, startDate: event.target.value })} /></label>
       <NumberField label="مدت دوره" value={draft.confirmation.programDurationDays} min={PROGRAM_DURATION_MIN_DAYS} max={PROGRAM_DURATION_MAX_DAYS} suffix="روز" onChange={(programDurationDays) => updateSection('confirmation', { ...draft.confirmation, programDurationDays })} />
@@ -291,7 +291,7 @@ export function OnboardingScreen({ stepSlug }: { stepSlug: OnboardingStepSlug })
 
   const next = async () => {
     const validation = validateOnboardingStep(draft, step.number);
-    if (step.number === 1 && mode === 'account' && !aiReady) validation.unshift('برای ادامه یک کلید معتبر AvalAI را متصل کن. Google به‌تنهایی کافی نیست.');
+    if (step.number === 1 && mode === 'account' && !aiReady) validation.unshift('برای ادامه، اتصال مربی هوشمند را کامل کن.');
     if (step.number === ONBOARDING_TOTAL_STEPS && draft.confirmation.startDate && draft.confirmation.startDate < localToday()) {
       validation.unshift('تاریخ شروع نمی‌تواند قبل از امروز باشد.');
     }
@@ -308,14 +308,14 @@ export function OnboardingScreen({ stepSlug }: { stepSlug: OnboardingStepSlug })
       router.push(`/onboarding/${getNextOnboardingStep(step.number).slug}`);
     } catch (error) {
       setActionError(error instanceof OnboardingConflictError
-        ? 'اطلاعات در تب یا دستگاه دیگری تغییر کرده است. صفحه را تازه کن تا نسخه جدید از بین نرود.'
-        : 'ذخیره این مرحله انجام نشد. داده فعلی روی صفحه باقی مانده و به مرحله بعد نرفتیم.');
+        ? 'اطلاعات در تب یا دستگاه دیگری تغییر کرده است. صفحه را تازه کن تا آخرین تغییرات حفظ شوند.'
+        : 'ذخیره این مرحله انجام نشد. دوباره تلاش کن.');
     }
   };
 
   const previous = getPreviousOnboardingStep(step.number);
   const resume = onboardingSteps.find((item) => item.number === resumeStepNumber(draft)) ?? onboardingSteps[0];
-  const modeLabel = mode === 'account' ? 'ذخیره در حساب' : mode === 'guest' ? 'Demo محلی' : mode === 'loading' ? 'در حال اتصال' : 'ذخیره متوقف';
+  const modeLabel = mode === 'account' ? 'ذخیره خودکار' : mode === 'guest' ? 'حالت مهمان' : mode === 'loading' ? 'در حال آماده‌سازی' : 'ذخیره در دسترس نیست';
 
   return <main className="onboarding-page" id="main-content">
     <section className="onboarding-shell">
@@ -326,7 +326,7 @@ export function OnboardingScreen({ stepSlug }: { stepSlug: OnboardingStepSlug })
         {errors.length ? <div ref={errorsRef} className="onboarding-errors" role="alert" tabIndex={-1}><strong>برای ادامه این موارد را کامل کن:</strong><ul>{errors.map((error) => <li key={error}>{error}</li>)}</ul></div> : null}
         {actionError ? <p className="onboarding-action-error" role="alert" tabIndex={-1}>{actionError}</p> : null}
       </div>
-      <footer className="onboarding-actions">{step.number > 1 ? <button type="button" className="secondary" onClick={() => router.push(`/onboarding/${previous.slug}`)} disabled={saving}>قبل</button> : mode === 'guest' ? <a className="secondary" href="/today">خروج از Demo</a> : <span className="onboarding-actions__spacer" aria-hidden="true" />}<button type="button" className="primary" onClick={() => void next()} disabled={saving || mode === 'loading' || mode === 'error'}>{saving ? 'در حال ذخیره…' : step.number === ONBOARDING_TOTAL_STEPS ? 'تأیید و ثبت دوره' : 'ادامه'}</button></footer>
+      <footer className="onboarding-actions">{step.number > 1 ? <button type="button" className="secondary" onClick={() => router.push(`/onboarding/${previous.slug}`)} disabled={saving}>قبل</button> : mode === 'guest' ? <a className="secondary" href="/today">خروج</a> : <span className="onboarding-actions__spacer" aria-hidden="true" />}<button type="button" className="primary" onClick={() => void next()} disabled={saving || mode === 'loading' || mode === 'error'}>{saving ? 'در حال ذخیره…' : step.number === ONBOARDING_TOTAL_STEPS ? 'تأیید و ادامه' : 'ادامه'}</button></footer>
     </section>
   </main>;
 }

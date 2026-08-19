@@ -1,8 +1,13 @@
 import 'server-only';
 
-import { AI_MAX_OUTPUT_TOKENS, AI_PROVIDER_TIMEOUT_MS, AI_VALIDATION_TIMEOUT_MS } from '../config';
+import {
+  AI_HARD_MAX_OUTPUT_TOKENS,
+  AI_MAX_OUTPUT_TOKENS,
+  AI_PROVIDER_TIMEOUT_MS,
+  AI_VALIDATION_TIMEOUT_MS,
+} from '../config';
 import type { AiGenerationInput } from '../types';
-import { fetchWithTimeout, providerHttpError } from './shared';
+import { fetchWithTimeout, outputReachedCeiling, providerHttpError } from './shared';
 
 const AVALAI_API_BASE = 'https://api.avalai.ir/v1';
 
@@ -28,6 +33,13 @@ function avalAiText(payload: AvalAiResponse): string {
     .trim();
 }
 
+function outputTokenLimit(request: AiGenerationInput): number {
+  const requested = request.maxOutputTokens;
+  return typeof requested === 'number' && Number.isInteger(requested) && requested > 0
+    ? Math.min(requested, AI_HARD_MAX_OUTPUT_TOKENS)
+    : AI_MAX_OUTPUT_TOKENS;
+}
+
 export async function validateAvalAiCredential(apiKey: string, modelId: string): Promise<void> {
   const response = await fetchWithTimeout(
     `${AVALAI_API_BASE}/models/${encodeURIComponent(modelId)}`,
@@ -41,7 +53,12 @@ export async function generateAvalAi(
   apiKey: string,
   modelId: string,
   request: AiGenerationInput,
-): Promise<{ text: string; requestId: string | null; stateId: string | null; usage: unknown }> {
+): Promise<{ text: string; requestId: string | null; stateId: string | null; usage: unknown; incomplete: boolean }> {
+  // Resolve the ceiling ONCE, clamped to the hard cap, and reuse the same
+  // number both for what we send and for truncation detection below. Detecting
+  // against a different (unclamped) value would silently under-report truncation
+  // whenever a caller requests above AI_HARD_MAX_OUTPUT_TOKENS.
+  const maxOutputTokens = outputTokenLimit(request);
   const response = await fetchWithTimeout(
     `${AVALAI_API_BASE}/responses`,
     {
@@ -54,7 +71,7 @@ export async function generateAvalAi(
         model: modelId,
         input: request.input,
         ...(request.systemInstruction ? { instructions: request.systemInstruction } : {}),
-        max_output_tokens: AI_MAX_OUTPUT_TOKENS,
+        max_output_tokens: maxOutputTokens,
         store: false,
       }),
     },
@@ -71,5 +88,6 @@ export async function generateAvalAi(
     requestId: response.headers.get('x-request-id'),
     stateId: payload.id ?? null,
     usage: payload.usage ?? null,
+    incomplete: outputReachedCeiling(payload.usage, maxOutputTokens),
   };
 }

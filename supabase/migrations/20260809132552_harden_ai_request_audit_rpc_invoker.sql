@@ -22,4 +22,4 @@ alter function public.reserve_ai_request(text, integer, integer) security invoke
 alter function public.complete_ai_request(uuid, text, text, text, text, integer, integer, integer, integer, integer, integer, integer, integer, text) security invoker;
 
 comment on function public.reserve_ai_request(text, integer, integer) is 'SECURITY INVOKER. Atomically reserves a request under auth.uid(); direct callers can only consume their own budget because column grants/RLS prevent backdating, deletion or cross-user writes.';
-comment on function public.complete_ai_request(uuid, text, text, text, text, integer, integer, integer, integer, integer, integer, integer, integer, text) is 'SECURITY INVOKER. Completes only the caller-owned pending row; immutable budget fields remain outside authenticated UPDATE privileges.';
+comment on function public.complete_ai_request(uuid, text, text, text, text, integer, integer, integer, integer, integer, integer, integer, integer, text) is 'SECURITY INVOKER. Completes only the caller-owned pending row; immutable budget fields remain outside authenticated UPDATE privileges.';;

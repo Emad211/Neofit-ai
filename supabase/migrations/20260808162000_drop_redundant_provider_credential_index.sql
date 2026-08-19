@@ -1,1 +1,0 @@
-drop index if exists public.encrypted_provider_credentials_user_provider_idx;

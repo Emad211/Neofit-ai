@@ -1,8 +1,13 @@
 import 'server-only';
 
-import { AI_MAX_OUTPUT_TOKENS, AI_PROVIDER_TIMEOUT_MS, AI_VALIDATION_TIMEOUT_MS } from '../config';
+import {
+  AI_HARD_MAX_OUTPUT_TOKENS,
+  AI_MAX_OUTPUT_TOKENS,
+  AI_PROVIDER_TIMEOUT_MS,
+  AI_VALIDATION_TIMEOUT_MS,
+} from '../config';
 import type { AiGenerationInput } from '../types';
-import { fetchWithTimeout, providerHttpError } from './shared';
+import { fetchWithTimeout, outputReachedCeiling, providerHttpError } from './shared';
 
 const GOOGLE_API_BASE = 'https://generativelanguage.googleapis.com/v1';
 
@@ -46,6 +51,13 @@ function interactionInput(request: AiGenerationInput): string | Array<{ type: 't
   ];
 }
 
+function outputTokenLimit(request: AiGenerationInput): number {
+  const requested = request.maxOutputTokens;
+  return typeof requested === 'number' && Number.isInteger(requested) && requested > 0
+    ? Math.min(requested, AI_HARD_MAX_OUTPUT_TOKENS)
+    : AI_MAX_OUTPUT_TOKENS;
+}
+
 export async function validateGoogleCredential(apiKey: string, modelId: string): Promise<void> {
   const response = await fetchWithTimeout(
     `${GOOGLE_API_BASE}/models/${encodeURIComponent(modelId)}`,
@@ -59,7 +71,12 @@ export async function generateGoogle(
   apiKey: string,
   modelId: string,
   request: AiGenerationInput,
-): Promise<{ text: string; requestId: string | null; stateId: string | null; usage: unknown }> {
+): Promise<{ text: string; requestId: string | null; stateId: string | null; usage: unknown; incomplete: boolean }> {
+  // Resolve the ceiling ONCE, clamped to the hard cap, and reuse the same
+  // number both for what we send and for truncation detection below. Detecting
+  // against a different (unclamped) value would silently under-report truncation
+  // whenever a caller requests above AI_HARD_MAX_OUTPUT_TOKENS.
+  const maxOutputTokens = outputTokenLimit(request);
   const response = await fetchWithTimeout(
     `${GOOGLE_API_BASE}/interactions`,
     {
@@ -72,7 +89,14 @@ export async function generateGoogle(
         model: modelId,
         input: interactionInput(request),
         ...(request.systemInstruction ? { system_instruction: request.systemInstruction } : {}),
-        generation_config: { max_output_tokens: AI_MAX_OUTPUT_TOKENS },
+        ...(request.responseSchema ? {
+          response_format: {
+            type: 'text',
+            mime_type: 'application/json',
+            schema: request.responseSchema,
+          },
+        } : {}),
+        generation_config: { max_output_tokens: maxOutputTokens },
         store: false,
       }),
     },
@@ -89,5 +113,6 @@ export async function generateGoogle(
     requestId: response.headers.get('x-request-id'),
     stateId: payload.id ?? null,
     usage: payload.usage ?? null,
+    incomplete: outputReachedCeiling(payload.usage, maxOutputTokens),
   };
 }

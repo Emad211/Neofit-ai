@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/client';
 
 export function ProfileScreen() {
   const router = useRouter();
-  const { account, configured, loadError } = useAccountState();
+  const { account, configured } = useAccountState();
   const [message, setMessage] = useState('');
   const [displayName, setDisplayName] = useState(account?.displayName ?? '');
   const [working, setWorking] = useState(false);
@@ -23,19 +23,73 @@ export function ProfileScreen() {
     setWorking(true); setMessage('');
     const supabase = createClient();
     const { error } = await supabase.from('profiles').upsert({ id: account.id, display_name: name, locale: 'fa', timezone: account.timezone });
-    if (error) { setMessage('ذخیره نام نمایشی انجام نشد.'); setWorking(false); return; }
-    setMessage('نام نمایشی در حساب ذخیره شد.'); setWorking(false); router.refresh();
+    if (error) { setMessage('نام ذخیره نشد. دوباره تلاش کن.'); setWorking(false); return; }
+    setMessage('نام نمایشی ذخیره شد.'); setWorking(false); router.refresh();
   }
 
-  return <section className="page-stack" aria-labelledby="profile-heading">
-    <div className="section-heading"><div><p className="section-kicker">حساب و برنامه</p><h2 id="profile-heading">پروفایل من</h2></div><span className="status-pill status-pill--soft"><NeoFitIcon name={account ? 'check' : 'profile'} size={15} />{account ? 'متصل' : 'مهمان'}</span></div>
-    <article className="profile-identity-card"><span className="profile-identity-card__avatar">{(account?.displayName || account?.email || 'م').slice(0, 1)}</span><div><h3>{account?.displayName ?? 'کاربر مهمان'}</h3><p>{account?.email ?? 'داده‌های محلی همین مرورگر'}</p></div><span className="profile-identity-card__state">{account ? 'Supabase + RLS' : 'بدون حساب آنلاین'}</span></article>
-    {account ? <article className="account-edit-card"><div><span>اطلاعات حساب</span><h3>نام نمایشی</h3></div><label htmlFor="profile-display-name">نامی که در نئوفیت می‌بینی</label><input id="profile-display-name" value={displayName} minLength={1} maxLength={80} onChange={(event) => setDisplayName(event.target.value)} /><button type="button" disabled={working} onClick={saveDisplayName}>{working ? 'در حال ذخیره...' : 'ذخیره نام'}</button></article> : <article className="account-connect-card"><div><span>همگام‌سازی شخصی</span><h3>{configured ? 'حساب نئوفیت آماده است' : 'اتصال این محیط تنظیم نشده'}</h3><p>{configured ? 'با ورود، هر بخش فقط داده‌های لازم خودش را از حساب می‌خواند.' : 'فعلاً می‌توانی صفحات مهمان را روی همین مرورگر بررسی کنی.'}</p></div>{configured ? <Link href="/auth">ورود یا ساخت حساب</Link> : null}</article>}
-    <div className="profile-metrics"><article><span>پروفایل بدنی</span><strong>—<small> از Progress</small></strong></article><article><span>هدف شخصی</span><strong>—<small> از Onboarding</small></strong></article><article><span>برنامه هفتگی فعلی</span><strong>—<small> از Workout</small></strong></article></div>
-    <article className="profile-plan-card"><div><span>پایه شخصی‌سازی</span><h3>Onboarding و محدودیت‌ها</h3><p>هدف، اطلاعات بدنی، سابقه پزشکی، Body Map آسیب و زمان تمرین را ثبت یا اصلاح کن.</p></div><NeoFitIcon name="sparkle" size={28} /></article>
-    <nav className="profile-links" aria-label="بخش‌های پروفایل"><Link href="/profile/security"><span><NeoFitIcon name="profile" />امنیت حساب و نشست‌ها</span><NeoFitIcon name="chevron" /></Link><Link href="/coach"><span><NeoFitIcon name="sparkle" />NeoFit Coach</span><NeoFitIcon name="chevron" /></Link><Link href="/onboarding"><span><NeoFitIcon name="profile" />Onboarding و Body Map</span><NeoFitIcon name="chevron" /></Link><Link href="/progress"><span><NeoFitIcon name="chart" />اندازه‌گیری و روند واقعی</span><NeoFitIcon name="chevron" /></Link><Link href="/workout"><span><NeoFitIcon name="workout" />برنامهٔ تمرین</span><NeoFitIcon name="chevron" /></Link><Link href="/nutrition"><span><NeoFitIcon name="food" />تغذیه و ثبت غذا</span><NeoFitIcon name="chevron" /></Link><Link href="/profile/ai"><span><NeoFitIcon name="sparkle" />هوش مصنوعی و کلیدهای شخصی</span><NeoFitIcon name="chevron" /></Link><Link href="/profile/integrations"><span><NeoFitIcon name="sparkle" />اتصال YouTube و ابزارها</span><NeoFitIcon name="chevron" /></Link></nav>
-    <article className="local-data-card"><div><span>معماری داده</span><h3>خواندن فقط هنگام نیاز</h3><p>{loadError ?? (account ? 'Profile برای نمایش این صفحه Nutrition diary یا برنامه Workout را فقط برای ساخت یک عدد تزئینی بارگیری نمی‌کند.' : 'داده‌های مهمان هر قابلیت در storage نسخه‌دار خودش باقی می‌مانند.')}</p></div><Link className="secondary-button" href="/nutrition">مدیریت تغذیه</Link>{message ? <p className="local-data-card__message" role="status">{message}</p> : null}</article>
+  return <section className="page-stack profile-page" aria-labelledby="profile-heading">
+    <div className="section-heading profile-page__heading">
+      <div><p className="section-kicker">حساب من</p><h2 id="profile-heading">پروفایل</h2></div>
+    </div>
+
+    <article className="profile-identity-card">
+      <span className="profile-identity-card__avatar">{(account?.displayName || account?.email || 'م').slice(0, 1)}</span>
+      <div><h3>{account?.displayName ?? 'کاربر مهمان'}</h3><p>{account?.email ?? 'برای برنامه شخصی وارد حساب شو'}</p></div>
+      <span className="profile-identity-card__state">{account ? 'فعال' : 'مهمان'}</span>
+    </article>
+
+    {!account ? (
+      <article className="account-connect-card">
+        <div>
+          <span>حساب NeoFit</span>
+          <h3>{configured ? 'برنامه و پیشرفتت را نگه دار' : 'ورود موقتاً در دسترس نیست'}</h3>
+          <p>{configured ? 'برای ذخیره دائمی اطلاعات و دریافت برنامه شخصی وارد شو یا حساب بساز.' : 'کمی بعد دوباره تلاش کن.'}</p>
+        </div>
+        {configured ? <Link href="/auth">ورود یا ساخت حساب</Link> : null}
+      </article>
+    ) : null}
+
+    <Link className="profile-coach-card" href="/coach">
+      <span className="profile-coach-card__icon"><NeoFitIcon name="sparkle" size={22} /></span>
+      <div><span>مربی NeoFit</span><h3>سؤال داری؟ از مربی بپرس</h3><p>درباره تمرین، تغذیه و روندت پاسخ مرتبط با اطلاعات خودت بگیر.</p></div>
+      <NeoFitIcon name="chevron" size={19} />
+    </Link>
+
+    <Link className="profile-plan-card" href="/onboarding/review">
+      <div><span>شخصی‌سازی برنامه</span><h3>هدف، سلامت و شرایط تمرین</h3><p>اطلاعاتی که برنامه بر اساس آن‌ها ساخته می‌شود را مرور یا ویرایش کن.</p></div>
+      <NeoFitIcon name="chevron" size={20} />
+    </Link>
+
+    <section className="profile-link-group" aria-labelledby="profile-data-heading">
+      <div className="profile-link-group__heading"><span>برنامه و داده‌ها</span><h3 id="profile-data-heading">فعالیت من</h3></div>
+      <nav className="profile-links" aria-label="برنامه و داده‌های من">
+        <Link href="/progress"><span><NeoFitIcon name="chart" />پیشرفت و اندازه‌گیری</span><NeoFitIcon name="chevron" /></Link>
+        <Link href="/workout"><span><NeoFitIcon name="workout" />برنامه تمرین</span><NeoFitIcon name="chevron" /></Link>
+        <Link href="/nutrition"><span><NeoFitIcon name="food" />تغذیه و ثبت غذا</span><NeoFitIcon name="chevron" /></Link>
+      </nav>
+    </section>
+
+    <section className="profile-link-group" aria-labelledby="profile-settings-heading">
+      <div className="profile-link-group__heading"><span>تنظیمات</span><h3 id="profile-settings-heading">حساب و اتصال‌ها</h3></div>
+      <nav className="profile-links" aria-label="تنظیمات حساب">
+        <Link href="/profile/security"><span><NeoFitIcon name="profile" />امنیت حساب</span><NeoFitIcon name="chevron" /></Link>
+        <Link href="/profile/ai"><span><NeoFitIcon name="sparkle" />مربی هوشمند</span><NeoFitIcon name="chevron" /></Link>
+        <Link href="/profile/integrations"><span><NeoFitIcon name="plus" />اتصال‌ها</span><NeoFitIcon name="chevron" /></Link>
+      </nav>
+    </section>
+
+    {account ? (
+      <details className="profile-edit-disclosure">
+        <summary>ویرایش نام نمایشی</summary>
+        <div className="account-edit-card">
+          <label htmlFor="profile-display-name">نامی که در NeoFit می‌بینی</label>
+          <input id="profile-display-name" value={displayName} minLength={1} maxLength={80} onChange={(event) => setDisplayName(event.target.value)} />
+          <button type="button" disabled={working} onClick={saveDisplayName}>{working ? 'در حال ذخیره...' : 'ذخیره نام'}</button>
+          {message ? <p className="local-data-card__message" role="status">{message}</p> : null}
+        </div>
+      </details>
+    ) : null}
+
     {account ? <form action="/auth/signout" method="post" className="signout-form"><button type="submit">خروج از این دستگاه</button></form> : null}
-    <div className="profile-boundary-note"><NeoFitIcon name={account ? 'check' : 'offline'} size={18} /><p>{account ? 'Identity، Nutrition، Workout، Progress، Onboarding، Coach و Integrationها منابع داده جدا و مالک‌محور دارند.' : 'در حالت مهمان، داده‌های شخصی فقط در همین مرورگر باقی می‌مانند.'}</p></div>
   </section>;
 }

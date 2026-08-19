@@ -6,7 +6,7 @@ export function CreateCycleButton() {
   const { pending } = useFormStatus();
   return (
     <button className="is-primary" type="submit" disabled={pending}>
-      {pending ? 'در حال ساخت چرخه...' : 'ساخت چرخهٔ دوره'}
+      {pending ? 'در حال آماده‌سازی...' : 'رفتن به برنامه من'}
     </button>
   );
 }

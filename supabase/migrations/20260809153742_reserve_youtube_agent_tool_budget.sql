@@ -77,4 +77,4 @@ end;
 $$;
 
 revoke all on function public.reserve_agent_tool_call(text, text) from public, anon;
-grant execute on function public.reserve_agent_tool_call(text, text) to authenticated;
+grant execute on function public.reserve_agent_tool_call(text, text) to authenticated;;

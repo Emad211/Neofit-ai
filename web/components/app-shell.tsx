@@ -8,22 +8,11 @@ import { useAccountState } from '@/components/account-state';
 
 const navigation: readonly { href: string; label: string; icon: NeoFitIconName }[] = [
   { href: '/today', label: 'امروز', icon: 'home' },
-  { href: '/nutrition', label: 'تغذیه', icon: 'food' },
   { href: '/workout', label: 'تمرین', icon: 'workout' },
+  { href: '/nutrition', label: 'تغذیه', icon: 'food' },
   { href: '/progress', label: 'پیشرفت', icon: 'chart' },
   { href: '/profile', label: 'پروفایل', icon: 'profile' },
 ];
-
-function pageTitle(pathname: string, displayName: string | null): string {
-  if (pathname.startsWith('/program')) return 'چرخهٔ دوره';
-  if (pathname.startsWith('/nutrition/plan')) return 'برنامهٔ غذایی';
-  if (pathname.startsWith('/nutrition')) return 'تغذیه';
-  if (pathname.startsWith('/workout')) return 'تمرین';
-  if (pathname.startsWith('/progress')) return 'پیشرفت';
-  if (pathname.startsWith('/coach')) return 'مربی نئوفیت';
-  if (pathname.startsWith('/profile')) return 'پروفایل';
-  return displayName ? `سلام ${displayName}، روزت چطوره؟` : 'سلام، روزت چطوره؟';
-}
 
 function accountInitial(displayName: string | null, email: string | null): string {
   const source = displayName?.trim() || email?.trim() || 'ن';
@@ -50,44 +39,49 @@ export function AppShell({ children }: { children: ReactNode }) {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [pathname]);
 
+  const showStatus = !online || Boolean(loadError) || !account;
   const statusClass = !online || loadError ? 'offline-note' : 'offline-note offline-note--trusted';
-  let statusText: ReactNode;
+  let statusText: ReactNode = null;
+
   if (!online) {
-    statusText = account
-      ? 'آفلاین هستی؛ داده‌های حساب هنگام اتصال دوباره خوانده می‌شوند.'
-      : 'آفلاین هستی؛ داده‌های مهمان همین مرورگر همچنان در دسترس‌اند.';
+    statusText = 'اتصال اینترنت قطع است. بعضی تغییرات تا زمان اتصال دوباره ذخیره نمی‌شوند.';
   } else if (loadError) {
-    statusText = loadError;
-  } else if (account) {
-    statusText = 'حساب متصل است؛ هر بخش فقط داده‌های موردنیاز خودش را می‌خواند.';
-  } else if (configured) {
-    statusText = <><span>حالت مهمان فعال است.</span> <Link href="/auth">ورود برای ذخیره در حساب</Link></>;
-  } else {
-    statusText = 'حالت Preview محلی؛ اتصال حساب برای این محیط تنظیم نشده است.';
+    statusText = 'بخشی از اطلاعات حساب در دسترس نیست. صفحه را دوباره بارگذاری کن.';
+  } else if (!account && configured) {
+    statusText = <><span>برای ذخیره اطلاعات و دریافت برنامه شخصی وارد حساب شو.</span> <Link href="/auth">ورود یا ساخت حساب</Link></>;
+  } else if (!account) {
+    statusText = 'ورود به حساب در این محیط در دسترس نیست.';
   }
 
   return (
     <main className="app-frame" id="main-content">
       <a className="skip-link" href="#screen-content">رفتن به محتوای اصلی</a>
-      <div className="app-frame__halo" aria-hidden="true" />
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">NeoFit</p>
-          <h1>{pageTitle(pathname, account?.displayName ?? null)}</h1>
-        </div>
-        <Link
-          className="avatar-button avatar-link"
-          href="/profile"
-          aria-label={account ? `پروفایل ${account.displayName}` : 'پروفایل مهمان'}
-        >
-          {accountInitial(account?.displayName ?? null, account?.email ?? null)}
+
+      <header className="topbar topbar--product">
+        <Link className="topbar-brand" href="/today" aria-label="NeoFit - امروز">
+          <span className="topbar-brand__mark" aria-hidden="true">N</span>
+          <span className="topbar-brand__copy"><strong>NeoFit</strong><small>مربی شخصی تو</small></span>
         </Link>
+        <div className="topbar-actions">
+          <Link className="coach-shortcut" href="/coach" aria-label="مربی NeoFit">
+            <NeoFitIcon name="sparkle" size={20} />
+          </Link>
+          <Link
+            className="avatar-button avatar-link"
+            href="/profile"
+            aria-label={account ? `پروفایل ${account.displayName}` : 'پروفایل'}
+          >
+            {accountInitial(account?.displayName ?? null, account?.email ?? null)}
+          </Link>
+        </div>
       </header>
 
-      <div className={statusClass} role="status" data-account-state={account ? 'authenticated' : 'guest'}>
-        <NeoFitIcon name={!online || loadError ? 'offline' : 'check'} size={17} />
-        <span>{statusText}</span>
-      </div>
+      {showStatus ? (
+        <div className={statusClass} role="status" data-account-state={account ? 'authenticated' : 'guest'}>
+          <NeoFitIcon name={!online || loadError ? 'offline' : 'profile'} size={17} />
+          <span>{statusText}</span>
+        </div>
+      ) : null}
 
       <div className="screen-content" id="screen-content" tabIndex={-1}>{children}</div>
 
@@ -101,7 +95,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               className={active ? 'bottom-nav__item is-active' : 'bottom-nav__item'}
               aria-current={active ? 'page' : undefined}
             >
-              <NeoFitIcon name={item.icon} />
+              <span className="bottom-nav__icon"><NeoFitIcon name={item.icon} /></span>
               <span>{item.label}</span>
             </Link>
           );

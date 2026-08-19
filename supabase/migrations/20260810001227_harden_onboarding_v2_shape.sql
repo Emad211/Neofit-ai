@@ -10,4 +10,4 @@ alter table public.user_onboarding
   check (
     schema_version <> 2
     or current_step between 1 and 13
-  );
+  );;

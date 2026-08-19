@@ -17,14 +17,16 @@ test('email change reuses the scanner-safe one-time-link boundary', async () => 
   assert.match(page, /تأیید تغییر ایمیل/);
 });
 
-test('email change requires a live Auth-server validation and does not claim immediate mutation', async () => {
+test('email change requires a live account validation and user confirmation flow', async () => {
   const actions = await source('app/(main)/profile/security/actions.ts');
   const page = await source('app/(main)/profile/security/page.tsx');
   assert.match(actions, /activeAuthSession\(supabase\)/);
   assert.match(actions, /auth\.updateUser\(\{ email \}\)/);
   assert.match(actions, /email === currentEmail/);
-  assert.match(page, /Secure Email Change/);
-  assert.match(page, /هیچ تغییر فوری فرض نمی‌شود/);
+  assert.match(page, /تغییر ایمیل/);
+  assert.match(page, /ارسال تأیید تغییر ایمیل/);
+  assert.match(page, /پیام‌های ارسالی تأیید/);
+  assert.doesNotMatch(page, /Secure Email Change|Auth server|metadata فعلی Supabase/);
 });
 
 test('canonical account lifecycle templates avoid direct ConfirmationURL consumption', async () => {

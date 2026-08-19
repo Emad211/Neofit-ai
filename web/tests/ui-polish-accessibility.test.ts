@@ -7,10 +7,11 @@ import { fileURLToPath } from 'node:url';
 const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 async function read(path: string) { return readFile(resolve(webRoot, path), 'utf8'); }
 
-test('account Profile no longer presents Guest workout fixtures as the current plan', async () => {
+test('account Profile links to real workout surfaces without presenting Guest fixtures as the current plan', async () => {
   const profile = await read('components/profile-screen.tsx');
   assert.doesNotMatch(profile, /workout-fixtures|workoutPlan\.length|<small> fixture<\/small>/);
-  assert.match(profile, /از Workout/);
+  assert.match(profile, /href="\/workout"/);
+  assert.match(profile, /برنامه تمرین/);
   assert.match(profile, /\/profile\/integrations/);
 });
 
@@ -25,14 +26,17 @@ test('global Stage 19 polish covers focus-visible, form typography and reduced m
   assert.match(css, /min-block-size:44px/);
 });
 
-test('Coach surfaces bounded cooldown and hides technical metadata behind details', async () => {
+test('Coach surfaces bounded cooldown while keeping implementation metadata out of the conversation UI', async () => {
   const coach = await read('components/coach-screen.tsx');
+  assert.match(coach, /response\.status === 429/);
   assert.match(coach, /Retry-After/);
-  assert.match(coach, /ai_request_budget_exceeded/);
+  assert.match(coach, /setCooldownUntil/);
   assert.match(coach, /coach-cooldown/);
-  assert.match(coach, /<details className="coach-technical-details">/);
-  assert.match(coach, /Ctrl\/⌘ \+ Enter/);
+  assert.match(coach, /event\.ctrlKey \|\| event\.metaKey/);
+  assert.match(coach, /event\.key === 'Enter'/);
   assert.match(coach, /aria-busy=\{loading\}/);
+  assert.doesNotMatch(coach, /<details className="coach-technical-details">/);
+  assert.doesNotMatch(coach, />Provider<|>Model<|>Latency<|>Fallback</);
 });
 
 test('YouTube results are cards and are never auto-embedded with an iframe', async () => {

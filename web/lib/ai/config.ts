@@ -12,7 +12,11 @@ export const DEFAULT_AI_MODELS: Readonly<Record<AiProvider, string>> = {
 
 export const AI_INPUT_LIMIT = 12_000;
 export const AI_SYSTEM_INSTRUCTION_LIMIT = 4_000;
+// Default ceiling for short conversational turns (Coach chat, the respond
+// proxy). Kept small on purpose.
 export const AI_MAX_OUTPUT_TOKENS = 700;
+export const AI_MAX_STRUCTURED_OUTPUT_TOKENS = 1_800;
+export const AI_HARD_MAX_OUTPUT_TOKENS = 2_000;
 export const AI_PROVIDER_TIMEOUT_MS = 45_000;
 export const AI_VALIDATION_TIMEOUT_MS = 12_000;
 

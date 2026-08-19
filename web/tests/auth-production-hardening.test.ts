@@ -107,6 +107,13 @@ test('cookie-authenticated mutation routes share a fail-closed same-origin guard
   assert.match(origin, /origin/);
   assert.match(origin, /sec-fetch-site/);
   assert.match(origin, /same-origin/);
+  // The attacker-controllable Host header may only widen the allow-list in local
+  // development. In preview/production the canonical origin is requestUrl.origin
+  // plus the environment-controlled NEXT_PUBLIC_APP_URL, never a spoofable Host.
+  assert.match(origin, /deploymentEnvironment === 'development'/);
+  const hostGate = origin.indexOf("deploymentEnvironment === 'development'");
+  const hostRead = origin.indexOf("headers.get('host')");
+  assert.ok(hostGate >= 0 && hostRead > hostGate, 'Host header trust must be gated behind the development check');
   for (const route of [signout, provider, respond, coach]) {
     assert.match(route, /isSameOriginBrowserMutation/);
   }
@@ -114,6 +121,28 @@ test('cookie-authenticated mutation routes share a fail-closed same-origin guard
   assert.match(provider, /cross_origin_request/);
   assert.match(respond, /cross_origin_request/);
   assert.match(coach, /cross_origin_request/);
+});
+
+test('global response headers ship a safe CSP subset and production-only HSTS', async () => {
+  const config = await readFile(new URL('../next.config.ts', import.meta.url), 'utf8');
+  // The CSP hardens framing, base hijacking, plugin embedding and off-origin form
+  // posts — directives that cannot silently break hydration.
+  assert.match(config, /Content-Security-Policy/);
+  assert.match(config, /frame-ancestors 'none'/);
+  assert.match(config, /base-uri 'self'/);
+  assert.match(config, /object-src 'none'/);
+  assert.match(config, /form-action 'self'/);
+  assert.match(config, /upgrade-insecure-requests/);
+  // A fetch directive without a nonce architecture would break React hydration
+  // past the build gate, so none may be added until proven on a hosted run.
+  assert.doesNotMatch(config, /script-src|style-src|default-src|connect-src|img-src/);
+  // HSTS is a long-lived HTTPS commitment: production only, never preview/dev http.
+  assert.match(config, /Strict-Transport-Security/);
+  assert.match(config, /max-age=63072000; includeSubDomains; preload/);
+  const hstsGuard = config.indexOf('isProduction');
+  const hstsHeader = config.indexOf('Strict-Transport-Security');
+  assert.ok(hstsGuard >= 0 && hstsHeader > hstsGuard, 'HSTS must be emitted only under the production guard');
+  assert.match(config, /=== 'production'/);
 });
 
 test('normal logout is local while global logout is explicit', async () => {
@@ -152,4 +181,17 @@ test('repo contains scanner-safe confirmation and recovery templates', async () 
   assert.match(recovery, /token_hash=\{\{ \.TokenHash \}\}/);
   assert.match(recovery, /type=recovery/);
   assert.match(recovery, /next=\/auth\/update-password/);
+});
+
+test('hosted root never silently falls back to Guest when Supabase public env is missing', async () => {
+  const home = await source('app/page.tsx');
+  const envGuard = home.indexOf('if (!hasSupabasePublicEnv())');
+  const hostedGuard = home.indexOf("deploymentEnvironment === 'preview' || deploymentEnvironment === 'production'");
+  const authRedirect = home.indexOf("redirect('/auth?error=config')");
+  const guestRedirect = home.indexOf("redirect('/today')");
+
+  assert.ok(envGuard >= 0, 'root must explicitly guard missing Supabase public configuration');
+  assert.ok(hostedGuard > envGuard, 'hosted environment check must happen inside the missing-config guard');
+  assert.ok(authRedirect > hostedGuard, 'hosted missing configuration must redirect to Auth');
+  assert.ok(guestRedirect > authRedirect, 'Guest fallback must remain development-only after hosted fail-closed logic');
 });

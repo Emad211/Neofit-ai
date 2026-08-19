@@ -17,6 +17,11 @@ import './account-integration.css';
 import './auth.css';
 import './agent-tools-polish.css';
 import './ui-truth-polish.css';
+import './product-ui-v3.css';
+import './product-ui-v3-system.css';
+import './product-ui-v3-workout.css';
+import './product-ui-v3-plans.css';
+import './product-ui-v4-polish.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(publicAppUrl),
@@ -36,7 +41,7 @@ export const metadata: Metadata = {
   other: { 'mobile-web-app-capable': 'yes' },
 };
 
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#176b47', colorScheme: 'light' };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#126b4a', colorScheme: 'light' };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return <html lang="fa" dir="rtl"><body data-deployment-environment={deploymentEnvironment}>{children}<PwaRegister environment={deploymentEnvironment} /></body></html>;

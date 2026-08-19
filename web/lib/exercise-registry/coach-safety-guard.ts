@@ -6,6 +6,14 @@ function record(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
+function latestRecordedWorkoutPain(context: Record<string, unknown>): number | null {
+  const workout = record(context.workout);
+  const recent = Array.isArray(workout?.recent) ? workout.recent : [];
+  const latest = record(recent[0]);
+  const pain = latest?.pain_scale;
+  return typeof pain === 'number' && Number.isFinite(pain) ? pain : null;
+}
+
 export function deterministicWorkoutSafetyResponse(
   context: Record<string, unknown>,
   domains: readonly CoachContextDomain[],
@@ -14,11 +22,14 @@ export function deterministicWorkoutSafetyResponse(
 
   const safety = record(context.safety);
   const injuries = record(safety?.injuries);
-  const painScale = injuries?.painScale;
-  const severeExercisePain = injuries?.painDuringExercise === true
-    && typeof painScale === 'number'
-    && Number.isFinite(painScale)
-    && painScale >= 7;
+  const onboardingPainScale = injuries?.painScale;
+  const onboardingPain = injuries?.painDuringExercise === true
+    && typeof onboardingPainScale === 'number'
+    && Number.isFinite(onboardingPainScale)
+    ? onboardingPainScale
+    : null;
+  const recentPain = latestRecordedWorkoutPain(context);
+  const abnormalPain = Math.max(onboardingPain ?? 0, recentPain ?? 0);
 
   const registry = record(context.exerciseRegistry);
   const candidates = Array.isArray(registry?.candidates) ? registry.candidates : [];
@@ -30,7 +41,16 @@ export function deterministicWorkoutSafetyResponse(
     return name ? [name] : [];
   }).slice(0, 3);
 
-  if (!severeExercisePain && blockedNames.length === 0) return null;
-  const exerciseClause = blockedNames.length > 0 ? ` به‌ویژه ${blockedNames.join('،')} را` : '';
-  return `با توجه به درد یا محدودیت ثبت‌شده، فعلاً${exerciseClause} انجام نده و تمرین را متوقف کن. پیش از ادامه، برای ارزیابی ایمن با پزشک یا فیزیوتراپیست واجد صلاحیت مشورت کن؛ من تشخیص پزشکی نمی‌دهم.`;
+  if (abnormalPain >= 4) {
+    const source = recentPain !== null && recentPain >= 4
+      ? 'در آخرین تمرین ثبت‌شده درد یا ناراحتی غیرعادی متوسط یا بیشتر گزارش شده است.'
+      : 'درد حین تمرین در محدوده‌ای ثبت شده که ادامه خودکار برنامه را قابل‌دفاع نمی‌کند.';
+    const blocked = blockedNames.length
+      ? ` همچنین ${blockedNames.join('، ')} با اطلاعات ایمنی فعلی برایت مناسب نیست و نباید انجام شود.`
+      : '';
+    return `${source} فعلاً تمرین را متوقف کن و قبل از برنامه‌ریزی مجدد، وضعیت درد و محدودیت‌ها را به‌روز کن.${blocked} اگر درد ادامه دارد، شدید است یا نگران‌کننده است، با پزشک یا فیزیوتراپیست واجد صلاحیت ارزیابی انجام بده؛ من تشخیص پزشکی نمی‌دهم.`;
+  }
+
+  if (blockedNames.length === 0) return null;
+  return `با اطلاعات ایمنی ثبت‌شده، ${blockedNames.join('، ')} برایت مناسب نیست. از این حرکت‌ها استفاده نکن؛ اگر لازم است محدودیت‌ها یا درد فعلی را در پروفایل به‌روز کن تا جایگزین‌های امن بررسی شوند.`;
 }

@@ -41,15 +41,9 @@ test('plan parser accepts only bounded identity/version/portion documents', () =
 });
 
 test('plan parser rejects stored nutrition claims instead of trusting them', () => {
+  assert.equal(parseNutritionPlanDocument({ ...validPlan, calories: 1800 }), null);
   assert.equal(parseNutritionPlanDocument({
-    ...validPlan,
-    calories: 1800,
-  }), null);
-  assert.equal(parseNutritionPlanDocument({
-    days: [{
-      ...validPlan.days[0],
-      meals: [{ ...validPlan.days[0]!.meals[0], macros: { proteinG: 50 } }],
-    }],
+    days: [{ ...validPlan.days[0], meals: [{ ...validPlan.days[0]!.meals[0], macros: { proteinG: 50 } }] }],
   }), null);
   assert.equal(parseNutritionPlanDocument({
     days: [{
@@ -92,7 +86,7 @@ test('database nutrition plans are owner-scoped, versioned and immutable in cont
   assert.match(migration, /nutrition_plan_meal_id text/);
 });
 
-test('account plan page loads a snapshot and never imports weeklyPlan directly', async () => {
+test('account plan page is today-aware, guest-safe and avoids fake personalized nutrition claims', async () => {
   const page = await web('app/(main)/nutrition/plan/page.tsx');
   const screen = await web('components/nutrition-plan-screen.tsx');
   const loader = await web('lib/supabase/nutrition-plan-data.ts');
@@ -101,8 +95,17 @@ test('account plan page loads a snapshot and never imports weeklyPlan directly',
   assert.doesNotMatch(screen, /weeklyPlan|data\/fixtures/);
   assert.match(loader, /\.from\('nutrition_plans'\)/);
   assert.match(loader, /resolveNutritionPlanDocument\(parsed, foodFixtures\)/);
-  assert.match(screen, /هنوز برنامهٔ غذایی فعالی ثبت نشده/);
-  assert.match(screen, /Demo مهمان/);
+  assert.match(loader, /localWeekday/);
+  assert.match(loader, /timeZone: identity\.account\.timezone/);
+  assert.match(screen, /snapshot\.localWeekday/);
+  assert.match(screen, /امروز · \{today\.day\}/);
+  assert.match(screen, /<details className="nutrition-plan-day"/);
+  assert.match(screen, /هنوز برنامه غذایی فعالی نداری/);
+  assert.match(screen, /برای ساخت برنامه وارد حساب شو/);
+  assert.match(screen, /وعده‌های هفتگی بر اساس الگوی غذایی و ترجیحاتت/);
+  assert.match(screen, /یک سهم استاندارد تعریف‌شده/);
+  assert.match(screen, /رفتن به برنامه من/);
+  assert.doesNotMatch(screen, /Demo مهمان|Nutrition Core|plan JSON|کاتالوگ نسخه‌دار|هدف کالری شخصی/);
 });
 
 test('plan UI does not render stored calorie or macro fields', async () => {
@@ -112,7 +115,7 @@ test('plan UI does not render stored calorie or macro fields', async () => {
   assert.match(core, /energyKcal/);
   assert.match(core, /proteinG/);
   assert.doesNotMatch(screen, /\.calories|\.macros|\.energyKcal|\.proteinG|\.carbsG|\.fatG/);
-  assert.match(screen, /Nutrition Core/);
+  assert.doesNotMatch(screen, /Nutrition Core|stored calorie|stored macro/i);
 });
 
 test('generated Supabase types include nutrition plans and entry provenance', async () => {

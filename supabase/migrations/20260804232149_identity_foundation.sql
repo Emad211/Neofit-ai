@@ -119,4 +119,4 @@ comment on table public.profiles is
   'User-owned identity profile. Nutrition and clinical data are out of scope.';
 
 comment on table public.user_settings is
-  'User-owned display and unit preferences. Nutrition calculations are out of scope.';
+  'User-owned display and unit preferences. Nutrition calculations are out of scope.';;

@@ -2,81 +2,110 @@ import Link from 'next/link';
 import { NeoFitIcon } from '@/components/neofit-icons';
 import { NutritionPlanLogForm } from '@/components/nutrition-plan-log-form';
 import { mealTypeLabelFa } from '@/lib/nutrition-adapter';
+import type { ResolvedNutritionPlanDay } from '@/lib/nutrition-plan-core';
 import type { NutritionPlanSnapshot } from '@/lib/supabase/nutrition-plan-data';
 
 const faNumber = new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 2 });
 
+function normalizedDay(value: string) {
+  return value.replace(/[\u200c\s]/g, '').trim();
+}
+
 function accountMessage(message: string | null, error: string | null): { tone: 'success' | 'error'; text: string } | null {
-  if (message === 'meal-logged') {
-    return { tone: 'success', text: 'وعده برای امروز ثبت شد. تکرار همان ثبت، دادهٔ تکراری ایجاد نمی‌کند.' };
-  }
+  if (message === 'meal-logged') return { tone: 'success', text: 'وعده برای امروز ثبت شد.' };
   if (!error) return null;
   const text = error === 'invalid_date'
-    ? 'تاریخ محلی ثبت معتبر نبود. صفحه را تازه کن و دوباره تلاش کن.'
+    ? 'ثبت وعده انجام نشد. صفحه را تازه کن و دوباره تلاش کن.'
     : error === 'plan_missing'
-      ? 'نسخهٔ فعال برنامه دیگر با این درخواست منطبق نیست. صفحه را تازه کن.'
+      ? 'برنامه تغییر کرده است. صفحه را تازه کن.'
       : error === 'plan_invalid'
-        ? 'این برنامه با کاتالوگ نسخه‌دار فعلی قابل ثبت نیست.'
+        ? 'این وعده فعلاً قابل ثبت نیست. صفحه را تازه کن.'
         : error === 'meal_missing'
-          ? 'این وعده در نسخهٔ فعال برنامه پیدا نشد.'
-          : 'ثبت وعده انجام نشد. دادهٔ ناقص وارد دفترچه نشده است.';
+          ? 'این وعده دیگر در برنامه فعلی نیست.'
+          : 'ثبت وعده انجام نشد. دوباره تلاش کن.';
   return { tone: 'error', text };
+}
+
+function DayMeals({
+  day,
+  snapshot,
+}: {
+  day: ResolvedNutritionPlanDay;
+  snapshot: NutritionPlanSnapshot;
+}) {
+  return (
+    <ol className="nutrition-plan-meals">
+      {day.meals.map((meal) => (
+        <li className="nutrition-plan-meal" key={meal.id}>
+          <div className="nutrition-plan-meal__copy">
+            <span>{mealTypeLabelFa(meal.mealType)}</span>
+            <strong>{meal.label}</strong>
+            <ul>
+              {meal.items.map((item) => (
+                <li key={`${meal.id}:${item.foodId}:${item.sourceVersion}`}>
+                  <span>{item.nameFa}</span>
+                  <small>{faNumber.format(item.portionCount)} × {item.portionLabelFa}</small>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {snapshot.planId && snapshot.version ? (
+            <NutritionPlanLogForm planId={snapshot.planId} planVersion={snapshot.version} mealId={meal.id} />
+          ) : null}
+        </li>
+      ))}
+    </ol>
+  );
 }
 
 function AccountPlan({ snapshot }: { snapshot: NutritionPlanSnapshot }) {
   if (snapshot.days.length === 0) {
     return (
-      <article className="local-data-card">
+      <article className="screen-empty-card">
+        <span className="screen-empty-card__icon"><NeoFitIcon name="food" size={28} /></span>
         <div>
-          <span>دادهٔ واقعی حساب</span>
-          <h3>هنوز برنامهٔ غذایی فعالی ثبت نشده</h3>
-          <p>NeoFit برنامهٔ نمونه را به‌جای برنامهٔ شخصی نمایش نمی‌دهد. وقتی نسخهٔ معتبر و resolve‌شده‌ای از برنامه فعال شود، همین صفحه آن را نشان می‌دهد.</p>
-          <div className="action-row">
-            <Link className="primary-button" href="/program">ساخت یا فعال‌سازی برنامه</Link>
-            <Link className="text-button" href="/onboarding/review">مرور اطلاعات پایه</Link>
-          </div>
+          <h3>هنوز برنامه غذایی فعالی نداری</h3>
+          <p>برنامه تمرین و تغذیه‌ات را بساز و بعد از مرور، فعالش کن.</p>
         </div>
+        <Link className="primary-button" href="/program">رفتن به برنامه من</Link>
+        <Link className="text-button" href="/onboarding/review">ویرایش اطلاعات</Link>
       </article>
     );
   }
 
+  const today = snapshot.localWeekday
+    ? snapshot.days.find((day) => normalizedDay(day.day) === normalizedDay(snapshot.localWeekday!)) ?? null
+    : null;
+  const otherDays = today ? snapshot.days.filter((day) => day.id !== today.id) : snapshot.days;
+
   return (
-    <div className="week-list">
-      {snapshot.days.map((day, index) => (
-        <article className={index === 0 ? 'day-card is-current' : 'day-card'} key={day.id}>
-          <div className="day-card__header">
-            <div><span>روز {faNumber.format(index + 1)}</span><h3>{day.day}</h3></div>
-            <b>{day.title}</b>
-          </div>
-          <ol>
-            {day.meals.map((meal) => (
-              <li key={meal.id}>
-                <div>
-                  <strong>{meal.label}</strong>
-                  <small>{mealTypeLabelFa(meal.mealType)}</small>
-                  <ul>
-                    {meal.items.map((item) => (
-                      <li key={`${meal.id}:${item.foodId}:${item.sourceVersion}`}>
-                        {item.nameFa} · {faNumber.format(item.portionCount)} × {item.portionLabelFa}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="plan-meal-actions">
-                  <span><NeoFitIcon name="check" size={14} />کاتالوگ نسخه‌دار</span>
-                  {snapshot.planId && snapshot.version ? (
-                    <NutritionPlanLogForm
-                      planId={snapshot.planId}
-                      planVersion={snapshot.version}
-                      mealId={meal.id}
-                    />
-                  ) : null}
-                </div>
-              </li>
-            ))}
-          </ol>
-        </article>
-      ))}
+    <div className="nutrition-plan-flow">
+      {today ? (
+        <section className="nutrition-plan-today" aria-labelledby="nutrition-plan-today-heading">
+          <header>
+            <div><span>امروز · {today.day}</span><h3 id="nutrition-plan-today-heading">{today.title}</h3></div>
+            <b>{faNumber.format(today.meals.length)} وعده</b>
+          </header>
+          <DayMeals day={today} snapshot={snapshot} />
+        </section>
+      ) : null}
+
+      <section className="nutrition-plan-week" aria-labelledby="nutrition-plan-week-heading">
+        <div className="section-heading section-heading--compact">
+          <div><p className="section-kicker">هفته</p><h2 id="nutrition-plan-week-heading">روزهای دیگر</h2></div>
+        </div>
+        <div className="nutrition-plan-day-list">
+          {otherDays.map((day) => (
+            <details className="nutrition-plan-day" key={day.id}>
+              <summary>
+                <span><strong>{day.day}</strong><small>{day.title}</small></span>
+                <span>{faNumber.format(day.meals.length)} وعده <NeoFitIcon name="chevron" size={17} /></span>
+              </summary>
+              <DayMeals day={day} snapshot={snapshot} />
+            </details>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
@@ -91,19 +120,31 @@ export function NutritionPlanScreen({
   error?: string | null;
 }) {
   const feedback = accountMessage(message, error);
+
+  if (snapshot.mode === 'guest') {
+    return (
+      <section className="page-stack nutrition-plan-page" aria-labelledby="plan-heading">
+        <Link className="back-button" href="/nutrition"><NeoFitIcon name="chevron" /> تغذیه</Link>
+        <div className="section-heading"><div><p className="section-kicker">برنامه غذایی</p><h2 id="plan-heading">برنامه هفتگی تو</h2></div></div>
+        <article className="screen-empty-card">
+          <span className="screen-empty-card__icon"><NeoFitIcon name="food" size={28} /></span>
+          <div><h3>برای ساخت برنامه وارد حساب شو</h3><p>بعد از تکمیل اطلاعاتت، وعده‌های هفتگی بر اساس الگوی غذایی و ترجیحاتت آماده می‌شوند.</p></div>
+          <Link className="primary-button" href="/auth">ورود یا ساخت حساب</Link>
+        </article>
+      </section>
+    );
+  }
+
   return (
-    <section className="page-stack" aria-labelledby="plan-heading">
-      <Link className="back-button" href="/nutrition">
-        <NeoFitIcon name="chevron" /> بازگشت به تغذیه
-      </Link>
-      <div className="section-heading">
+    <section className="page-stack nutrition-plan-page" aria-labelledby="plan-heading">
+      <Link className="back-button" href="/nutrition"><NeoFitIcon name="chevron" /> تغذیه</Link>
+      <div className="section-heading nutrition-plan-page__heading">
         <div>
-          <p className="section-kicker">{snapshot.mode === 'guest' ? 'برنامه نمونه مهمان' : 'برنامهٔ فعال حساب'}</p>
-          <h2 id="plan-heading">{snapshot.title ?? 'برنامه غذایی'}</h2>
+          <p className="section-kicker">برنامه غذایی</p>
+          <h2 id="plan-heading">{snapshot.title ?? 'برنامه غذایی من'}</h2>
+          <p className="page-intro">وعده‌ها بر اساس الگوی غذایی و ترجیحاتت چیده شده‌اند؛ مقدار هر آیتم همان یک سهم استاندارد تعریف‌شده برای آن غذاست.</p>
         </div>
-        {snapshot.version ? (
-          <span className="status-pill status-pill--soft"><NeoFitIcon name="check" size={15} />نسخه {faNumber.format(snapshot.version)}</span>
-        ) : null}
+        <Link className="text-button" href="/program">برنامه من</Link>
       </div>
 
       {snapshot.mode === 'unavailable' ? (
@@ -116,27 +157,7 @@ export function NutritionPlanScreen({
         </div>
       ) : null}
 
-      {snapshot.mode === 'guest' ? (
-        <>
-          <div className="auth-notice auth-notice--warning" role="status">این فقط Demo مهمان است و برنامهٔ شخصی یا توصیه تغذیه‌ای حساب محسوب نمی‌شود.</div>
-          <div className="week-list">
-            {snapshot.guestDays.map((day, index) => (
-              <article className={index === 0 ? 'day-card is-current' : 'day-card'} key={day.day}>
-                <div className="day-card__header">
-                  <div><span>روز {faNumber.format(index + 1)}</span><h3>{day.day}</h3></div>
-                  <b>{day.title}</b>
-                </div>
-                <ol>{day.meals.map((meal) => <li key={meal}>{meal}<span>Demo</span></li>)}</ol>
-              </article>
-            ))}
-          </div>
-        </>
-      ) : snapshot.mode === 'account' ? (
-        <>
-          <p className="page-intro">برنامهٔ حساب فقط هویت غذای نسخه‌دار و اندازه سهم را نگه می‌دارد. هر عدد تغذیه‌ای هنگام استفاده از برنامه از Nutrition Core محاسبه می‌شود، نه از plan JSON یا مدل زبانی.</p>
-          <AccountPlan snapshot={snapshot} />
-        </>
-      ) : null}
+      {snapshot.mode === 'account' ? <AccountPlan snapshot={snapshot} /> : null}
     </section>
   );
 }

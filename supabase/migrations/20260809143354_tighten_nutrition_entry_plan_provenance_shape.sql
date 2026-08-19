@@ -16,4 +16,4 @@ alter table public.nutrition_entries
       and nutrition_plan_meal_id is not null
       and char_length(btrim(nutrition_plan_meal_id)) between 1 and 160
     )
-  );
+  );;

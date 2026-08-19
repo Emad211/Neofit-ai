@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { NeoFitIcon } from '@/components/neofit-icons';
 import { useAccountState } from '@/components/account-state';
 import { formatLocalDate } from '@/lib/local-date';
 import {
@@ -69,7 +70,7 @@ export function ProgressScreen() {
         .limit(180);
       if (cancelled) return;
       if (queryError) {
-        setError('خواندن اندازه‌گیری‌های حساب انجام نشد.');
+        setError('اندازه‌گیری‌ها بارگذاری نشدند. دوباره تلاش کن.');
         setMeasurements([]);
       } else {
         setMeasurements((data ?? []).map(rowToBodyMeasurement).reverse());
@@ -83,7 +84,7 @@ export function ProgressScreen() {
   }, [account?.id]);
 
   const weightRows = useMemo(
-    () => measurements.filter((row) => row.weightKg !== null).slice(-8),
+    () => measurements.filter((row) => row.weightKg !== null).slice(-10),
     [measurements],
   );
   const latestWeightRow = useMemo(
@@ -101,9 +102,31 @@ export function ProgressScreen() {
   const weightChange = weightRows.length >= 2
     ? (weightRows.at(-1)?.weightKg ?? 0) - (weightRows[0]?.weightKg ?? 0)
     : null;
-  const minWeight = weightRows.length ? Math.min(...weightRows.map((row) => row.weightKg ?? 0)) : 0;
-  const maxWeight = weightRows.length ? Math.max(...weightRows.map((row) => row.weightKg ?? 0)) : 0;
-  const weightRange = Math.max(0.5, maxWeight - minWeight);
+
+  const chart = useMemo(() => {
+    if (!weightRows.length) return null;
+    const width = 320;
+    const height = 118;
+    const padX = 8;
+    const padY = 14;
+    const values = weightRows.map((row) => row.weightKg ?? 0);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = Math.max(0.5, max - min);
+    const step = weightRows.length === 1 ? 0 : (width - padX * 2) / (weightRows.length - 1);
+    const points = weightRows.map((row, index) => {
+      const x = weightRows.length === 1 ? width / 2 : padX + step * index;
+      const normalized = ((row.weightKg ?? min) - min) / range;
+      const y = height - padY - normalized * (height - padY * 2);
+      return { x, y, row };
+    });
+    return {
+      width,
+      height,
+      polyline: points.map((point) => `${point.x},${point.y}`).join(' '),
+      points,
+    };
+  }, [weightRows]);
 
   async function saveMeasurement(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -132,7 +155,7 @@ export function ProgressScreen() {
         setMeasurements(next);
         setWeight(''); setWaist(''); setBodyFat(''); setNote('');
       } catch {
-        setError('ذخیره اندازه‌گیری روی این مرورگر ممکن نشد.');
+        setError('ذخیره اندازه‌گیری روی این دستگاه ممکن نشد.');
       } finally {
         setSaving(false);
       }
@@ -155,7 +178,7 @@ export function ProgressScreen() {
       .select('*')
       .single();
     if (insertError || !data) {
-      setError('ذخیره اندازه‌گیری در حساب انجام نشد.');
+      setError('اندازه‌گیری ذخیره نشد. دوباره تلاش کن.');
       setSaving(false);
       return;
     }
@@ -171,7 +194,7 @@ export function ProgressScreen() {
     if (!account) {
       const next = measurements.filter((item) => item.id !== row.id);
       try { writeLocalBodyMeasurements(next); setMeasurements(next); }
-      catch { setError('حذف داده محلی انجام نشد.'); }
+      catch { setError('حذف اندازه‌گیری انجام نشد.'); }
       return;
     }
     const supabase = createMeasurementClient();
@@ -180,58 +203,70 @@ export function ProgressScreen() {
       .delete()
       .eq('user_id', account.id)
       .eq('id', row.id);
-    if (deleteError) setError('حذف اندازه‌گیری از حساب انجام نشد.');
+    if (deleteError) setError('حذف اندازه‌گیری انجام نشد.');
     else setMeasurements((current) => current.filter((item) => item.id !== row.id));
   }
 
   return (
-    <section className="page-stack" aria-labelledby="progress-heading">
-      <div className="section-heading">
-        <div><p className="section-kicker">دادهٔ واقعی</p><h2 id="progress-heading">پیشرفت</h2></div>
-        <span className="progress-period">{account ? 'حساب همگام' : 'همین مرورگر'}</span>
+    <section className="page-stack progress-page" aria-labelledby="progress-heading">
+      <div className="section-heading progress-page__heading">
+        <div><p className="section-kicker">روند من</p><h2 id="progress-heading">پیشرفت</h2></div>
+        <span className="progress-period">{account ? 'حساب من' : 'این دستگاه'}</span>
       </div>
 
-      <div className="progress-metrics">
-        <article><span>آخرین وزن</span>{metric(latestWeightRow?.weightKg, 'کیلوگرم')}<p>{weightChange === null ? 'برای روند، حداقل دو ثبت وزن لازم است' : `${faNumber.format(Math.abs(weightChange))} کیلوگرم ${weightChange < 0 ? 'کاهش' : weightChange > 0 ? 'افزایش' : 'بدون تغییر'}`}</p></article>
-        <article><span>آخرین دور کمر</span>{metric(latestWaistRow?.waistCm, 'سانتی‌متر')}<p>{metricDate(latestWaistRow)}</p></article>
-        <article><span>درصد چربی بدن</span>{metric(latestBodyFatRow?.bodyFatPercent, '٪')}<p>{metricDate(latestBodyFatRow)}</p></article>
+      <article className="progress-hero">
+        <div className="progress-hero__value">
+          <span>وزن فعلی</span>
+          {metric(latestWeightRow?.weightKg, 'kg')}
+          <small>{metricDate(latestWeightRow)}</small>
+        </div>
+        <div className={`progress-hero__change ${weightChange === null ? '' : weightChange < 0 ? 'is-down' : weightChange > 0 ? 'is-up' : 'is-flat'}`}>
+          <span>تغییر در ثبت‌های اخیر</span>
+          <strong>{weightChange === null ? '—' : `${weightChange > 0 ? '+' : ''}${faNumber.format(weightChange)} kg`}</strong>
+        </div>
+      </article>
+
+      <div className="progress-secondary-metrics">
+        <article><span>دور کمر</span>{metric(latestWaistRow?.waistCm, 'cm')}<p>{metricDate(latestWaistRow)}</p></article>
+        <article><span>چربی بدن</span>{metric(latestBodyFatRow?.bodyFatPercent, '٪')}<p>{metricDate(latestBodyFatRow)}</p></article>
       </div>
 
       <article className="progress-chart-card">
         <div className="progress-chart-card__header">
-          <div><span>روند وزن</span><h3>{weightRows.length ? 'آخرین اندازه‌گیری‌های وزن' : 'هنوز داده‌ای برای نمودار نیست'}</h3></div>
-          {weightChange === null ? <b>—</b> : <b>{weightChange > 0 ? '+' : ''}{faNumber.format(weightChange)} kg</b>}
+          <div><span>روند وزن</span><h3>{weightRows.length ? 'آخرین ثبت‌ها' : 'هنوز داده‌ای برای نمودار نیست'}</h3></div>
+          <b>{weightRows.length ? `${faNumber.format(weightRows.length)} ثبت` : '—'}</b>
         </div>
-        {loading ? <p className="progress-empty">در حال خواندن اندازه‌گیری‌ها...</p> : weightRows.length ? (
-          <div className="weight-bars" aria-label="روند وزن ثبت‌شده" style={{ gridTemplateColumns: `repeat(${weightRows.length}, minmax(0, 1fr))` }}>
-            {weightRows.map((row) => {
-              const normalized = ((row.weightKg ?? minWeight) - minWeight) / weightRange;
-              const height = 38 + normalized * 62;
-              return <div className="weight-bar" key={row.id}><span className="weight-bar__value">{faNumber.format(row.weightKg ?? 0)}</span><i style={{ blockSize: `${height}%` }} /><small>{dateFormatter.format(new Date(row.measuredAt))}</small></div>;
-            })}
+        {loading ? <p className="progress-empty">در حال بارگذاری...</p> : chart ? (
+          <div className="weight-line-chart">
+            <svg viewBox={`0 0 ${chart.width} ${chart.height}`} role="img" aria-label="روند وزن ثبت‌شده" preserveAspectRatio="none">
+              <polyline className="weight-line-chart__line" points={chart.polyline} fill="none" />
+              {chart.points.map((point) => <circle className="weight-line-chart__point" key={point.row.id} cx={point.x} cy={point.y} r="3.6" />)}
+            </svg>
+            <div className="weight-line-chart__labels">
+              <span>{dateFormatter.format(new Date(weightRows[0]!.measuredAt))}</span>
+              <span>{dateFormatter.format(new Date(weightRows.at(-1)!.measuredAt))}</span>
+            </div>
           </div>
-        ) : <p className="progress-empty">اولین وزن را پایین ثبت کن؛ NeoFit هیچ روند شخصی را از خودش نمی‌سازد.</p>}
+        ) : <p className="progress-empty">اولین وزن را ثبت کن تا روندت اینجا نمایش داده شود.</p>}
       </article>
 
-      <form className="measurement-form" onSubmit={saveMeasurement}>
-        <div className="section-heading section-heading--compact"><div><p className="section-kicker">ثبت جدید</p><h2>اندازه‌گیری بدن</h2></div><span className="count-badge">{localDate}</span></div>
-        <div className="measurement-grid">
-          <label>وزن (kg)<input type="number" step="0.1" min="0.1" max="1000" value={weight} onChange={(event) => setWeight(event.target.value)} placeholder="مثلاً 82.4" /></label>
-          <label>دور کمر (cm)<input type="number" step="0.1" min="0.1" max="500" value={waist} onChange={(event) => setWaist(event.target.value)} placeholder="مثلاً 91" /></label>
-          <label>درصد چربی (%)<input type="number" step="0.1" min="0" max="100" value={bodyFat} onChange={(event) => setBodyFat(event.target.value)} placeholder="اختیاری" /></label>
-        </div>
-        <label className="measurement-note">یادداشت<input maxLength={1000} value={note} onChange={(event) => setNote(event.target.value)} placeholder="مثلاً صبح، ناشتا" /></label>
-        {error ? <p className="measurement-error" role="alert">{error}</p> : null}
-        <button type="submit" disabled={saving}>{saving ? 'در حال ذخیره...' : account ? 'ذخیره در حساب' : 'ذخیره روی این دستگاه'}</button>
-      </form>
+      <details className="measurement-disclosure">
+        <summary><span><NeoFitIcon name="plus" size={18} />ثبت اندازه‌گیری جدید</span><small>{localDate}</small></summary>
+        <form className="measurement-form" onSubmit={saveMeasurement}>
+          <div className="measurement-grid">
+            <label>وزن (kg)<input type="number" step="0.1" min="0.1" max="1000" value={weight} onChange={(event) => setWeight(event.target.value)} placeholder="مثلاً 82.4" /></label>
+            <label>دور کمر (cm)<input type="number" step="0.1" min="0.1" max="500" value={waist} onChange={(event) => setWaist(event.target.value)} placeholder="مثلاً 91" /></label>
+            <label>درصد چربی (%)<input type="number" step="0.1" min="0" max="100" value={bodyFat} onChange={(event) => setBodyFat(event.target.value)} placeholder="اختیاری" /></label>
+          </div>
+          <label className="measurement-note">یادداشت<input maxLength={1000} value={note} onChange={(event) => setNote(event.target.value)} placeholder="مثلاً صبح، ناشتا" /></label>
+          {error ? <p className="measurement-error" role="alert">{error}</p> : null}
+          <button type="submit" disabled={saving}>{saving ? 'در حال ذخیره...' : 'ذخیره اندازه‌گیری'}</button>
+        </form>
+      </details>
 
-      <article className="consistency-card">
-        <div className="consistency-card__copy"><span>مرز داده</span><h3>فقط اندازه‌گیری واقعی</h3><p>Progress برای نمایش کارت یا نمودار، Nutrition diary یا وزن‌های Demo را بارگیری نمی‌کند.</p></div>
-      </article>
+      <p className="progress-tip"><NeoFitIcon name="check" size={16} />برای مقایسه بهتر، اندازه‌گیری‌ها را تا حد ممکن در شرایط مشابه ثبت کن.</p>
 
       {measurements.length ? <section className="measurement-history" aria-labelledby="measurement-history-heading"><div className="section-heading section-heading--compact"><div><p className="section-kicker">تاریخچه</p><h2 id="measurement-history-heading">آخرین ثبت‌ها</h2></div></div>{[...measurements].reverse().slice(0, 6).map((row) => <article key={row.id}><div><strong>{dateFormatter.format(new Date(row.measuredAt))}</strong><p>{[row.weightKg !== null ? `${faNumber.format(row.weightKg)} kg` : null, row.waistCm !== null ? `${faNumber.format(row.waistCm)} cm کمر` : null, row.bodyFatPercent !== null ? `${faNumber.format(row.bodyFatPercent)}٪ چربی` : null].filter(Boolean).join(' · ')}</p>{row.note ? <small>{row.note}</small> : null}</div><button type="button" onClick={() => void deleteMeasurement(row)}>حذف</button></article>)}</section> : null}
-
-      <p className="progress-demo-note">این صفحه وزن یا روند ساختگی نمایش نمی‌دهد. مقادیر بالا فقط از ثبت‌های همین کاربر یا همین مرورگر می‌آیند.</p>
     </section>
   );
 }

@@ -46,25 +46,20 @@ function FoodResult({ food, onSelect }: { food: FoodFixture; onSelect: (food: Fo
   const estimate = estimateWebFood(food, 1);
   return (
     <button className="food-result" onClick={() => onSelect(food)} type="button">
-      <span className={`food-result__mark food-result__mark--${food.category}`} aria-hidden="true">
-        {food.nameFa.slice(0, 1)}
-      </span>
+      <span className={`food-result__mark food-result__mark--${food.category}`} aria-hidden="true">{food.nameFa.slice(0, 1)}</span>
       <span className="food-result__main">
         <span className="food-result__title">{food.nameFa}</span>
         <span className="food-result__meta">{food.portionLabelFa} · {categoryLabels[food.category]}</span>
-        <span className="food-result__evidence"><NeoFitIcon name="check" size={14} />{food.evidenceLabel}</span>
       </span>
-      <span className="food-result__energy">
-        <b>{faNumber.format(estimate.macros.calories)}</b>
-        <small>کیلوکالری</small>
-      </span>
+      <span className="food-result__energy"><b>{faNumber.format(estimate.macros.calories)}</b><small>کیلوکالری</small></span>
+      <NeoFitIcon name="chevron" size={17} />
     </button>
   );
 }
 
 export function NutritionScreen() {
   const router = useRouter();
-  const { addFood, account } = useNutritionState();
+  const { addFood } = useNutritionState();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<CategoryFilter>('all');
   const [selectedFood, setSelectedFood] = useState<FoodFixture | null>(null);
@@ -126,7 +121,7 @@ export function NutritionScreen() {
       router.push('/today');
       router.refresh();
     } catch {
-      setSubmitError('ثبت غذا انجام نشد. اتصال اینترنت و وضعیت حساب را بررسی کن.');
+      setSubmitError('ثبت غذا انجام نشد. اتصال اینترنت را بررسی کن و دوباره تلاش کن.');
     } finally {
       setSaving(false);
     }
@@ -139,58 +134,39 @@ export function NutritionScreen() {
       ? `نتیجه برای «${query}»`
       : categoryLabel
         ? `دستهٔ ${categoryLabel}`
-        : 'همهٔ غذاهای فعلی کاتالوگ';
+        : 'غذاها';
 
   return (
     <>
-      <section className="page-stack" aria-labelledby="nutrition-heading">
-        <div className="section-heading">
-          <div>
-            <p className="section-kicker">کاتالوگ تغذیه</p>
-            <h2 id="nutrition-heading">چه چیزی خوردی؟</h2>
+      <section className="page-stack nutrition-page" aria-labelledby="nutrition-heading">
+        <div className="section-heading nutrition-page__heading">
+          <div><p className="section-kicker">تغذیه</p><h2 id="nutrition-heading">ثبت غذا</h2><p className="page-intro">غذا را جست‌وجو کن، مقدار را مشخص کن و ثبتش کن.</p></div>
+          <Link className="text-button" href="/nutrition/plan">برنامه غذایی</Link>
+        </div>
+
+        <div className="nutrition-search-block">
+          <label className="search-box">
+            <span className="sr-only">جست‌وجوی غذا</span>
+            <NeoFitIcon name="search" />
+            <input autoComplete="off" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="مثلاً قورمه‌سبزی یا جوجه کباب" />
+            {query ? <button type="button" onClick={() => setQuery('')} aria-label="پاک‌کردن جست‌وجو">×</button> : <span />}
+          </label>
+
+          <div className="filter-row" aria-label="دسته‌بندی غذاها">
+            {categoryFilters.map((filter) => (
+              <button className={category === filter.id ? 'filter-chip is-active' : 'filter-chip'} type="button" key={filter.id} aria-pressed={category === filter.id} onClick={() => setCategory(filter.id)}>{filter.label}</button>
+            ))}
           </div>
-          <Link className="text-button" href="/nutrition/plan">برنامهٔ هفته</Link>
         </div>
 
-        <label className="search-box">
-          <span className="sr-only">جست‌وجوی غذا</span>
-          <NeoFitIcon name="search" />
-          <input
-            autoComplete="off"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="مثلاً قورمه‌سبزی یا جوجه کباب"
-          />
-          {query ? <button type="button" onClick={() => setQuery('')} aria-label="پاک‌کردن جست‌وجو">×</button> : <span />}
-        </label>
-
-        <div className="filter-row" aria-label="دسته‌بندی‌های واقعی کاتالوگ">
-          {categoryFilters.map((filter) => (
-            <button
-              className={category === filter.id ? 'filter-chip is-active' : 'filter-chip'}
-              type="button"
-              key={filter.id}
-              aria-pressed={category === filter.id}
-              onClick={() => setCategory(filter.id)}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="results-summary" aria-live="polite">
-          <span>{summaryLabel}</span>
-          <b>{faNumber.format(filteredFoods.length)} مورد</b>
-        </div>
+        <div className="results-summary" aria-live="polite"><span>{summaryLabel}</span><b>{faNumber.format(filteredFoods.length)} مورد</b></div>
 
         <div className="food-results">
-          {filteredFoods.length ? filteredFoods.map((food) => (
-            <FoodResult key={food.id} food={food} onSelect={chooseFood} />
-          )) : (
+          {filteredFoods.length ? filteredFoods.map((food) => <FoodResult key={food.id} food={food} onSelect={chooseFood} />) : (
             <div className="empty-state">
               <span className="empty-state__icon"><NeoFitIcon name="search" size={30} /></span>
               <h3>غذایی پیدا نشد</h3>
-              <p>جست‌وجو یا دسته‌بندی را تغییر بده. کاتالوگ فعلی هنوز محدود و نسخه‌دار است.</p>
+              <p>جست‌وجو یا دسته‌بندی را تغییر بده.</p>
               <button type="button" className="secondary-button" onClick={resetSearch}>نمایش همهٔ غذاها</button>
             </div>
           )}
@@ -199,21 +175,10 @@ export function NutritionScreen() {
 
       {selectedFood && selectedEstimate ? (
         <div className="sheet-layer" role="presentation" onMouseDown={closeSheet}>
-          <section
-            className="meal-sheet"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="meal-sheet-title"
-            aria-describedby="meal-sheet-evidence"
-            onMouseDown={(event) => event.stopPropagation()}
-          >
+          <section className="meal-sheet" role="dialog" aria-modal="true" aria-labelledby="meal-sheet-title" aria-describedby="meal-sheet-evidence" onMouseDown={(event) => event.stopPropagation()}>
             <span className="sheet-handle" />
             <header className="meal-sheet__header">
-              <div>
-                <span>{categoryLabels[selectedFood.category]}</span>
-                <h2 id="meal-sheet-title">{selectedFood.nameFa}</h2>
-                <p>{selectedFood.portionLabelFa}</p>
-              </div>
+              <div><span>{categoryLabels[selectedFood.category]}</span><h2 id="meal-sheet-title">{selectedFood.nameFa}</h2><p>{selectedFood.portionLabelFa}</p></div>
               <button ref={closeButtonRef} type="button" aria-label="بستن" disabled={saving} onClick={closeSheet}>×</button>
             </header>
 
@@ -234,31 +199,17 @@ export function NutritionScreen() {
             </div>
 
             <div className="sheet-field">
-              <label>نوع وعده</label>
+              <label>وعده</label>
               <div className="meal-type-row">
                 {mealOptions.map((option) => (
-                  <button
-                    type="button"
-                    key={option.id}
-                    disabled={saving}
-                    className={mealType === option.id ? 'is-active' : ''}
-                    aria-pressed={mealType === option.id}
-                    onClick={() => setMealType(option.id)}
-                  >
-                    {option.label}
-                  </button>
+                  <button type="button" key={option.id} disabled={saving} className={mealType === option.id ? 'is-active' : ''} aria-pressed={mealType === option.id} onClick={() => setMealType(option.id)}>{option.label}</button>
                 ))}
               </div>
             </div>
 
-            <p id="meal-sheet-evidence" className="evidence-note"><NeoFitIcon name="check" size={16} />مقدارها با قوانین قطعی Nutrition Core محاسبه شده‌اند.</p>
-            <p className="sync-destination-note">
-              {account ? 'این وعده در حساب Supabase تو ذخیره می‌شود.' : 'این وعده فقط در همین مرورگر ذخیره می‌شود.'}
-            </p>
+            <p id="meal-sheet-evidence" className="evidence-note">مقادیر تغذیه‌ای بر اساس سهم انتخاب‌شده محاسبه می‌شوند.</p>
             {submitError ? <p className="meal-submit-error" role="alert">{submitError}</p> : null}
-            <button className="primary-button" type="button" disabled={saving} onClick={confirmFood}>
-              {saving ? 'در حال ذخیره...' : 'ثبت این غذا'}
-            </button>
+            <button className="primary-button" type="button" disabled={saving} onClick={confirmFood}>{saving ? 'در حال ذخیره...' : 'ثبت غذا'}</button>
           </section>
         </div>
       ) : null}

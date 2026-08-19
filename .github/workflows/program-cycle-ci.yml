@@ -7,8 +7,12 @@ on:
       - 'web/app/(main)/program/**'
       - 'web/app/onboarding/ready/**'
       - 'web/lib/program-cycle/**'
+      - 'web/lib/program-generation/**'
       - 'web/lib/supabase/database.types.ts'
       - 'web/tests/program-cycle-lifecycle.test.ts'
+      - 'web/tests/program-generation.test.ts'
+      - 'web/tests/ui-truth-audit.test.ts'
+      - 'web/tests/ui-polish-accessibility.test.ts'
       - '.github/workflows/program-cycle-ci.yml'
   push:
     branches: ['main']
@@ -17,8 +21,12 @@ on:
       - 'web/app/(main)/program/**'
       - 'web/app/onboarding/ready/**'
       - 'web/lib/program-cycle/**'
+      - 'web/lib/program-generation/**'
       - 'web/lib/supabase/database.types.ts'
       - 'web/tests/program-cycle-lifecycle.test.ts'
+      - 'web/tests/program-generation.test.ts'
+      - 'web/tests/ui-truth-audit.test.ts'
+      - 'web/tests/ui-polish-accessibility.test.ts'
 
 jobs:
   verify:
@@ -33,13 +41,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.13.1
           cache: npm
           cache-dependency-path: |
+            package-lock.json
             web/package.json
             packages/nutrition-core/package.json
+            packages/exercise-registry/package.json
       - run: npm install --no-audit --no-fund
       - run: npm run test:program-cycle
       - run: npm run test:supabase-app
+      - run: npm run test:ui-truth
+      - run: npm run test:ui-polish
       - run: npm run typecheck
       - run: npm run build

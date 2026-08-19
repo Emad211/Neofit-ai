@@ -129,4 +129,4 @@ comment on table public.nutrition_goals is
   'User-owned daily Nutrition Core goals. SQL stores the versioned JSON and performs no nutrition arithmetic.';
 
 comment on table public.nutrition_entries is
-  'User-owned Nutrition Core diary entries. estimate stores grams, center and optional range exactly as produced by Shared Core.';
+  'User-owned Nutrition Core diary entries. estimate stores grams, center and optional range exactly as produced by Shared Core.';;

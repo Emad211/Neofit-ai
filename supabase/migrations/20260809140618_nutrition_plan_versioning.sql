@@ -110,4 +110,4 @@ create index nutrition_entries_plan_history_idx
   where nutrition_plan_id is not null;
 
 comment on table public.nutrition_plans is 'Versioned user-owned meal identity/portion plans. Calories/macros are not authoritative plan data; NeoFit resolves food identity/version and calculates nutrition through the shared Nutrition Core.';
-comment on column public.nutrition_entries.nutrition_plan_id is 'Optional immutable plan provenance when a diary entry is created from a versioned Nutrition Plan.';
+comment on column public.nutrition_entries.nutrition_plan_id is 'Optional immutable plan provenance when a diary entry is created from a versioned Nutrition Plan.';;

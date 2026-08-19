@@ -26,6 +26,16 @@ function sha256(value: string): string {
   return createHash('sha256').update(value).digest('hex');
 }
 
+// The single source of truth for a Program Cycle's onboarding provenance hash.
+// Creation pins it; generation must recompute it from the live draft with the
+// exact same function and refuse when it no longer matches — otherwise a plan
+// could be materialized from a draft the immutable cycle row does not record.
+// parseOnboardingDraft returns the validated object unchanged, so stringifying
+// an unchanged `user_onboarding.draft` column is byte-stable across reads.
+export function onboardingSnapshotSha256(draft: OnboardingDraft): string {
+  return sha256(JSON.stringify(draft));
+}
+
 export async function ensureProgramCycle(input: {
   readonly supabase: SupabaseClient<Database>;
   readonly userId: string;
@@ -53,7 +63,7 @@ export async function ensureProgramCycle(input: {
     throw new ProgramCyclePersistenceError();
   }
 
-  const snapshotSha256 = sha256(JSON.stringify(input.draft));
+  const snapshotSha256 = onboardingSnapshotSha256(input.draft);
   const idempotencyKey = sha256([
     `program-cycle-v${PROGRAM_CYCLE_SCHEMA_VERSION}`,
     input.userId,
@@ -83,4 +93,25 @@ export async function ensureProgramCycle(input: {
     revision: row.cycle_revision,
     created: row.created,
   };
+}
+
+// Terminally abandons a pre-generation (draft/failed) cycle. The RPC is the only
+// path to the 'abandoned' status and refuses any generated or live cycle, so a
+// forged request can never discard a plan-bearing cycle. Discarding frees the
+// single-open slot; the caller then pins a fresh cycle to the current draft.
+export async function discardProgramCycle(input: {
+  readonly supabase: SupabaseClient<Database>;
+  readonly cycleId: string;
+  readonly expectedRevision: number;
+}): Promise<{ readonly id: string; readonly status: ProgramCycleStatus; readonly revision: number }> {
+  const { data, error } = await input.supabase.rpc('discard_program_cycle', {
+    p_cycle_id: input.cycleId,
+    p_expected_revision: input.expectedRevision,
+  });
+  const row = data?.[0];
+  const status = parseProgramCycleStatus(row?.cycle_status);
+  if (error || !row || !status) {
+    throw new ProgramCyclePersistenceError();
+  }
+  return { id: row.cycle_id, status, revision: row.cycle_revision };
 }

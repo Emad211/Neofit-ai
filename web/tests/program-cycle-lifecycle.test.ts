@@ -24,7 +24,7 @@ test('Program Cycle core keeps status and duration boundaries deterministic', ()
   assert.equal(programCycleEndDate('2026-12-20', 84), '2027-03-13');
   assert.throws(() => programCycleEndDate('2026-02-30', 14));
   assert.throws(() => programCycleEndDate('2026-08-11', 85));
-  assert.equal(programCycleStatusLabel('generating'), 'در حال آماده‌سازی');
+  assert.equal(programCycleStatusLabel('generating'), 'در حال ساخت');
 });
 
 test('Program Cycle migration enforces ownership, one open cycle, idempotency and revision checks', async () => {
@@ -55,8 +55,8 @@ test('Ready creates a real draft cycle without claiming planner output', async (
   const button = await web('app/onboarding/ready/create-cycle-button.tsx');
   assert.match(ready, /createProgramCycle/);
   assert.match(ready, /CreateCycleButton/);
-  assert.match(button, /ساخت چرخهٔ دوره/);
-  assert.doesNotMatch(ready, /برنامه با موفقیت ساخته شد/);
+  assert.match(button, /رفتن به برنامه من/);
+  assert.doesNotMatch(ready, /برنامه با موفقیت ساخته شد|Demo Onboarding|ورودی معتبر چرخه/);
   assert.match(actions, /activeAuthSession/);
   assert.match(actions, /\.eq\('provider', 'avalai'\)/);
   assert.match(actions, /parseOnboardingDraft/);
@@ -84,4 +84,73 @@ test('generated database types expose Program Cycle tables and RPCs', async () =
   assert.match(types, /program_cycles:/);
   assert.match(types, /ensure_program_cycle:/);
   assert.match(types, /transition_program_cycle:/);
+});
+
+test('Data-integrity hardening migration locks reference tables and freezes terminal history', async () => {
+  const migration = await repo('supabase/migrations/20260819090000_data_integrity_hardening.sql');
+  // Reference tables become RLS-protected and read-only for everyone, so a
+  // future write grant or a direct PostgREST call can never mutate them.
+  assert.match(migration, /alter table public\.exercise_registry enable row level security/);
+  assert.match(migration, /alter table public\.exercise_substitutions enable row level security/);
+  assert.match(migration, /create policy exercise_registry_read[\s\S]*?for select to anon, authenticated/);
+  assert.doesNotMatch(migration, /for (insert|update|delete|all) to (anon|authenticated)/i);
+  // Covering indexes for the composite plan foreign keys.
+  assert.match(migration, /program_cycles_active_workout_plan_fk_idx/);
+  assert.match(migration, /program_cycles_active_nutrition_plan_fk_idx/);
+  // Invariant 6 enforced at the database edge: terminal history is frozen.
+  assert.match(migration, /freeze_terminal_workout_session[\s\S]*?workout_session_frozen/);
+  assert.match(migration, /freeze_workout_sets_when_session_inactive[\s\S]*?workout_set_session_not_active/);
+  assert.match(migration, /freeze_nutrition_entry_update[\s\S]*?nutrition_entry_immutable/);
+  // A malformed plan cannot become persisted authority.
+  assert.match(migration, /enforce_workout_plan_day_shape[\s\S]*?workout_plan_day_exercise_count/);
+  // Every function keeps the search_path discipline the repo mandates.
+  const functions = migration.match(/create or replace function[\s\S]*?\$\$;/g) ?? [];
+  assert.ok(functions.length >= 4);
+  for (const fn of functions) assert.match(fn, /set search_path = ''/);
+});
+
+test('Diverged-onboarding recovery migration adds a discardable terminal status', async () => {
+  const migration = await repo('supabase/migrations/20260819091000_program_cycle_diverged_onboarding_recovery.sql');
+  // The new terminal status and the single transition edge that reaches it.
+  assert.match(migration, /program_cycles_status_valid[\s\S]*?'abandoned'/);
+  assert.match(migration, /old\.status in \('draft','failed'\) and new\.status = 'abandoned'/);
+  // A dedicated, narrow discard RPC that can only ever produce 'abandoned' and
+  // refuses any generated or live cycle.
+  assert.match(migration, /create or replace function public\.discard_program_cycle/);
+  assert.match(migration, /security invoker/);
+  assert.match(migration, /set search_path = ''/);
+  assert.match(migration, /pg_advisory_xact_lock/);
+  assert.match(migration, /stale_program_cycle_revision/);
+  assert.match(migration, /status not in \('draft','failed'\)[\s\S]*?program_cycle_not_discardable/);
+  assert.match(migration, /set\s+status = 'abandoned'/);
+  // Reachable only by an authenticated owner, never anon.
+  assert.match(migration, /revoke all on function public\.discard_program_cycle\(uuid,integer\) from public, anon/);
+  assert.match(migration, /grant execute on function public\.discard_program_cycle\(uuid,integer\) to authenticated/);
+  const types = await web('lib/supabase/database.types.ts');
+  assert.match(types, /discard_program_cycle:/);
+});
+
+test('Diverged-onboarding recovery is wired end to end without a dead end', async () => {
+  // 'abandoned' is a known terminal status, not an "unavailable" parse failure.
+  assert.equal(parseProgramCycleStatus('abandoned'), 'abandoned');
+  assert.equal(programCycleStatusLabel('abandoned'), 'کنارگذاشته‌شده');
+  // Every "current cycle" query treats abandoned as terminal, like completed, so
+  // a discarded-but-not-rebuilt cycle never re-traps the user on any entry point.
+  for (const path of ['lib/program-cycle/data.ts', 'app/page.tsx', 'app/onboarding/ready/page.tsx']) {
+    const source = await web(path);
+    assert.match(source, /\.neq\('status', 'abandoned'\)/);
+  }
+  // The persistence wrapper discards via the RPC; the action rebuilds from the
+  // current draft rather than the stale pinned one.
+  const persistence = await web('lib/program-cycle/persistence.ts');
+  assert.match(persistence, /export async function discardProgramCycle/);
+  assert.match(persistence, /rpc\('discard_program_cycle'/);
+  const actions = await web('app/(main)/program/actions.ts');
+  assert.match(actions, /export async function discardAndRebuildProgramCycle/);
+  assert.match(actions, /discardProgramCycle\(/);
+  assert.match(actions, /ensureProgramCycle\(/);
+  // The page offers the rebuild action, not a review link that cannot re-pin it.
+  const page = await web('app/(main)/program/page.tsx');
+  assert.match(page, /discardAndRebuildProgramCycle/);
+  assert.match(page, /ساخت دوباره با آخرین اطلاعات/);
 });

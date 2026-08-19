@@ -1,0 +1,296 @@
+/* NeoFit Product UI v4 — premium polish layer.
+   Purely additive, loaded LAST in the cascade (after product-ui-v3-workout.css).
+   It gives the calm v3 system real depth, gradient heroes, tactile micro-motion
+   and refined brand marks without changing a single component, string or aria.
+   Every rule here overrides an earlier flat rule by source order at equal
+   specificity; nothing here is required by a source-assertion test. */
+
+:root {
+  /* Layered, green-tinted elevation — ambient blur + tight contact shadow. */
+  --elev-1: 0 1px 2px rgba(16, 40, 29, .045), 0 5px 14px rgba(16, 40, 29, .05);
+  --elev-2: 0 2px 5px rgba(16, 40, 29, .05), 0 12px 28px rgba(16, 40, 29, .075);
+  --elev-3: 0 6px 14px rgba(16, 40, 29, .07), 0 20px 46px rgba(16, 40, 29, .11);
+  --elev-hero: 0 12px 26px rgba(9, 28, 19, .22), 0 34px 74px rgba(9, 28, 19, .26);
+
+  /* Brand gradients — a touch brighter at the light source than the flat token. */
+  --grad-primary: linear-gradient(158deg, #1a8a5f 0%, #0b4935 100%);
+  --grad-mark: linear-gradient(150deg, #17855c 0%, #0a3f2c 100%);
+
+  /* Motion — a calm spring and a soft ease-out. */
+  --ease-spring: cubic-bezier(.2, .8, .2, 1);
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+
+  /* Refined depth tokens the v3 aliases point at. */
+  --shadow-sm: var(--elev-1);
+  --shadow-lg: var(--elev-3);
+
+  /* Nudge the faintest caption grey darker for readable contrast on white. */
+  --text-faint: #6f7a73;
+}
+
+/* ---------- Elevation: lift the flat white surfaces off the canvas ---------- */
+.today-nutrition-card,
+.today-quick-actions > a,
+.meal-list,
+.workout-card,
+.food-results,
+.progress-secondary-metrics article,
+.progress-chart-card,
+.measurement-disclosure,
+.measurement-history,
+.profile-identity-card,
+.profile-coach-card,
+.profile-plan-card,
+.profile-links,
+.profile-edit-disclosure,
+.coach-prompts button,
+.coach-auth-card,
+.program-cycle-hero > div,
+.program-cycle-command,
+.program-plan-grid > article,
+.exercise-list,
+.screen-empty-card,
+.empty-state,
+.search-box,
+.auth-form,
+.onboarding-review-card,
+.onboarding-ai-gate__status,
+.onboarding-ai-gate__provider,
+.ai-provider-card,
+.integration-card,
+.integration-explainer-card {
+  box-shadow: var(--elev-1);
+}
+
+/* ---------- Interactive foundation: smooth transitions + tap feedback ---------- */
+.primary-button,
+.secondary-button,
+.today-focus-card__action,
+.today-coach-link,
+.today-quick-actions > a,
+.workout-card,
+.workout-detail-start,
+.food-result,
+.exercise-row,
+.profile-links a,
+.profile-coach-card,
+.profile-plan-card,
+.filter-chip,
+.meal-type-row button,
+.coach-prompts button,
+.coach-composer button,
+.program-cycle-primary,
+.bottom-nav__item,
+.stepper button,
+.text-button,
+.back-button,
+.coach-shortcut,
+.avatar-button {
+  transition:
+    transform .18s var(--ease-spring),
+    box-shadow .2s ease,
+    background .2s ease,
+    border-color .2s ease,
+    color .2s ease;
+}
+
+/* Tappable rows and controls press in slightly when touched. */
+.food-result:active,
+.exercise-row:active,
+.profile-links a:active,
+.profile-coach-card:active,
+.profile-plan-card:active,
+.filter-chip:active,
+.meal-type-row button:active,
+.coach-prompts button:active,
+.today-coach-link:active { transform: scale(.985); }
+
+/* ---------- Hero cards: flat dark blocks become deep, glowing surfaces ---------- */
+.today-focus-card {
+  background:
+    radial-gradient(135% 105% at 88% -12%, rgba(217, 239, 139, .12), transparent 52%),
+    radial-gradient(125% 125% at 12% 0%, #1c4634 0%, #112f1f 56%, #0c2218 100%);
+  box-shadow: var(--elev-hero), inset 0 1px 0 rgba(255, 255, 255, .07);
+}
+.today-focus-card--welcome {
+  background:
+    radial-gradient(135% 105% at 88% -12%, rgba(217, 239, 139, .14), transparent 54%),
+    radial-gradient(125% 125% at 12% 0%, #1f4d38 0%, #143726 58%, #0f2a1d 100%);
+}
+.today-focus-card--rest {
+  background: radial-gradient(125% 125% at 15% 0%, #2f463b 0%, #253a30 60%, #1d302778 100%), #263a31;
+}
+.today-focus-card--quiet {
+  background: radial-gradient(125% 125% at 15% 0%, #4a423c 0%, #3a3430 62%, #322d29 100%), #3a3430;
+}
+
+.workout-overview,
+.progress-hero,
+.workout-detail-hero {
+  background:
+    radial-gradient(130% 110% at 86% -14%, rgba(217, 239, 139, .10), transparent 50%),
+    radial-gradient(125% 125% at 12% 0%, #1b442f 0%, #12301f 56%, #0c2318 100%);
+  box-shadow: var(--elev-hero), inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+
+/* Inset stat tiles inside heroes gain a faint edge so they read as glass. */
+.workout-overview__stats > div,
+.progress-hero__change,
+.workout-detail-hero__stats > div {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .04);
+}
+
+/* ---------- Primary buttons: gradient, lift, tactile press ---------- */
+.primary-button,
+.program-cycle-primary,
+.measurement-form > button,
+.auth-form button,
+.auth-confirm-form button,
+.onboarding-actions .primary,
+.onboarding-ai-gate__actions button,
+.ai-provider-actions button,
+.onboarding-list-editor button {
+  background: var(--grad-primary);
+  box-shadow: 0 7px 18px rgba(11, 73, 53, .24), inset 0 1px 0 rgba(255, 255, 255, .16);
+}
+.primary-button:hover,
+.program-cycle-primary:hover,
+.measurement-form > button:hover,
+.auth-form button:hover,
+.onboarding-actions .primary:hover { box-shadow: 0 10px 24px rgba(11, 73, 53, .3), inset 0 1px 0 rgba(255, 255, 255, .18); }
+.primary-button:active,
+.program-cycle-primary:active,
+.measurement-form > button:active,
+.auth-form button:active,
+.onboarding-actions .primary:active { transform: translateY(1px); box-shadow: 0 3px 10px rgba(11, 73, 53, .22); }
+
+.secondary-button { transition: transform .18s var(--ease-spring), box-shadow .2s ease, border-color .2s ease, background .2s ease; }
+.secondary-button:hover { border-color: #cdd9d0; box-shadow: var(--elev-1); }
+.secondary-button:active { transform: translateY(1px); }
+
+/* Light action buttons that sit on the dark heroes. */
+.today-focus-card__action,
+.workout-detail-start {
+  box-shadow: 0 8px 20px rgba(6, 20, 14, .28), inset 0 1px 0 rgba(255, 255, 255, .6);
+}
+.today-focus-card__action:hover,
+.workout-detail-start:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(6, 20, 14, .34); }
+.today-focus-card__action:active,
+.workout-detail-start:active { transform: translateY(1px); box-shadow: 0 4px 12px rgba(6, 20, 14, .26); }
+
+/* ---------- Brand marks & avatars: gradient with a soft glow ---------- */
+.topbar-brand__mark,
+.avatar-button,
+.profile-identity-card__avatar,
+.coach-hero__mark,
+.profile-coach-card__icon,
+.onboarding-mark,
+.auth-brand > span {
+  background: var(--grad-mark);
+  box-shadow: 0 6px 16px rgba(11, 73, 53, .26), inset 0 1px 0 rgba(255, 255, 255, .16);
+}
+.onboarding-logo::before {
+  background: var(--grad-mark);
+  box-shadow: 0 4px 12px rgba(11, 73, 53, .24);
+}
+.coach-shortcut:hover,
+.avatar-button:hover { transform: translateY(-1px); }
+.coach-shortcut:active,
+.avatar-button:active { transform: translateY(0) scale(.96); }
+
+/* ---------- Quick actions: the signature delight ---------- */
+.today-quick-actions > a > span { transition: transform .2s var(--ease-spring); }
+.today-quick-actions > a:hover { transform: translateY(-2px); border-color: #d4ded6; box-shadow: var(--elev-3); }
+.today-quick-actions > a:hover > span { transform: scale(1.08) rotate(-4deg); }
+.today-quick-actions > a:active { transform: translateY(0) scale(.99); box-shadow: var(--elev-1); }
+
+/* ---------- Cards that lift on hover (desktop pointer) ---------- */
+.workout-card:hover,
+.profile-coach-card:hover,
+.profile-plan-card:hover { transform: translateY(-2px); border-color: #d4ded6; box-shadow: var(--elev-2); }
+
+/* ---------- Bottom nav: glowing active pill ---------- */
+.bottom-nav__item.is-active .bottom-nav__icon {
+  background: var(--grad-mark);
+  box-shadow: 0 6px 16px rgba(11, 73, 53, .32);
+}
+.bottom-nav__item:active .bottom-nav__icon { transform: scale(.9); }
+
+/* ---------- Rows: warm contact hover ---------- */
+.food-result:hover,
+.exercise-row:hover,
+.profile-links a:hover { background: #f4f9f5; }
+
+/* ---------- Food mark: soft catalog chip ---------- */
+.food-result__mark {
+  background: linear-gradient(150deg, #ecf6ef, #dcefe3) !important;
+  box-shadow: inset 0 0 0 1px rgba(18, 107, 74, .07);
+}
+
+/* ---------- Chips & filters: crisper active state ---------- */
+.filter-chip.is-active { box-shadow: 0 4px 12px rgba(11, 73, 53, .18); }
+.filter-chip:hover { border-color: #c4d3ca; }
+
+/* ---------- Search focus: fuller glow ---------- */
+.search-box:focus-within { box-shadow: 0 0 0 4px rgba(18, 107, 74, .1), var(--elev-2); }
+
+/* ---------- Empty-state & catalog icons: gradient tile ---------- */
+.screen-empty-card__icon,
+.empty-state__icon {
+  background: linear-gradient(150deg, #e9f5ee, #d7ecdf);
+  box-shadow: inset 0 0 0 1px rgba(18, 107, 74, .06);
+}
+
+/* ---------- Calorie ring & progress line: a hint of depth ---------- */
+.today-nutrition-card .calorie-ring { box-shadow: 0 8px 22px rgba(16, 40, 29, .08); }
+.weight-line-chart__line { filter: drop-shadow(0 4px 7px rgba(18, 107, 74, .2)); }
+
+/* ---------- Coach: bubble depth + composer float ---------- */
+.coach-message--assistant { box-shadow: var(--elev-1); }
+.coach-message--user { box-shadow: 0 8px 20px rgba(11, 73, 53, .22); }
+.coach-prompts button:hover { transform: translateY(-2px); border-color: #d4ded6; box-shadow: var(--elev-2); }
+.coach-composer { box-shadow: 0 16px 38px rgba(20, 38, 28, .13); }
+.coach-composer:focus-within { border-color: #bcd3c6; box-shadow: 0 0 0 4px rgba(18, 107, 74, .08), 0 16px 38px rgba(20, 38, 28, .14); }
+.coach-composer button:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(11, 73, 53, .3); }
+.coach-composer button:active { transform: translateY(1px) scale(.96); }
+
+/* ---------- Onboarding & auth: selected depth, sticky-bar lift ---------- */
+.onboarding-choice-grid button.is-selected,
+.onboarding-goal-grid button.is-selected,
+.onboarding-chip-grid button.is-selected { box-shadow: inset 0 0 0 1px var(--primary-strong), 0 6px 16px rgba(11, 73, 53, .12); }
+.onboarding-choice-grid button:active,
+.onboarding-goal-grid button:active,
+.onboarding-chip-grid button:active { transform: scale(.985); }
+.onboarding-actions,
+.bottom-nav { box-shadow: 0 -10px 34px rgba(16, 40, 29, .08); }
+
+/* ---------- Workout player: keep the calm dark, add just enough depth ---------- */
+.workout-player-card { box-shadow: 0 24px 60px rgba(0, 0, 0, .38); }
+.workout-player-primary { box-shadow: 0 8px 20px rgba(0, 0, 0, .3); transition: transform .16s var(--ease-spring), box-shadow .18s ease; }
+.workout-player-primary:not(:disabled):active { transform: translateY(1px); }
+
+/* ---------- Status pills / cycle status: subtle inset edge ---------- */
+.status-pill,
+.program-cycle-status,
+.profile-identity-card__state { box-shadow: inset 0 0 0 1px rgba(18, 107, 74, .08); }
+
+/* ---------- Reduced motion: strip all lift/scale, keep the color states ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .primary-button:hover, .primary-button:active,
+  .secondary-button:hover, .secondary-button:active,
+  .today-focus-card__action:hover, .today-focus-card__action:active,
+  .workout-detail-start:hover, .workout-detail-start:active,
+  .today-quick-actions > a:hover, .today-quick-actions > a:active,
+  .today-quick-actions > a:hover > span,
+  .workout-card:hover, .profile-coach-card:hover, .profile-plan-card:hover,
+  .coach-prompts button:hover, .coach-composer button:hover, .coach-composer button:active,
+  .coach-shortcut:hover, .coach-shortcut:active, .avatar-button:hover, .avatar-button:active,
+  .bottom-nav__item:active .bottom-nav__icon,
+  .food-result:active, .exercise-row:active, .profile-links a:active,
+  .profile-coach-card:active, .profile-plan-card:active, .filter-chip:active,
+  .meal-type-row button:active, .coach-prompts button:active, .today-coach-link:active,
+  .onboarding-choice-grid button:active, .onboarding-goal-grid button:active,
+  .onboarding-chip-grid button:active, .workout-player-primary:not(:disabled):active {
+    transform: none;
+  }
+}

@@ -40,7 +40,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<PersistenceMode>('loading');
   const [accountId, setAccountId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('در حال بررسی محل ذخیره‌سازی...');
+  const [message, setMessage] = useState('در حال آماده‌سازی...');
   const [editRevision, setEditRevision] = useState(0);
 
   const databaseUpdatedAtRef = useRef<string | null>(null);
@@ -76,7 +76,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         setDraft(readGuestOnboardingDraft() ?? createEmptyOnboardingDraft());
         setMode('guest');
-        setMessage('حالت مهمان: پیشرفت فقط در همین مرورگر ذخیره می‌شود.');
+        setMessage('پیشرفتت فقط روی همین دستگاه ذخیره می‌شود.');
         return;
       }
 
@@ -88,7 +88,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
           if (cancelled) return;
           setDraft(readGuestOnboardingDraft() ?? createEmptyOnboardingDraft());
           setMode('guest');
-          setMessage('حالت مهمان: برای ساخت دوره AI شخصی وارد حساب شو.');
+          setMessage('برای ذخیره دائمی و ساخت برنامه شخصی وارد حساب شو.');
           return;
         }
 
@@ -99,18 +99,18 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         setDraft(remote?.draft ?? createEmptyOnboardingDraft());
         setMode('account');
         if (remote?.migratedFromVersion === 1) {
-          setMessage('داده‌های قابل‌تشخیص نسخه قبلی حفظ شدند؛ پاسخ‌های مبهم باید دوباره انتخاب شوند.');
+          setMessage('بعضی پاسخ‌های قبلی نیاز به مرور دوباره دارند.');
         } else if (remote && !remote.draft) {
-          setMessage('نسخه ذخیره‌شده قابل اعتماد نیست؛ پاسخ‌های شخصی دوباره بررسی می‌شوند.');
+          setMessage('اطلاعات قبلی کامل نبود؛ لطفاً پاسخ‌ها را دوباره مرور کن.');
         } else if (remote?.status === 'completed') {
-          setMessage('Onboarding این حساب تکمیل شده است؛ اطلاعات قابل مرور و اصلاح‌اند.');
+          setMessage('اطلاعاتت تکمیل شده و هر زمان بخواهی قابل ویرایش است.');
         } else {
-          setMessage('پیشرفت در حساب شخصی ذخیره می‌شود.');
+          setMessage('تغییراتت به‌صورت خودکار ذخیره می‌شوند.');
         }
       } catch {
         if (cancelled) return;
         setMode('error');
-        setMessage('اتصال حساب در دسترس نیست؛ برای جلوگیری از دو نسخه داده، ذخیره متوقف شده است.');
+        setMessage('اتصال به حساب در دسترس نیست. صفحه را تازه کن و دوباره تلاش کن.');
       }
     }
     void initialize();
@@ -133,7 +133,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       autosaveTimerRef.current = null;
       if (mode === 'guest') {
         writeGuestOnboardingDraft(draft);
-        setMessage('پیش‌نویس به‌صورت خودکار در همین مرورگر ذخیره شد.');
+        setMessage('روی همین دستگاه ذخیره شد.');
         return;
       }
       if (mode !== 'account' || !accountId) return;
@@ -148,14 +148,14 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         );
         setDatabaseRevision(result.databaseUpdatedAt);
       }).then(() => {
-        setMessage('پیش‌نویس به‌صورت خودکار ذخیره شد.');
+        setMessage('ذخیره شد.');
       }).catch((error) => {
         if (error instanceof OnboardingConflictError) {
           setMode('error');
-          setMessage('این Onboarding در تب یا دستگاه دیگری تغییر کرده است. صفحه را تازه کن تا نسخه جدید جایگزین نشود.');
+          setMessage('اطلاعات در جای دیگری تغییر کرده است. صفحه را تازه کن تا آخرین تغییرات حفظ شوند.');
           return;
         }
-        setMessage('ذخیره خودکار موقتاً انجام نشد؛ با «ادامه» دوباره تلاش می‌کنیم.');
+        setMessage('ذخیره خودکار انجام نشد؛ با «ادامه» دوباره تلاش می‌کنیم.');
       });
     }, AUTOSAVE_DELAY_MS);
 
@@ -184,16 +184,20 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         setMessage('ذخیره شد.');
       } else if (mode === 'guest') {
         writeGuestOnboardingDraft(nextDraft);
-        setMessage('در همین مرورگر ذخیره شد.');
+        setMessage('روی همین دستگاه ذخیره شد.');
       } else {
         throw new Error('Onboarding persistence is unavailable.');
       }
-      setDraft(nextDraft);
+      // Re-apply the step marker to the LATEST state, not the pre-await snapshot:
+      // inputs stay editable while the remote write is in flight, so a keystroke
+      // during that window must survive. markStepCompleted is pure and idempotent,
+      // and a concurrent edit re-arms autosave, so persistence still converges.
+      setDraft((current) => markStepCompleted(current, step));
       return nextDraft;
     } catch (error) {
       if (error instanceof OnboardingConflictError) {
         setMode('error');
-        setMessage('این Onboarding در تب یا دستگاه دیگری تغییر کرده است. صفحه را تازه کن تا نسخه جدید جایگزین نشود.');
+        setMessage('اطلاعات در جای دیگری تغییر کرده است. صفحه را تازه کن تا آخرین تغییرات حفظ شوند.');
       }
       throw error;
     } finally {
@@ -220,20 +224,20 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         setDatabaseRevision(result.databaseUpdatedAt);
         clearGuestOnboardingDraft();
         setDraft(result.draft);
-        setMessage(result.metadataSyncWarning ? 'Onboarding ذخیره شد؛ همگام‌سازی بخشی از پروفایل بعداً تکرار می‌شود.' : 'Onboarding با موفقیت تکمیل شد.');
+        setMessage(result.metadataSyncWarning ? 'اطلاعات ذخیره شد؛ بخشی از پروفایل کمی بعد به‌روزرسانی می‌شود.' : 'اطلاعاتت با موفقیت تکمیل شد.');
         return { draft: result.draft, metadataSyncWarning: result.metadataSyncWarning };
       }
       if (mode === 'guest') {
         writeGuestOnboardingDraft(completedDraft);
         setDraft(completedDraft);
-        setMessage('Onboarding مهمان تکمیل شد؛ این مسیر Demo است و برنامه AI شخصی ایجاد نمی‌کند.');
+        setMessage('اطلاعات روی همین دستگاه ذخیره شد. برای برنامه شخصی وارد حساب شو.');
         return { draft: completedDraft, metadataSyncWarning: false };
       }
       throw new Error('Onboarding persistence is unavailable.');
     } catch (error) {
       if (error instanceof OnboardingConflictError) {
         setMode('error');
-        setMessage('قبل از تکمیل، داده در تب یا دستگاه دیگری تغییر کرده است. صفحه را تازه کن تا نسخه جدید از بین نرود.');
+        setMessage('اطلاعات در جای دیگری تغییر کرده است. صفحه را تازه کن تا آخرین تغییرات حفظ شوند.');
       }
       throw error;
     } finally {

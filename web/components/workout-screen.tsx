@@ -4,31 +4,67 @@ import type { WorkoutPlanSnapshot } from '@/lib/supabase/workout-plan-data';
 
 const faNumber = new Intl.NumberFormat('fa-IR');
 
+function WorkoutEmpty({
+  title,
+  text,
+  actionHref,
+  actionLabel,
+  secondaryHref,
+  secondaryLabel,
+}: {
+  title: string;
+  text: string;
+  actionHref?: string;
+  actionLabel?: string;
+  secondaryHref?: string;
+  secondaryLabel?: string;
+}) {
+  return (
+    <article className="screen-empty-card">
+      <span className="screen-empty-card__icon"><NeoFitIcon name="workout" size={28} /></span>
+      <div><h3>{title}</h3><p>{text}</p></div>
+      {actionHref && actionLabel ? <Link className="primary-button" href={actionHref}>{actionLabel}</Link> : null}
+      {secondaryHref && secondaryLabel ? <Link className="text-button" href={secondaryHref}>{secondaryLabel}</Link> : null}
+    </article>
+  );
+}
+
 export function WorkoutScreen({ snapshot }: { snapshot: WorkoutPlanSnapshot }) {
   if (snapshot.mode === 'unavailable') {
     return (
-      <section className="page-stack" aria-labelledby="workout-heading">
-        <div className="section-heading"><div><p className="section-kicker">برنامه تمرینی</p><h2 id="workout-heading">برنامه در دسترس نیست</h2></div></div>
-        <article className="local-data-card"><div><span>خطای اتصال</span><h3>برنامه تمرینی خوانده نشد</h3><p>{snapshot.loadError ?? 'دوباره تلاش کن.'}</p></div></article>
+      <section className="page-stack workout-page" aria-labelledby="workout-heading">
+        <div className="section-heading"><div><p className="section-kicker">تمرین</p><h2 id="workout-heading">برنامه تمرین</h2></div></div>
+        <WorkoutEmpty title="برنامه تمرینی بارگذاری نشد" text={snapshot.loadError ?? 'صفحه را تازه کن و دوباره تلاش کن.'} />
       </section>
     );
   }
 
-  if (snapshot.mode === 'account' && snapshot.days.length === 0) {
+  if (snapshot.mode === 'guest') {
     return (
-      <section className="page-stack" aria-labelledby="workout-heading">
-        <div className="section-heading"><div><p className="section-kicker">برنامهٔ حساب</p><h2 id="workout-heading">هنوز برنامهٔ فعالی ثبت نشده</h2></div></div>
-        <article className="local-data-card">
-          <div>
-            <span>دادهٔ واقعی حساب</span>
-            <h3>NeoFit برنامهٔ نمونه را به‌جای برنامهٔ شخصی نمایش نمی‌دهد</h3>
-            <p>وقتی یک نسخهٔ معتبر از برنامه برای حساب فعال شود، جلسه‌ها و Player از همان نسخه استفاده می‌کنند.</p>
-          </div>
-        </article>
-        <div className="action-row">
-          <Link className="primary-button" href="/program">ساخت یا فعال‌سازی برنامه</Link>
-          <Link className="text-button" href="/onboarding/review">مرور اطلاعات پایه</Link>
-        </div>
+      <section className="page-stack workout-page" aria-labelledby="workout-heading">
+        <div className="section-heading"><div><p className="section-kicker">تمرین</p><h2 id="workout-heading">برنامه شخصی تمرین</h2></div></div>
+        <WorkoutEmpty
+          title="برای ساخت برنامه شخصی وارد حساب شو"
+          text="بعد از تکمیل اطلاعاتت، NeoFit برنامه تمرین مناسب شرایطت را آماده می‌کند."
+          actionHref="/auth"
+          actionLabel="ورود یا ساخت حساب"
+        />
+      </section>
+    );
+  }
+
+  if (snapshot.days.length === 0) {
+    return (
+      <section className="page-stack workout-page" aria-labelledby="workout-heading">
+        <div className="section-heading"><div><p className="section-kicker">تمرین</p><h2 id="workout-heading">برنامه تمرین</h2></div></div>
+        <WorkoutEmpty
+          title="هنوز برنامه تمرینی نداری"
+          text="اطلاعاتت را مرور کن و برنامه تمرین و تغذیه‌ات را بساز."
+          actionHref="/program"
+          actionLabel="رفتن به برنامه من"
+          secondaryHref="/onboarding/review"
+          secondaryLabel="ویرایش اطلاعات"
+        />
       </section>
     );
   }
@@ -41,49 +77,47 @@ export function WorkoutScreen({ snapshot }: { snapshot: WorkoutPlanSnapshot }) {
   );
 
   return (
-    <section className="page-stack" aria-labelledby="workout-heading">
-      <div className="section-heading">
-        <div>
-          <p className="section-kicker">{snapshot.mode === 'guest' ? 'برنامه نمونه مهمان' : 'برنامهٔ فعال حساب'}</p>
-          <h2 id="workout-heading">{snapshot.title ?? 'تمرین‌های برنامه'}</h2>
-        </div>
-        <span className="status-pill">
-          <NeoFitIcon name="workout" size={15} />
-          {snapshot.version ? `نسخه ${faNumber.format(snapshot.version)}` : `${faNumber.format(workoutPlan.length)} جلسه`}
-        </span>
+    <section className="page-stack workout-page" aria-labelledby="workout-heading">
+      <div className="section-heading workout-page__heading">
+        <div><p className="section-kicker">برنامه تمرین</p><h2 id="workout-heading">{snapshot.title ?? 'تمرین‌های من'}</h2></div>
+        <Link className="text-button" href="/program">برنامه من</Link>
       </div>
 
-      {snapshot.mode === 'guest' ? (
-        <div className="auth-notice auth-notice--warning" role="status">این برنامه فقط Demo مهمان است و برنامهٔ شخصی یا تجویز‌شده محسوب نمی‌شود.</div>
-      ) : null}
-
-      {snapshot.mode === 'account' ? (
-        <div className="auth-notice" role="status">ترتیب زیر ترتیب نسخهٔ فعال برنامه است. NeoFit تا وقتی schedule/history جداگانه نداشته باشد، جلسه‌ای را به‌عنوان «بعدی» حدس نمی‌زند.</div>
-      ) : null}
-
-      <article className="workout-summary-card">
-        <div><span>جلسه</span><strong>{faNumber.format(workoutPlan.length)}</strong></div>
-        <div><span>حرکت</span><strong>{faNumber.format(exerciseCount)}</strong></div>
-        <div><span>ست کل</span><strong>{faNumber.format(totalSets)}</strong></div>
+      <article className="workout-overview">
+        <div className="workout-overview__copy">
+          <span>برنامه فعال</span>
+          <h3>{faNumber.format(workoutPlan.length)} جلسه برای دوره فعلی</h3>
+          <p>جلسه‌ای را که می‌خواهی انجام بدهی باز کن؛ جزئیات حرکت‌ها داخل هر جلسه است.</p>
+        </div>
+        <div className="workout-overview__stats" aria-label="خلاصه برنامه تمرین">
+          <div><strong>{faNumber.format(workoutPlan.length)}</strong><span>جلسه</span></div>
+          <div><strong>{faNumber.format(exerciseCount)}</strong><span>حرکت</span></div>
+          <div><strong>{faNumber.format(totalSets)}</strong><span>ست</span></div>
+        </div>
       </article>
 
-      <div className="workout-list">
-        {workoutPlan.map((workout) => (
-          <Link className="workout-card" href={`/workout/${workout.id}`} key={workout.id}>
-            <div className="workout-card__day"><span>{workout.day}</span></div>
-            <div className="workout-card__body">
-              <h3>{workout.title}</h3>
-              <p>{workout.focus}</p>
-              <div className="workout-card__meta">
-                <span>{workout.duration}</span>
-                <span>{faNumber.format(workout.exercises.length)} حرکت</span>
-                <span>{faNumber.format(workout.exercises.reduce((sum, exercise) => sum + exercise.sets, 0))} ست</span>
+      <section className="workout-sessions" aria-labelledby="workout-sessions-heading">
+        <div className="section-heading section-heading--compact">
+          <div><p className="section-kicker">جلسه‌ها</p><h2 id="workout-sessions-heading">برنامه هفتگی</h2></div>
+        </div>
+        <div className="workout-list">
+          {workoutPlan.map((workout) => (
+            <Link className="workout-card" href={`/workout/${workout.id}`} key={workout.id}>
+              <div className="workout-card__day"><span>{workout.day}</span></div>
+              <div className="workout-card__body">
+                <h3>{workout.title}</h3>
+                <p>{workout.focus}</p>
+                <div className="workout-card__meta">
+                  <span>{workout.duration}</span>
+                  <span>{faNumber.format(workout.exercises.length)} حرکت</span>
+                  <span>{faNumber.format(workout.exercises.reduce((sum, exercise) => sum + exercise.sets, 0))} ست</span>
+                </div>
               </div>
-            </div>
-            <NeoFitIcon name="chevron" />
-          </Link>
-        ))}
-      </div>
+              <span className="workout-card__open"><span>باز کردن</span><NeoFitIcon name="chevron" size={18} /></span>
+            </Link>
+          ))}
+        </div>
+      </section>
     </section>
   );
 }

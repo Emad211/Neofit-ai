@@ -1,0 +1,366 @@
+/* NeoFit Product UI v3 — workout detail and active session. */
+
+.workout-details-page {
+  max-inline-size: 820px;
+  margin-inline: auto;
+}
+
+.workout-details-page .back-button {
+  justify-self: start;
+  color: var(--text-soft);
+  font-size: .74rem;
+}
+
+.workout-detail-hero {
+  display: grid;
+  gap: 17px;
+  padding: 25px;
+  border: 0;
+  border-radius: 28px;
+  background: #122b21;
+  color: #fff;
+  box-shadow: 0 18px 44px rgba(13,41,29,.13);
+}
+.workout-detail-hero__top {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  color:rgba(255,255,255,.62);
+  font-size:.72rem;
+  font-weight:750;
+}
+.workout-detail-hero h2 {
+  margin: 0;
+  max-inline-size: 620px;
+  font-size: clamp(1.55rem,6vw,2.15rem);
+  line-height:1.35;
+}
+.workout-detail-hero > p {
+  margin:-8px 0 0;
+  max-inline-size:620px;
+  color:rgba(255,255,255,.68);
+  font-size:.82rem;
+  line-height:1.85;
+}
+.workout-detail-hero__stats {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin:0;
+}
+.workout-detail-hero__stats > div {
+  display:grid;
+  justify-items:start;
+  gap:2px;
+  min-block-size:68px;
+  padding:11px;
+  border-radius:15px;
+  background:rgba(255,255,255,.06);
+}
+.workout-detail-hero__stats strong { font-size:1.05rem; }
+.workout-detail-hero__stats span { color:rgba(255,255,255,.58); font-size:.64rem; }
+.workout-detail-start {
+  justify-self:start;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-block-size:48px;
+  min-inline-size:148px;
+  padding-inline:18px;
+  border-radius:14px;
+  background:#fff;
+  color:var(--primary-strong);
+  font-size:.82rem;
+  font-weight:900;
+  text-decoration:none;
+}
+
+.workout-exercise-section { display:grid; gap:11px; }
+.exercise-list {
+  display:grid;
+  gap:0;
+  padding:0;
+  margin:0;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:22px;
+  background:var(--surface);
+  list-style:none;
+}
+.exercise-row {
+  display:grid;
+  grid-template-columns:38px minmax(0,1fr) auto;
+  align-items:center;
+  gap:12px;
+  min-block-size:76px;
+  padding:12px 14px;
+  border:0;
+  border-block-end:1px solid var(--border);
+  border-radius:0;
+  background:transparent;
+}
+.exercise-row:last-child { border-block-end:0; }
+.exercise-row__index {
+  display:grid;
+  place-items:center;
+  inline-size:34px;
+  block-size:34px;
+  border-radius:11px;
+  background:var(--surface-soft);
+  color:var(--primary-strong);
+  font-size:.72rem;
+  font-weight:900;
+}
+.exercise-row h3 { margin:0 0 2px; font-size:.88rem; }
+.exercise-row p { margin:0; color:var(--text-faint); font-size:.69rem; }
+.exercise-row__rest { display:grid; justify-items:end; gap:2px; color:var(--text-faint); font-size:.62rem; }
+.exercise-row__rest small { font-size:.6rem; }
+.exercise-row__rest b { color:var(--text-soft); font-size:.68rem; }
+.workout-safety-note {
+  display:flex;
+  align-items:flex-start;
+  gap:7px;
+  margin:0;
+  padding:0 2px;
+  border:0;
+  background:transparent;
+  color:var(--text-faint);
+  font-size:.68rem;
+  line-height:1.7;
+}
+.workout-safety-note svg { flex:0 0 auto; margin-block-start:2px; color:var(--primary); }
+
+/* Active workout: full attention, almost no decoration. */
+.workout-player-frame {
+  min-block-size:100svh;
+  display:grid;
+  place-items:center;
+  padding:20px;
+  background:#0c1611;
+  color:#f5f7f5;
+}
+.workout-player-card {
+  inline-size:min(100%,580px);
+  display:grid;
+  gap:18px;
+  padding:24px;
+  border:0;
+  border-radius:26px;
+  background:#111f19;
+  box-shadow:none;
+}
+.workout-player-card.is-loading {
+  min-block-size:260px;
+  place-items:center;
+  color:rgba(255,255,255,.62);
+}
+.workout-player-header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.workout-player-header a {
+  color:rgba(255,255,255,.6);
+  font-size:.7rem;
+  font-weight:800;
+  text-decoration:none;
+}
+.workout-player-header > div {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:rgba(255,255,255,.5);
+  font-size:.65rem;
+}
+.workout-player-header b { color:#9bd1b4; font-weight:850; }
+.workout-player-progress {
+  block-size:4px;
+  overflow:hidden;
+  border-radius:99px;
+  background:rgba(255,255,255,.08);
+}
+.workout-player-progress span {
+  display:block;
+  block-size:100%;
+  border-radius:inherit;
+  background:#8ed2ad;
+}
+.workout-player-heading {
+  display:grid;
+  justify-items:center;
+  gap:3px;
+  padding-block:10px 4px;
+  text-align:center;
+}
+.workout-player-kicker {
+  margin:0;
+  color:#8ed2ad;
+  font-size:.66rem;
+  font-weight:850;
+}
+.workout-player-heading h1,
+.workout-completion-card h1,
+.workout-finished h1 {
+  margin:4px 0;
+  max-inline-size:520px;
+  font-size:clamp(1.7rem,7vw,2.35rem);
+  line-height:1.32;
+}
+.workout-player-heading p,
+.workout-finished > p {
+  margin:0;
+  color:rgba(255,255,255,.58);
+  font-size:.72rem;
+  line-height:1.75;
+}
+.workout-player-set-number {
+  text-align:center;
+  color:#fff;
+  font-size:1.05rem;
+  font-weight:850;
+}
+.workout-player-inputs {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.workout-player-inputs label,
+.workout-completion-card label {
+  display:grid;
+  gap:7px;
+  color:rgba(255,255,255,.58);
+  font-size:.66rem;
+  font-weight:800;
+}
+.workout-player-inputs label > span { color:rgba(255,255,255,.35); font-size:.58rem; }
+.workout-player-inputs input,
+.workout-completion-card textarea {
+  inline-size:100%;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:16px;
+  outline:0;
+  background:rgba(255,255,255,.055);
+  color:#fff;
+  font:inherit;
+}
+.workout-player-inputs input {
+  min-block-size:92px;
+  padding:10px;
+  text-align:center;
+  font-size:2.25rem;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+}
+.workout-player-inputs input:focus-visible,
+.workout-completion-card textarea:focus-visible {
+  border-color:#8ed2ad;
+  box-shadow:0 0 0 3px rgba(142,210,173,.12);
+}
+.workout-player-set-history {
+  display:grid;
+  gap:6px;
+  padding:12px;
+  border-radius:14px;
+  background:rgba(255,255,255,.04);
+}
+.workout-player-set-history > span { color:rgba(255,255,255,.46); font-size:.62rem; }
+.workout-player-set-history > div { display:grid; grid-template-columns:30px 1fr 1fr; gap:8px; color:rgba(255,255,255,.65); font-size:.66rem; }
+.workout-player-set-history b { color:#8ed2ad; }
+.workout-player-primary,
+.workout-player-link-button {
+  min-block-size:50px;
+  border:0;
+  border-radius:14px;
+  font:inherit;
+  font-size:.78rem;
+  font-weight:900;
+  cursor:pointer;
+  text-align:center;
+}
+.workout-player-primary {
+  display:grid;
+  place-items:center;
+  padding-inline:18px;
+  background:#ecf6f0;
+  color:#0c2b1e;
+}
+.workout-player-primary:disabled,
+.workout-player-link-button:disabled { opacity:.45; cursor:not-allowed; }
+.workout-player-link-button { background:transparent; color:rgba(255,255,255,.45); }
+.workout-player-error,
+.workout-player-warning {
+  margin:0;
+  padding:10px 12px;
+  border-radius:12px;
+  font-size:.67rem;
+  line-height:1.7;
+}
+.workout-player-error { background:rgba(183,61,61,.14); color:#ffb8b8; }
+.workout-player-warning { background:rgba(196,143,38,.13); color:#f0d39a; }
+.workout-rest-card { min-block-size:420px; align-content:center; justify-items:center; text-align:center; }
+.workout-rest-card > strong { font-size:clamp(5.4rem,24vw,8rem); line-height:.92; color:#a6dec1; font-variant-numeric:tabular-nums; }
+.workout-rest-card > span { color:rgba(255,255,255,.45); font-size:.7rem; }
+.workout-rest-card > p { margin:5px 0 10px; color:rgba(255,255,255,.62); font-size:.75rem; }
+.workout-rest-card .workout-player-primary { inline-size:100%; }
+.workout-completion-card { gap:16px; }
+.workout-completion-card input[type='range'] { inline-size:100%; accent-color:#8ed2ad; }
+.workout-completion-card label { grid-template-columns:1fr auto; align-items:center; }
+.workout-completion-card textarea { min-block-size:100px; padding:12px; resize:vertical; }
+.workout-completion-summary,
+.workout-finished__stats { display:flex; align-items:stretch; gap:8px; }
+.workout-completion-summary > div,
+.workout-finished__stats > div {
+  flex:1;
+  display:grid;
+  gap:3px;
+  padding:12px;
+  border-radius:14px;
+  background:rgba(255,255,255,.045);
+  text-align:center;
+}
+.workout-completion-summary span,
+.workout-finished__stats span { color:rgba(255,255,255,.5); font-size:.62rem; }
+.workout-completion-summary strong,
+.workout-finished__stats strong { color:#fff; font-size:1rem; }
+.workout-finished { min-block-size:430px; align-content:center; justify-items:center; text-align:center; }
+.workout-finished__mark {
+  display:grid;
+  place-items:center;
+  inline-size:64px;
+  block-size:64px;
+  border-radius:999px;
+  background:#ecf6f0;
+  color:#0c2b1e;
+  font-size:1.8rem;
+  font-weight:950;
+}
+.workout-finished__stats { inline-size:100%; }
+.workout-finished .workout-player-primary { inline-size:100%; }
+
+@media (min-width:760px) {
+  .workout-detail-hero { grid-template-columns:minmax(0,1fr) auto; align-items:end; }
+  .workout-detail-hero__top,
+  .workout-detail-hero h2,
+  .workout-detail-hero > p,
+  .workout-detail-hero__stats { grid-column:1; }
+  .workout-detail-start { grid-column:2; grid-row:1 / 5; align-self:end; }
+}
+
+@media (max-width:520px) {
+  .workout-player-frame { padding:0; align-items:stretch; }
+  .workout-player-card {
+    min-block-size:100svh;
+    align-content:start;
+    padding:18px 16px calc(18px + env(safe-area-inset-bottom));
+    border-radius:0;
+  }
+  .workout-player-inputs { gap:8px; }
+  .workout-player-inputs input { min-block-size:86px; font-size:2rem; }
+  .workout-rest-card,
+  .workout-finished { align-content:center; }
+  .workout-finished__stats { flex-direction:column; inline-size:100%; }
+  .exercise-row { grid-template-columns:34px minmax(0,1fr); }
+  .exercise-row__rest { grid-column:2; justify-items:start; grid-auto-flow:column; align-items:center; gap:6px; }
+}

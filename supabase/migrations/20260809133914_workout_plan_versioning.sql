@@ -125,4 +125,4 @@ create index workout_sessions_plan_idx on public.workout_sessions (user_id, work
   where workout_plan_id is not null;
 
 comment on table public.workout_plans is 'Immutable-content versioned workout plans. Account plans are user-owned under RLS; active plan changes by activating another version rather than mutating plan JSON in place.';
-comment on column public.workout_sessions.workout_plan_id is 'Plan version source for this session when the workout came from an authenticated account plan; null for legacy or guest-derived sessions.';
+comment on column public.workout_sessions.workout_plan_id is 'Plan version source for this session when the workout came from an authenticated account plan; null for legacy or guest-derived sessions.';;

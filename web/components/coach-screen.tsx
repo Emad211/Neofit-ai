@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { NeoFitIcon } from '@/components/neofit-icons';
 import { useAccountState } from '@/components/account-state';
 import type { YouTubeVideoCard } from '@/lib/integrations/types';
 
@@ -30,13 +31,13 @@ type Message = {
 const starter: Message = {
   id: 'welcome',
   role: 'assistant',
-  content: 'سلام. من Coach نئوفیت هستم. می‌توانم بر اساس اطلاعات واقعی حساب، تمرین‌ها، تغذیه ثبت‌شده و محدودیت‌های Onboarding بهت پاسخ بدهم. اگر ویدیوی آموزشی بخواهی، می‌توانم YouTube را هم به‌صورت کنترل‌شده جست‌وجو کنم یا یک لینک عمومی را با Gemini بررسی کنم.',
+  content: 'سلام. درباره تمرین، تغذیه، پیشرفت یا محدودیت‌هایی که ثبت کرده‌ای از من بپرس.',
 };
 
 const prompts = [
-  'وضعیت تمرین‌های اخیرم را جمع‌بندی کن',
-  'امروز از نظر تغذیه چه چیزی ثبت کرده‌ام؟',
-  'در یوتیوب یک ویدیوی آموزش اسکوات پیدا کن',
+  'تمرین‌های اخیرم را جمع‌بندی کن',
+  'تغذیه امروز را بررسی کن',
+  'یک ویدیوی آموزش اسکوات پیدا کن',
 ];
 
 function faSeconds(value: number) {
@@ -44,25 +45,16 @@ function faSeconds(value: number) {
 }
 
 function YouTubeCards({ videos }: { videos: readonly YouTubeVideoCard[] }) {
-  if (videos.length === 0) return <p className="coach-youtube-empty">نتیجه ویدیویی مناسبی پیدا نشد.</p>;
+  if (videos.length === 0) return <p className="coach-youtube-empty">ویدیوی مناسبی پیدا نشد.</p>;
   return (
-    <div className="coach-youtube-grid" aria-label="نتایج YouTube">
+    <div className="coach-youtube-grid" aria-label="نتایج ویدیو">
       {videos.map((video) => (
-        <a
-          className="coach-youtube-card"
-          href={video.watchUrl}
-          target="_blank"
-          rel="noreferrer noopener"
-          key={video.videoId}
-        >
+        <a className="coach-youtube-card" href={video.watchUrl} target="_blank" rel="noreferrer noopener" key={video.videoId}>
           <div className="coach-youtube-card__media">
             {video.thumbnailUrl ? <img src={video.thumbnailUrl} alt="" loading="lazy" /> : <span aria-hidden="true">▶</span>}
             {video.durationLabel ? <b>{video.durationLabel}</b> : null}
           </div>
-          <div className="coach-youtube-card__body">
-            <strong>{video.title}</strong>
-            <span>{video.channelTitle || 'YouTube'}</span>
-          </div>
+          <div className="coach-youtube-card__body"><strong>{video.title}</strong><span>{video.channelTitle || 'YouTube'}</span></div>
         </a>
       ))}
     </div>
@@ -81,15 +73,13 @@ export function CoachScreen() {
   const endRef = useRef<HTMLDivElement | null>(null);
 
   const history = useMemo(
-    () => messages
-      .filter((item) => item.id !== 'welcome')
-      .slice(-6)
-      .map(({ role, content }) => ({ role, content })),
+    () => messages.filter((item) => item.id !== 'welcome').slice(-6).map(({ role, content }) => ({ role, content })),
     [messages],
   );
 
   const cooldownSeconds = cooldownUntil ? Math.max(0, Math.ceil((cooldownUntil - now) / 1000)) : 0;
   const blocked = loading || cooldownSeconds > 0;
+  const conversationStarted = messages.length > 1;
 
   useEffect(() => {
     if (!cooldownUntil) return;
@@ -139,36 +129,33 @@ export function CoachScreen() {
               ? headerSeconds
               : 60;
           setCooldownUntil(Date.now() + Math.max(1, retrySeconds) * 1000);
-          if (payload.error === 'ai_request_budget_exceeded') {
-            throw new Error(`برای محافظت از سهمیه و هزینه، درخواست‌های Coach موقتاً محدود شده‌اند. حدود ${faSeconds(retrySeconds)} ثانیه دیگر دوباره امتحان کن.`);
-          }
-          throw new Error(`YouTube یا Provider موقتاً rate-limit شده است. حدود ${faSeconds(retrySeconds)} ثانیه دیگر دوباره امتحان کن.`);
+          throw new Error(`درخواست‌ها موقتاً محدود شده‌اند. حدود ${faSeconds(retrySeconds)} ثانیه دیگر دوباره امتحان کن.`);
         }
         if (payload.error === 'youtube_not_configured') {
-          setErrorAction({ href: '/profile/integrations', label: 'اتصال YouTube' });
-          throw new Error('برای جست‌وجوی YouTube ابتدا کلید محدودشده YouTube Data API v3 را در اتصال‌ها ذخیره کن.');
+          setErrorAction({ href: '/profile/integrations', label: 'تنظیم اتصال ویدیو' });
+          throw new Error('برای جست‌وجوی ویدیو، اتصال YouTube را از تنظیمات فعال کن.');
         }
         if (payload.error === 'youtube_video_requires_google') {
-          setErrorAction({ href: '/profile/ai', label: 'تنظیم Google Gemini' });
-          throw new Error('فهم محتوای لینک YouTube در NeoFit فعلاً به کلید Google Gemini نیاز دارد؛ AvalAI برای این قابلیت fallback نمی‌شود.');
+          setErrorAction({ href: '/profile/ai', label: 'تنظیم مربی هوشمند' });
+          throw new Error('بررسی محتوای مستقیم یک لینک ویدیو فعلاً به اتصال Google نیاز دارد.');
         }
         if (response.status === 503 && payload.error === 'ai_not_configured') {
-          setErrorAction({ href: '/profile/ai', label: 'تنظیم هوش مصنوعی' });
-          throw new Error('برای پاسخ هوشمند Coach یک کلید Google یا AvalAI معتبر ذخیره کن.');
+          setErrorAction({ href: '/profile/ai', label: 'تنظیم مربی هوشمند' });
+          throw new Error('برای استفاده از مربی هوشمند، اتصال هوش مصنوعی را در تنظیمات فعال کن.');
         }
         if (response.status === 401 && payload.error === 'authentication_required') {
           setErrorAction({ href: '/auth', label: 'ورود دوباره' });
-          throw new Error('Session حساب معتبر نیست؛ دوباره وارد حساب شو.');
+          throw new Error('نشست حسابت منقضی شده است. دوباره وارد حساب شو.');
         }
         if (payload.error === 'ai_provider_unavailable') {
-          setErrorAction({ href: '/profile/ai', label: 'بررسی Providerها' });
-          throw new Error(`Provider پاسخ نداد${payload.code ? ` (${payload.code})` : ''}. وضعیت کلید را بررسی کن.`);
+          setErrorAction({ href: '/profile/ai', label: 'بررسی اتصال هوش مصنوعی' });
+          throw new Error('مربی هوشمند پاسخ نداد. اتصال هوش مصنوعی را بررسی کن و دوباره تلاش کن.');
         }
         if (payload.error === 'youtube_tool_unavailable') {
-          setErrorAction({ href: '/profile/integrations', label: 'بررسی اتصال YouTube' });
-          throw new Error('جست‌وجوی YouTube در دسترس نبود. وضعیت کلید یا سهمیه YouTube را بررسی کن.');
+          setErrorAction({ href: '/profile/integrations', label: 'بررسی اتصال ویدیو' });
+          throw new Error('جست‌وجوی ویدیو موقتاً در دسترس نیست. کمی بعد دوباره تلاش کن.');
         }
-        throw new Error('پاسخ Coach در دسترس نبود. دوباره تلاش کن.');
+        throw new Error('پاسخ مربی در دسترس نبود. دوباره تلاش کن.');
       }
 
       const assistantMessage: Message = {
@@ -180,7 +167,7 @@ export function CoachScreen() {
       };
       setMessages((current) => [...current, assistantMessage].slice(-20));
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'خطای نامشخص');
+      setError(caught instanceof Error ? caught.message : 'پاسخ مربی در دسترس نبود.');
     } finally {
       setLoading(false);
     }
@@ -199,29 +186,29 @@ export function CoachScreen() {
   }
 
   return (
-    <section className="coach-page" aria-labelledby="coach-heading" aria-busy={loading}>
+    <section className={conversationStarted ? 'coach-page coach-page--active' : 'coach-page'} aria-labelledby="coach-heading" aria-busy={loading}>
       <header className="coach-hero">
+        <span className="coach-hero__mark"><NeoFitIcon name="sparkle" size={22} /></span>
         <div>
-          <p className="section-kicker">NeoFit Coach</p>
-          <h2 id="coach-heading">Coach شخصی، روی داده واقعی تو</h2>
-          <p>Google اولویت اول است و AvalAI fallback کنترل‌شده. YouTube فقط با درخواست صریح تو فعال می‌شود. Chat این صفحه فعلاً بین دستگاه‌ها ذخیره نمی‌شود.</p>
+          <p className="section-kicker">مربی NeoFit</p>
+          <h2 id="coach-heading">چه کمکی می‌خواهی؟</h2>
+          {!conversationStarted ? <p>سؤالت را ساده بنویس؛ پاسخ با اطلاعاتی که خودت ثبت کرده‌ای هماهنگ می‌شود.</p> : null}
         </div>
-        <span className="status-pill">read-only</span>
       </header>
 
       {!account ? (
         <article className="coach-auth-card">
-          <h3>برای Coach وارد حساب شو</h3>
-          <p>Context پزشکی، تمرین و تغذیه فقط با Session معتبر و RLS خوانده می‌شود.</p>
+          <h3>برای استفاده از مربی وارد حساب شو</h3>
+          <p>بعد از ورود، مربی می‌تواند پاسخ را با اطلاعات و برنامه خودت هماهنگ کند.</p>
           <Link href="/auth">ورود یا ساخت حساب</Link>
         </article>
       ) : (
         <>
-          <div className="coach-prompts">
-            {prompts.map((prompt) => (
-              <button type="button" key={prompt} disabled={blocked} onClick={() => void sendMessage(prompt)}>{prompt}</button>
-            ))}
-          </div>
+          {!conversationStarted ? (
+            <div className="coach-prompts" aria-label="پیشنهاد سؤال">
+              {prompts.map((prompt) => <button type="button" key={prompt} disabled={blocked} onClick={() => void sendMessage(prompt)}>{prompt}</button>)}
+            </div>
+          ) : null}
 
           <div className="coach-thread" aria-live="polite" aria-relevant="additions">
             {messages.map((message) => (
@@ -229,49 +216,31 @@ export function CoachScreen() {
                 <div className="coach-message__text">{message.content}</div>
                 {message.youtube?.mode === 'search' && message.youtube.videos ? <YouTubeCards videos={message.youtube.videos} /> : null}
                 {message.youtube?.mode === 'video' && message.youtube.url ? (
-                  <a className="coach-video-source" href={message.youtube.url} target="_blank" rel="noreferrer noopener">باز کردن ویدیوی بررسی‌شده در YouTube</a>
-                ) : null}
-                {message.meta && (message.meta.provider || message.meta.contextDomains?.length) ? (
-                  <details className="coach-technical-details">
-                    <summary>جزئیات فنی پاسخ</summary>
-                    <div>
-                      {message.meta.provider ? <span>Provider: {message.meta.provider}</span> : null}
-                      {message.meta.modelId ? <span>Model: {message.meta.modelId}</span> : null}
-                      {typeof message.meta.latencyMs === 'number' ? <span>Latency: {message.meta.latencyMs.toLocaleString('fa-IR')} ms</span> : null}
-                      {message.meta.fallbackFrom ? <span>Fallback از {message.meta.fallbackFrom}</span> : null}
-                      {message.meta.contextDomains?.length ? <span>Context: {message.meta.contextDomains.join(' · ')}</span> : null}
-                    </div>
-                  </details>
+                  <a className="coach-video-source" href={message.youtube.url} target="_blank" rel="noreferrer noopener">باز کردن ویدیو در YouTube</a>
                 ) : null}
               </article>
             ))}
-            {loading ? <article className="coach-message coach-message--assistant"><div className="coach-thinking"><span aria-hidden="true" />در حال خواندن فقط context و ابزار لازم...</div></article> : null}
+            {loading ? <article className="coach-message coach-message--assistant"><div className="coach-thinking"><span aria-hidden="true" />در حال آماده‌کردن پاسخ...</div></article> : null}
             <div ref={endRef} />
           </div>
 
           {cooldownSeconds > 0 ? <p className="coach-cooldown" role="status">ارسال بعدی تا {faSeconds(cooldownSeconds)} ثانیه دیگر</p> : null}
-          {error ? (
-            <div className="coach-error" role="alert">
-              <span>{error}</span>
-              {errorAction ? <Link href={errorAction.href}>{errorAction.label}</Link> : null}
-            </div>
-          ) : null}
+          {error ? <div className="coach-error" role="alert"><span>{error}</span>{errorAction ? <Link href={errorAction.href}>{errorAction.label}</Link> : null}</div> : null}
 
           <form className="coach-composer" onSubmit={submit}>
-            <label className="sr-only" htmlFor="coach-message-input">پیام به NeoFit Coach</label>
+            <label className="sr-only" htmlFor="coach-message-input">پیام به مربی NeoFit</label>
             <textarea
               id="coach-message-input"
               value={input}
               maxLength={2400}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={composerKeyDown}
-              placeholder="مثلاً: در یوتیوب یک آموزش اسکوات پیدا کن، یا این لینک را بررسی کن..."
+              placeholder="پیامت را بنویس..."
               disabled={blocked}
             />
-            <button type="submit" disabled={blocked || !input.trim()}>{loading ? 'در حال پاسخ...' : 'ارسال'}</button>
+            <button type="submit" aria-label="ارسال پیام" disabled={blocked || !input.trim()}><NeoFitIcon name="chevron" size={20} /></button>
           </form>
-          <p className="coach-composer-hint">Enter خط جدید · Ctrl/⌘ + Enter ارسال</p>
-          <p className="coach-boundary">Coach فعلاً فقط می‌خواند و پیشنهاد می‌دهد؛ هیچ برنامه، هدف یا داده پزشکی را بدون ابزار write و تأیید صریح تغییر نمی‌دهد.</p>
+          <p className="coach-boundary">پیشنهادها جایگزین نظر پزشک یا متخصص درمانی نیستند.</p>
         </>
       )}
     </section>
