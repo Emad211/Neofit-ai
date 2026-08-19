@@ -188,7 +188,11 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       } else {
         throw new Error('Onboarding persistence is unavailable.');
       }
-      setDraft(nextDraft);
+      // Re-apply the step marker to the LATEST state, not the pre-await snapshot:
+      // inputs stay editable while the remote write is in flight, so a keystroke
+      // during that window must survive. markStepCompleted is pure and idempotent,
+      // and a concurrent edit re-arms autosave, so persistence still converges.
+      setDraft((current) => markStepCompleted(current, step));
       return nextDraft;
     } catch (error) {
       if (error instanceof OnboardingConflictError) {
