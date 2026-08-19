@@ -164,9 +164,9 @@ The Ready Server Action consumes only `parseOnboardingDraft` output, stores hash
 
 The shared 23-exercise registry, versioned SQL mirror, read-only grants, Workout Plan identity/name trigger, deterministic Onboarding safety mapping, safe substitutions, critical no-inference safety guard, prompt/output budgets and dedicated CI are implemented. All 23 migrations and real SQL/REST permission/trigger probes passed locally. Live AvalAI tests passed 3/3 on both Flash and Flash Lite; Lite is now the measured low-cost default. Hosted migration and real-account runtime proof remain open.
 
-### Stage24 structured planners — AFTER STAGE23
+### Stage24 structured planners — CODE + CONTRACT TESTS GREEN; HOSTED GENERATION PROOF OPEN
 
-Bounded Training + Nutrition structured generation and deterministic validators/materializers. Nutrition Core remains arithmetic authority.
+Bounded Training + Nutrition structured generation with a pure contract parser, a deterministic materializer and `security invoker` finalize/activate RPCs are implemented (`web/lib/program-generation/*`, migration `20260811170000_program_generation.sql`). A planner only *selects* pre-screened exercise/food identities + quarter-step portions; Nutrition Core computes every number and an absurd day is rejected against a Core-computed integrity ceiling. Preflight and the revision claim both run before any provider spend. The contract/materializer surface is covered by `tests/program-generation.test.ts` (happy path, invented-identity/out-of-range/off-step/oversized-meal/mismatched-day-size rejection, allergy + clinical + unset-medical + prototype-injury fail-closed, negated free-text equipment, Arabic→Persian disliked-food folding, atomic finalize/activate, claim-before-spend ordering); `test:program-cycle` is 20/20. Stage doc: `docs/NEOFIT_STAGE24_STRUCTURED_PROGRAM_PLANNERS.md`. Hosted generation + fallback + stale-revision-abort runtime proofs remain open.
 
 ---
 
