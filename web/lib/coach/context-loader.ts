@@ -167,6 +167,7 @@ export async function loadCoachContext(
   if (profileResult.error || onboardingResult.error) throw new Error('Unable to load Coach profile context.');
 
   const onboarding = parseOnboardingDraft(onboardingResult.data?.draft ?? null);
+  const onboardingCompleted = onboardingResult.data?.status === 'completed';
   const timezone = normalizeTimeZone(profileResult.data?.timezone);
   const focusWeekday = requestedWeekday(message, timezone);
   const context: Record<string, unknown> = {
@@ -226,7 +227,9 @@ export async function loadCoachContext(
   }
 
   if (domains.includes('workout')) {
-    context.exerciseRegistry = exerciseRegistryContext(message, onboarding);
+    // Deterministic safety candidates require a completed, fully-validated
+    // profile; an in-progress draft must not yield allowed/blocked decisions.
+    context.exerciseRegistry = exerciseRegistryContext(message, onboardingCompleted ? onboarding : null);
   }
 
   const tasks: Array<Promise<void>> = [];

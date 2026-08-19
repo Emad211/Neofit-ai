@@ -52,18 +52,33 @@ export function safetyProfileFromOnboarding(input: OnboardingSafetyInput): Exerc
   if (input.highBloodPressure === true || input.cardiacHistory === true) {
     blockedTags.push('valsalva_risk');
   }
+  // unset != explicit "no": an unanswered cardiovascular question is not evidence
+  // of safety, so fail closed into human review rather than inferring "no risk".
+  if (input.highBloodPressure === null || input.cardiacHistory === null) {
+    reviewReasons.push('incomplete_medical_history');
+  }
   if (input.physicianRestrictions.trim()) reviewReasons.push('physician_restriction_requires_review');
   if (input.generalLimitations.trim()) reviewReasons.push('general_limitation_requires_review');
-  if (input.painDuringExercise === true && (input.painScale ?? 0) >= 7) reviewReasons.push('severe_exercise_pain');
+  if (input.painDuringExercise === null) {
+    reviewReasons.push('incomplete_pain_report');
+  } else if (input.painDuringExercise === true && (input.painScale === null || input.painScale >= 7)) {
+    // Reported pain with unknown or high severity is reviewed; a null scale is
+    // missing evidence, never a quiet zero.
+    reviewReasons.push('severe_exercise_pain');
+  }
 
   for (const injury of input.injuries) {
     if (injury.status !== 'current') continue;
-    const group = BODY_PART_GROUPS[injury.bodyPartId];
-    if (!group) {
+    // Only own enumerable keys are real mappings; a prototype-chain id such as
+    // 'constructor' must fail closed, never resolve to an inherited function.
+    const group = Object.prototype.hasOwnProperty.call(BODY_PART_GROUPS, injury.bodyPartId)
+      ? BODY_PART_GROUPS[injury.bodyPartId]
+      : undefined;
+    const tags = group ? BODY_PART_TAGS[group] : undefined;
+    if (!tags) {
       reviewReasons.push('unmapped_current_injury');
       continue;
     }
-    const tags = BODY_PART_TAGS[group];
     if (injury.severity === 'severe') blockedTags.push(...tags);
     else reviewTags.push(...tags);
     if (injury.forbiddenMovements.trim()) reviewReasons.push('reported_forbidden_movement_requires_review');
