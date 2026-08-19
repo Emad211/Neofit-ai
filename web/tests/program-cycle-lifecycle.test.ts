@@ -85,3 +85,26 @@ test('generated database types expose Program Cycle tables and RPCs', async () =
   assert.match(types, /ensure_program_cycle:/);
   assert.match(types, /transition_program_cycle:/);
 });
+
+test('Data-integrity hardening migration locks reference tables and freezes terminal history', async () => {
+  const migration = await repo('supabase/migrations/20260819090000_data_integrity_hardening.sql');
+  // Reference tables become RLS-protected and read-only for everyone, so a
+  // future write grant or a direct PostgREST call can never mutate them.
+  assert.match(migration, /alter table public\.exercise_registry enable row level security/);
+  assert.match(migration, /alter table public\.exercise_substitutions enable row level security/);
+  assert.match(migration, /create policy exercise_registry_read[\s\S]*?for select to anon, authenticated/);
+  assert.doesNotMatch(migration, /for (insert|update|delete|all) to (anon|authenticated)/i);
+  // Covering indexes for the composite plan foreign keys.
+  assert.match(migration, /program_cycles_active_workout_plan_fk_idx/);
+  assert.match(migration, /program_cycles_active_nutrition_plan_fk_idx/);
+  // Invariant 6 enforced at the database edge: terminal history is frozen.
+  assert.match(migration, /freeze_terminal_workout_session[\s\S]*?workout_session_frozen/);
+  assert.match(migration, /freeze_workout_sets_when_session_inactive[\s\S]*?workout_set_session_not_active/);
+  assert.match(migration, /freeze_nutrition_entry_update[\s\S]*?nutrition_entry_immutable/);
+  // A malformed plan cannot become persisted authority.
+  assert.match(migration, /enforce_workout_plan_day_shape[\s\S]*?workout_plan_day_exercise_count/);
+  // Every function keeps the search_path discipline the repo mandates.
+  const functions = migration.match(/create or replace function[\s\S]*?\$\$;/g) ?? [];
+  assert.ok(functions.length >= 4);
+  for (const fn of functions) assert.match(fn, /set search_path = ''/);
+});
