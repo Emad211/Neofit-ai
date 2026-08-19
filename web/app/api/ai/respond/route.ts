@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { AI_INPUT_LIMIT, AI_SYSTEM_INSTRUCTION_LIMIT } from '@/lib/ai/config';
+import { authenticatedAiContext } from '@/lib/ai/credential-store';
 import { generateWithProviderFallback } from '@/lib/ai/provider-router';
 import { ProviderRequestError } from '@/lib/ai/provider-error';
 import { AiBudgetExceededError, AiBudgetUnavailableError } from '@/lib/ai/request-audit';
@@ -47,8 +48,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'system_instruction_invalid' }, { status: 400 });
   }
 
+  // This path forwards a browser-supplied systemInstruction on the caller's own
+  // provider credentials and budget, so it must fail closed on an authenticated
+  // NeoFit session — never an anonymous open proxy. Resolve the context here and
+  // pass it through, rather than letting the router authenticate as a late side
+  // effect that would surface as a misleading "not configured" response.
+  let auth;
+  try { auth = await authenticatedAiContext(); }
+  catch {
+    return NextResponse.json({ error: 'authentication_required' }, {
+      status: 401,
+      headers: { 'Cache-Control': 'private, no-store' },
+    });
+  }
+
   try {
-    const result = await generateWithProviderFallback({ input, systemInstruction }, undefined, 'respond');
+    const result = await generateWithProviderFallback({ input, systemInstruction }, auth, 'respond');
     return NextResponse.json(result, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     if (error instanceof AiBudgetExceededError) return budgetExceeded(error);
