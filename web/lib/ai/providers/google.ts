@@ -7,7 +7,7 @@ import {
   AI_VALIDATION_TIMEOUT_MS,
 } from '../config';
 import type { AiGenerationInput } from '../types';
-import { fetchWithTimeout, providerHttpError } from './shared';
+import { fetchWithTimeout, outputReachedCeiling, providerHttpError } from './shared';
 
 const GOOGLE_API_BASE = 'https://generativelanguage.googleapis.com/v1';
 
@@ -71,7 +71,12 @@ export async function generateGoogle(
   apiKey: string,
   modelId: string,
   request: AiGenerationInput,
-): Promise<{ text: string; requestId: string | null; stateId: string | null; usage: unknown }> {
+): Promise<{ text: string; requestId: string | null; stateId: string | null; usage: unknown; incomplete: boolean }> {
+  // Resolve the ceiling ONCE, clamped to the hard cap, and reuse the same
+  // number both for what we send and for truncation detection below. Detecting
+  // against a different (unclamped) value would silently under-report truncation
+  // whenever a caller requests above AI_HARD_MAX_OUTPUT_TOKENS.
+  const maxOutputTokens = outputTokenLimit(request);
   const response = await fetchWithTimeout(
     `${GOOGLE_API_BASE}/interactions`,
     {
@@ -91,7 +96,7 @@ export async function generateGoogle(
             schema: request.responseSchema,
           },
         } : {}),
-        generation_config: { max_output_tokens: outputTokenLimit(request) },
+        generation_config: { max_output_tokens: maxOutputTokens },
         store: false,
       }),
     },
@@ -108,5 +113,6 @@ export async function generateGoogle(
     requestId: response.headers.get('x-request-id'),
     stateId: payload.id ?? null,
     usage: payload.usage ?? null,
+    incomplete: outputReachedCeiling(payload.usage, maxOutputTokens),
   };
 }

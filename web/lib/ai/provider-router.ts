@@ -109,6 +109,7 @@ export async function generateWithProviderFallback(
           latencyMs: providerLatencyMs,
           usage: result.usage,
           fallbackFrom,
+          incomplete: result.incomplete,
         };
       } catch (error) {
         lastError = error;

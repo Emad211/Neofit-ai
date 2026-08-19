@@ -89,7 +89,7 @@ test('Coach system context fails closed before unbounded prompt cost', () => {
   );
 });
 
-test('provider payloads enforce default and hard per-request output-token ceilings', async () => {
+test('provider payloads enforce default and hard per-request output-token ceilings and detect truncation', async () => {
   const config = await readWeb('lib/ai/config.ts');
   const google = await readWeb('lib/ai/providers/google.ts');
   const avalai = await readWeb('lib/ai/providers/avalai.ts');
@@ -100,7 +100,12 @@ test('provider payloads enforce default and hard per-request output-token ceilin
     assert.match(provider, /function outputTokenLimit/);
     assert.match(provider, /Math\.min\(requested, AI_HARD_MAX_OUTPUT_TOKENS\)/);
     assert.match(provider, /: AI_MAX_OUTPUT_TOKENS/);
-    assert.match(provider, /max_output_tokens: outputTokenLimit\(request\)/);
+    // The ceiling is resolved ONCE (clamped) and the SAME value is both sent to
+    // the provider and used for truncation detection — never two divergent
+    // numbers, or truncation would be under-reported above the hard cap.
+    assert.match(provider, /const maxOutputTokens = outputTokenLimit\(request\)/);
+    assert.match(provider, /max_output_tokens: maxOutputTokens/);
+    assert.match(provider, /incomplete: outputReachedCeiling\(payload\.usage, maxOutputTokens\)/);
   }
 });
 
