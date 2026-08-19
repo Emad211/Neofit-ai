@@ -94,3 +94,24 @@ export async function ensureProgramCycle(input: {
     created: row.created,
   };
 }
+
+// Terminally abandons a pre-generation (draft/failed) cycle. The RPC is the only
+// path to the 'abandoned' status and refuses any generated or live cycle, so a
+// forged request can never discard a plan-bearing cycle. Discarding frees the
+// single-open slot; the caller then pins a fresh cycle to the current draft.
+export async function discardProgramCycle(input: {
+  readonly supabase: SupabaseClient<Database>;
+  readonly cycleId: string;
+  readonly expectedRevision: number;
+}): Promise<{ readonly id: string; readonly status: ProgramCycleStatus; readonly revision: number }> {
+  const { data, error } = await input.supabase.rpc('discard_program_cycle', {
+    p_cycle_id: input.cycleId,
+    p_expected_revision: input.expectedRevision,
+  });
+  const row = data?.[0];
+  const status = parseProgramCycleStatus(row?.cycle_status);
+  if (error || !row || !status) {
+    throw new ProgramCyclePersistenceError();
+  }
+  return { id: row.cycle_id, status, revision: row.cycle_revision };
+}

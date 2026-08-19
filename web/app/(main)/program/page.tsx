@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { loadProgramCycleSnapshot } from '@/lib/program-cycle/data';
 import { programCycleStatusLabel } from '@/lib/program-cycle/core';
-import { activateProgramCycle, generateProgramCycle, recoverProgramCycleGeneration } from './actions';
+import { activateProgramCycle, discardAndRebuildProgramCycle, generateProgramCycle, recoverProgramCycleGeneration } from './actions';
 import { ProgramActionButton } from './program-action-button';
 import './program.css';
 
@@ -39,11 +39,14 @@ const PROGRAM_ISSUES: Readonly<Record<string, ProgramIssue>> = {
     actionLabel: 'تکمیل اطلاعات',
   },
   onboarding_snapshot_changed: {
-    text: 'اطلاعاتت بعد از شروع این دوره تغییر کرده است. یک‌بار آن را مرور و تأیید کن تا برنامه بر اساس آخرین اطلاعات ساخته شود.',
+    text: 'اطلاعاتت بعد از شروع این دوره تغییر کرده است. برای اینکه برنامه بر اساس آخرین اطلاعات ساخته شود، دوره را با اطلاعات تازه از نو بساز.',
     tone: 'warning',
     retry: false,
-    actionHref: '/onboarding/review',
-    actionLabel: 'مرور و تأیید اطلاعات',
+  },
+  cycle_rebuild_failed: {
+    text: 'به‌روزرسانی دوره کامل نشد. صفحه را تازه کن و دوباره تلاش کن.',
+    tone: 'error',
+    retry: false,
   },
   clinical_review_required: {
     text: 'برای ساخت برنامه تمرین، یکی از محدودیت‌های سلامت یا دردهایی که ثبت کرده‌ای نیاز به مرور دارد.',
@@ -203,7 +206,9 @@ export default async function ProgramPage({
       ? 'برنامه‌ها فعال شدند و حالا در بخش تمرین و تغذیه در دسترس‌اند.'
       : query.message === 'generation-recovered'
         ? 'تلاش قبلی بسته شد. حالا می‌توانی دوباره برنامه را بسازی.'
-        : null;
+        : query.message === 'cycle-rebuilt' && cycle.status === 'draft'
+          ? 'دوره با آخرین اطلاعاتت از نو ساخته شد. حالا می‌توانی برنامه را بسازی.'
+          : null;
 
   // Generation eligibility and the "needs review" prompt derive ONLY from the
   // persisted cycle row, never from the user-controllable URL. A ?message= or
@@ -212,16 +217,19 @@ export default async function ProgramPage({
   const persistedFailureCode = cycle.status === 'failed' ? cycle.generation_failure_code : null;
   const persistedIssue = persistedFailureCode ? PROGRAM_ISSUES[persistedFailureCode] ?? FALLBACK_ISSUE : null;
   // A cycle pinned to a now-diverged onboarding draft cannot be generated: the
-  // action fails closed on the same mismatch. Route to review instead of
-  // offering a dead button, and treat it as the reason needing user action.
+  // action fails closed on the same mismatch. Offer an in-place rebuild (discard
+  // the stale cycle, pin a fresh one to the current draft) instead of a dead
+  // generate button or a review link that cannot re-pin the immutable cycle.
   const snapshotChanged = snapshot.onboardingChanged;
   const canGenerate = !snapshotChanged && (
     cycle.status === 'draft'
     || (cycle.status === 'failed' && (persistedIssue?.retry ?? true))
   );
-  const reviewIssue = snapshotChanged
-    ? PROGRAM_ISSUES.onboarding_snapshot_changed
-    : (cycle.status === 'failed' && persistedIssue && !persistedIssue.retry ? persistedIssue : null);
+  // Clinical/other fail-closed reasons still route to the relevant review screen.
+  // The diverged-onboarding case is handled by its own rebuild card below.
+  const reviewIssue = !snapshotChanged && cycle.status === 'failed' && persistedIssue && !persistedIssue.retry
+    ? persistedIssue
+    : null;
   const needsUserAction = Boolean(reviewIssue?.actionHref && reviewIssue.actionLabel);
 
   // Banner: an explicit ?error= wins; otherwise fall back to the persisted
@@ -262,6 +270,21 @@ export default async function ProgramPage({
             <p>اطلاعات مربوط را اصلاح یا تأیید کن، بعد برگرد و برنامه را بساز.</p>
           </div>
           <Link className="primary-button" href={reviewIssue!.actionHref!}>{reviewIssue!.actionLabel}</Link>
+        </article>
+      ) : null}
+
+      {snapshotChanged ? (
+        <article className="program-cycle-command">
+          <div>
+            <p className="section-kicker">قبل از ادامه</p>
+            <h3>اطلاعاتت تغییر کرده است</h3>
+            <p>بعد از شروع این دوره، اطلاعاتت را تغییر داده‌ای. دوره را با آخرین اطلاعات از نو بساز تا برنامه دقیقاً بر همان پایه ساخته شود.</p>
+          </div>
+          <form action={discardAndRebuildProgramCycle}>
+            <input type="hidden" name="cycleId" value={cycle.id} />
+            <input type="hidden" name="revision" value={cycle.revision} />
+            <ProgramActionButton pendingLabel="در حال به‌روزرسانی دوره…">ساخت دوباره با آخرین اطلاعات</ProgramActionButton>
+          </form>
         </article>
       ) : null}
 

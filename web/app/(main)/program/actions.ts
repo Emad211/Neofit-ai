@@ -10,7 +10,7 @@ import {
   ProgramPlannerError,
   type ProgramPlannerEvidence,
 } from '@/lib/program-generation/planners';
-import { onboardingSnapshotSha256 } from '@/lib/program-cycle/persistence';
+import { discardProgramCycle, ensureProgramCycle, onboardingSnapshotSha256 } from '@/lib/program-cycle/persistence';
 import { createClient } from '@/lib/supabase/server';
 
 const GENERATION_STALE_MS = 5 * 60_000;
@@ -167,6 +167,66 @@ export async function generateProgramCycle(formData: FormData): Promise<void> {
 
   revalidatePath('/program');
   redirect('/program?message=plans-ready');
+}
+
+// Diverged-onboarding recovery. A draft/failed cycle pins the onboarding
+// provenance hash at creation; if the user re-completes onboarding afterwards,
+// generation fails closed on the mismatch and the single-open-cycle rule forbids
+// opening a second cycle — the classic dead end. This discards the stale cycle
+// (only draft/failed are discardable) and immediately pins a fresh one to the
+// current draft, so the user leaves with a generatable cycle rather than a trap.
+export async function discardAndRebuildProgramCycle(formData: FormData): Promise<void> {
+  const cycleId = text(formData, 'cycleId');
+  const expectedRevision = revisionValue(text(formData, 'revision'));
+  if (!cycleId || expectedRevision === null) redirect('/program?error=invalid_request');
+
+  const supabase = await createClient();
+  const active = await activeAuthSession(supabase);
+  if (!active) redirect('/auth');
+
+  const [cycleResult, onboardingResult] = await Promise.all([
+    supabase.from('program_cycles').select('id,status,revision').eq('id', cycleId).eq('user_id', active.userId).maybeSingle(),
+    supabase.from('user_onboarding').select('draft,status,updated_at').eq('user_id', active.userId).maybeSingle(),
+  ]);
+  const cycle = cycleResult.data;
+  const draft = parseOnboardingDraft(onboardingResult.data?.draft ?? null);
+  if (
+    cycleResult.error
+    || onboardingResult.error
+    || !cycle
+    || cycle.revision !== expectedRevision
+    || !['draft', 'failed'].includes(cycle.status)
+    || onboardingResult.data?.status !== 'completed'
+    || !draft
+  ) {
+    redirect('/program?error=stale_or_incomplete');
+  }
+
+  // Free the single-open slot first. The RPC refuses anything but draft/failed,
+  // so this can never touch a generated or live cycle even under a forged form.
+  try {
+    await discardProgramCycle({ supabase, cycleId: cycle.id, expectedRevision: cycle.revision });
+  } catch {
+    redirect('/program?error=cycle_rebuild_failed');
+  }
+
+  // Pin a fresh cycle to the current draft. If this second step fails the user
+  // simply has no open cycle; Ready is the natural place to create one, and it
+  // no longer counts the just-abandoned cycle as open.
+  try {
+    await ensureProgramCycle({
+      supabase,
+      userId: active.userId,
+      draft,
+      onboardingUpdatedAt: onboardingResult.data.updated_at,
+    });
+  } catch {
+    redirect('/onboarding/ready?error=cycle');
+  }
+
+  revalidatePath('/program');
+  revalidatePath('/');
+  redirect('/program?message=cycle-rebuilt');
 }
 
 export async function recoverProgramCycleGeneration(formData: FormData): Promise<void> {

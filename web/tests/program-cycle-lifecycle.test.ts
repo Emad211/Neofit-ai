@@ -108,3 +108,49 @@ test('Data-integrity hardening migration locks reference tables and freezes term
   assert.ok(functions.length >= 4);
   for (const fn of functions) assert.match(fn, /set search_path = ''/);
 });
+
+test('Diverged-onboarding recovery migration adds a discardable terminal status', async () => {
+  const migration = await repo('supabase/migrations/20260819091000_program_cycle_diverged_onboarding_recovery.sql');
+  // The new terminal status and the single transition edge that reaches it.
+  assert.match(migration, /program_cycles_status_valid[\s\S]*?'abandoned'/);
+  assert.match(migration, /old\.status in \('draft','failed'\) and new\.status = 'abandoned'/);
+  // A dedicated, narrow discard RPC that can only ever produce 'abandoned' and
+  // refuses any generated or live cycle.
+  assert.match(migration, /create or replace function public\.discard_program_cycle/);
+  assert.match(migration, /security invoker/);
+  assert.match(migration, /set search_path = ''/);
+  assert.match(migration, /pg_advisory_xact_lock/);
+  assert.match(migration, /stale_program_cycle_revision/);
+  assert.match(migration, /status not in \('draft','failed'\)[\s\S]*?program_cycle_not_discardable/);
+  assert.match(migration, /set\s+status = 'abandoned'/);
+  // Reachable only by an authenticated owner, never anon.
+  assert.match(migration, /revoke all on function public\.discard_program_cycle\(uuid,integer\) from public, anon/);
+  assert.match(migration, /grant execute on function public\.discard_program_cycle\(uuid,integer\) to authenticated/);
+  const types = await web('lib/supabase/database.types.ts');
+  assert.match(types, /discard_program_cycle:/);
+});
+
+test('Diverged-onboarding recovery is wired end to end without a dead end', async () => {
+  // 'abandoned' is a known terminal status, not an "unavailable" parse failure.
+  assert.equal(parseProgramCycleStatus('abandoned'), 'abandoned');
+  assert.equal(programCycleStatusLabel('abandoned'), 'کنارگذاشته‌شده');
+  // Every "current cycle" query treats abandoned as terminal, like completed, so
+  // a discarded-but-not-rebuilt cycle never re-traps the user on any entry point.
+  for (const path of ['lib/program-cycle/data.ts', 'app/page.tsx', 'app/onboarding/ready/page.tsx']) {
+    const source = await web(path);
+    assert.match(source, /\.neq\('status', 'abandoned'\)/);
+  }
+  // The persistence wrapper discards via the RPC; the action rebuilds from the
+  // current draft rather than the stale pinned one.
+  const persistence = await web('lib/program-cycle/persistence.ts');
+  assert.match(persistence, /export async function discardProgramCycle/);
+  assert.match(persistence, /rpc\('discard_program_cycle'/);
+  const actions = await web('app/(main)/program/actions.ts');
+  assert.match(actions, /export async function discardAndRebuildProgramCycle/);
+  assert.match(actions, /discardProgramCycle\(/);
+  assert.match(actions, /ensureProgramCycle\(/);
+  // The page offers the rebuild action, not a review link that cannot re-pin it.
+  const page = await web('app/(main)/program/page.tsx');
+  assert.match(page, /discardAndRebuildProgramCycle/);
+  assert.match(page, /ساخت دوباره با آخرین اطلاعات/);
+});

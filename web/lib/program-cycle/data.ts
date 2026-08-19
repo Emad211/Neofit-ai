@@ -47,6 +47,7 @@ export async function loadProgramCycleSnapshot(): Promise<ProgramCycleSnapshot> 
     .select('*')
     .eq('user_id', active.userId)
     .neq('status', 'completed')
+    .neq('status', 'abandoned')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();

@@ -105,6 +105,7 @@ export default async function OnboardingReadyPage({ searchParams }: { searchPara
       .select('id')
       .eq('user_id', active.userId)
       .neq('status', 'completed')
+      .neq('status', 'abandoned')
       .limit(1)
       .maybeSingle(),
     searchParams,
